@@ -269,6 +269,114 @@ export function createPromoGestDevApiPlugin(): Plugin {
     return { user, sessionHash: hashed };
   }
 
+
+  /**
+   * Creates disposable sample data for the Vite-only preview.
+   * This is deliberately lazy: the real first-run wizard remains available until
+   * the user explicitly opens the demo workspace.
+   */
+  function ensurePreviewDemoData(): StoredUserRecord | null {
+    if (organization) {
+      // Never turn an already initialized, user-provided Vite organization into a demo admin session.
+      if (organization.id !== '30000000-0000-0000-0000-000000000001') return null;
+      return users.find((user) => user.id === '30000000-0000-0000-0000-000000000002') ?? null;
+    }
+
+    const nowIso = new Date().toISOString();
+    organization = {
+      id: '30000000-0000-0000-0000-000000000001',
+      legalName: 'مؤسسة تجريبية لمعاينة PROMO GEST',
+      tradeName: 'PROMO GEST DEMO',
+      legalForm: 'SARL',
+      nif: null,
+      nis: null,
+      tradeRegisterNumber: null,
+      taxArticleNumber: null,
+      shareCapitalDzd: null,
+      wilayaCode: '31',
+      wilayaName: 'وهران / Oran',
+      address: 'عنوان افتراضي غير حقيقي — بيانات معاينة فقط',
+      phone: null,
+      email: 'demo@promogest.local',
+      defaultLanguage: 'ar',
+      currencyCode: 'DZD',
+    };
+    initializedAtUtc = nowIso;
+
+    const admin: StoredUserRecord = {
+      id: '30000000-0000-0000-0000-000000000002',
+      username: 'demo.admin',
+      fullName: 'مدير المعاينة التجريبية',
+      email: 'demo@promogest.local',
+      phone: null,
+      isSystemAdministrator: true,
+      isActive: true,
+      preferredLanguage: 'ar',
+      failedLoginAttempts: 0,
+      lockoutEndUtc: null,
+      lastLoginAtUtc: null,
+      createdAtUtc: nowIso,
+      roleCodes: ['SYSTEM_ADMIN'],
+      // The preview session is issued by a dedicated development-only GET route;
+      // no reusable demo password is created or exposed.
+      passwordHash: hashPassword(crypto.randomBytes(32).toString('hex')),
+      securityStamp: crypto.randomUUID(),
+    };
+    users.push(admin);
+
+    projects.push(
+      {
+        id: '30000000-0000-0000-0000-000000000003',
+        code: 'DEMO-ORAN-001',
+        nameAr: 'إقامة النخيل التجريبية',
+        nameFr: 'Résidence Ennahil (démo)',
+        wilayaCode: '31',
+        wilayaName: 'وهران / Oran',
+        municipality: 'بئر الجير / Bir El Djir',
+        address: 'عنوان افتراضي — وهران',
+        landTitleReference: 'DEMO-LAND-001',
+        buildingPermitNumber: 'DEMO-PERMIT-001',
+        buildingPermitDate: '2026-05-15',
+        status: 'UnderConstruction',
+        estimatedBudgetDzd: 1250000000,
+        plannedBlocksCount: 4,
+        plannedUnitsCount: 180,
+        createdAtUtc: nowIso,
+        members: [],
+      },
+      {
+        id: '30000000-0000-0000-0000-000000000004',
+        code: 'DEMO-ORAN-002',
+        nameAr: 'إقامة الباهية التجريبية',
+        nameFr: 'Résidence El Bahia (démo)',
+        wilayaCode: '31',
+        wilayaName: 'وهران / Oran',
+        municipality: 'السانية / Es Sénia',
+        address: 'عنوان افتراضي — وهران',
+        landTitleReference: 'DEMO-LAND-002',
+        buildingPermitNumber: 'DEMO-PERMIT-002',
+        buildingPermitDate: null,
+        status: 'Planning',
+        estimatedBudgetDzd: 780000000,
+        plannedBlocksCount: 2,
+        plannedUnitsCount: 96,
+        createdAtUtc: nowIso,
+        members: [],
+      }
+    );
+
+    addAudit(
+      'PREVIEW_DEMO_CREATED',
+      'Info',
+      'Temporary in-memory demo workspace created for Vite preview; no real organization data.',
+      admin,
+      'OrganizationSettings',
+      organization.id
+    );
+
+    return admin;
+  }
+
   return {
     name: 'promogest-dev-api-contract',
     configureServer(server) {
@@ -300,6 +408,7 @@ export function createPromoGestDevApiPlugin(): Plugin {
             isInitialized: Boolean(organization),
             timestampUtc: new Date().toISOString(),
             environmentMode: 'ViteDevContractPreview',
+            previewMode: true,
           });
         }
 
@@ -335,6 +444,59 @@ export function createPromoGestDevApiPlugin(): Plugin {
             defaultLanguage: organization?.defaultLanguage ?? 'ar',
             initializedAtUtc,
           });
+        }
+
+        // Vite-preview-only demo access. This route does not exist in the production ASP.NET Core API.
+        // GET is intentional here because some embedded preview hosts block state-changing requests.
+        if (method === 'GET' && pathname === '/api/auth/preview-session') {
+          const demoAdmin = ensurePreviewDemoData();
+          if (!demoAdmin || !organization) {
+            return sendJson(res, 409, {
+              code: 'PREVIEW_DEMO_NOT_AVAILABLE',
+              message: 'Demo access is only available before a real organization is initialized in this preview server.',
+            });
+          }
+          demoAdmin.lastLoginAtUtc = new Date().toISOString();
+
+          const rawToken = crypto.randomBytes(32).toString('base64url');
+          sessions.push({
+            tokenHash: hashToken(rawToken),
+            userId: demoAdmin.id,
+            securityStamp: demoAdmin.securityStamp,
+            expiresAtMs: Date.now() + 12 * 3600_000,
+          });
+
+          addAudit('PREVIEW_DEMO_SESSION_OPENED', 'Info', 'Opened the disposable Vite demo workspace.', demoAdmin, 'UserSession');
+          const cookieAttributes = getCookieAttributes(req);
+          const nextCsrf = createCsrfPair(demoAdmin.id, cookieAttributes);
+
+          return sendJson(
+            res,
+            200,
+            {
+              user: {
+                id: demoAdmin.id,
+                username: demoAdmin.username,
+                fullName: demoAdmin.fullName,
+                email: demoAdmin.email,
+                phone: demoAdmin.phone,
+                isSystemAdministrator: demoAdmin.isSystemAdministrator,
+                isActive: demoAdmin.isActive,
+                preferredLanguage: demoAdmin.preferredLanguage,
+                roles: demoAdmin.roleCodes,
+                permissions: getPermissions(demoAdmin),
+                lastLoginAtUtc: demoAdmin.lastLoginAtUtc,
+              },
+              organization,
+            },
+            {
+              'Set-Cookie': [
+                `${COOKIE_NAME}=${rawToken}; ${cookieAttributes}; HttpOnly`,
+                ...nextCsrf.cookies,
+              ],
+              [CSRF_HEADER_NAME]: nextCsrf.token,
+            }
+          );
         }
 
         if (method === 'POST' && pathname === '/api/setup/initialize') {

@@ -208,4 +208,5 @@ export interface HealthStatusResponse {
   isInitialized: boolean;
   timestampUtc: string;
   environmentMode: string;
+  previewMode?: boolean;
 }

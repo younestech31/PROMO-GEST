@@ -6,6 +6,7 @@ param(
     [int]$DatabasePort = 5432,
     [string]$ProvisionUser = "postgres",
     [string]$DatabaseUser = "promogest_owner",
+    [string]$RuntimeDatabaseUser = "promogest_app",
     [string]$RestoreStorageDir = "C:\PromoGest\storage_restored",
     [string]$RestoreDataProtectionDir = "C:\PromoGest\dataprotection-keys_restored",
     [string]$RestoreConfigDir = "C:\PromoGest\config_restored"
@@ -26,25 +27,56 @@ if ($TargetDatabase -notmatch '^[A-Za-z_][A-Za-z0-9_]{0,62}$') {
     throw "TargetDatabase must be a safe PostgreSQL identifier."
 }
 
-Write-Host "[1/7] Verifying every backup-bundle checksum..."
+$requiredFiles = @("database.dump", "storage.zip", "dataprotection-keys.zip", "config-sanitized.zip")
+foreach ($requiredFile in $requiredFiles) {
+    if (-not (Test-Path -LiteralPath (Join-Path $BackupBundleDir $requiredFile) -PathType Leaf)) {
+        throw "Required backup component is missing: $requiredFile"
+    }
+}
+foreach ($roleName in @($ProvisionUser, $DatabaseUser, $RuntimeDatabaseUser)) {
+    if ($roleName -notmatch '^[A-Za-z_][A-Za-z0-9_]{0,62}$') {
+        throw "PostgreSQL role names must be simple identifiers."
+    }
+}
+if ([string]::Equals($DatabaseUser, $RuntimeDatabaseUser, [StringComparison]::OrdinalIgnoreCase)) {
+    throw "Migration owner and runtime application role must be different identities."
+}
+foreach ($restorePath in @($RestoreStorageDir, $RestoreDataProtectionDir, $RestoreConfigDir)) {
+    if (Test-Path -LiteralPath $restorePath) {
+        throw "Restore destination already exists. Choose a new path: $restorePath"
+    }
+}
+
+Write-Host "[1/8] Verifying every required backup-bundle checksum..."
+$manifestEntries = @{}
 foreach ($line in Get-Content -LiteralPath $ManifestPath) {
     if ([string]::IsNullOrWhiteSpace($line)) { continue }
-    $parts = $line -split "\s+", 2
-    if ($parts.Count -ne 2) { throw "Invalid manifest entry: $line" }
-
-    $expected = $parts[0].Trim().ToLowerInvariant()
-    $relativePath = $parts[1].Trim()
-    if ([IO.Path]::IsPathRooted($relativePath) -or $relativePath -match '(^|[\\/])\.\.([\\/]|$)') {
+    if ($line -notmatch '^\s*([0-9a-fA-F]{64})\s{2}(.+?)\s*$') {
+        throw "Invalid SHA-256 manifest entry: $line"
+    }
+    $expected = $Matches[1].ToLowerInvariant()
+    $relativePath = $Matches[2].Trim()
+    if ([IO.Path]::IsPathRooted($relativePath) -or $relativePath -match '[\\/]' -or
+        $relativePath -match '(^|[\\/])\.\.([\\/]|$)') {
         throw "Unsafe path in backup manifest: $relativePath"
     }
-
+    if ($manifestEntries.ContainsKey($relativePath)) {
+        throw "Duplicate manifest entry: $relativePath"
+    }
     $backupFile = Join-Path $BackupBundleDir $relativePath
     if (-not (Test-Path -LiteralPath $backupFile -PathType Leaf)) {
         throw "Missing expected backup file: $backupFile"
     }
     $actual = (Get-FileHash -LiteralPath $backupFile -Algorithm SHA256).Hash.ToLowerInvariant()
-    if ($expected -ne $actual) {
-        throw "Checksum mismatch for $backupFile"
+    if ($expected -ne $actual) { throw "Checksum mismatch for $backupFile" }
+    $manifestEntries[$relativePath] = $expected
+}
+if ($manifestEntries.Count -ne $requiredFiles.Count) {
+    throw "Manifest must cover exactly the four required backup components."
+}
+foreach ($requiredFile in $requiredFiles) {
+    if (-not $manifestEntries.ContainsKey($requiredFile)) {
+        throw "Manifest does not cover required component: $requiredFile"
     }
 }
 

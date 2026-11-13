@@ -30,7 +30,7 @@ public sealed class WindowsDpapiMachineScopeTests
             using (var firstProvider = CreateProvider(keyDirectory, applicationName))
             {
                 protectedPayload = firstProvider
-                    .GetRequiredService<IDataProtectionProvider>().GetRequiredService<IDataProtectionProvider>().CreateProtector(purpose)
+                    .GetRequiredService<IDataProtectionProvider>().CreateProtector(purpose)
                     .Protect(plainText);
             }
 

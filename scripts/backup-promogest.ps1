@@ -191,16 +191,11 @@ if (-not (Test-Path -LiteralPath $AppConfigPath -PathType Leaf)) {
 $SanitizedStage = Join-Path $BundleDir "_config_stage"
 New-Item -ItemType Directory -Force -Path $SanitizedStage | Out-Null
 $cfgJson = Get-Content -LiteralPath $AppConfigPath -Raw | ConvertFrom-Json
-if ($cfgJson.ConnectionStrings -and $cfgJson.ConnectionStrings.DefaultConnection) {
-    # Use the .NET parser so quoted passwords and escaped semicolons are redacted as a whole value.
-    $connectionBuilder = [System.Data.Common.DbConnectionStringBuilder]::new()
-    $connectionBuilder.ConnectionString = [string]$cfgJson.ConnectionStrings.DefaultConnection
-    foreach ($key in @($connectionBuilder.Keys)) {
-        if ([string]$key -match '^(?i:Password|Pwd)$') {
-            $connectionBuilder[$key] = "REDACTED_FOR_BACKUP"
-        }
-    }
-    $cfgJson.ConnectionStrings.DefaultConnection = $connectionBuilder.ConnectionString
+# Connection strings are supplied again from the protected secret store after
+# restore. Remove the entire object so additional/future connection names cannot
+# accidentally carry credentials into the backup archive.
+if ($null -ne $cfgJson.PSObject.Properties["ConnectionStrings"]) {
+    $cfgJson.PSObject.Properties.Remove("ConnectionStrings")
 }
 $cfgJson | ConvertTo-Json -Depth 10 | Set-Content -LiteralPath (Join-Path $SanitizedStage "appsettings.Production.sanitized.json") -Encoding UTF8
 if (-not (Test-Path -LiteralPath $CaddyfilePath -PathType Leaf)) {

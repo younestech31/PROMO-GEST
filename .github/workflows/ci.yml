@@ -465,6 +465,7 @@ jobs:
             & $restoreScript -BackupBundleDir $probeBundle -RestoreStorageDir (Join-Path $restoreProbeRoot "overlap-output") -RestoreDataProtectionDir (Join-Path (Join-Path $restoreProbeRoot "overlap-output") "nested") -RestoreConfigDir (Join-Path $restoreProbeRoot "other-output")
           }
           catch {
+            Write-Host "Restore overlap probe returned: $($_.Exception.Message)"
             $overlapRejected = $_.Exception.Message -like "*distinct and non-overlapping*"
           }
           if (-not $overlapRejected) {

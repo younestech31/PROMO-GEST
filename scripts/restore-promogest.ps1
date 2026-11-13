@@ -24,10 +24,8 @@ Add-Type -AssemblyName System.IO.Compression.FileSystem
 
 function Get-NormalizedPath {
     param([Parameter(Mandatory = $true)][string]$Path)
-    return [IO.Path]::GetFullPath($Path).TrimEnd(
-        [IO.Path]::DirectorySeparatorChar,
-        [IO.Path]::AltDirectorySeparatorChar
-    )
+    $fullPath = [IO.Path]::GetFullPath($Path)
+    return $fullPath.TrimEnd([IO.Path]::DirectorySeparatorChar, [IO.Path]::AltDirectorySeparatorChar)
 }
 
 function Assert-NoPathOverlap {
@@ -38,10 +36,8 @@ function Assert-NoPathOverlap {
 
     $normalized = @($Paths | ForEach-Object { Get-NormalizedPath -Path $_ })
     for ($i = 0; $i -lt $normalized.Count; $i++) {
-        $volumeRoot = [IO.Path]::GetPathRoot($normalized[$i]).TrimEnd(
-            [IO.Path]::DirectorySeparatorChar,
-            [IO.Path]::AltDirectorySeparatorChar
-        )
+        $volumeRoot = [IO.Path]::GetPathRoot($normalized[$i])
+        $volumeRoot = $volumeRoot.TrimEnd([IO.Path]::DirectorySeparatorChar, [IO.Path]::AltDirectorySeparatorChar)
         if ([string]::Equals($normalized[$i], $volumeRoot, [StringComparison]::OrdinalIgnoreCase)) {
             throw "$Description must not be a volume root: $($normalized[$i])"
         }
@@ -65,7 +61,7 @@ function Assert-SafeZipArchive {
     $archive = [System.IO.Compression.ZipFile]::OpenRead($ArchivePath)
     try {
         foreach ($entry in $archive.Entries) {
-            $entryName = $entry.FullName.Replace('\', '/')
+            $entryName = $entry.FullName.Replace([char]92, [char]47)
             $segments = $entryName.Split("/")
             if ([string]::IsNullOrWhiteSpace($entryName) -or
                 $entryName.StartsWith("/") -or

@@ -7,7 +7,7 @@ A complete backup must preserve a consistent set of:
 1. PostgreSQL 18 database dump.
 2. Local document storage referenced by `stored_files`.
 3. ASP.NET Core Data Protection key ring.
-4. Sanitized installation configuration and local HTTPS configuration.
+4. Sanitized installation configuration and the Caddy site configuration (`Caddyfile`).
 5. SHA-256 manifest covering every archive component.
 
 Backing up only PostgreSQL leaves documents orphaned. Backing up database and documents without the Data Protection key ring can make previously protected payloads unreadable after restoration. Store backup bundles on encrypted media or an encrypted NAS and restrict access to the service and maintenance administrators.

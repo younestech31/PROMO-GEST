@@ -171,7 +171,7 @@ jobs:
             -in "$RUNNER_TEMP/promogest-dp.crt" \
             -passout env:PROMOGEST_DATA_PROTECTION_CERT_PASSWORD
           rm -f "$RUNNER_TEMP/promogest-dp.key" "$RUNNER_TEMP/promogest-dp.crt"
-          printf '%s\n' '{"ConnectionStrings":{"DefaultConnection":"Host=localhost;Port=5432;Database=promogest_ci;Username=promogest_app;Password=app_pass"},"Storage":{"RootDirectory":"/tmp/promogest-storage"},"Security":{"RequireHttpsCookies":true,"JwtSecret":"LINUX-JWT-SECRET-DO-NOT-BACKUP","ApiToken":"LINUX-API-TOKEN-DO-NOT-BACKUP","SigningKey":"LINUX-SIGNING-KEY-DO-NOT-BACKUP"},"External":{"ClientSecret":"LINUX-CLIENT-SECRET-DO-NOT-BACKUP","DisplayName":"CI fixture"}}' > "$config_path"
+          printf '%s\n' '{"ConnectionStrings":{"DefaultConnection":"Host=localhost;Port=5432;Database=promogest_ci;Username=promogest_app;Password=app_pass"},"Storage":{"RootDirectory":"/tmp/promogest-storage"},"Security":{"RequireHttpsCookies":true,"TokenLifetimeMinutes":30,"PrivateKeyPath":"/var/lib/promogest/keys/private.key","JwtSecret":"LINUX-JWT-SECRET-DO-NOT-BACKUP","ApiToken":"LINUX-API-TOKEN-DO-NOT-BACKUP","SigningKey":"LINUX-SIGNING-KEY-DO-NOT-BACKUP"},"External":{"ClientSecret":"LINUX-CLIENT-SECRET-DO-NOT-BACKUP","DisplayName":"CI fixture"}}' > "$config_path"
 
           probe_file="$storage_root/organization/2026/11/restore-probe.bin"
           probe_hash="$(sha256sum "$probe_file" | awk '{print $1}')"
@@ -233,6 +233,33 @@ jobs:
             sudo test -s "$bundle_dir/$component"
           done
           sudo bash -c 'cd "$1" && sha256sum -c manifest.sha256' _ "$bundle_dir"
+          sudo tar -xOzf "$bundle_dir/config-sanitized.tar.gz" ./appsettings.Production.sanitized.json > "$RUNNER_TEMP/promogest-config-sanitized.json"
+          python3 - "$RUNNER_TEMP/promogest-config-sanitized.json" <<'PY'
+          import json
+          import pathlib
+          import re
+          import sys
+
+          config = json.loads(pathlib.Path(sys.argv[1]).read_text(encoding="utf-8-sig"))
+          if config.get("Security", {}).get("TokenLifetimeMinutes") != 30:
+              raise SystemExit("Linux sanitizer removed a non-secret token policy value.")
+          if config.get("Security", {}).get("PrivateKeyPath") != "/var/lib/promogest/keys/private.key":
+              raise SystemExit("Linux sanitizer removed a non-secret key path.")
+          sensitive = re.compile(r"(?i)(^connectionstrings?$|(?:password|passwd|pwd|secret|tokens?|credentials?|private.?key|api.?key|access.?key|signing.?key)(?:value|text|string|hash)?$)")
+
+          def check_clean(value):
+              if isinstance(value, dict):
+                  for key, item in value.items():
+                      if sensitive.search(str(key)):
+                          raise SystemExit(f"Linux sanitizer retained sensitive property: {key}")
+                      check_clean(item)
+              elif isinstance(value, list):
+                  for item in value:
+                      check_clean(item)
+
+          check_clean(config)
+          PY
+          rm -f "$RUNNER_TEMP/promogest-config-sanitized.json"
           lock_mode_after="$(stat -c '%a' /run/lock)"
           if [[ "$lock_mode_after" != "$lock_mode_before" ]]; then
             echo "Backup script changed /run/lock permissions ($lock_mode_before -> $lock_mode_after)." >&2
@@ -514,6 +541,8 @@ jobs:
             Storage = [PSCustomObject]@{ RootDirectory = "C:\PromoGest\storage" }
             Security = [PSCustomObject]@{
               RequireHttpsCookies = $true
+              TokenLifetimeMinutes = 30
+              PrivateKeyPath = "C:\\PromoGest\\keys\\private.key"
               JwtSecret = "WINDOWS-JWT-SECRET-DO-NOT-BACKUP"
               ApiToken = "WINDOWS-API-TOKEN-DO-NOT-BACKUP"
               SigningKey = "WINDOWS-SIGNING-KEY-DO-NOT-BACKUP"
@@ -534,6 +563,10 @@ jobs:
           $sanitizedObject = $sanitizedText | ConvertFrom-Json
           if ($null -eq $sanitizedObject.Storage -or $null -eq $sanitizedObject.Security) {
             throw "Windows backup configuration sanitizer removed required non-secret configuration sections."
+          }
+          if ($sanitizedObject.Security.TokenLifetimeMinutes -ne 30 -or
+              $sanitizedObject.Security.PrivateKeyPath -ne "C:\\PromoGest\\keys\\private.key") {
+            throw "Windows backup configuration sanitizer removed non-secret policy or key-path settings."
           }
           Remove-Item -LiteralPath $sanitizerSourcePath, $sanitizerOutputPath -Force
           Write-Host "Verified production configuration sanitizer removes every connection string and preserves required settings."

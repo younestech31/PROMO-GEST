@@ -72,7 +72,7 @@ PGHOST=127.0.0.1 PGUSER=promogest_owner PGPROVISION_USER=postgres \
   ./src/PromoGest.Api/appsettings.Production.json ./dataprotection-keys
 ```
 
-For the Linux systemd backup service, store PostgreSQL client credentials in `/etc/promogest/pgpass`, owned by `root:root` with mode `0600`; the unit runs with `ProtectHome=true`, so `/root/.pgpass` is deliberately not used by that service. For a manual drill, set `PGPASSFILE` to a protected file readable only by the operator. The service's default destination is `/var/backups/promogest`. If you change `PROMOGEST_BACKUP_ROOT`, pre-create a dedicated root-owned directory and update the backup unit's `ReadWritePaths` to include that exact destination; do not use shared system directories or a path overlapping storage, Data Protection keys, application configuration, or Caddy configuration.
+For the Linux systemd backup service, store PostgreSQL client credentials in `/etc/promogest/pgpass`, owned by `root:root` with mode `0600`; the unit runs with `ProtectHome=true`, so `/root/.pgpass` is deliberately not used by that service. For a manual drill, set `PGPASSFILE` to a protected file readable only by the operator. The service's default destination is `/var/backups/promogest`. If you change `PROMOGEST_BACKUP_ROOT`, pre-create a dedicated root-owned directory and update the backup unit's `ReadWritePaths` to include that exact destination; do not use shared system directories, `/home`, `/root`, `/run/user` (hidden by `ProtectHome=true`), or a path overlapping storage, Data Protection keys, application configuration, or Caddy configuration.
 
 ## 5. Data Protection recovery
 

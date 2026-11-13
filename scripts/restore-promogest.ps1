@@ -65,7 +65,7 @@ function Assert-SafeZipArchive {
     $archive = [System.IO.Compression.ZipFile]::OpenRead($ArchivePath)
     try {
         foreach ($entry in $archive.Entries) {
-            $entryName = $entry.FullName.Replace("`", "/")
+            $entryName = $entry.FullName.Replace('\', '/')
             $segments = $entryName.Split("/")
             if ([string]::IsNullOrWhiteSpace($entryName) -or
                 $entryName.StartsWith("/") -or

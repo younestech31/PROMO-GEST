@@ -86,6 +86,20 @@ foreach ($sourceDirectory in $protectedSourceDirectories) {
 }
 New-Item -ItemType Directory -Force -Path $BackupRoot | Out-Null
 
+$BackupLockStream = $null
+$BackupLockPath = Join-Path $BackupRoot ".promogest-backup.lock"
+try {
+    $BackupLockStream = [IO.File]::Open(
+        $BackupLockPath,
+        [IO.FileMode]::OpenOrCreate,
+        [IO.FileAccess]::ReadWrite,
+        [IO.FileShare]::None
+    )
+}
+catch [IO.IOException] {
+    throw "Another PROMO GEST backup is already running (lock: $BackupLockPath)."
+}
+
 try {
     $service = Get-Service -Name $ServiceName -ErrorAction Stop
     if ($SkipServiceStop) {
@@ -174,14 +188,21 @@ Get-ChildItem -LiteralPath $BundleDir -File | Sort-Object Name | ForEach-Object 
 Write-Host "Backup bundle created at $BundleDir. Verify restoration before relying on it."
 }
 finally {
-    if ($serviceWasRunning) {
-        Write-Host "Restarting $ServiceName after backup..."
-        $service = Get-Service -Name $ServiceName -ErrorAction Stop
-        if ($service.Status -ne [System.ServiceProcess.ServiceControllerStatus]::Running) {
-            Start-Service -Name $ServiceName
-            (Get-Service -Name $ServiceName).WaitForStatus(
-                [System.ServiceProcess.ServiceControllerStatus]::Running,
-                [TimeSpan]::FromSeconds(90))
+    try {
+        if ($serviceWasRunning) {
+            Write-Host "Restarting $ServiceName after backup..."
+            $service = Get-Service -Name $ServiceName -ErrorAction Stop
+            if ($service.Status -ne [System.ServiceProcess.ServiceControllerStatus]::Running) {
+                Start-Service -Name $ServiceName
+                (Get-Service -Name $ServiceName).WaitForStatus(
+                    [System.ServiceProcess.ServiceControllerStatus]::Running,
+                    [TimeSpan]::FromSeconds(90))
+            }
+        }
+    }
+    finally {
+        if ($null -ne $BackupLockStream) {
+            $BackupLockStream.Dispose()
         }
     }
 }

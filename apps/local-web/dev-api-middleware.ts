@@ -275,10 +275,11 @@ export function createPromoGestDevApiPlugin(): Plugin {
    * This is deliberately lazy: the real first-run wizard remains available until
    * the user explicitly opens the demo workspace.
    */
-  function ensurePreviewDemoData(): StoredUserRecord {
+  function ensurePreviewDemoData(): StoredUserRecord | null {
     if (organization) {
-      const existingAdmin = users.find((user) => user.isSystemAdministrator);
-      if (existingAdmin) return existingAdmin;
+      // Never turn an already initialized, user-provided Vite organization into a demo admin session.
+      if (organization.id !== '30000000-0000-0000-0000-000000000001') return null;
+      return users.find((user) => user.id === '30000000-0000-0000-0000-000000000002') ?? null;
     }
 
     const nowIso = new Date().toISOString();
@@ -448,6 +449,12 @@ export function createPromoGestDevApiPlugin(): Plugin {
         // GET is intentional here because some embedded preview hosts block state-changing requests.
         if (method === 'GET' && pathname === '/api/auth/preview-session') {
           const demoAdmin = ensurePreviewDemoData();
+          if (!demoAdmin || !organization) {
+            return sendJson(res, 409, {
+              code: 'PREVIEW_DEMO_NOT_AVAILABLE',
+              message: 'Demo access is only available before a real organization is initialized in this preview server.',
+            });
+          }
           demoAdmin.lastLoginAtUtc = new Date().toISOString();
 
           const rawToken = crypto.randomBytes(32).toString('base64url');

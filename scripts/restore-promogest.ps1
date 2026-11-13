@@ -264,6 +264,22 @@ $sanitizedConfig = Join-Path $RestoreConfigDir "appsettings.Production.sanitized
 if (-not (Test-Path -LiteralPath $sanitizedConfig -PathType Leaf)) {
     throw "Sanitized production configuration is missing from the backup archive."
 }
+$caddyfile = Join-Path $RestoreConfigDir "Caddyfile"
+if (-not (Test-Path -LiteralPath $caddyfile -PathType Leaf)) {
+    throw "Caddyfile is missing from the restored configuration archive."
+}
+if ((Get-Item -LiteralPath $caddyfile).Length -eq 0) {
+    throw "Restored Caddyfile is empty."
+}
+try {
+    $sanitizedConfigObject = Get-Content -LiteralPath $sanitizedConfig -Raw -ErrorAction Stop | ConvertFrom-Json -ErrorAction Stop
+}
+catch {
+    throw "Sanitized production configuration is not valid JSON: $($_.Exception.Message)"
+}
+if ($null -eq $sanitizedConfigObject.Storage -or $null -eq $sanitizedConfigObject.Security) {
+    throw "Sanitized production configuration is missing required Storage or Security sections."
+}
 if (Select-String -LiteralPath $sanitizedConfig -Pattern '(?i)Password\s*=\s*(?!REDACTED_FOR_BACKUP)[^;"]+' -Quiet) {
     throw "Sanitized configuration appears to contain an unredacted connection-string password."
 }

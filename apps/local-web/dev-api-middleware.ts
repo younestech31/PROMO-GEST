@@ -259,7 +259,13 @@ export function createPromoGestDevApiPlugin(): Plugin {
 
   function getAuthenticatedSession(req: IncomingMessage): { user: StoredUserRecord; sessionHash: string } | null {
     const cookies = parseCookies(req);
-    const raw = cookies[COOKIE_NAME];
+    const authorization = req.headers.authorization;
+    const authorizationValue = Array.isArray(authorization) ? authorization[0] : authorization;
+    const bearerToken = authorizationValue?.match(/^Bearer ([A-Za-z0-9_-]+)$/)?.[1] ?? null;
+    // Embedded preview browsers may reject third-party cookies. The Vite-only
+    // demo entry route therefore also issues a short-lived bearer token held in
+    // the frontend module's memory; this middleware is never used in production.
+    const raw = bearerToken ?? cookies[COOKIE_NAME];
     if (!raw) return null;
     const hashed = hashToken(raw);
     const session = sessions.find((s) => s.tokenHash === hashed && s.expiresAtMs > Date.now());
@@ -404,7 +410,7 @@ export function createPromoGestDevApiPlugin(): Plugin {
         if (method === 'GET' && pathname === '/health/ready') {
           return sendJson(res, 200, {
             status: 'Ready',
-            databaseConnected: true,
+            databaseConnected: false,
             isInitialized: Boolean(organization),
             timestampUtc: new Date().toISOString(),
             environmentMode: 'ViteDevContractPreview',
@@ -495,6 +501,7 @@ export function createPromoGestDevApiPlugin(): Plugin {
                 ...nextCsrf.cookies,
               ],
               [CSRF_HEADER_NAME]: nextCsrf.token,
+              'X-PROMOGEST-PREVIEW-TOKEN': rawToken,
             }
           );
         }

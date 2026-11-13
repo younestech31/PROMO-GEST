@@ -89,7 +89,7 @@ export function OverviewView({
           </h2>
           <div className="flex items-center gap-2 text-sm font-bold text-emerald-700">
             <CheckCircle2 className="w-4 h-4 shrink-0" aria-hidden="true" />
-            <span>{health?.databaseConnected ? t.serverConnected : t.serverDisconnected}</span>
+            <span>{health?.previewMode || health?.databaseConnected ? t.serverConnected : t.serverDisconnected}</span>
           </div>
           <dl className="mt-4 pt-4 border-t border-slate-100 space-y-2 text-xs">
             <div className="flex justify-between gap-2">
@@ -98,7 +98,9 @@ export function OverviewView({
                 <span>{t.overview.databaseEngine}</span>
               </dt>
               <dd className="font-data text-slate-900">
-                PostgreSQL 18 · {health?.databaseConnected ? 'OK' : 'OFFLINE'}
+                {health?.previewMode
+                  ? (language === 'ar' ? 'ذاكرة مؤقتة · بيانات تجريبية' : 'Mémoire temporaire · Démo')
+                  : `PostgreSQL 18 · ${health?.databaseConnected ? 'OK' : 'OFFLINE'}`}
               </dd>
             </div>
             <div className="flex justify-between gap-2">
@@ -108,7 +110,9 @@ export function OverviewView({
             <div className="flex justify-between gap-2">
               <dt className="text-slate-500">{t.overview.initializationState}</dt>
               <dd className="font-medium text-slate-900">
-                {health?.isInitialized ? t.overview.initializedYes : '—'}
+                {health?.previewMode
+                  ? (language === 'ar' ? 'تهيئة تجريبية مؤقتة' : 'Initialisation démo temporaire')
+                  : health?.isInitialized ? t.overview.initializedYes : '—'}
               </dd>
             </div>
           </dl>

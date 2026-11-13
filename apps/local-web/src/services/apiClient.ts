@@ -39,6 +39,7 @@ export class ApiConnectionError extends Error {
 }
 
 let cachedCsrfToken: string | null = null;
+let previewSessionToken: string | null = null;
 
 async function ensureCsrfToken(): Promise<string> {
   const fromCookie = typeof document !== 'undefined'
@@ -107,11 +108,17 @@ async function requestJson<T>(url: string, init?: RequestInit): Promise<T> {
 
   let response: Response;
   try {
+    const previewHeaders: Record<string, string> = {};
+    if (previewSessionToken) {
+      previewHeaders.Authorization = `Bearer ${previewSessionToken}`;
+    }
+
     response = await fetch(url, {
       ...init,
       credentials: 'include',
       headers: {
         'Content-Type': 'application/json',
+        ...previewHeaders,
         ...csrfHeaders,
         ...(init?.headers ?? {}),
       },
@@ -122,6 +129,18 @@ async function requestJson<T>(url: string, init?: RequestInit): Promise<T> {
 
   const isAuthTransition = url === '/api/auth/login' || url === '/api/auth/logout';
   syncCsrfCacheFromResponse(response, isAuthTransition);
+
+  if (url === '/api/auth/preview-session' && response.ok) {
+    const token = response.headers.get('X-PROMOGEST-PREVIEW-TOKEN');
+    if (!token) {
+      throw new ApiConnectionError('Preview session response did not include its in-memory access token.');
+    }
+    previewSessionToken = token;
+  }
+
+  if (url === '/api/auth/logout') {
+    previewSessionToken = null;
+  }
 
   if (response.status === 204) {
     return undefined as T;

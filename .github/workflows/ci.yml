@@ -519,6 +519,47 @@ jobs:
           Remove-Item -LiteralPath $sanitizerSourcePath, $sanitizerOutputPath -Force
           Write-Host "Verified production configuration sanitizer removes every connection string and preserves required settings."
 
+          $installerScriptPath = Join-Path (Get-Location).Path "deploy/windows/install-service.ps1"
+          $installerTokens = $null
+          $installerParseErrors = $null
+          $installerAst = [System.Management.Automation.Language.Parser]::ParseFile(
+            $installerScriptPath,
+            [ref]$installerTokens,
+            [ref]$installerParseErrors
+          )
+          $bindFunctionAst = $installerAst.Find({
+            param($node)
+            $node -is [System.Management.Automation.Language.FunctionDefinitionAst] -and
+              $node.Name -eq "Assert-PromoGestLoopbackBindUrl"
+          }, $true)
+          if ($null -eq $bindFunctionAst) {
+            throw "Production loopback bind validator was not found."
+          }
+          . ([ScriptBlock]::Create($bindFunctionAst.Extent.Text))
+          Assert-PromoGestLoopbackBindUrl -Value "http://127.0.0.1:5080"
+          Assert-PromoGestLoopbackBindUrl -Value "http://[::1]:5080"
+
+          $unsafeBindUrls = @(
+            "http://0.0.0.0:5080",
+            "http://192.168.1.50:5080",
+            "https://127.0.0.1:5080",
+            "http://127.0.0.1:5080/admin",
+            "http://127.0.0.1:5080;http://0.0.0.0:5080"
+          )
+          foreach ($unsafeBindUrl in $unsafeBindUrls) {
+            $bindRejected = $false
+            try {
+              Assert-PromoGestLoopbackBindUrl -Value $unsafeBindUrl
+            }
+            catch {
+              $bindRejected = $true
+            }
+            if (-not $bindRejected) {
+              throw "Production installer accepted an unsafe Kestrel BindUrl: $unsafeBindUrl"
+            }
+          }
+          Write-Host "Verified Kestrel accepts loopback-only HTTP URLs and rejects LAN/WAN, HTTPS-bypass, path, and multi-URL bindings."
+
           Add-Type -AssemblyName System.IO.Compression.FileSystem
           $zipSource = Join-Path $env:RUNNER_TEMP "promogest-zip-smoke-source"
           $zipPath = Join-Path $env:RUNNER_TEMP "promogest-zip-smoke.zip"

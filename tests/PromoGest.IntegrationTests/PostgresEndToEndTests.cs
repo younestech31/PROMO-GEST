@@ -286,6 +286,30 @@ public sealed class PostgresEndToEndTests : IClassFixture<PostgreSql18Integratio
                 Assert.Equal("23505", pgEx.SqlState);
             }
 
+            // 5b. Database trigger protects the only active System Administrator from direct SQL mutation.
+            await using (var adminInvariantConn = new NpgsqlConnection(connStr))
+            {
+                await adminInvariantConn.OpenAsync();
+
+                await using var deactivateAdmin = new NpgsqlCommand(
+                    "UPDATE users SET is_active = FALSE WHERE is_system_administrator = TRUE;",
+                    adminInvariantConn);
+                var deactivateError = await Assert.ThrowsAsync<PostgresException>(() => deactivateAdmin.ExecuteNonQueryAsync());
+                Assert.Equal("42501", deactivateError.SqlState);
+
+                await using var demoteAdmin = new NpgsqlCommand(
+                    "UPDATE users SET is_system_administrator = FALSE WHERE is_system_administrator = TRUE;",
+                    adminInvariantConn);
+                var demoteError = await Assert.ThrowsAsync<PostgresException>(() => demoteAdmin.ExecuteNonQueryAsync());
+                Assert.Equal("42501", demoteError.SqlState);
+
+                await using var deleteAdmin = new NpgsqlCommand(
+                    "DELETE FROM users WHERE is_system_administrator = TRUE;",
+                    adminInvariantConn);
+                var deleteError = await Assert.ThrowsAsync<PostgresException>(() => deleteAdmin.ExecuteNonQueryAsync());
+                Assert.Equal("42501", deleteError.SqlState);
+            }
+
             // 6. Audit logs are immutable both in EF Core and PostgreSQL trigger (42501)
             using (var scope = factory.Services.CreateScope())
             {
@@ -305,6 +329,16 @@ public sealed class PostgresEndToEndTests : IClassFixture<PostgreSql18Integratio
                 deleteCmd.Parameters.AddWithValue("id", auditEntry.Id);
                 var pgDeleteEx = await Assert.ThrowsAsync<PostgresException>(() => deleteCmd.ExecuteNonQueryAsync());
                 Assert.Equal("42501", pgDeleteEx.SqlState);
+
+                await using var truncateCmd = new NpgsqlCommand("TRUNCATE audit_logs;", rawConn);
+                var pgTruncateEx = await Assert.ThrowsAsync<PostgresException>(() => truncateCmd.ExecuteNonQueryAsync());
+                Assert.Equal("42501", pgTruncateEx.SqlState);
+
+                await using var ddlCmd = new NpgsqlCommand(
+                    "ALTER TABLE audit_logs DISABLE TRIGGER trg_audit_logs_immutable;",
+                    rawConn);
+                var pgDdlEx = await Assert.ThrowsAsync<PostgresException>(() => ddlCmd.ExecuteNonQueryAsync());
+                Assert.Equal("42501", pgDdlEx.SqlState);
             }
 
             // 7. Generic login error on bad password -> valid login -> rotate CSRF -> create employee & project

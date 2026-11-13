@@ -30,7 +30,7 @@ public sealed class WindowsDpapiMachineScopeTests
             using (var firstProvider = CreateProvider(keyDirectory, applicationName))
             {
                 protectedPayload = firstProvider
-                    .GetRequiredService<IDataProtectionProvider>().CreateProtector(purpose)
+                    .GetRequiredService<IDataProtectionProvider>().GetRequiredService<IDataProtectionProvider>().CreateProtector(purpose)
                     .Protect(plainText);
             }
 
@@ -40,7 +40,7 @@ public sealed class WindowsDpapiMachineScopeTests
             using (var restartedProvider = CreateProvider(keyDirectory, applicationName))
             {
                 var restored = restartedProvider
-                    .CreateProtector(purpose)
+                    .GetRequiredService<IDataProtectionProvider>().CreateProtector(purpose)
                     .Unprotect(protectedPayload);
 
                 Assert.Equal(plainText, restored);

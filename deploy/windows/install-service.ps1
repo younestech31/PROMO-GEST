@@ -18,14 +18,23 @@ if ([string]::IsNullOrWhiteSpace($ServiceAccount)) {
 }
 
 $InstallRoot = [IO.Path]::GetFullPath($InstallRoot)
+$customBackupRoot = -not [string]::IsNullOrWhiteSpace($BackupRoot)
 $AppDir = Join-Path $InstallRoot "app"
 $StorageDir = Join-Path $InstallRoot "storage"
 $DataProtectionDir = Join-Path $InstallRoot "dataprotection-keys"
 $ScriptsDir = Join-Path $InstallRoot "scripts"
 $LogsDir = Join-Path $InstallRoot "logs"
-$BackupDir = if ([string]::IsNullOrWhiteSpace($BackupRoot)) { Join-Path $InstallRoot "backups" } else { [IO.Path]::GetFullPath($BackupRoot) }
+$BackupDir = if (-not $customBackupRoot) { Join-Path $InstallRoot "backups" } else { [IO.Path]::GetFullPath($BackupRoot) }
 
 $backupDirNormalized = $BackupDir.TrimEnd([IO.Path]::DirectorySeparatorChar, [IO.Path]::AltDirectorySeparatorChar)
+$installRootNormalized = $InstallRoot.TrimEnd([IO.Path]::DirectorySeparatorChar, [IO.Path]::AltDirectorySeparatorChar)
+if ($customBackupRoot -and (
+    [string]::Equals($backupDirNormalized, $installRootNormalized, [StringComparison]::OrdinalIgnoreCase) -or
+    $backupDirNormalized.StartsWith($installRootNormalized + [IO.Path]::DirectorySeparatorChar, [StringComparison]::OrdinalIgnoreCase) -or
+    $installRootNormalized.StartsWith($backupDirNormalized + [IO.Path]::DirectorySeparatorChar, [StringComparison]::OrdinalIgnoreCase)
+)) {
+    throw "A custom BackupRoot must be outside InstallRoot; otherwise backup ACLs could restrict the live application tree."
+}
 $backupVolumeRoot = [IO.Path]::GetPathRoot($BackupDir).TrimEnd(
     [IO.Path]::DirectorySeparatorChar,
     [IO.Path]::AltDirectorySeparatorChar)

@@ -24,25 +24,23 @@ public sealed class LocalFileStorageService
 
     private string GetSafeFullPath(string relativePath)
     {
-        var root = Path.GetFullPath(_rootDirectory);
-        if (!root.EndsWith(Path.DirectorySeparatorChar) && !root.EndsWith(Path.AltDirectorySeparatorChar))
+        if (string.IsNullOrWhiteSpace(relativePath) || Path.IsPathRooted(relativePath))
         {
-            root += Path.DirectorySeparatorChar;
+            throw new InvalidOperationException("A non-empty relative storage path is required.");
         }
 
+        var root = Path.GetFullPath(_rootDirectory);
         var fullTarget = Path.GetFullPath(Path.Combine(root, relativePath));
         var relative = Path.GetRelativePath(root, fullTarget);
 
-        if (relative.StartsWith("..", StringComparison.Ordinal) ||
-            Path.IsPathRooted(relative) ||
-            relative.Equals("..", StringComparison.Ordinal))
-        {
-            throw new InvalidOperationException("Path traversal or root escape blocked.");
-        }
+        var escapesRoot =
+            relative.Equals("..", StringComparison.Ordinal) ||
+            relative.StartsWith(".." + Path.DirectorySeparatorChar, StringComparison.Ordinal) ||
+            relative.StartsWith(".." + Path.AltDirectorySeparatorChar, StringComparison.Ordinal);
 
-        if (!fullTarget.StartsWith(root, StringComparison.OrdinalIgnoreCase))
+        if (escapesRoot || Path.IsPathRooted(relative))
         {
-            throw new InvalidOperationException("Path traversal blocked by root prefix boundary.");
+            throw new InvalidOperationException("Path traversal or storage root escape blocked.");
         }
 
         return fullTarget;

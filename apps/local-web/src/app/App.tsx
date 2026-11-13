@@ -146,7 +146,7 @@ export function App() {
         language={language}
         onLanguageChange={setLanguage}
         onInitialized={() => void handleInitialized()}
-        isPreviewMode={health?.environmentMode === 'ViteDevContractPreview'}
+        isPreviewMode={health?.previewMode === true}
         onPreviewLogin={handleOpenPreview}
       />
     );
@@ -161,7 +161,7 @@ export function App() {
         connectionState={connectionState}
         onRetryConnection={() => void checkHealthAndBootstrap()}
         onLoggedIn={(s) => void handleLoggedIn(s)}
-        isPreviewMode={health?.environmentMode === 'ViteDevContractPreview'}
+        isPreviewMode={health?.previewMode === true}
         onPreviewLogin={handleOpenPreview}
       />
     );

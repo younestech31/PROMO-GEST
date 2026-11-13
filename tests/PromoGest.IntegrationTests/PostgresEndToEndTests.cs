@@ -7,6 +7,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Npgsql;
 using PromoGest.Contracts.Auth;
+using PromoGest.Contracts.Audit;
 using PromoGest.Contracts.Common;
 using PromoGest.Contracts.Projects;
 using PromoGest.Contracts.Setup;

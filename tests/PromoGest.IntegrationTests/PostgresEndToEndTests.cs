@@ -184,6 +184,7 @@ public sealed class PostgresEndToEndTests : IClassFixture<PostgreSql18Integratio
         return new WebApplicationFactory<Program>().WithWebHostBuilder(builder =>
         {
             builder.UseEnvironment("Development");
+            builder.ConfigureLogging(logging => logging.AddConsole().SetMinimumLevel(LogLevel.Debug));
             builder.ConfigureAppConfiguration((_, config) =>
             {
                 config.AddInMemoryCollection(new Dictionary<string, string?>
@@ -404,7 +405,9 @@ public sealed class PostgresEndToEndTests : IClassFixture<PostgreSql18Integratio
             // Grant project membership -> access works
             var assignResp = await adminClient.PutAsJsonAsync($"/api/projects/{createdProject.Id}/members",
                 new AssignProjectMemberRequest(createdEmployee!.Id, "CommercialAgent", false, true, false, true));
-            Assert.Equal(HttpStatusCode.OK, assignResp.StatusCode);
+            var assignBody = await assignResp.Content.ReadAsStringAsync();
+            Assert.True(assignResp.StatusCode == HttpStatusCode.OK,
+                $"Project member assignment failed with {(int)assignResp.StatusCode} {assignResp.StatusCode}: {assignBody}");
 
             var allowedAttempt = await employeeClient.GetAsync($"/api/projects/{createdProject.Id}");
             Assert.Equal(HttpStatusCode.OK, allowedAttempt.StatusCode);

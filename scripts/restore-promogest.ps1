@@ -50,7 +50,7 @@ foreach ($restorePath in @($RestoreStorageDir, $RestoreDataProtectionDir, $Resto
     }
 }
 
-Write-Host "[1/8] Verifying every required backup-bundle checksum..."
+Write-Host "[1/6] Verifying every required backup-bundle checksum..."
 $manifestEntries = @{}
 foreach ($line in Get-Content -LiteralPath $ManifestPath) {
     if ([string]::IsNullOrWhiteSpace($line)) { continue }
@@ -83,11 +83,11 @@ foreach ($requiredFile in $requiredFiles) {
     }
 }
 
-Write-Host "[2/7] Validating PostgreSQL dump..."
+Write-Host "[2/6] Validating PostgreSQL dump..."
 & pg_restore --list "$DbDumpPath" | Out-Null
 if ($LASTEXITCODE -ne 0) { throw "PostgreSQL dump is invalid (pg_restore --list exit $LASTEXITCODE)." }
 
-Write-Host "[3/7] Creating an isolated restore database with provisioning identity $ProvisionUser..."
+Write-Host "[3/6] Creating an isolated restore database with provisioning identity $ProvisionUser..."
 $existing = & psql --host=$DatabaseHost --port=$DatabasePort --username=$ProvisionUser --dbname=postgres --tuples-only --no-align -c "SELECT 1 FROM pg_database WHERE datname = '$TargetDatabase';"
 if ($LASTEXITCODE -ne 0) { throw "Could not query PostgreSQL database catalog using $ProvisionUser." }
 if (-not [string]::IsNullOrWhiteSpace(($existing -join "").Trim())) {
@@ -118,7 +118,7 @@ GRANT SELECT, INSERT ON TABLE audit_logs TO "$RuntimeDatabaseUser";
 & psql --host=$DatabaseHost --port=$DatabasePort --username=$DatabaseUser --dbname=$TargetDatabase --set=ON_ERROR_STOP=1 --command=$grantSql
 if ($LASTEXITCODE -ne 0) { throw "Could not reapply least-privilege runtime grants after restore." }
 
-Write-Host "[4/8] Restoring local document storage, Data Protection keys, and sanitized configuration..."
+Write-Host "[4/6] Restoring local document storage, Data Protection keys, and sanitized configuration..."
 New-Item -ItemType Directory -Force -Path $RestoreStorageDir, $RestoreDataProtectionDir, $RestoreConfigDir | Out-Null
 Expand-Archive -LiteralPath $StorageArchivePath -DestinationPath $RestoreStorageDir -Force
 Expand-Archive -LiteralPath $DpKeysArchivePath -DestinationPath $RestoreDataProtectionDir -Force
@@ -135,9 +135,9 @@ if (Select-String -LiteralPath $sanitizedConfig -Pattern '(?i)Password\s*=\s*(?!
     throw "Sanitized configuration appears to contain an unredacted connection-string password."
 }
 
-Write-Host "[5/8] Verifying restored database access as the least-privileged runtime identity..."
+Write-Host "[5/6] Verifying restored database access as the least-privileged runtime identity..."
 $runtimeValidationSql = @'
-DO $
+DO $$
 BEGIN
     IF NOT has_table_privilege(current_user, 'public.projects', 'SELECT,INSERT,UPDATE,DELETE') THEN
         RAISE EXCEPTION 'Runtime role is missing DML privileges on projects';
@@ -156,7 +156,7 @@ BEGIN
         RAISE EXCEPTION 'Runtime role has schema or database creation privileges';
     END IF;
 END
-$;
+$$;
 SELECT count(*) FROM organization_settings;
 SELECT count(*) FROM users;
 SELECT count(*) FROM projects;
@@ -167,7 +167,7 @@ if ($LASTEXITCODE -ne 0) {
     throw "Restored database is not usable with runtime identity $RuntimeDatabaseUser."
 }
 
-Write-Host "[8/8] Verifying every restored stored file..."
+Write-Host "[6/6] Verifying every restored stored file..."
 $counts = & psql --host=$DatabaseHost --port=$DatabasePort --username=$DatabaseUser --dbname=$TargetDatabase --tuples-only --no-align --set=ON_ERROR_STOP=1 -c "SELECT (SELECT count(*) FROM organization_settings), (SELECT count(*) FROM users), (SELECT count(*) FROM projects), (SELECT count(*) FROM stored_files);"
 if ($LASTEXITCODE -ne 0) { throw "Could not query restored database counts." }
 Write-Host "Restored counts (organization|users|projects|stored_files): $counts"

@@ -6,22 +6,22 @@ umask 077
 # Run as root from a root-owned systemd oneshot service. PostgreSQL credentials
 # belong in a root-owned 0600 PGPASSFILE; never pass passwords on command lines.
 
-if [[ "\${EUID}" -ne 0 ]]; then
+if [[ "${EUID}" -ne 0 ]]; then
   echo "ERROR: Run this backup script as root." >&2
   exit 1
 fi
 
-PGHOST="\${PGHOST:-127.0.0.1}"
-PGPORT="\${PGPORT:-5432}"
-PGUSER="\${PGUSER:-promogest_owner}"
-PGPASSFILE="\${PGPASSFILE:-/root/.pgpass}"
-DB_NAME="\${PROMOGEST_DB_NAME:-promogest}"
-SERVICE_NAME="\${PROMOGEST_SERVICE_NAME:-promogest.service}"
-STORAGE_DIR="\${PROMOGEST_STORAGE_DIR:-/var/lib/promogest/storage}"
-DP_KEYS_DIR="\${PROMOGEST_DATA_PROTECTION_KEY_DIR:-/var/lib/promogest/dataprotection-keys}"
-CONFIG_PATH="\${PROMOGEST_CONFIG_PATH:-/opt/promogest/app/appsettings.Production.json}"
-CADDYFILE_PATH="\${PROMOGEST_CADDYFILE_PATH:-/etc/caddy/Caddyfile}"
-BACKUP_ROOT="\${PROMOGEST_BACKUP_ROOT:-/var/backups/promogest}"
+PGHOST="${PGHOST:-127.0.0.1}"
+PGPORT="${PGPORT:-5432}"
+PGUSER="${PGUSER:-promogest_owner}"
+PGPASSFILE="${PGPASSFILE:-/etc/promogest/pgpass}"
+DB_NAME="${PROMOGEST_DB_NAME:-promogest}"
+SERVICE_NAME="${PROMOGEST_SERVICE_NAME:-promogest.service}"
+STORAGE_DIR="${PROMOGEST_STORAGE_DIR:-/var/lib/promogest/storage}"
+DP_KEYS_DIR="${PROMOGEST_DATA_PROTECTION_KEY_DIR:-/var/lib/promogest/dataprotection-keys}"
+CONFIG_PATH="${PROMOGEST_CONFIG_PATH:-/opt/promogest/app/appsettings.Production.json}"
+CADDYFILE_PATH="${PROMOGEST_CADDYFILE_PATH:-/etc/caddy/Caddyfile}"
+BACKUP_ROOT="${PROMOGEST_BACKUP_ROOT:-/var/backups/promogest}"
 
 for identifier in "$DB_NAME" "$PGUSER"; do
   if [[ ! "$identifier" =~ ^[A-Za-z_][A-Za-z0-9_]{0,62}$ ]]; then
@@ -43,7 +43,7 @@ export PGHOST PGPORT PGUSER PGPASSFILE
 [[ -d "$DP_KEYS_DIR" ]] || { echo "ERROR: Data Protection key directory missing: $DP_KEYS_DIR" >&2; exit 1; }
 [[ -f "$CONFIG_PATH" ]] || { echo "ERROR: Production configuration missing: $CONFIG_PATH" >&2; exit 1; }
 [[ -f "$CADDYFILE_PATH" ]] || { echo "ERROR: Caddyfile missing: $CADDYFILE_PATH" >&2; exit 1; }
-[[ -n "\${PROMOGEST_DATA_PROTECTION_CERT_PASSWORD:-}" ]] || {
+[[ -n "${PROMOGEST_DATA_PROTECTION_CERT_PASSWORD:-}" ]] || {
   echo "ERROR: PROMOGEST_DATA_PROTECTION_CERT_PASSWORD is required." >&2
   exit 1
 }

@@ -14,8 +14,8 @@ jobs:
     name: Frontend install, checks, and static hosting
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
         with:
           node-version: "22"
           cache: npm
@@ -56,7 +56,7 @@ jobs:
             exit 1
           fi
       - name: Upload verified production SPA assets
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: promogest-wwwroot
           path: src/PromoGest.Api/wwwroot/
@@ -82,12 +82,12 @@ jobs:
           --health-timeout 5s
           --health-retries 10
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/download-artifact@v4
+      - uses: actions/checkout@v7
+      - uses: actions/download-artifact@v8
         with:
           name: promogest-wwwroot
           path: src/PromoGest.Api/wwwroot
-      - uses: actions/setup-dotnet@v4
+      - uses: actions/setup-dotnet@v6
         with:
           dotnet-version: "10.0.x"
       - name: Restore solution
@@ -233,12 +233,12 @@ jobs:
     needs: frontend
     runs-on: windows-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/download-artifact@v4
+      - uses: actions/checkout@v7
+      - uses: actions/download-artifact@v8
         with:
           name: promogest-wwwroot
           path: src/PromoGest.Api/wwwroot
-      - uses: actions/setup-dotnet@v4
+      - uses: actions/setup-dotnet@v6
         with:
           dotnet-version: "10.0.x"
       - name: Restore solution

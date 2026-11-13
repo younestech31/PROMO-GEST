@@ -39,6 +39,23 @@ if [[ ! -d "$DP_KEYS_DIR" ]] || ! find "$DP_KEYS_DIR" -type f -print -quit | gre
   echo "ERROR: Data Protection key directory is missing or empty: $DP_KEYS_DIR" >&2
   exit 1
 fi
+DP_CERTIFICATE_PATH="$DP_KEYS_DIR/protection.pfx"
+if [[ ! -f "$DP_CERTIFICATE_PATH" ]]; then
+  echo "ERROR: Linux Data Protection certificate is missing: $DP_CERTIFICATE_PATH" >&2
+  exit 1
+fi
+if [[ -z "${PROMOGEST_DATA_PROTECTION_CERT_PASSWORD:-}" ]]; then
+  echo "ERROR: PROMOGEST_DATA_PROTECTION_CERT_PASSWORD is required to validate the Linux Data Protection certificate." >&2
+  exit 1
+fi
+if ! command -v openssl >/dev/null 2>&1; then
+  echo "ERROR: openssl is required to validate the Data Protection PKCS#12 certificate." >&2
+  exit 1
+fi
+if ! openssl pkcs12 -in "$DP_CERTIFICATE_PATH" -noout -passin env:PROMOGEST_DATA_PROTECTION_CERT_PASSWORD >/dev/null; then
+  echo "ERROR: Linux Data Protection PKCS#12 certificate is invalid or its password is incorrect." >&2
+  exit 1
+fi
 
 SOURCE_PREFIX="${SOURCE_DB:0:32}"
 VERIFY_DB="${SOURCE_PREFIX}_restore_$(date +%s)_$RANDOM"
@@ -125,6 +142,14 @@ find "$RESTORE_KEYS" -type f -print -quit | grep -q . || {
   echo "ERROR: Data Protection archive restored no key files." >&2
   exit 1
 }
+if [[ ! -f "$RESTORE_KEYS/protection.pfx" ]]; then
+  echo "ERROR: Restored Data Protection key directory is missing protection.pfx." >&2
+  exit 1
+fi
+if ! openssl pkcs12 -in "$RESTORE_KEYS/protection.pfx" -noout -passin env:PROMOGEST_DATA_PROTECTION_CERT_PASSWORD >/dev/null; then
+  echo "ERROR: Restored Data Protection certificate could not be opened." >&2
+  exit 1
+fi
 
 echo "[5/8] Verifying restored database access as runtime role '$APP_USER'..."
 psql --host="$PGHOST" --port="$PGPORT" --username="$APP_USER" --dbname="$VERIFY_DB" --set=ON_ERROR_STOP=1 <<'SQL'

@@ -24,7 +24,7 @@ Do not put production passwords in scripts, source control, command history, or 
 
 ## 3. Creating backups
 
-On Windows Server, run the backup script from an elevated maintenance session:
+On Windows Server, run the backup script from an elevated maintenance session. By default it stops the `PromoGestLocalErp` Windows service before dumping PostgreSQL and archiving storage/key files, then restarts it in a `finally` block. This short maintenance window prevents database rows, document files, and the Data Protection key ring from being captured at different points while the application is writing. Do not use `-SkipServiceStop` unless the service has already been stopped and will remain stopped for the entire backup:
 
 ```powershell
 .\scripts\backup-promogest.ps1 -DatabaseName promogest -StorageDir C:\PromoGest\storage -BackupRoot D:\PromoGestBackups
@@ -38,13 +38,13 @@ A backup is not considered verified until it has been restored into a separate s
 
 ### Windows
 
-Configure PostgreSQL client credentials for both the provisioning user and `promogest_owner` in the protected pgpass file. The restore script deliberately refuses to overwrite an existing target database.
+Configure PostgreSQL client credentials for the provisioning user (`postgres`), migration owner (`promogest_owner`), and runtime role (`promogest_app`) in the protected pgpass file. The runtime identity is used for the post-restore access and privilege checks. The restore script deliberately refuses to overwrite an existing target database.
 
 ```powershell
 .\scripts\restore-promogest.ps1 -BackupBundleDir D:\PromoGestBackups\promogest_backup_YYYYMMDD_HHMMSS -TargetDatabase promogest_restore_verify -ProvisionUser postgres -DatabaseUser promogest_owner
 ```
 
-The script validates the dump and manifest, creates a new database with the requested owner, restores as the maintenance owner, restores storage and Data Protection keys, and verifies every stored file by existence, byte length, and SHA-256.
+The script requires all four archive components and a complete SHA-256 manifest, validates the PostgreSQL dump, and refuses to reuse an existing target database or restore directory. It creates the new database with the migration owner, restores as that owner, then explicitly re-applies runtime `CONNECT`, schema, table, sequence, and default privileges for `promogest_app`. It reasserts the `audit_logs` restriction (runtime can `SELECT`/`INSERT`, not `UPDATE`/`DELETE`/`TRUNCATE`/manage triggers) and proves the restored database can be read by the runtime identity without schema/database creation privileges. It restores storage and Data Protection keys, rejects an unredacted connection-string password in the sanitized configuration, and verifies every stored file by existence, byte length, and SHA-256.
 
 ### Linux
 
@@ -55,7 +55,7 @@ PGHOST=127.0.0.1 PGUSER=promogest_owner PGPROVISION_USER=postgres \
   ./scripts/verify-backup-restore.sh promogest ./storage ./src/PromoGest.Api/appsettings.json ./dataprotection-keys
 ```
 
-The Linux drill restores the database, storage, Data Protection keys, and sanitized configuration into temporary locations, then verifies every database-referenced file. It removes only the uniquely named scratch database created by the drill; it never drops the source database.
+The Linux drill restores the database, storage, Data Protection keys, and sanitized configuration into temporary locations. It reapplies and tests runtime grants (including future-object default privileges and append-only audit restrictions), then verifies every database-referenced file. It removes only the uniquely named scratch database created by the drill; it never drops the source database.
 
 ## 5. Data Protection recovery
 

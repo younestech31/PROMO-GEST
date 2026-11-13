@@ -16,6 +16,9 @@ $ErrorActionPreference = "Stop"
 $BackupBundleDir = (Resolve-Path -LiteralPath $BackupBundleDir).Path
 $ManifestPath = Join-Path $BackupBundleDir "manifest.sha256"
 $DbDumpPath = Join-Path $BackupBundleDir "database.dump"
+$StorageArchivePath = Join-Path $BackupBundleDir "storage.zip"
+$DpKeysArchivePath = Join-Path $BackupBundleDir "dataprotection-keys.zip"
+$ConfigArchivePath = Join-Path $BackupBundleDir "config-sanitized.zip"
 
 if (-not (Test-Path -LiteralPath $ManifestPath -PathType Leaf)) {
     throw "Missing manifest.sha256 in $BackupBundleDir"
@@ -165,11 +168,11 @@ if ($LASTEXITCODE -ne 0) {
 }
 
 Write-Host "[8/8] Verifying every restored stored file..."
-$counts = & psql --host=$DatabaseHost --port=$DatabasePort --username=$DatabaseUser --dbname=$TargetDatabase --tuples-only --no-align -c "SELECT (SELECT count(*) FROM organization_settings), (SELECT count(*) FROM users), (SELECT count(*) FROM projects), (SELECT count(*) FROM stored_files);"
+$counts = & psql --host=$DatabaseHost --port=$DatabasePort --username=$DatabaseUser --dbname=$TargetDatabase --tuples-only --no-align --set=ON_ERROR_STOP=1 -c "SELECT (SELECT count(*) FROM organization_settings), (SELECT count(*) FROM users), (SELECT count(*) FROM projects), (SELECT count(*) FROM stored_files);"
 if ($LASTEXITCODE -ne 0) { throw "Could not query restored database counts." }
 Write-Host "Restored counts (organization|users|projects|stored_files): $counts"
 
-$storedFiles = & psql --host=$DatabaseHost --port=$DatabasePort --username=$DatabaseUser --dbname=$TargetDatabase --tuples-only --no-align -c "SELECT stored_relative_path || '|' || sha256_checksum || '|' || size_bytes FROM stored_files;"
+$storedFiles = & psql --host=$DatabaseHost --port=$DatabasePort --username=$DatabaseUser --dbname=$TargetDatabase --tuples-only --no-align --set=ON_ERROR_STOP=1 -c "SELECT stored_relative_path || '|' || sha256_checksum || '|' || size_bytes FROM stored_files;"
 if ($LASTEXITCODE -ne 0) { throw "Could not enumerate stored_files in restored database." }
 
 $root = [IO.Path]::GetFullPath($RestoreStorageDir)

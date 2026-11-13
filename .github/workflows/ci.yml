@@ -178,6 +178,8 @@ jobs:
         run: dotnet restore src/PromoGest.sln
       - name: Build solution
         run: dotnet build src/PromoGest.sln --configuration Release --no-restore
+      - name: Verify Windows machine-scoped Data Protection key-ring recovery
+        run: dotnet test tests/PromoGest.IntegrationTests/PromoGest.IntegrationTests.csproj --configuration Release --no-build --filter FullyQualifiedName~WindowsDpapiMachineScopeTests
       - name: Publish Windows x64 application
         run: dotnet publish src/PromoGest.Api/PromoGest.Api.csproj --configuration Release --runtime win-x64 --self-contained true --output artifacts/win-x64
       - name: Validate PowerShell scripts

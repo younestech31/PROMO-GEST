@@ -140,7 +140,18 @@ async function requestJson<T>(url: string, init?: RequestInit): Promise<T> {
         payload.validationErrors
       );
     }
-    throw new ApiError(response.status, `HTTP_${response.status}`, `Server responded with status ${response.status}`);
+    if (response.status === 403) {
+      throw new ApiError(
+        403,
+        'HTTP_403_NON_JSON',
+        `The preview host or reverse proxy returned a non-JSON 403 for ${url}; the request may have been blocked before the PROMO GEST API handled it.`
+      );
+    }
+    throw new ApiError(
+      response.status,
+      `HTTP_${response.status}`,
+      `Server responded with status ${response.status} (${contentType || 'unknown content type'}) for ${url}.`
+    );
   }
 
   if (!isJson) {

@@ -590,6 +590,10 @@ const API_ERROR_MESSAGES: Record<string, { ar: string; fr: string }> = {
     ar: 'انتهت صلاحية رمز الحماية الأمني (CSRF). يرجى تحديث الصفحة والمحاولة مجدداً.',
     fr: 'Jeton anti-falsification (CSRF) manquant ou expiré. Veuillez réessayer.',
   },
+  HTTP_403_NON_JSON: {
+    ar: 'أعاد مضيف المعاينة أو الوسيط استجابة 403 غير متوافقة مع واجهة API. قد يكون الطلب قد حُظر قبل وصوله إلى خدمة PROMO GEST. أعد تحميل المعاينة؛ وإذا استمر الخطأ فافحص طلب initialize في تبويب Network.',
+    fr: 'L’hôte d’aperçu ou son proxy a renvoyé une réponse 403 non JSON. La requête a peut-être été bloquée avant le traitement par l’API PROMO GEST. Rechargez l’aperçu et, si le problème persiste, inspectez la requête initialize dans Network.',
+  },
   CANNOT_MODIFY_SYSTEM_ADMIN: {
     ar: 'لا يمكن تعديل حساب مدير النظام الوحيد أو إعادة تعيين كلمة مروره من هذه الواجهة.',
     fr: 'Le compte unique Administrateur Système ne peut pas être modifié ici.',

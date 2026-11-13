@@ -197,11 +197,31 @@ if [[ -n "$BACKUP_BUNDLE_DIR" ]]; then
   python3 - "$RESTORE_CONFIG/appsettings.Production.sanitized.json" <<'PY'
 import json
 import pathlib
+import re
 import sys
 
 config = json.loads(pathlib.Path(sys.argv[1]).read_text(encoding="utf-8-sig"))
-if "ConnectionStrings" in config:
-    raise SystemExit("ERROR: Production sanitized configuration must not contain ConnectionStrings.")
+if not isinstance(config, dict):
+    raise SystemExit("ERROR: Production sanitized configuration must be a JSON object.")
+if "Storage" not in config or "Security" not in config:
+    raise SystemExit("ERROR: Production sanitized configuration is missing Storage or Security sections.")
+
+sensitive_name = re.compile(
+    r"(?i)(^connectionstrings?$|password|passwd|pwd|secret|token|credential|private.?key|api.?key|access.?key|signing.?key)"
+)
+
+def assert_clean(value, path="$"):
+    if isinstance(value, dict):
+        for key, item in value.items():
+            current_path = f"{path}.{key}"
+            if sensitive_name.search(str(key)):
+                raise SystemExit(f"ERROR: Secret-bearing property found in sanitized config: {current_path}")
+            assert_clean(item, current_path)
+    elif isinstance(value, list):
+        for index, item in enumerate(value):
+            assert_clean(item, f"{path}[{index}]")
+
+assert_clean(config)
 PY
 fi
 

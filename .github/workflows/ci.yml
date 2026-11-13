@@ -554,6 +554,11 @@ jobs:
           $storageArchiveProbe = Join-Path $probeBundle "storage.zip"
           $dpArchiveProbe = Join-Path $probeBundle "dataprotection-keys.zip"
           $configArchiveProbe = Join-Path $probeBundle "config-sanitized.zip"
+          foreach ($archivePath in @($storageArchiveProbe, $dpArchiveProbe, $configArchiveProbe)) {
+            if (Test-Path -LiteralPath $archivePath) {
+              Remove-Item -LiteralPath $archivePath -Force
+            }
+          }
           $maliciousArchive = [System.IO.Compression.ZipFile]::Open(
             $storageArchiveProbe,
             [System.IO.Compression.ZipArchiveMode]::Create

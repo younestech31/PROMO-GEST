@@ -111,23 +111,38 @@ function Assert-SafeZipArchive {
     param([Parameter(Mandatory = $true)][string]$ArchivePath)
 
     $archive = [System.IO.Compression.ZipFile]::OpenRead($ArchivePath)
+    $seenEntries = [Collections.Generic.HashSet[string]]::new([StringComparer]::OrdinalIgnoreCase)
     try {
         foreach ($entry in $archive.Entries) {
             $entryName = $entry.FullName.Replace([char]92, [char]47)
-            $segments = $entryName.Split("/")
             if ([string]::IsNullOrWhiteSpace($entryName) -or
                 $entryName.StartsWith("/") -or
                 $entryName -match '^[A-Za-z]:' -or
-                $entryName.Contains(":") -or
-                $segments -contains "..") {
+                $entryName.Contains(":")) {
                 throw "Unsafe ZIP entry path in '$ArchivePath': $($entry.FullName)"
             }
 
-            # Reject Unix symbolic-link entries even when the archive was produced
-            # on a non-Windows host and later moved to this Windows restore server.
+            $normalizedEntryName = $entryName.TrimEnd("/")
+            $segments = $normalizedEntryName.Split("/")
+            if ($segments.Count -eq 0 -or
+                $segments -contains ".." -or
+                $segments -contains "." -or
+                $segments -contains "") {
+                throw "Unsafe ZIP entry path in '$ArchivePath': $($entry.FullName)"
+            }
+            if (-not $seenEntries.Add($normalizedEntryName)) {
+                throw "Duplicate or case-colliding ZIP entry in '$ArchivePath': $($entry.FullName)"
+            }
+
+            # Allow only ordinary files and directories. Reject Unix links/devices
+            # and Windows reparse points even when the archive came from another OS.
             $unixFileType = ($entry.ExternalAttributes -shr 16) -band 0xF000
-            if ($unixFileType -eq 0xA000) {
-                throw "Symbolic links are not allowed in backup ZIP archives: $($entry.FullName)"
+            if ($unixFileType -ne 0 -and $unixFileType -ne 0x8000 -and $unixFileType -ne 0x4000) {
+                throw "Non-regular ZIP entry type is not allowed: $($entry.FullName)"
+            }
+            $dosAttributes = $entry.ExternalAttributes -band 0xFFFF
+            if (($dosAttributes -band [int][IO.FileAttributes]::ReparsePoint) -ne 0) {
+                throw "Windows reparse points are not allowed in backup ZIP archives: $($entry.FullName)"
             }
         }
     }

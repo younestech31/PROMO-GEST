@@ -1,4 +1,6 @@
 using System.Collections.Concurrent;
+using System.Security.Cryptography;
+using System.Security.Cryptography.X509Certificates;
 using System.Net;
 using System.Net.Http.Json;
 using Microsoft.AspNetCore.Hosting;
@@ -248,6 +250,30 @@ public sealed class PostgresEndToEndTests : IClassFixture<PostgreSql18Integratio
     private WebApplicationFactory<Program> CreateFactory(string connectionString, string tempRoot)
     {
         Directory.CreateDirectory(tempRoot);
+
+        // Linux requires an explicit certificate because PersistKeysToFileSystem disables
+        // the default key-at-rest protection heuristic. Generate a per-test certificate so
+        // API integration tests remain self-contained and exercise the real Linux setup.
+        var dataProtectionPassword = Convert.ToHexString(RandomNumberGenerator.GetBytes(32));
+        var dataProtectionDirectory = Path.Combine(tempRoot, "dp-keys");
+        Directory.CreateDirectory(dataProtectionDirectory);
+        var certificatePath = Path.Combine(dataProtectionDirectory, "protection.pfx");
+
+        using (var rsa = RSA.Create(2048))
+        {
+            var request = new CertificateRequest(
+                "CN=PromoGest API Integration Test",
+                rsa,
+                HashAlgorithmName.SHA256,
+                RSASignaturePadding.Pkcs1);
+            using var certificate = request.CreateSelfSigned(
+                DateTimeOffset.UtcNow.AddMinutes(-5),
+                DateTimeOffset.UtcNow.AddYears(1));
+            File.WriteAllBytes(
+                certificatePath,
+                certificate.Export(X509ContentType.Pfx, dataProtectionPassword));
+        }
+
         return new WebApplicationFactory<Program>().WithWebHostBuilder(builder =>
         {
             builder.UseEnvironment("Development");
@@ -263,7 +289,9 @@ public sealed class PostgresEndToEndTests : IClassFixture<PostgreSql18Integratio
                     ["ConnectionStrings:DefaultConnection"] = connectionString,
                     ["Security:RequireHttpsCookies"] = "false",
                     ["Storage:RootDirectory"] = Path.Combine(tempRoot, "storage"),
-                    ["Security:DataProtectionKeyDirectory"] = Path.Combine(tempRoot, "dp-keys")
+                    ["Security:DataProtectionKeyDirectory"] = dataProtectionDirectory,
+                    ["Security:DataProtectionCertificatePath"] = certificatePath,
+                    ["PROMOGEST_DATA_PROTECTION_CERT_PASSWORD"] = dataProtectionPassword
                 });
             });
             builder.ConfigureTestServices(services =>

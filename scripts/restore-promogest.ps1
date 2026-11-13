@@ -107,6 +107,33 @@ function Set-PromoGestRestoreDirectoryAcl {
     }
 }
 
+function Assert-NoSensitiveConfigurationProperties {
+    param(
+        [AllowNull()][object]$Value,
+        [string]$CurrentPath = "$"
+    )
+
+    if ($null -eq $Value) { return }
+    $sensitivePropertyPattern = '(?i)(^connectionstrings?$|password|passwd|pwd|secret|token|credential|private.?key|api.?key|access.?key|signing.?key)'
+
+    if ($Value -is [PSCustomObject]) {
+        foreach ($property in $Value.PSObject.Properties) {
+            $propertyPath = "$CurrentPath.$($property.Name)"
+            if ($property.Name -match $sensitivePropertyPattern) {
+                throw "Sanitized configuration contains a secret-bearing property at $propertyPath."
+            }
+            Assert-NoSensitiveConfigurationProperties -Value $property.Value -CurrentPath $propertyPath
+        }
+        return
+    }
+
+    if ($Value -is [System.Collections.IList] -and $Value -isnot [string]) {
+        for ($index = 0; $index -lt $Value.Count; $index++) {
+            Assert-NoSensitiveConfigurationProperties -Value $Value[$index] -CurrentPath "$CurrentPath[$index]"
+        }
+    }
+}
+
 function Assert-SafeZipArchive {
     param([Parameter(Mandatory = $true)][string]$ArchivePath)
 
@@ -327,9 +354,7 @@ try {
 catch {
     throw "Sanitized production configuration is not valid JSON: $($_.Exception.Message)"
 }
-if ($null -ne $sanitizedConfigObject.PSObject.Properties["ConnectionStrings"]) {
-    throw "Sanitized production configuration must not contain ConnectionStrings; restore secrets from the protected secret store."
-}
+Assert-NoSensitiveConfigurationProperties -Value $sanitizedConfigObject
 if ($null -eq $sanitizedConfigObject.Storage -or $null -eq $sanitizedConfigObject.Security) {
     throw "Sanitized production configuration is missing required Storage or Security sections."
 }

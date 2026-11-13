@@ -209,6 +209,7 @@ jobs:
           sudo install -d -o root -g root -m 0750 /etc/promogest
           sudo install -o root -g root -m 0600 "$PGPASSFILE" /etc/promogest/pgpass
           backup_root="$RUNNER_TEMP/promogest-backups"
+          lock_mode_before="$(stat -c '%a' /run/lock)"
           sudo env \
             PGHOST="$PGHOST" PGPORT="$PGPORT" PGUSER="$PGUSER" \
             PGPASSFILE=/etc/promogest/pgpass \
@@ -226,7 +227,17 @@ jobs:
             sudo test -s "$bundle_dir/$component"
           done
           sudo bash -c 'cd "$1" && sha256sum -c manifest.sha256' _ "$bundle_dir"
-          bash scripts/verify-backup-restore.sh promogest_ci "$storage_root" "$config_path" "$key_root"
+          lock_mode_after="$(stat -c '%a' /run/lock)"
+          if [[ "$lock_mode_after" != "$lock_mode_before" ]]; then
+            echo "Backup script changed /run/lock permissions ($lock_mode_before -> $lock_mode_after)." >&2
+            exit 1
+          fi
+          sudo env \
+            PGHOST="$PGHOST" PGPORT="$PGPORT" PGUSER="$PGUSER" \
+            PGPROVISION_USER=postgres PROMOGEST_APP_USER=promogest_app \
+            PGPASSFILE=/etc/promogest/pgpass \
+            PROMOGEST_DATA_PROTECTION_CERT_PASSWORD="$PROMOGEST_DATA_PROTECTION_CERT_PASSWORD" \
+            bash scripts/verify-backup-restore.sh promogest_ci "" "" "" "$bundle_dir"
 
   windows-publish-and-powershell:
     name: Windows publish and PowerShell validation

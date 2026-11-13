@@ -58,6 +58,7 @@ public interface IProjectRepository
     Task<IReadOnlyList<Project>> ListForUserWithMembersAsync(Guid userId, CancellationToken ct = default);
     Task<ProjectMember?> GetMemberAsync(Guid projectId, Guid userId, CancellationToken ct = default);
     Task AddProjectAsync(Project project, CancellationToken ct = default);
+    Task AddMemberAsync(ProjectMember member, CancellationToken ct = default);
     Task SaveChangesAsync(CancellationToken ct = default);
 }
 

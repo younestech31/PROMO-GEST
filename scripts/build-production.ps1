@@ -8,7 +8,7 @@ $PublishDir = Join-Path $RootDir "artifacts\publish"
 Write-Host "[1/4] Building React production frontend (monorepo root)..."
 Push-Location $RootDir
 try {
-    npm install --no-audit --no-fund
+    npm ci --no-audit --no-fund
     if ($LASTEXITCODE -ne 0) { throw "npm install failed" }
     npm run lint
     if ($LASTEXITCODE -ne 0) { throw "npm run lint failed" }
@@ -20,9 +20,14 @@ try {
     Pop-Location
 }
 
-Write-Host "[2/4] Copying compiled React static files into ASP.NET Core wwwroot..."
+Write-Host "[2/4] Verifying and copying compiled React static files into ASP.NET Core wwwroot..."
+$DistDir = Join-Path $WebDir "dist"
+if (-not (Test-Path (Join-Path $DistDir "index.html") -PathType Leaf)) { throw "Frontend dist/index.html is missing." }
+if (-not (Get-ChildItem -Path $DistDir -Recurse -File | Where-Object { $_.Extension -in @(".js", ".css") })) { throw "Frontend dist has no JS or CSS assets." }
+New-Item -ItemType Directory -Force -Path $WwwrootDir | Out-Null
 Get-ChildItem -Path $WwwrootDir -Exclude ".gitkeep" | Remove-Item -Recurse -Force
-Copy-Item -Path (Join-Path $WebDir "dist\*") -Destination $WwwrootDir -Recurse -Force
+Copy-Item -Path (Join-Path $DistDir "*") -Destination $WwwrootDir -Recurse -Force
+if (-not (Test-Path (Join-Path $WwwrootDir "index.html") -PathType Leaf)) { throw "ASP.NET Core wwwroot/index.html was not copied." }
 
 Write-Host "[3/4] Running .NET unit tests..."
 Push-Location $RootDir

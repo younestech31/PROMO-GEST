@@ -1,12 +1,19 @@
+using System.Collections.Concurrent;
+using System.Security.Cryptography;
+using System.Security.Cryptography.X509Certificates;
 using System.Net;
 using System.Net.Http.Json;
 using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.TestHost;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
+using Microsoft.Extensions.Logging;
 using Npgsql;
 using PromoGest.Contracts.Auth;
+using PromoGest.Contracts.Audit;
 using PromoGest.Contracts.Common;
 using PromoGest.Contracts.Projects;
 using PromoGest.Contracts.Setup;
@@ -21,14 +28,35 @@ namespace PromoGest.IntegrationTests;
 public sealed class PostgreSql18IntegrationFixture : IAsyncLifetime
 {
     private PostgreSqlContainer? _container;
-    private string _adminConnectionString = string.Empty;
+    private string _provisionConnectionString = string.Empty;
+    private string _migrationConnectionString = string.Empty;
+    private string _runtimeConnectionString = string.Empty;
+    private readonly Dictionary<string, string?> _previousEnvironment = new(StringComparer.Ordinal);
+    private string? _dataProtectionTestRoot;
 
     public async Task InitializeAsync()
     {
-        var externalConnection = Environment.GetEnvironmentVariable("PROMOGEST_TEST_DB_CONNECTION");
-        if (!string.IsNullOrWhiteSpace(externalConnection))
+        ConfigureLinuxDataProtectionEnvironment();
+
+        var provision = Environment.GetEnvironmentVariable("PROMOGEST_TEST_PROVISION_DB_CONNECTION");
+        var migration = Environment.GetEnvironmentVariable("PROMOGEST_TEST_MIGRATE_DB_CONNECTION");
+        var runtime = Environment.GetEnvironmentVariable("PROMOGEST_TEST_DB_CONNECTION");
+
+        if (!string.IsNullOrWhiteSpace(provision) ||
+            !string.IsNullOrWhiteSpace(migration) ||
+            !string.IsNullOrWhiteSpace(runtime))
         {
-            _adminConnectionString = externalConnection;
+            if (string.IsNullOrWhiteSpace(provision) ||
+                string.IsNullOrWhiteSpace(migration) ||
+                string.IsNullOrWhiteSpace(runtime))
+            {
+                throw new InvalidOperationException(
+                    "Set all three PostgreSQL test connections: provision, migration-owner, and runtime-app.");
+            }
+
+            _provisionConnectionString = provision;
+            _migrationConnectionString = migration;
+            _runtimeConnectionString = runtime;
             return;
         }
 
@@ -40,31 +68,239 @@ public sealed class PostgreSql18IntegrationFixture : IAsyncLifetime
             .Build();
 
         await _container.StartAsync();
-        _adminConnectionString = _container.GetConnectionString();
+        _provisionConnectionString = _container.GetConnectionString();
+
+        await using var provisionConnection = new NpgsqlConnection(_provisionConnectionString);
+        await provisionConnection.OpenAsync();
+
+        await using (var createOwner = new NpgsqlCommand(
+            "CREATE ROLE promogest_owner LOGIN NOSUPERUSER NOCREATEDB NOCREATEROLE NOINHERIT PASSWORD 'owner_test_password';",
+            provisionConnection))
+        {
+            await createOwner.ExecuteNonQueryAsync();
+        }
+
+        await using (var createApp = new NpgsqlCommand(
+            "CREATE ROLE promogest_app LOGIN NOSUPERUSER NOCREATEDB NOCREATEROLE NOINHERIT PASSWORD 'app_test_password';",
+            provisionConnection))
+        {
+            await createApp.ExecuteNonQueryAsync();
+        }
+
+        _migrationConnectionString = new NpgsqlConnectionStringBuilder(_provisionConnectionString)
+        {
+            Username = "promogest_owner",
+            Password = "owner_test_password"
+        }.ConnectionString;
+
+        _runtimeConnectionString = new NpgsqlConnectionStringBuilder(_provisionConnectionString)
+        {
+            Username = "promogest_app",
+            Password = "app_test_password"
+        }.ConnectionString;
     }
 
     public async Task<string> CreateIsolatedDatabaseConnectionStringAsync()
     {
         var dbName = $"promogest_it_{Guid.NewGuid():N}"[..28];
-        await using var conn = new NpgsqlConnection(_adminConnectionString);
-        await conn.OpenAsync();
-        await using (var cmd = new NpgsqlCommand($"CREATE DATABASE \"{dbName}\";", conn))
+
+        await using (var provisionConnection = new NpgsqlConnection(_provisionConnectionString))
         {
-            await cmd.ExecuteNonQueryAsync();
+            await provisionConnection.OpenAsync();
+            await using var createDatabase = new NpgsqlCommand(
+                $"CREATE DATABASE \"{dbName}\" OWNER promogest_owner;",
+                provisionConnection);
+            await createDatabase.ExecuteNonQueryAsync();
         }
 
-        var builder = new NpgsqlConnectionStringBuilder(_adminConnectionString)
+        var migrationConnection = new NpgsqlConnectionStringBuilder(_migrationConnectionString)
         {
             Database = dbName
-        };
-        return builder.ConnectionString;
+        }.ConnectionString;
+        var runtimeConnection = new NpgsqlConnectionStringBuilder(_runtimeConnectionString)
+        {
+            Database = dbName
+        }.ConnectionString;
+
+        await using (var ownerConnection = new NpgsqlConnection(migrationConnection))
+        {
+            await ownerConnection.OpenAsync();
+            await using var grants = new NpgsqlCommand(
+                "GRANT USAGE ON SCHEMA public TO promogest_app; " +
+                "ALTER DEFAULT PRIVILEGES FOR ROLE promogest_owner IN SCHEMA public " +
+                "GRANT SELECT, INSERT, UPDATE, DELETE ON TABLES TO promogest_app; " +
+                "ALTER DEFAULT PRIVILEGES FOR ROLE promogest_owner IN SCHEMA public " +
+                "GRANT USAGE, SELECT ON SEQUENCES TO promogest_app;",
+                ownerConnection);
+            await grants.ExecuteNonQueryAsync();
+        }
+
+        var migrationOptions = new DbContextOptionsBuilder<AppDbContext>()
+            .UseNpgsql(migrationConnection, npgsql =>
+                npgsql.MigrationsAssembly(typeof(AppDbContext).Assembly.FullName))
+            .Options;
+
+        await using (var migrationDb = new AppDbContext(migrationOptions))
+        {
+            await migrationDb.Database.MigrateAsync();
+            await DbInitializer.SeedRolesAndPermissionsAsync(migrationDb);
+
+            var applied = await migrationDb.Database.GetAppliedMigrationsAsync();
+            if (!applied.Contains("20261113000003_SystemAdministratorInvariant"))
+            {
+                throw new InvalidOperationException(
+                    "The SystemAdministratorInvariant migration was not discovered and applied.");
+            }
+            if (!applied.Contains("20261113000004_AuditLogRuntimePermissions"))
+            {
+                throw new InvalidOperationException(
+                    "The AuditLogRuntimePermissions migration was not discovered and applied.");
+            }
+        }
+
+        // Prove the restricted runtime identity can authenticate before any ASP.NET Core test host is created.
+        await using (var runtimeProbe = new NpgsqlConnection(runtimeConnection))
+        {
+            await runtimeProbe.OpenAsync();
+            await using var identityCommand = new NpgsqlCommand("SELECT current_user;", runtimeProbe);
+            var currentUser = (string?)await identityCommand.ExecuteScalarAsync();
+            if (!string.Equals(currentUser, "promogest_app", StringComparison.Ordinal))
+            {
+                throw new InvalidOperationException($"Expected runtime database identity 'promogest_app', got '{currentUser}'.");
+            }
+        }
+
+        return runtimeConnection;
     }
 
     public async Task DisposeAsync()
     {
-        if (_container is not null)
+        try
         {
-            await _container.DisposeAsync();
+            if (_container is not null)
+            {
+                await _container.DisposeAsync();
+            }
+        }
+        finally
+        {
+            foreach (var (name, value) in _previousEnvironment)
+            {
+                Environment.SetEnvironmentVariable(name, value);
+            }
+
+            if (_dataProtectionTestRoot is not null && Directory.Exists(_dataProtectionTestRoot))
+            {
+                Directory.Delete(_dataProtectionTestRoot, recursive: true);
+            }
+        }
+    }
+
+    private void ConfigureLinuxDataProtectionEnvironment()
+    {
+        if (!OperatingSystem.IsLinux())
+        {
+            return;
+        }
+
+        var variables = new[]
+        {
+            "Security__DataProtectionCertificatePath",
+            "Security__DataProtectionKeyDirectory",
+            "Security__RequireHttpsCookies",
+            "Storage__RootDirectory",
+            "PROMOGEST_DATA_PROTECTION_CERT_PASSWORD"
+        };
+        foreach (var name in variables)
+        {
+            _previousEnvironment[name] = Environment.GetEnvironmentVariable(name);
+        }
+
+        _dataProtectionTestRoot = Path.Combine(
+            Path.GetTempPath(),
+            $"promogest-api-dp-tests-{Guid.NewGuid():N}");
+        var keyDirectory = Path.Combine(_dataProtectionTestRoot, "keys");
+        Directory.CreateDirectory(keyDirectory);
+
+        var certificatePath = Path.Combine(keyDirectory, "protection.pfx");
+        var password = Convert.ToHexString(RandomNumberGenerator.GetBytes(32));
+
+        using (var rsa = RSA.Create(2048))
+        {
+            var request = new CertificateRequest(
+                "CN=PromoGest PostgreSQL API Integration Test",
+                rsa,
+                HashAlgorithmName.SHA256,
+                RSASignaturePadding.Pkcs1);
+            using var certificate = request.CreateSelfSigned(
+                DateTimeOffset.UtcNow.AddMinutes(-5),
+                DateTimeOffset.UtcNow.AddYears(1));
+            File.WriteAllBytes(certificatePath, certificate.Export(X509ContentType.Pfx, password));
+        }
+
+        Environment.SetEnvironmentVariable("Security__DataProtectionCertificatePath", certificatePath);
+        Environment.SetEnvironmentVariable("Security__DataProtectionKeyDirectory", keyDirectory);
+        Environment.SetEnvironmentVariable("Security__RequireHttpsCookies", "false");
+        Environment.SetEnvironmentVariable("Storage__RootDirectory", Path.Combine(_dataProtectionTestRoot, "storage"));
+        Environment.SetEnvironmentVariable("PROMOGEST_DATA_PROTECTION_CERT_PASSWORD", password);
+    }
+}
+
+internal sealed class BufferingLoggerProvider : ILoggerProvider
+{
+    private readonly ConcurrentQueue<string> _entries = new();
+
+    public IReadOnlyList<string> Snapshot() => _entries.ToArray();
+
+    public ILogger CreateLogger(string categoryName) => new BufferingLogger(categoryName, _entries);
+
+    public void Dispose()
+    {
+    }
+
+    private sealed class BufferingLogger(
+        string categoryName,
+        ConcurrentQueue<string> entries) : ILogger
+    {
+        public IDisposable? BeginScope<TState>(TState state) where TState : notnull => null;
+
+        public bool IsEnabled(LogLevel logLevel) => logLevel >= LogLevel.Information;
+
+        public void Log<TState>(
+            LogLevel logLevel,
+            EventId eventId,
+            TState state,
+            Exception? exception,
+            Func<TState, Exception?, string> formatter)
+        {
+            if (!IsEnabled(logLevel))
+            {
+                return;
+            }
+
+            var message = formatter(state, exception);
+            if (exception is not null)
+            {
+                message += Environment.NewLine + exception;
+            }
+
+            if (exception is DbUpdateConcurrencyException concurrencyException)
+            {
+                foreach (var entry in concurrencyException.Entries)
+                {
+                    var keyNames = entry.Metadata.FindPrimaryKey()?.Properties
+                        .Select(property => property.Name)
+                        .ToHashSet(StringComparer.Ordinal) ?? new HashSet<string>();
+                    var concurrencyValues = entry.Properties
+                        .Where(property => keyNames.Contains(property.Metadata.Name) || property.Metadata.IsConcurrencyToken)
+                        .Select(property => $"{property.Metadata.Name}: original={property.OriginalValue}, current={property.CurrentValue}");
+                    message += Environment.NewLine +
+                        $"Concurrency entity={entry.Metadata.ClrType.Name}, state={entry.State}: " +
+                        string.Join("; ", concurrencyValues);
+                }
+            }
+
+            entries.Enqueue($"[{logLevel}] {categoryName}: {message}");
         }
     }
 }
@@ -72,6 +308,7 @@ public sealed class PostgreSql18IntegrationFixture : IAsyncLifetime
 public sealed class PostgresEndToEndTests : IClassFixture<PostgreSql18IntegrationFixture>
 {
     private readonly PostgreSql18IntegrationFixture _fixture;
+    private readonly BufferingLoggerProvider _serverLogs = new();
 
     public PostgresEndToEndTests(PostgreSql18IntegrationFixture fixture)
     {
@@ -84,15 +321,27 @@ public sealed class PostgresEndToEndTests : IClassFixture<PostgreSql18Integratio
         return new WebApplicationFactory<Program>().WithWebHostBuilder(builder =>
         {
             builder.UseEnvironment("Development");
+            builder.ConfigureLogging(logging =>
+            {
+                logging.AddProvider(_serverLogs);
+                logging.SetMinimumLevel(LogLevel.Information);
+            });
             builder.ConfigureAppConfiguration((_, config) =>
             {
                 config.AddInMemoryCollection(new Dictionary<string, string?>
                 {
                     ["ConnectionStrings:DefaultConnection"] = connectionString,
                     ["Security:RequireHttpsCookies"] = "false",
-                    ["Storage:RootDirectory"] = Path.Combine(tempRoot, "storage"),
-                    ["Security:DataProtectionKeyDirectory"] = Path.Combine(tempRoot, "dp-keys")
+                    ["Storage:RootDirectory"] = Path.Combine(tempRoot, "storage")
                 });
+            });
+            builder.ConfigureTestServices(services =>
+            {
+                services.RemoveAll<AppDbContext>();
+                services.RemoveAll<DbContextOptions<AppDbContext>>();
+                services.AddDbContext<AppDbContext>(options =>
+                    options.UseNpgsql(connectionString, npgsql =>
+                        npgsql.MigrationsAssembly(typeof(AppDbContext).Assembly.FullName)));
             });
         });
     }
@@ -200,6 +449,30 @@ public sealed class PostgresEndToEndTests : IClassFixture<PostgreSql18Integratio
                 Assert.Equal("23505", pgEx.SqlState);
             }
 
+            // 5b. Database trigger protects the only active System Administrator from direct SQL mutation.
+            await using (var adminInvariantConn = new NpgsqlConnection(connStr))
+            {
+                await adminInvariantConn.OpenAsync();
+
+                await using var deactivateAdmin = new NpgsqlCommand(
+                    "UPDATE users SET is_active = FALSE WHERE is_system_administrator = TRUE;",
+                    adminInvariantConn);
+                var deactivateError = await Assert.ThrowsAsync<PostgresException>(() => deactivateAdmin.ExecuteNonQueryAsync());
+                Assert.Equal("42501", deactivateError.SqlState);
+
+                await using var demoteAdmin = new NpgsqlCommand(
+                    "UPDATE users SET is_system_administrator = FALSE WHERE is_system_administrator = TRUE;",
+                    adminInvariantConn);
+                var demoteError = await Assert.ThrowsAsync<PostgresException>(() => demoteAdmin.ExecuteNonQueryAsync());
+                Assert.Equal("42501", demoteError.SqlState);
+
+                await using var deleteAdmin = new NpgsqlCommand(
+                    "DELETE FROM users WHERE is_system_administrator = TRUE;",
+                    adminInvariantConn);
+                var deleteError = await Assert.ThrowsAsync<PostgresException>(() => deleteAdmin.ExecuteNonQueryAsync());
+                Assert.Equal("42501", deleteError.SqlState);
+            }
+
             // 6. Audit logs are immutable both in EF Core and PostgreSQL trigger (42501)
             using (var scope = factory.Services.CreateScope())
             {
@@ -219,6 +492,28 @@ public sealed class PostgresEndToEndTests : IClassFixture<PostgreSql18Integratio
                 deleteCmd.Parameters.AddWithValue("id", auditEntry.Id);
                 var pgDeleteEx = await Assert.ThrowsAsync<PostgresException>(() => deleteCmd.ExecuteNonQueryAsync());
                 Assert.Equal("42501", pgDeleteEx.SqlState);
+
+                await using var truncateCmd = new NpgsqlCommand("TRUNCATE audit_logs;", rawConn);
+                var pgTruncateEx = await Assert.ThrowsAsync<PostgresException>(() => truncateCmd.ExecuteNonQueryAsync());
+                Assert.Equal("42501", pgTruncateEx.SqlState);
+
+                await using var ddlCmd = new NpgsqlCommand(
+                    "ALTER TABLE audit_logs DISABLE TRIGGER trg_audit_logs_immutable;",
+                    rawConn);
+                var pgDdlEx = await Assert.ThrowsAsync<PostgresException>(() => ddlCmd.ExecuteNonQueryAsync());
+                Assert.Equal("42501", pgDdlEx.SqlState);
+
+                const string auditPrivilegesSql =
+                    "SELECT has_table_privilege(current_user, 'public.audit_logs', 'SELECT') " +
+                    "AND has_table_privilege(current_user, 'public.audit_logs', 'INSERT') " +
+                    "AND NOT has_table_privilege(current_user, 'public.audit_logs', 'UPDATE') " +
+                    "AND NOT has_table_privilege(current_user, 'public.audit_logs', 'DELETE') " +
+                    "AND NOT has_table_privilege(current_user, 'public.audit_logs', 'TRUNCATE') " +
+                    "AND NOT has_table_privilege(current_user, 'public.audit_logs', 'TRIGGER');";
+                await using var auditPrivilegesCommand = new NpgsqlCommand(auditPrivilegesSql, rawConn);
+                var auditPrivilegesAreLeastPrivilege = (bool)(await auditPrivilegesCommand.ExecuteScalarAsync())!;
+                Assert.True(auditPrivilegesAreLeastPrivilege,
+                    "The runtime role must only read and append audit logs, not change them or their triggers.");
             }
 
             // 7. Generic login error on bad password -> valid login -> rotate CSRF -> create employee & project
@@ -262,7 +557,28 @@ public sealed class PostgresEndToEndTests : IClassFixture<PostgreSql18Integratio
             // Grant project membership -> access works
             var assignResp = await adminClient.PutAsJsonAsync($"/api/projects/{createdProject.Id}/members",
                 new AssignProjectMemberRequest(createdEmployee!.Id, "CommercialAgent", false, true, false, true));
-            Assert.Equal(HttpStatusCode.OK, assignResp.StatusCode);
+            var assignBody = await assignResp.Content.ReadAsStringAsync();
+            Assert.True(assignResp.StatusCode == HttpStatusCode.OK,
+                $"Project member assignment failed with {(int)assignResp.StatusCode} {assignResp.StatusCode}: {assignBody}" +
+                $"{Environment.NewLine}Captured ASP.NET Core server logs:{Environment.NewLine}{string.Join(Environment.NewLine, _serverLogs.Snapshot())}");
+
+            // Reassign the same employee to cover the existing-membership UPDATE path.
+            var updateMembershipResp = await adminClient.PutAsJsonAsync($"/api/projects/{createdProject.Id}/members",
+                new AssignProjectMemberRequest(createdEmployee.Id, "CommercialAgent", true, false, false, false));
+            Assert.Equal(HttpStatusCode.OK, updateMembershipResp.StatusCode);
+
+            using (var scope = factory.Services.CreateScope())
+            {
+                var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+                var updatedMembership = await db.ProjectMembers.SingleAsync(
+                    member => member.ProjectId == createdProject.Id && member.UserId == createdEmployee.Id);
+                Assert.True(updatedMembership.CanViewFinancials);
+                Assert.False(updatedMembership.CanManageSales);
+                Assert.False(updatedMembership.CanManageConstruction);
+                Assert.False(updatedMembership.CanManageDocuments);
+                Assert.Equal(1, await db.ProjectMembers.CountAsync(
+                    member => member.ProjectId == createdProject.Id && member.UserId == createdEmployee.Id));
+            }
 
             var allowedAttempt = await employeeClient.GetAsync($"/api/projects/{createdProject.Id}");
             Assert.Equal(HttpStatusCode.OK, allowedAttempt.StatusCode);

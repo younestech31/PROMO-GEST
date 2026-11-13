@@ -11,7 +11,7 @@ PROMO GEST enforces **at most one System Administrator per installation** at thr
 4. **Local Server-Console-Only Admin Recovery**: If the single System Administrator is locked out or loses their password, recovery is **never** exposed over HTTP. An OS administrator with physical/console access to the local server runs:
    - `PromoGest.Api.exe --unlock-admin`
    - `PromoGest.Api.exe --reset-admin-password` (reads new password from `--password-env <VAR>` or interactive masked console input)
-   This executes `AdminRecoveryService`, revokes all prior admin sessions, and records `ADMIN_LOCAL_UNLOCK` / `ADMIN_LOCAL_PASSWORD_RECOVERY` in `audit_logs`.
+   This executes `AdminRecoveryService`, revokes all prior admin sessions, and records `ADMIN_LOCAL_UNLOCK` / `ADMIN_LOCAL_PASSWORD_RECOVERY` in `audit_logs`. The CLI-only recovery modes intentionally skip Data Protection initialization, so a missing or damaged Linux certificate/key ring does not block database-backed administrator recovery; a valid local runtime database connection is still required.
 
 ## 2. Password, Session & Timing-Safe Authentication Security
 - **Zero hard-coded credentials**: No default admin account exists prior to running the First-Run Installation Wizard.
@@ -25,7 +25,7 @@ PROMO GEST enforces **at most one System Administrator per installation** at thr
 ## 3. CSRF Protection (`SameSite=Strict` + ASP.NET Core Antiforgery)
 `SameSite=Strict` alone is insufficient on local LAN deployments where multiple ports or sibling local services may share the same host/site boundary. Therefore:
 - ASP.NET Core Antiforgery (`IAntiforgery`) is configured with `.PromoGest.Antiforgery` (`HttpOnly = true`, `SameSite = Strict`), paired with the `promogest_csrf` cookie and `X-CSRF-TOKEN` header.
-- `DataProtection` keys are persisted locally (`Security:DataProtectionKeyDirectory`) so antiforgery tokens remain valid across server restarts.
+- `DataProtection` keys are persisted locally (`Security:DataProtectionKeyDirectory`) so antiforgery tokens remain valid across server restarts. On Windows they are encrypted with machine-scope DPAPI (`ProtectKeysWithDpapi(protectToLocalMachine: true)`) so the virtual service account and local maintenance identity can read the same key ring; filesystem ACLs restrict the key directory to the service account, SYSTEM, and local Administrators. On Linux the local key ring is encrypted at rest with the configured PKCS#12 certificate (`Security:DataProtectionCertificatePath`), and its password is supplied through `PROMOGEST_DATA_PROTECTION_CERT_PASSWORD` in the protected service environment. Keep the certificate/private key and its password separately protected; the backup bundle includes the certificate file when it is stored inside the configured Data Protection key directory. File-system permissions remain an additional protection, not a replacement for certificate encryption. On Windows, the installer grants the application service write access only to document storage, the Data Protection key ring, and logs. Backup archives are restricted to `SYSTEM` and local Administrators; the application service identity has no access to the backup directory.
 - `CsrfValidationMiddleware` validates `X-CSRF-TOKEN` on **every** state-changing `/api/*` request (`POST`, `PUT`, `PATCH`, `DELETE`), rejecting missing/invalid tokens with `403 CSRF_TOKEN_INVALID`.
 - `AuthController` rotates CSRF tokens whenever authentication state changes (`login` / `logout`).
 
@@ -34,7 +34,7 @@ PROMO GEST enforces **at most one System Administrator per installation** at thr
 - Every project query filters by `ProjectMembers` for non-admin employees. Non-admin access to `GET /api/projects/{projectId}` verifies membership first and returns `403 Forbidden` (`PROJECT_ACCESS_DENIED`) even for non-existent UUIDs, preventing project ID probing.
 - Every authorization failure records an `ACCESS_DENIED` entry in `audit_logs`.
 - Audit records sanitize CR/LF characters and truncate oversized headers (e.g., `User-Agent`) to column limits so logging never fails with SQL `22001`.
-- Audit immutability is enforced both in EF Core (`AppDbContext.SaveChangesAsync` rejects `Modified`/`Deleted` `AuditLog` entries) and in PostgreSQL (`trg_audit_logs_immutable` trigger raising SQLSTATE `42501`).
+- Audit immutability is enforced in EF Core (`AppDbContext.SaveChangesAsync` rejects `Modified`/`Deleted` entries), by the PostgreSQL `trg_audit_logs_immutable` trigger, and by the runtime role's table ACL. The `promogest_app` role receives only `SELECT` and `INSERT` on `audit_logs`; `UPDATE`, `DELETE`, `TRUNCATE`, and `TRIGGER` are explicitly revoked by migration `20261113000004_AuditLogRuntimePermissions`.
 
 ## 5. HTTP Security Headers & Reverse Proxy Trust
 - `UseForwardedHeaders()` trusts only loopback reverse proxies (`127.0.0.1`, `::1`) for `X-Forwarded-For` and `X-Forwarded-Proto` with `ForwardLimit = 1`.

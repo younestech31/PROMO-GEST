@@ -1,3 +1,4 @@
+using System.Security.Cryptography.X509Certificates;
 using System.Threading.RateLimiting;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.DataProtection;
@@ -17,26 +18,105 @@ var builder = WebApplication.CreateBuilder(new WebApplicationOptions
 });
 
 builder.Host.UseWindowsService();
-builder.Logging.AddEventLog(options => options.SourceName = "PromoGestLocalErp");
+if (OperatingSystem.IsWindows())
+{
+    builder.Logging.AddEventLog();
+}
+
+var migrationMode = args.Contains("--migrate", StringComparer.OrdinalIgnoreCase);
+var localRecoveryMode =
+    args.Contains("--unlock-admin", StringComparer.OrdinalIgnoreCase) ||
+    args.Contains("--reset-admin-password", StringComparer.OrdinalIgnoreCase);
+if (migrationMode)
+{
+    var migrationConnection = Environment.GetEnvironmentVariable("PROMOGEST_MIGRATE_DB_CONNECTION");
+    if (string.IsNullOrWhiteSpace(migrationConnection))
+    {
+        throw new InvalidOperationException(
+            "PROMOGEST_MIGRATE_DB_CONNECTION must be supplied for --migrate. The runtime database identity must never perform schema migrations.");
+    }
+
+    builder.Configuration["ConnectionStrings:DefaultConnection"] = migrationConnection;
+}
 
 var requireHttpsCookies = builder.Configuration.GetValue<bool>("Security:RequireHttpsCookies", true);
 
 builder.Services.AddPromoGestInfrastructure(builder.Configuration);
 
-var storageRoot = builder.Configuration["Storage:RootDirectory"] ?? Path.Combine(AppContext.BaseDirectory, "storage");
-var defaultKeyDirectory = Path.Combine(
-    Path.GetDirectoryName(Path.GetFullPath(storageRoot)) ?? AppContext.BaseDirectory,
-    "dataprotection-keys");
-var dpKeyDirectory = builder.Configuration["Security:DataProtectionKeyDirectory"] ?? defaultKeyDirectory;
-Directory.CreateDirectory(dpKeyDirectory);
-
-var dpBuilder = builder.Services.AddDataProtection()
-    .SetApplicationName("PromoGest")
-    .PersistKeysToFileSystem(new DirectoryInfo(dpKeyDirectory));
-
-if (OperatingSystem.IsWindows())
+// Database migration is a database-maintenance operation and must not depend on
+// the runtime application's Data Protection key ring or platform encryption secrets.
+// The runtime host configures Data Protection below; the --migrate path resolves only
+// AppDbContext and therefore does not need to create or unlock application keys.
+// Console-only admin recovery must remain available even when the runtime Data Protection
+// certificate/key ring is damaged or missing. These commands do not issue HTTP tokens.
+if (!migrationMode && !localRecoveryMode)
 {
-    dpBuilder.ProtectKeysWithDpapi();
+    var storageRoot = builder.Configuration["Storage:RootDirectory"] ?? Path.Combine(AppContext.BaseDirectory, "storage");
+    var defaultKeyDirectory = Path.Combine(
+        Path.GetDirectoryName(Path.GetFullPath(storageRoot)) ?? AppContext.BaseDirectory,
+        "dataprotection-keys");
+    var dpKeyDirectory = builder.Configuration["Security:DataProtectionKeyDirectory"] ?? defaultKeyDirectory;
+    Directory.CreateDirectory(dpKeyDirectory);
+
+    var dpBuilder = builder.Services.AddDataProtection()
+        .SetApplicationName("PromoGest")
+        .PersistKeysToFileSystem(new DirectoryInfo(dpKeyDirectory));
+
+    if (OperatingSystem.IsWindows())
+    {
+        // The service runs under a virtual service account, while maintenance and recovery
+        // may run under SYSTEM or an administrator account. Machine-scope DPAPI keeps the
+        // key ring decryptable on this Windows installation by those identities; filesystem
+        // ACLs on the key directory remain restricted to the service, SYSTEM, and Administrators.
+        dpBuilder.ProtectKeysWithDpapi(protectToLocalMachine: true);
+    }
+    else if (OperatingSystem.IsLinux())
+    {
+        // PersistKeysToFileSystem disables the default at-rest encryption heuristic.
+        // Linux deployments must provide a local PKCS#12 certificate and its password
+        // through the service environment; never fall back to plaintext key-ring files.
+        var certificatePath = builder.Configuration["Security:DataProtectionCertificatePath"];
+        var certificatePassword = builder.Configuration["PROMOGEST_DATA_PROTECTION_CERT_PASSWORD"]
+            ?? Environment.GetEnvironmentVariable("PROMOGEST_DATA_PROTECTION_CERT_PASSWORD");
+
+        if (string.IsNullOrWhiteSpace(certificatePath) || !Path.IsPathRooted(certificatePath))
+        {
+            throw new InvalidOperationException(
+                "Security:DataProtectionCertificatePath must be an absolute path to a local PKCS#12 certificate on Linux.");
+        }
+
+        if (!File.Exists(certificatePath))
+        {
+            throw new FileNotFoundException(
+                "The Linux Data Protection certificate file was not found.",
+                certificatePath);
+        }
+
+        if (string.IsNullOrWhiteSpace(certificatePassword))
+        {
+            throw new InvalidOperationException(
+                "PROMOGEST_DATA_PROTECTION_CERT_PASSWORD must be supplied by the Linux service environment.");
+        }
+
+        var dataProtectionCertificate = X509CertificateLoader.LoadPkcs12FromFile(
+            certificatePath,
+            certificatePassword,
+            X509KeyStorageFlags.EphemeralKeySet);
+
+        if (!dataProtectionCertificate.HasPrivateKey)
+        {
+            dataProtectionCertificate.Dispose();
+            throw new InvalidOperationException(
+                "The Linux Data Protection certificate must contain its private key.");
+        }
+
+        dpBuilder.ProtectKeysWithCertificate(dataProtectionCertificate);
+    }
+    else
+    {
+        throw new PlatformNotSupportedException(
+            "PROMO GEST requires Windows DPAPI or a Linux X.509 Data Protection certificate for key-at-rest protection.");
+    }
 }
 
 builder.Services.AddAntiforgery(options =>

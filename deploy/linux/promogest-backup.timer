@@ -1,0 +1,11 @@
+[Unit]
+Description=Daily PROMO GEST backup schedule
+
+[Timer]
+OnCalendar=*-*-* 22:00:00
+Persistent=true
+RandomizedDelaySec=5m
+Unit=promogest-backup.service
+
+[Install]
+WantedBy=timers.target

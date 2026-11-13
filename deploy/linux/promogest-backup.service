@@ -1,0 +1,27 @@
+[Unit]
+Description=PROMO GEST consistent database, storage, and key-ring backup
+After=postgresql.service
+Requires=postgresql.service
+
+[Service]
+Type=oneshot
+User=root
+Group=root
+WorkingDirectory=/opt/promogest/app
+EnvironmentFile=/etc/promogest/promogest.env
+Environment=PGPASSFILE=/etc/promogest/pgpass
+Environment=PROMOGEST_BACKUP_ROOT=/var/backups/promogest
+Environment=PROMOGEST_SYSTEMD_PROTECT_HOME=true
+ExecStart=/usr/local/sbin/backup-promogest.sh
+UMask=0077
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectControlGroups=true
+RestrictSUIDSGID=true
+LockPersonality=true
+ReadOnlyPaths=/opt/promogest/app /var/lib/promogest /etc/caddy
+ReadWritePaths=/var/backups/promogest

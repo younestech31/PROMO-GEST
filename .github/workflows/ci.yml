@@ -2,44 +2,70 @@ name: PROMO GEST CI
 
 on:
   push:
-    branches: [main]
+    branches: [main, "fix/**"]
   pull_request:
     branches: [main]
 
+permissions:
+  contents: read
+
 jobs:
   frontend:
-    name: Frontend Typecheck, Unit Tests & Production Build
+    name: Frontend install, checks, and static hosting
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
         with:
           node-version: "22"
-      - name: Install Dependencies
+          cache: npm
+      - name: Install locked dependencies
         run: npm ci --no-audit --no-fund
-      - name: Lint
+      - name: TypeScript strict check
         run: npm run lint
-      - name: Build Frontend
+      - name: Frontend unit tests
+        run: npm test
+      - name: Build frontend
         run: npm run build
-      - name: Verify Build Output Exists
+      - name: Verify frontend production output
+        shell: bash
         run: |
-          if [ ! -d "apps/local-web/dist" ]; then
-            echo "ERROR: apps/local-web/dist directory missing!" >&2
+          set -euo pipefail
+          test -s apps/local-web/dist/index.html
+          if ! find apps/local-web/dist -type f \( -name '*.js' -o -name '*.css' \) -print -quit | grep -q .; then
+            echo "Missing frontend JavaScript/CSS assets" >&2
             exit 1
           fi
-          if [ ! -f "apps/local-web/dist/index.html" ]; then
-            echo "ERROR: index.html missing in build output!" >&2
+          if grep -R -n -E 'dev-api-middleware|createPromoGestDevApiPlugin|ViteDevContractPreview' apps/local-web/dist; then
+            echo "Development preview code leaked into production frontend." >&2
             exit 1
           fi
-      - name: Verify dev middleware is not bundled into production dist
+      - name: Build frontend into ASP.NET Core wwwroot
+        run: npm run build:aspnetcore
+      - name: Verify ASP.NET Core static hosting output
+        shell: bash
         run: |
-          if grep -rn "dev-api-middleware\|createPromoGestDevApiPlugin\|ViteDevContractPreview" apps/local-web/dist; then
-            echo "ERROR: Dev preview middleware leaked into production dist!" >&2
+          set -euo pipefail
+          test -s src/PromoGest.Api/wwwroot/index.html
+          if ! find src/PromoGest.Api/wwwroot -type f \( -name '*.js' -o -name '*.css' \) -print -quit | grep -q .; then
+            echo "Missing wwwroot JavaScript/CSS assets" >&2
             exit 1
           fi
+          if grep -R -n -E 'dev-api-middleware|createPromoGestDevApiPlugin|ViteDevContractPreview' src/PromoGest.Api/wwwroot; then
+            echo "Development preview code leaked into ASP.NET Core wwwroot." >&2
+            exit 1
+          fi
+      - name: Upload verified production SPA assets
+        uses: actions/upload-artifact@v7
+        with:
+          name: promogest-wwwroot
+          path: src/PromoGest.Api/wwwroot/
+          if-no-files-found: error
+          retention-days: 1
 
   backend-and-postgres:
-    name: .NET 10 Build, Unit Tests & PostgreSQL 18 Integration Tests (Least-Privilege Roles)
+    name: .NET 10 and PostgreSQL 18 least-privilege tests
+    needs: frontend
     runs-on: ubuntu-latest
     services:
       postgres:
@@ -51,48 +77,893 @@ jobs:
         ports:
           - 5432:5432
         options: >-
-          --health-cmd pg_isready
+          --health-cmd "pg_isready -U postgres"
           --health-interval 10s
           --health-timeout 5s
-          --health-retries 5
+          --health-retries 10
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-dotnet@v4
+      - uses: actions/checkout@v7
+      - uses: actions/download-artifact@v8
+        with:
+          name: promogest-wwwroot
+          path: src/PromoGest.Api/wwwroot
+      - uses: actions/setup-dotnet@v6
         with:
           dotnet-version: "10.0.x"
-      - name: Restore Solution
+      - name: Restore solution
         run: dotnet restore src/PromoGest.sln
-      - name: Build Solution (Warnings as Errors)
+      - name: Build solution with warnings as errors
         run: dotnet build src/PromoGest.sln --configuration Release --no-restore
-      - name: Domain Tests
+      - name: Publish Linux runtime artifact
+        run: dotnet publish src/PromoGest.Api/PromoGest.Api.csproj --configuration Release --runtime linux-x64 --self-contained true --output artifacts/linux-x64
+      - name: Verify Linux published executable
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -x artifacts/linux-x64/PromoGest.Api
+          test -s artifacts/linux-x64/PromoGest.Api.dll
+      - name: Validate Linux shell scripts
+        shell: bash
+        run: |
+          set -euo pipefail
+          for script in scripts/*.sh; do
+            bash -n "$script"
+          done
+          if grep -nF '\${' scripts/*.sh; then
+            echo "Escaped Bash parameter expansion found in a shell script." >&2
+            exit 1
+          fi
+      - name: Domain tests
         run: dotnet test tests/PromoGest.Domain.Tests/PromoGest.Domain.Tests.csproj --configuration Release --no-build
-      - name: Application Security Tests
+      - name: Application tests
         run: dotnet test tests/PromoGest.Application.Tests/PromoGest.Application.Tests.csproj --configuration Release --no-build
-      - name: Provision Roles & Database in PostgreSQL 18
-        run: |
-          PGPASSWORD=postgres_password psql -h localhost -U postgres -c "
-            CREATE ROLE promogest_owner WITH LOGIN PASSWORD 'owner_pass' CREATEDB;
-            CREATE ROLE promogest_app WITH LOGIN PASSWORD 'app_pass';
-            CREATE DATABASE promogest OWNER promogest_owner;
-          "
-          PGPASSWORD=postgres_password psql -h localhost -U postgres -d promogest -c "
-            GRANT USAGE ON SCHEMA public TO promogest_app;
-            ALTER DEFAULT PRIVILEGES FOR ROLE promogest_owner IN SCHEMA public GRANT SELECT, INSERT, UPDATE, DELETE ON TABLES TO promogest_app;
-            ALTER DEFAULT PRIVILEGES FOR ROLE promogest_owner IN SCHEMA public GRANT USAGE, SELECT ON SEQUENCES TO promogest_app;
-          "
-      - name: PostgreSQL 18 Integration Tests (Migrations as Owner, Workflows as App Role)
+      - name: Provision PostgreSQL identities and initial database
         env:
-          PROMOGEST_TEST_DB_CONNECTION: Host=localhost;Port=5432;Database=promogest;Username=promogest_app;Password=app_pass
-          PROMOGEST_MIGRATE_DB_CONNECTION: Host=localhost;Port=5432;Database=promogest;Username=promogest_owner;Password=owner_pass
-        run: dotnet test tests/PromoGest.IntegrationTests/PromoGest.IntegrationTests.csproj --configuration Release --no-build
-
-  powershell-and-publish:
-    name: PowerShell Syntax & Publish Verification
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - name: Install PowerShell (pwsh)
-        run: sudo apt-get update && sudo apt-get install -y powershell
-      - name: Syntax Check PowerShell Scripts
+          PGPASSWORD: postgres_password
         run: |
-          pwsh -Command "Get-ChildItem -Path scripts, deploy -Recurse -Filter *.ps1 | ForEach-Object { \$null = [System.Management.Automation.Language.Parser]::ParseFile(\$_.FullName, [ref]\$null, [ref]\$null); Write-Host 'Validated syntax: ' \$_.FullName }"
+          set -euo pipefail
+          psql -h localhost -U postgres -d postgres -v ON_ERROR_STOP=1 <<'SQL'
+          CREATE ROLE promogest_owner WITH LOGIN NOSUPERUSER NOCREATEDB NOCREATEROLE NOINHERIT PASSWORD 'owner_pass';
+          CREATE ROLE promogest_app WITH LOGIN NOSUPERUSER NOCREATEDB NOCREATEROLE NOINHERIT PASSWORD 'app_pass';
+          CREATE DATABASE promogest_ci OWNER promogest_owner;
+          GRANT CONNECT ON DATABASE promogest_ci TO promogest_app;
+          SQL
+      - name: Apply migrations and seed roles as migration owner
+        env:
+          PROMOGEST_MIGRATE_DB_CONNECTION: Host=localhost;Port=5432;Database=promogest_ci;Username=promogest_owner;Password=owner_pass
+        run: dotnet run --project src/PromoGest.Api/PromoGest.Api.csproj --configuration Release --no-build -- --migrate
+      - name: Run integration tests with separate database identities
+        env:
+          PROMOGEST_TEST_PROVISION_DB_CONNECTION: Host=localhost;Port=5432;Database=postgres;Username=postgres;Password=postgres_password
+          PROMOGEST_TEST_MIGRATE_DB_CONNECTION: Host=localhost;Port=5432;Database=promogest_ci;Username=promogest_owner;Password=owner_pass
+          PROMOGEST_TEST_DB_CONNECTION: Host=localhost;Port=5432;Database=promogest_ci;Username=promogest_app;Password=app_pass
+        run: dotnet test tests/PromoGest.IntegrationTests/PromoGest.IntegrationTests.csproj --configuration Release --no-build
+      - name: Run full database, storage, and Data Protection restore drill
+        env:
+          PGHOST: localhost
+          PGPORT: "5432"
+          PGUSER: promogest_owner
+          PGPROVISION_USER: postgres
+          PROMOGEST_APP_USER: promogest_app
+          PROMOGEST_DATA_PROTECTION_CERT_PASSWORD: Restore-CI-Pfx-Password-2026
+          PGPASSFILE: ${{ runner.temp }}/promogest.pgpass
+        shell: bash
+        run: |
+          set -euo pipefail
+          printf '%s\n' \
+            'localhost:5432:*:postgres:postgres_password' \
+            'localhost:5432:*:promogest_owner:owner_pass' \
+            'localhost:5432:*:promogest_app:app_pass' > "$PGPASSFILE"
+          chmod 600 "$PGPASSFILE"
+
+          storage_root="$RUNNER_TEMP/promogest-storage"
+          key_root="$RUNNER_TEMP/promogest-dpkeys"
+          config_path="$RUNNER_TEMP/config/appsettings.json"
+          mkdir -p "$storage_root/organization/2026/11" "$key_root" "$(dirname "$config_path")"
+          printf 'PROMO GEST restore verification file\n' > "$storage_root/organization/2026/11/restore-probe.bin"
+          printf '<key id="ci-restore-probe">test-only-key-material</key>\n' > "$key_root/key-ci-probe.xml"
+          openssl req -x509 -newkey rsa:2048 -nodes \
+            -keyout "$RUNNER_TEMP/promogest-dp.key" \
+            -out "$RUNNER_TEMP/promogest-dp.crt" \
+            -days 2 -subj "/CN=PromoGest CI Data Protection"
+          openssl pkcs12 -export -out "$key_root/protection.pfx" \
+            -inkey "$RUNNER_TEMP/promogest-dp.key" \
+            -in "$RUNNER_TEMP/promogest-dp.crt" \
+            -passout env:PROMOGEST_DATA_PROTECTION_CERT_PASSWORD
+          rm -f "$RUNNER_TEMP/promogest-dp.key" "$RUNNER_TEMP/promogest-dp.crt"
+          printf '%s\n' '{"ConnectionStrings":{"DefaultConnection":"Host=localhost;Port=5432;Database=promogest_ci;Username=promogest_app;Password=app_pass"},"Storage":{"RootDirectory":"/tmp/promogest-storage"},"Security":{"RequireHttpsCookies":true,"TokenLifetimeMinutes":30,"PrivateKeyPath":"/var/lib/promogest/keys/private.key","JwtSecret":"LINUX-JWT-SECRET-DO-NOT-BACKUP","JwtSecretKey":"LINUX-JWT-SECRET-KEY-DO-NOT-BACKUP","EncryptionKey":"LINUX-ENCRYPTION-KEY-DO-NOT-BACKUP","ApiToken":"LINUX-API-TOKEN-DO-NOT-BACKUP","SigningKey":"LINUX-SIGNING-KEY-DO-NOT-BACKUP"},"External":{"ClientSecret":"LINUX-CLIENT-SECRET-DO-NOT-BACKUP","DisplayName":"CI fixture"}}' > "$config_path"
+
+          probe_file="$storage_root/organization/2026/11/restore-probe.bin"
+          probe_hash="$(sha256sum "$probe_file" | awk '{print $1}')"
+          probe_size="$(stat -c '%s' "$probe_file")"
+
+          psql --host="$PGHOST" --port="$PGPORT" --username="$PGUSER" --dbname=promogest_ci \
+            --set=ON_ERROR_STOP=1 --set=probe_hash="$probe_hash" --set=probe_size="$probe_size" <<'SQL'
+          WITH probe_user AS (
+              INSERT INTO users (
+                  id, username, normalized_username, full_name, email, normalized_email, phone,
+                  password_hash, is_system_administrator, is_active, preferred_language,
+                  failed_login_attempts, lockout_end_utc, last_login_at_utc, security_stamp,
+                  created_at_utc, updated_at_utc, concurrency_stamp
+              )
+              VALUES (
+                  gen_random_uuid(), 'backup.restore.probe', 'BACKUP.RESTORE.PROBE',
+                  'Backup Restore Probe', 'backup-restore-probe@example.invalid',
+                  'BACKUP-RESTORE-PROBE@EXAMPLE.INVALID', NULL, 'test-only-password-hash',
+                  FALSE, TRUE, 'ar', 0, NULL, NULL, gen_random_uuid(), now(), now(), gen_random_uuid()
+              )
+              RETURNING id
+          )
+          INSERT INTO stored_files (
+              id, original_file_name, stored_relative_path, content_type, size_bytes,
+              sha256_checksum, scope, project_id, uploaded_by_user_id,
+              created_at_utc, updated_at_utc, concurrency_stamp
+          )
+          SELECT gen_random_uuid(), 'restore-probe.bin', 'organization/2026/11/restore-probe.bin',
+                 'application/octet-stream', :'probe_size'::bigint, :'probe_hash',
+                 'Organization', NULL, probe_user.id, now(), now(), gen_random_uuid()
+          FROM probe_user;
+          SQL
+
+          echo "[Linux backup script] Creating a real protected backup bundle as root..."
+          sudo install -d -o root -g root -m 0750 /etc/promogest
+          sudo install -o root -g root -m 0600 "$PGPASSFILE" /etc/promogest/pgpass
+          backup_root="$RUNNER_TEMP/promogest-backups"
+          lock_mode_before="$(stat -c '%a' /run/lock)"
+          sudo env \
+            PGHOST="$PGHOST" PGPORT="$PGPORT" PGUSER="$PGUSER" \
+            PGPASSFILE=/etc/promogest/pgpass \
+            PROMOGEST_DB_NAME=promogest_ci \
+            PROMOGEST_STORAGE_DIR="$storage_root" \
+            PROMOGEST_DATA_PROTECTION_KEY_DIR="$key_root" \
+            PROMOGEST_CONFIG_PATH="$config_path" \
+            PROMOGEST_CADDYFILE_PATH="$GITHUB_WORKSPACE/deploy/linux/Caddyfile" \
+            PROMOGEST_BACKUP_ROOT="$backup_root" \
+            PROMOGEST_DATA_PROTECTION_CERT_PASSWORD="$PROMOGEST_DATA_PROTECTION_CERT_PASSWORD" \
+            bash scripts/backup-promogest.sh
+          bundle_dir="$(sudo find "$backup_root" -mindepth 1 -maxdepth 1 -type d -name 'promogest_backup_*' -print -quit)"
+          test -n "$bundle_dir"
+          sudo test -f "$backup_root/.promogest-backup.lock"
+          test "$(sudo stat -c '%u:%a' "$backup_root/.promogest-backup.lock")" = "0:600"
+          if grep -nF '/run/lock' deploy/linux/promogest-backup.service; then
+            echo "Backup systemd unit must not receive write access to the shared /run/lock directory." >&2
+            exit 1
+          fi
+          for component in database.dump storage.tar.gz dataprotection-keys.tar.gz config-sanitized.tar.gz manifest.sha256; do
+            sudo test -s "$bundle_dir/$component"
+          done
+          sudo bash -c 'cd "$1" && sha256sum -c manifest.sha256' _ "$bundle_dir"
+          sudo tar -xOzf "$bundle_dir/config-sanitized.tar.gz" ./appsettings.Production.sanitized.json > "$RUNNER_TEMP/promogest-config-sanitized.json"
+          python3 - "$RUNNER_TEMP/promogest-config-sanitized.json" <<'PY'
+          import json
+          import pathlib
+          import re
+          import sys
+
+          config = json.loads(pathlib.Path(sys.argv[1]).read_text(encoding="utf-8-sig"))
+          if config.get("Security", {}).get("TokenLifetimeMinutes") != 30:
+              raise SystemExit("Linux sanitizer removed a non-secret token policy value.")
+          if config.get("Security", {}).get("PrivateKeyPath") != "/var/lib/promogest/keys/private.key":
+              raise SystemExit("Linux sanitizer removed a non-secret key path.")
+          sensitive = re.compile(r"(?i)(^connectionstrings?$|(?:password|passwd|pwd|secret|tokens?|credentials?|private.?key|api.?key|access.?key|signing.?key)(?:value|text|string|hash)?$)")
+
+          def check_clean(value):
+              if isinstance(value, dict):
+                  for key, item in value.items():
+                      if sensitive.search(str(key)):
+                          raise SystemExit(f"Linux sanitizer retained sensitive property: {key}")
+                      check_clean(item)
+              elif isinstance(value, list):
+                  for item in value:
+                      check_clean(item)
+
+          check_clean(config)
+          PY
+          rm -f "$RUNNER_TEMP/promogest-config-sanitized.json"
+          lock_mode_after="$(stat -c '%a' /run/lock)"
+          if [[ "$lock_mode_after" != "$lock_mode_before" ]]; then
+            echo "Backup script changed /run/lock permissions ($lock_mode_before -> $lock_mode_after)." >&2
+            exit 1
+          fi
+          sudo env \
+            PGHOST="$PGHOST" PGPORT="$PGPORT" PGUSER="$PGUSER" \
+            PGPROVISION_USER=postgres PROMOGEST_APP_USER=promogest_app \
+            PGPASSFILE=/etc/promogest/pgpass \
+            PROMOGEST_DATA_PROTECTION_CERT_PASSWORD="$PROMOGEST_DATA_PROTECTION_CERT_PASSWORD" \
+            bash scripts/verify-backup-restore.sh promogest_ci "" "" "" "$bundle_dir"
+
+          echo "[Linux restore verifier] Rejecting path-traversal entries from a checksummed production bundle..."
+          malicious_bundle="$RUNNER_TEMP/promogest-malicious-tar-bundle"
+          sudo cp -a "$bundle_dir" "$malicious_bundle"
+          sudo python3 - "$malicious_bundle/storage.tar.gz" <<'PY'
+          import io
+          import sys
+          import tarfile
+
+          with tarfile.open(sys.argv[1], "w:gz") as archive:
+              payload = b"must-not-escape"
+              item = tarfile.TarInfo("../escape.txt")
+              item.size = len(payload)
+              archive.addfile(item, io.BytesIO(payload))
+          PY
+          sudo bash -c 'cd "$1" && sha256sum database.dump storage.tar.gz dataprotection-keys.tar.gz config-sanitized.tar.gz > manifest.sha256' _ "$malicious_bundle"
+          traversal_log="$RUNNER_TEMP/promogest-tar-traversal.log"
+          if sudo env \
+            PGHOST="$PGHOST" PGPORT="$PGPORT" PGUSER="$PGUSER" \
+            PGPROVISION_USER=postgres PROMOGEST_APP_USER=promogest_app \
+            PGPASSFILE=/etc/promogest/pgpass \
+            PROMOGEST_DATA_PROTECTION_CERT_PASSWORD="$PROMOGEST_DATA_PROTECTION_CERT_PASSWORD" \
+            bash scripts/verify-backup-restore.sh promogest_ci "" "" "" "$malicious_bundle" > "$traversal_log" 2>&1; then
+            echo "Linux restore verifier accepted a tar path-traversal entry." >&2
+            exit 1
+          fi
+          grep -F "Unsafe archive path" "$traversal_log" >/dev/null || {
+            cat "$traversal_log" >&2
+            echo "Linux restore verifier failed for an unexpected reason during the traversal probe." >&2
+            exit 1
+          }
+
+          echo "[Linux restore verifier] Rejecting symbolic-link entries from a checksummed production bundle..."
+          sudo python3 - "$malicious_bundle/storage.tar.gz" <<'PY'
+          import sys
+          import tarfile
+
+          with tarfile.open(sys.argv[1], "w:gz") as archive:
+              item = tarfile.TarInfo("linked-outside-storage")
+              item.type = tarfile.SYMTYPE
+              item.linkname = "../../outside"
+              archive.addfile(item)
+          PY
+          sudo bash -c 'cd "$1" && sha256sum database.dump storage.tar.gz dataprotection-keys.tar.gz config-sanitized.tar.gz > manifest.sha256' _ "$malicious_bundle"
+          symlink_log="$RUNNER_TEMP/promogest-tar-symlink.log"
+          if sudo env \
+            PGHOST="$PGHOST" PGPORT="$PGPORT" PGUSER="$PGUSER" \
+            PGPROVISION_USER=postgres PROMOGEST_APP_USER=promogest_app \
+            PGPASSFILE=/etc/promogest/pgpass \
+            PROMOGEST_DATA_PROTECTION_CERT_PASSWORD="$PROMOGEST_DATA_PROTECTION_CERT_PASSWORD" \
+            bash scripts/verify-backup-restore.sh promogest_ci "" "" "" "$malicious_bundle" > "$symlink_log" 2>&1; then
+            echo "Linux restore verifier accepted a tar symbolic-link entry." >&2
+            exit 1
+          fi
+          grep -F "Links/devices are not allowed" "$symlink_log" >/dev/null || {
+            cat "$symlink_log" >&2
+            echo "Linux restore verifier failed for an unexpected reason during the symlink probe." >&2
+            exit 1
+          }
+          sudo rm -rf -- "$malicious_bundle"
+          rm -f -- "$traversal_log" "$symlink_log"
+
+          echo "[Linux backup script] Verifying failed backups are cleaned and the service is restarted..."
+          fake_systemd_dir="$RUNNER_TEMP/promogest-fake-systemctl"
+          failed_backup_root="$RUNNER_TEMP/promogest-failed-backups"
+          systemd_state="$RUNNER_TEMP/promogest-systemd-state"
+          mkdir -p "$fake_systemd_dir"
+          cat > "$fake_systemd_dir/systemctl" <<'SYSTEMCTL'
+          #!/usr/bin/env bash
+          set -euo pipefail
+          case "${1:-}" in
+            show) cat "$PROMOGEST_TEST_SYSTEMD_STATE" ;;
+            stop) printf 'inactive\n' > "$PROMOGEST_TEST_SYSTEMD_STATE" ;;
+            start) printf 'active\n' > "$PROMOGEST_TEST_SYSTEMD_STATE" ;;
+            *) echo "Unexpected fake systemctl command: ${1:-}" >&2; exit 2 ;;
+          esac
+          SYSTEMCTL
+          chmod 0755 "$fake_systemd_dir/systemctl"
+          printf 'active\n' > "$systemd_state"
+          if sudo env \
+            PATH="$fake_systemd_dir:$PATH" \
+            PGHOST=127.0.0.1 PGPORT=1 PGUSER="$PGUSER" \
+            PGPASSFILE=/etc/promogest/pgpass \
+            PROMOGEST_TEST_SYSTEMD_STATE="$systemd_state" \
+            PROMOGEST_SERVICE_NAME=promogest-failure-probe.service \
+            PROMOGEST_DB_NAME=promogest_ci \
+            PROMOGEST_STORAGE_DIR="$storage_root" \
+            PROMOGEST_DATA_PROTECTION_KEY_DIR="$key_root" \
+            PROMOGEST_CONFIG_PATH="$config_path" \
+            PROMOGEST_CADDYFILE_PATH="$GITHUB_WORKSPACE/deploy/linux/Caddyfile" \
+            PROMOGEST_BACKUP_ROOT="$failed_backup_root" \
+            PROMOGEST_DATA_PROTECTION_CERT_PASSWORD="$PROMOGEST_DATA_PROTECTION_CERT_PASSWORD" \
+            bash scripts/backup-promogest.sh; then
+            echo "Backup unexpectedly succeeded while PostgreSQL was unreachable." >&2
+            exit 1
+          fi
+          test "$(cat "$systemd_state")" = "active"
+          remaining_partial="$(sudo find "$failed_backup_root" -mindepth 1 -maxdepth 1 -type d -name 'promogest_backup_*' -print -quit)"
+          test -z "$remaining_partial"
+
+          echo "[Linux backup script] Verifying transitional systemd states are rejected..."
+          transient_backup_root="$RUNNER_TEMP/promogest-transient-backups"
+          printf 'activating\n' > "$systemd_state"
+          if sudo env \
+            PATH="$fake_systemd_dir:$PATH" \
+            PGHOST="$PGHOST" PGPORT="$PGPORT" PGUSER="$PGUSER" \
+            PGPASSFILE=/etc/promogest/pgpass \
+            PROMOGEST_TEST_SYSTEMD_STATE="$systemd_state" \
+            PROMOGEST_SERVICE_NAME=promogest-transient-probe.service \
+            PROMOGEST_DB_NAME=promogest_ci \
+            PROMOGEST_STORAGE_DIR="$storage_root" \
+            PROMOGEST_DATA_PROTECTION_KEY_DIR="$key_root" \
+            PROMOGEST_CONFIG_PATH="$config_path" \
+            PROMOGEST_CADDYFILE_PATH="$GITHUB_WORKSPACE/deploy/linux/Caddyfile" \
+            PROMOGEST_BACKUP_ROOT="$transient_backup_root" \
+            PROMOGEST_DATA_PROTECTION_CERT_PASSWORD="$PROMOGEST_DATA_PROTECTION_CERT_PASSWORD" \
+            bash scripts/backup-promogest.sh; then
+            echo "Backup unexpectedly proceeded while the service was activating." >&2
+            exit 1
+          fi
+          test "$(cat "$systemd_state")" = "activating"
+          remaining_transient="$(sudo find "$transient_backup_root" -mindepth 1 -maxdepth 1 -type d -name 'promogest_backup_*' -print -quit)"
+          test -z "$remaining_transient"
+          sudo rm -rf -- "$failed_backup_root" "$transient_backup_root" "$fake_systemd_dir"
+          rm -f -- "$systemd_state"
+          echo "Verified failed-backup cleanup, service restart, and transitional-state rejection."
+
+          echo "[Linux backup script] Verifying unsafe backup destinations are rejected..."
+          if sudo env \
+            PGHOST="$PGHOST" PGPORT="$PGPORT" PGUSER="$PGUSER" \
+            PGPASSFILE=/etc/promogest/pgpass \
+            PROMOGEST_DATA_PROTECTION_CERT_PASSWORD="$PROMOGEST_DATA_PROTECTION_CERT_PASSWORD" \
+            PROMOGEST_DB_NAME=promogest_ci \
+            PROMOGEST_STORAGE_DIR="$storage_root" \
+            PROMOGEST_DATA_PROTECTION_KEY_DIR="$key_root" \
+            PROMOGEST_CONFIG_PATH="$config_path" \
+            PROMOGEST_CADDYFILE_PATH="$GITHUB_WORKSPACE/deploy/linux/Caddyfile" \
+            PROMOGEST_BACKUP_ROOT="$storage_root/backup-under-storage" \
+            bash scripts/backup-promogest.sh; then
+            echo "Backup script accepted a destination nested inside document storage." >&2
+            exit 1
+          fi
+
+          echo "[Linux backup script] Verifying shared system backup roots are rejected..."
+          if sudo env \
+            PGHOST="$PGHOST" PGPORT="$PGPORT" PGUSER="$PGUSER" \
+            PGPASSFILE=/etc/promogest/pgpass \
+            PROMOGEST_DATA_PROTECTION_CERT_PASSWORD="$PROMOGEST_DATA_PROTECTION_CERT_PASSWORD" \
+            PROMOGEST_DB_NAME=promogest_ci \
+            PROMOGEST_STORAGE_DIR="$storage_root" \
+            PROMOGEST_DATA_PROTECTION_KEY_DIR="$key_root" \
+            PROMOGEST_CONFIG_PATH="$config_path" \
+            PROMOGEST_CADDYFILE_PATH="$GITHUB_WORKSPACE/deploy/linux/Caddyfile" \
+            PROMOGEST_BACKUP_ROOT=/var/backups \
+            bash scripts/backup-promogest.sh; then
+            echo "Backup script accepted the shared /var/backups directory." >&2
+            exit 1
+          fi
+
+          echo "[Linux backup script] Verifying ProtectHome paths are rejected only in systemd mode..."
+          if sudo env \
+            PGHOST="$PGHOST" PGPORT="$PGPORT" PGUSER="$PGUSER" \
+            PGPASSFILE=/etc/promogest/pgpass \
+            PROMOGEST_DATA_PROTECTION_CERT_PASSWORD="$PROMOGEST_DATA_PROTECTION_CERT_PASSWORD" \
+            PROMOGEST_SYSTEMD_PROTECT_HOME=true \
+            PROMOGEST_DB_NAME=promogest_ci \
+            PROMOGEST_STORAGE_DIR="$storage_root" \
+            PROMOGEST_DATA_PROTECTION_KEY_DIR="$key_root" \
+            PROMOGEST_CONFIG_PATH="$config_path" \
+            PROMOGEST_CADDYFILE_PATH="$GITHUB_WORKSPACE/deploy/linux/Caddyfile" \
+            PROMOGEST_BACKUP_ROOT="$RUNNER_TEMP/protected-home-backup-probe" \
+            bash scripts/backup-promogest.sh; then
+            echo "Backup script accepted a protected-home destination in systemd mode." >&2
+            exit 1
+          fi
+
+          echo "[Linux backup script] Verifying linked Data Protection roots are rejected..."
+          key_root_link="$RUNNER_TEMP/promogest-dpkeys-link"
+          ln -s "$key_root" "$key_root_link"
+          if sudo env \
+            PGHOST="$PGHOST" PGPORT="$PGPORT" PGUSER="$PGUSER" \
+            PGPASSFILE=/etc/promogest/pgpass \
+            PROMOGEST_DATA_PROTECTION_CERT_PASSWORD="$PROMOGEST_DATA_PROTECTION_CERT_PASSWORD" \
+            PROMOGEST_DB_NAME=promogest_ci \
+            PROMOGEST_STORAGE_DIR="$storage_root" \
+            PROMOGEST_DATA_PROTECTION_KEY_DIR="$key_root_link" \
+            PROMOGEST_CONFIG_PATH="$config_path" \
+            PROMOGEST_CADDYFILE_PATH="$GITHUB_WORKSPACE/deploy/linux/Caddyfile" \
+            PROMOGEST_BACKUP_ROOT="$RUNNER_TEMP/promogest-symlink-backup-probe" \
+            bash scripts/backup-promogest.sh; then
+            echo "Backup script accepted a symbolic-link Data Protection root." >&2
+            exit 1
+          fi
+
+  windows-publish-and-powershell:
+    name: Windows publish and PowerShell validation
+    needs: frontend
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/download-artifact@v8
+        with:
+          name: promogest-wwwroot
+          path: src/PromoGest.Api/wwwroot
+      - uses: actions/setup-dotnet@v6
+        with:
+          dotnet-version: "10.0.x"
+      - name: Restore solution
+        run: dotnet restore src/PromoGest.sln
+      - name: Build solution
+        run: dotnet build src/PromoGest.sln --configuration Release --no-restore
+      - name: Verify Windows machine-scoped Data Protection key-ring recovery
+        run: dotnet test tests/PromoGest.IntegrationTests/PromoGest.IntegrationTests.csproj --configuration Release --no-build --filter FullyQualifiedName~WindowsDpapiMachineScopeTests
+      - name: Publish Windows x64 application
+        run: dotnet publish src/PromoGest.Api/PromoGest.Api.csproj --configuration Release --runtime win-x64 --self-contained true --output artifacts/win-x64
+      - name: Validate PowerShell scripts
+        shell: pwsh
+        run: |
+          $files = Get-ChildItem -Path scripts, deploy -Recurse -Filter *.ps1
+          foreach ($file in $files) {
+            $tokens = $null
+            $errors = $null
+            [System.Management.Automation.Language.Parser]::ParseFile($file.FullName, [ref]$tokens, [ref]$errors) | Out-Null
+            if ($errors.Count -gt 0) {
+              $errors | ForEach-Object {
+                Write-Error "$($file.FullName):$($_.Extent.StartLineNumber):$($_.Extent.StartColumnNumber): $($_.Message)"
+              }
+              exit 1
+            }
+            Write-Host "Validated syntax: $($file.FullName)"
+          }
+
+          $backupScriptPath = Join-Path (Get-Location).Path "scripts/backup-promogest.ps1"
+          $backupTokens = $null
+          $backupParseErrors = $null
+          $backupAst = [System.Management.Automation.Language.Parser]::ParseFile(
+            $backupScriptPath,
+            [ref]$backupTokens,
+            [ref]$backupParseErrors
+          )
+          $sensitiveHelperAst = $backupAst.Find({
+            param($node)
+            $node -is [System.Management.Automation.Language.FunctionDefinitionAst] -and
+              $node.Name -eq "Remove-PromoGestSensitiveConfigProperties"
+          }, $true)
+          if ($null -eq $sensitiveHelperAst) {
+            throw "Production backup sensitive-property sanitizer helper was not found."
+          }
+          . ([ScriptBlock]::Create($sensitiveHelperAst.Extent.Text))
+
+          $sanitizerAst = $backupAst.Find({
+            param($node)
+            $node -is [System.Management.Automation.Language.FunctionDefinitionAst] -and
+              $node.Name -eq "Write-PromoGestSanitizedConfig"
+          }, $true)
+          if ($null -eq $sanitizerAst) {
+            throw "Production backup configuration sanitizer function was not found."
+          }
+          . ([ScriptBlock]::Create($sanitizerAst.Extent.Text))
+
+          $sanitizerSourcePath = Join-Path $env:RUNNER_TEMP "promogest-sanitizer-source.json"
+          $sanitizerOutputPath = Join-Path $env:RUNNER_TEMP "promogest-sanitizer-output.json"
+          $sanitizerProbe = [PSCustomObject]@{
+            ConnectionStrings = [PSCustomObject]@{
+              DefaultConnection = "Host=127.0.0.1;Database=promogest;Password=DEFAULT-DB-SECRET-DO-NOT-BACKUP"
+              ReportingConnection = "Host=127.0.0.1;Database=reporting;Password=SECOND-DB-SECRET-DO-NOT-BACKUP"
+            }
+            Storage = [PSCustomObject]@{ RootDirectory = "C:\PromoGest\storage" }
+            Security = [PSCustomObject]@{
+              RequireHttpsCookies = $true
+              TokenLifetimeMinutes = 30
+              PrivateKeyPath = "C:\\PromoGest\\keys\\private.key"
+              JwtSecret = "WINDOWS-JWT-SECRET-DO-NOT-BACKUP"
+              JwtSecretKey = "WINDOWS-JWT-SECRET-KEY-DO-NOT-BACKUP"
+              EncryptionKey = "WINDOWS-ENCRYPTION-KEY-DO-NOT-BACKUP"
+              ApiToken = "WINDOWS-API-TOKEN-DO-NOT-BACKUP"
+              SigningKey = "WINDOWS-SIGNING-KEY-DO-NOT-BACKUP"
+            }
+            External = [PSCustomObject]@{
+              ClientSecret = "WINDOWS-CLIENT-SECRET-DO-NOT-BACKUP"
+              DisplayName = "CI fixture"
+            }
+          }
+          $sanitizerProbe | ConvertTo-Json -Depth 8 |
+            Set-Content -LiteralPath $sanitizerSourcePath -Encoding UTF8
+          Write-PromoGestSanitizedConfig -SourcePath $sanitizerSourcePath -DestinationPath $sanitizerOutputPath
+
+          $sanitizedText = Get-Content -LiteralPath $sanitizerOutputPath -Raw
+          if ($sanitizedText -match 'ConnectionStrings|DEFAULT-DB-SECRET-DO-NOT-BACKUP|SECOND-DB-SECRET-DO-NOT-BACKUP|JwtSecret|JwtSecretKey|EncryptionKey|ApiToken|SigningKey|ClientSecret|WINDOWS-.*DO-NOT-BACKUP') {
+            throw "Windows backup configuration sanitizer leaked a connection string or nested secret-bearing configuration field."
+          }
+          $sanitizedObject = $sanitizedText | ConvertFrom-Json
+          if ($null -eq $sanitizedObject.Storage -or $null -eq $sanitizedObject.Security) {
+            throw "Windows backup configuration sanitizer removed required non-secret configuration sections."
+          }
+          if ($sanitizedObject.Security.TokenLifetimeMinutes -ne 30 -or
+              $sanitizedObject.Security.PrivateKeyPath -ne "C:\\PromoGest\\keys\\private.key") {
+            throw "Windows backup configuration sanitizer removed non-secret policy or key-path settings."
+          }
+          Remove-Item -LiteralPath $sanitizerSourcePath, $sanitizerOutputPath -Force
+          Write-Host "Verified production configuration sanitizer removes every connection string and preserves required settings."
+
+          $installerScriptPath = Join-Path (Get-Location).Path "deploy/windows/install-service.ps1"
+          $installerTokens = $null
+          $installerParseErrors = $null
+          $installerAst = [System.Management.Automation.Language.Parser]::ParseFile(
+            $installerScriptPath,
+            [ref]$installerTokens,
+            [ref]$installerParseErrors
+          )
+          $bindFunctionAst = $installerAst.Find({
+            param($node)
+            $node -is [System.Management.Automation.Language.FunctionDefinitionAst] -and
+              $node.Name -eq "Assert-PromoGestLoopbackBindUrl"
+          }, $true)
+          if ($null -eq $bindFunctionAst) {
+            throw "Production loopback bind validator was not found."
+          }
+          . ([ScriptBlock]::Create($bindFunctionAst.Extent.Text))
+          Assert-PromoGestLoopbackBindUrl -Value "http://127.0.0.1:5080"
+          Assert-PromoGestLoopbackBindUrl -Value "http://[::1]:5080"
+
+          $unsafeBindUrls = @(
+            "http://0.0.0.0:5080",
+            "http://192.168.1.50:5080",
+            "https://127.0.0.1:5080",
+            "http://127.0.0.1:5080/admin",
+            "http://127.0.0.1:5080;http://0.0.0.0:5080"
+          )
+          foreach ($unsafeBindUrl in $unsafeBindUrls) {
+            $bindRejected = $false
+            try {
+              Assert-PromoGestLoopbackBindUrl -Value $unsafeBindUrl
+            }
+            catch {
+              $bindRejected = $true
+            }
+            if (-not $bindRejected) {
+              throw "Production installer accepted an unsafe Kestrel BindUrl: $unsafeBindUrl"
+            }
+          }
+          Write-Host "Verified Kestrel accepts loopback-only HTTP URLs and rejects LAN/WAN, HTTPS-bypass, path, and multi-URL bindings."
+
+          Add-Type -AssemblyName System.IO.Compression.FileSystem
+          $zipSource = Join-Path $env:RUNNER_TEMP "promogest-zip-smoke-source"
+          $zipPath = Join-Path $env:RUNNER_TEMP "promogest-zip-smoke.zip"
+          New-Item -ItemType Directory -Force -Path $zipSource | Out-Null
+          [System.IO.File]::WriteAllText((Join-Path $zipSource ".hidden-probe"), "hidden-file-included")
+          [System.IO.File]::WriteAllText((Join-Path $zipSource "ordinary-probe.txt"), "ordinary-file-included")
+          [System.IO.Compression.ZipFile]::CreateFromDirectory(
+            $zipSource,
+            $zipPath,
+            [System.IO.Compression.CompressionLevel]::Optimal,
+            $false
+          )
+          $zip = [System.IO.Compression.ZipFile]::OpenRead($zipPath)
+          try {
+            $entryNames = @($zip.Entries | ForEach-Object { $_.FullName })
+            if ($entryNames -notcontains ".hidden-probe" -or $entryNames -notcontains "ordinary-probe.txt") {
+              throw "Windows backup ZIP smoke test failed to include hidden and ordinary files."
+            }
+          }
+          finally {
+            $zip.Dispose()
+          }
+          Remove-Item -LiteralPath $zipPath, $zipSource -Recurse -Force
+          Write-Host "Verified ZIP creation includes hidden and ordinary files."
+
+          $lockPath = Join-Path $env:RUNNER_TEMP "promogest-lock-smoke.lock"
+          $firstLock = [System.IO.File]::Open(
+            $lockPath,
+            [System.IO.FileMode]::OpenOrCreate,
+            [System.IO.FileAccess]::ReadWrite,
+            [System.IO.FileShare]::None
+          )
+          $secondLockAcquired = $false
+          try {
+            try {
+              $secondLock = [System.IO.File]::Open(
+                $lockPath,
+                [System.IO.FileMode]::OpenOrCreate,
+                [System.IO.FileAccess]::ReadWrite,
+                [System.IO.FileShare]::None
+              )
+              $secondLockAcquired = $true
+              $secondLock.Dispose()
+            }
+            catch [System.IO.IOException] {
+              Write-Host "Verified a concurrent Windows backup lock is rejected."
+            }
+          }
+          finally {
+            $firstLock.Dispose()
+          }
+          if ($secondLockAcquired) {
+            throw "Windows backup lock smoke test allowed a second concurrent lock."
+          }
+          $releasedLock = [System.IO.File]::Open(
+            $lockPath,
+            [System.IO.FileMode]::OpenOrCreate,
+            [System.IO.FileAccess]::ReadWrite,
+            [System.IO.FileShare]::None
+          )
+          $releasedLock.Dispose()
+          Remove-Item -LiteralPath $lockPath -Force
+          Write-Host "Verified the Windows backup lock is released after completion."
+
+          $restoreProbeRoot = Join-Path $env:RUNNER_TEMP "promogest-restore-overlap-smoke"
+          $probeBundle = Join-Path $restoreProbeRoot "bundle"
+          New-Item -ItemType Directory -Force -Path $probeBundle | Out-Null
+          foreach ($component in @("database.dump", "storage.zip", "dataprotection-keys.zip", "config-sanitized.zip", "manifest.sha256")) {
+            [System.IO.File]::WriteAllText((Join-Path $probeBundle $component), "validation-probe")
+          }
+          $restoreScript = Join-Path (Get-Location).Path "scripts/restore-promogest.ps1"
+
+          $junctionTarget = Join-Path $env:RUNNER_TEMP "promogest-backup-junction-target"
+          $backupJunction = Join-Path $env:RUNNER_TEMP "promogest-backup-junction"
+          New-Item -ItemType Directory -Force -Path $junctionTarget | Out-Null
+          New-Item -ItemType Junction -Path $backupJunction -Target $junctionTarget | Out-Null
+          try {
+            $backupScriptBlocked = $false
+            try {
+              & .\scripts\backup-promogest.ps1 -BackupRoot (Join-Path $backupJunction "destination")
+            }
+            catch {
+              $backupScriptBlocked = $_.Exception.Message -like "*junction or symbolic link*"
+            }
+            if (-not $backupScriptBlocked) {
+              throw "Windows backup script did not reject a destination traversing a junction."
+            }
+
+            $installerBlocked = $false
+            try {
+              & .\deploy\windows\install-service.ps1 -BackupRoot (Join-Path $backupJunction "destination")
+            }
+            catch {
+              $installerBlocked = $_.Exception.Message -like "*junction or symbolic link*"
+            }
+            if (-not $installerBlocked) {
+              throw "Windows installer did not reject a backup destination traversing a junction."
+            }
+
+            $installRootReparseBlocked = $false
+            try {
+              & .\deploy\windows\install-service.ps1 -InstallRoot (Join-Path $backupJunction "install-root") -BackupRoot (Join-Path $restoreProbeRoot "external-backups")
+            }
+            catch {
+              $installRootReparseBlocked = $_.Exception.Message -like "*InstallRoot must not traverse a junction or symbolic link*"
+            }
+            if (-not $installRootReparseBlocked) {
+              throw "Windows installer did not reject an InstallRoot traversing a junction."
+            }
+
+            $restoreReparseBlocked = $false
+            try {
+              & $restoreScript -BackupBundleDir $probeBundle -RestoreStorageDir (Join-Path $backupJunction "restore-storage") -RestoreDataProtectionDir (Join-Path $restoreProbeRoot "restore-keys") -RestoreConfigDir (Join-Path $restoreProbeRoot "restore-config")
+            }
+            catch {
+              $restoreReparseBlocked = $_.Exception.Message -like "*junction or symbolic link*"
+            }
+            if (-not $restoreReparseBlocked) {
+              throw "Windows restore script did not reject a destination traversing a junction."
+            }
+
+            $protectedRootReparseBlocked = $false
+            try {
+              & $restoreScript -BackupBundleDir $probeBundle -ProtectedInstallRoot $backupJunction -RestoreStorageDir (Join-Path $restoreProbeRoot "protected-root-storage") -RestoreDataProtectionDir (Join-Path $restoreProbeRoot "protected-root-keys") -RestoreConfigDir (Join-Path $restoreProbeRoot "protected-root-config")
+            }
+            catch {
+              $protectedRootReparseBlocked = $_.Exception.Message -like "*Restore destination must not traverse a junction or symbolic link*"
+            }
+            if (-not $protectedRootReparseBlocked) {
+              throw "Windows restore script did not reject a ProtectedInstallRoot traversing a junction."
+            }
+          }
+          finally {
+            Remove-Item -LiteralPath $backupJunction -Force
+            Remove-Item -LiteralPath $junctionTarget -Recurse -Force
+          }
+          Write-Host "Verified backup, install, and restore scripts reject junction-based destinations."
+
+          $installRootBackupRejected = $false
+          try {
+            & .\deploy\windows\install-service.ps1 -InstallRoot $restoreProbeRoot -BackupRoot $restoreProbeRoot
+          }
+          catch {
+            $installRootBackupRejected = $_.Exception.Message -like "*custom BackupRoot must be outside InstallRoot*"
+          }
+          if (-not $installRootBackupRejected) {
+            throw "Windows installer did not reject BackupRoot equal to InstallRoot."
+          }
+
+          $installParentBackupRejected = $false
+          try {
+            & .\deploy\windows\install-service.ps1 -InstallRoot (Join-Path $restoreProbeRoot "live-install") -BackupRoot $restoreProbeRoot
+          }
+          catch {
+            $installParentBackupRejected = $_.Exception.Message -like "*custom BackupRoot must be outside InstallRoot*"
+          }
+          if (-not $installParentBackupRejected) {
+            throw "Windows installer did not reject BackupRoot containing InstallRoot."
+          }
+
+          $overlapRejected = $false
+          try {
+            & $restoreScript -BackupBundleDir $probeBundle -RestoreStorageDir (Join-Path $restoreProbeRoot "overlap-output") -RestoreDataProtectionDir (Join-Path (Join-Path $restoreProbeRoot "overlap-output") "nested") -RestoreConfigDir (Join-Path $restoreProbeRoot "other-output")
+          }
+          catch {
+            Write-Host "Restore overlap probe returned: $($_.Exception.Message)"
+            $overlapRejected = $_.Exception.Message -like "*distinct and non-overlapping*"
+          }
+          if (-not $overlapRejected) {
+            throw "The production restore script did not reject overlapping restore destinations."
+          }
+
+          $liveRootRejected = $false
+          try {
+            & $restoreScript -BackupBundleDir $probeBundle -ProtectedInstallRoot $restoreProbeRoot -RestoreStorageDir (Join-Path $restoreProbeRoot "live-storage-restore") -RestoreDataProtectionDir (Join-Path $env:RUNNER_TEMP "isolated-restore-keys") -RestoreConfigDir (Join-Path $env:RUNNER_TEMP "isolated-restore-config")
+          }
+          catch {
+            Write-Host "Live installation root probe returned: $($_.Exception.Message)"
+            $liveRootRejected = $_.Exception.Message -like "*outside the live installation root*"
+          }
+          if (-not $liveRootRejected) {
+            throw "The production restore script did not reject an output directory inside the live installation root."
+          }
+
+          $databaseDumpProbe = Join-Path $probeBundle "database.dump"
+          [System.IO.File]::WriteAllText($databaseDumpProbe, "not-a-real-dump")
+          $storageArchiveProbe = Join-Path $probeBundle "storage.zip"
+          $dpArchiveProbe = Join-Path $probeBundle "dataprotection-keys.zip"
+          $configArchiveProbe = Join-Path $probeBundle "config-sanitized.zip"
+          foreach ($archivePath in @($storageArchiveProbe, $dpArchiveProbe, $configArchiveProbe)) {
+            if (Test-Path -LiteralPath $archivePath) {
+              Remove-Item -LiteralPath $archivePath -Force
+            }
+          }
+          $maliciousArchive = [System.IO.Compression.ZipFile]::Open(
+            $storageArchiveProbe,
+            [System.IO.Compression.ZipArchiveMode]::Create
+          )
+          try {
+            $maliciousEntry = $maliciousArchive.CreateEntry("../escape.txt")
+            $maliciousWriter = [System.IO.StreamWriter]::new($maliciousEntry.Open())
+            try { $maliciousWriter.Write("must-not-escape") }
+            finally { $maliciousWriter.Dispose() }
+          }
+          finally {
+            $maliciousArchive.Dispose()
+          }
+          foreach ($archivePath in @($dpArchiveProbe, $configArchiveProbe)) {
+            $emptyArchive = [System.IO.Compression.ZipFile]::Open(
+              $archivePath,
+              [System.IO.Compression.ZipArchiveMode]::Create
+            )
+            $emptyArchive.Dispose()
+          }
+          $manifestFiles = @("database.dump", "storage.zip", "dataprotection-keys.zip", "config-sanitized.zip")
+          $manifestLines = foreach ($name in $manifestFiles) {
+            $fileHash = (Get-FileHash -LiteralPath (Join-Path $probeBundle $name) -Algorithm SHA256).Hash.ToLowerInvariant()
+            "$fileHash  $name"
+          }
+          [System.IO.File]::WriteAllLines(
+            (Join-Path $probeBundle "manifest.sha256"),
+            [string[]]$manifestLines,
+            [System.Text.UTF8Encoding]::new($false)
+          )
+          $unsafeArchiveRejected = $false
+          try {
+            & $restoreScript -BackupBundleDir $probeBundle -TargetDatabase promogest_zip_traversal_probe -RestoreStorageDir (Join-Path $restoreProbeRoot "zip-storage") -RestoreDataProtectionDir (Join-Path $restoreProbeRoot "zip-keys") -RestoreConfigDir (Join-Path $restoreProbeRoot "zip-config")
+          }
+          catch {
+            Write-Host "Unsafe ZIP probe returned: $($_.Exception.Message)"
+            $unsafeArchiveRejected = $_.Exception.Message -like "*Unsafe ZIP entry path*"
+          }
+          if (-not $unsafeArchiveRejected) {
+            throw "The production restore script did not reject a ZIP traversal entry before database access."
+          }
+
+          Remove-Item -LiteralPath $storageArchiveProbe -Force
+          $collisionArchive = [System.IO.Compression.ZipFile]::Open(
+            $storageArchiveProbe,
+            [System.IO.Compression.ZipArchiveMode]::Create
+          )
+          try {
+            foreach ($entryName in @("docs/Report.txt", "docs/report.txt")) {
+              $collisionEntry = $collisionArchive.CreateEntry($entryName)
+              $collisionWriter = [System.IO.StreamWriter]::new($collisionEntry.Open())
+              try { $collisionWriter.Write($entryName) }
+              finally { $collisionWriter.Dispose() }
+            }
+          }
+          finally {
+            $collisionArchive.Dispose()
+          }
+          $manifestLines = foreach ($name in $manifestFiles) {
+            $fileHash = (Get-FileHash -LiteralPath (Join-Path $probeBundle $name) -Algorithm SHA256).Hash.ToLowerInvariant()
+            "$fileHash  $name"
+          }
+          [System.IO.File]::WriteAllLines(
+            (Join-Path $probeBundle "manifest.sha256"),
+            [string[]]$manifestLines,
+            [System.Text.UTF8Encoding]::new($false)
+          )
+          $collisionArchiveRejected = $false
+          try {
+            & $restoreScript -BackupBundleDir $probeBundle -TargetDatabase promogest_zip_collision_probe -RestoreStorageDir (Join-Path $restoreProbeRoot "zip-storage") -RestoreDataProtectionDir (Join-Path $restoreProbeRoot "zip-keys") -RestoreConfigDir (Join-Path $restoreProbeRoot "zip-config")
+          }
+          catch {
+            Write-Host "Case-collision ZIP probe returned: $($_.Exception.Message)"
+            $collisionArchiveRejected = $_.Exception.Message -like "*Duplicate or case-colliding ZIP entry*"
+          }
+          if (-not $collisionArchiveRejected) {
+            throw "The production restore script did not reject case-colliding ZIP entries."
+          }
+
+          Remove-Item -LiteralPath $storageArchiveProbe -Force
+          $reservedNameArchive = [System.IO.Compression.ZipFile]::Open(
+            $storageArchiveProbe,
+            [System.IO.Compression.ZipArchiveMode]::Create
+          )
+          try {
+            $reservedEntry = $reservedNameArchive.CreateEntry("docs/CON.txt")
+            $reservedWriter = [System.IO.StreamWriter]::new($reservedEntry.Open())
+            try { $reservedWriter.Write("reserved-device-name") }
+            finally { $reservedWriter.Dispose() }
+          }
+          finally {
+            $reservedNameArchive.Dispose()
+          }
+          $manifestLines = foreach ($name in $manifestFiles) {
+            $fileHash = (Get-FileHash -LiteralPath (Join-Path $probeBundle $name) -Algorithm SHA256).Hash.ToLowerInvariant()
+            "$fileHash  $name"
+          }
+          [System.IO.File]::WriteAllLines(
+            (Join-Path $probeBundle "manifest.sha256"),
+            [string[]]$manifestLines,
+            [System.Text.UTF8Encoding]::new($false)
+          )
+          $reservedNameRejected = $false
+          try {
+            & $restoreScript -BackupBundleDir $probeBundle -TargetDatabase promogest_zip_reserved_name_probe -RestoreStorageDir (Join-Path $restoreProbeRoot "zip-storage") -RestoreDataProtectionDir (Join-Path $restoreProbeRoot "zip-keys") -RestoreConfigDir (Join-Path $restoreProbeRoot "zip-config")
+          }
+          catch {
+            Write-Host "Reserved-name ZIP probe returned: $($_.Exception.Message)"
+            $reservedNameRejected = $_.Exception.Message -like "*Windows-incompatible ZIP path segment*"
+          }
+          if (-not $reservedNameRejected) {
+            throw "The production restore script did not reject a reserved Windows device name."
+          }
+
+          Remove-Item -LiteralPath $storageArchiveProbe -Force
+          $trailingNameArchive = [System.IO.Compression.ZipFile]::Open(
+            $storageArchiveProbe,
+            [System.IO.Compression.ZipArchiveMode]::Create
+          )
+          try {
+            $trailingEntry = $trailingNameArchive.CreateEntry("docs/trailing-name.")
+            $trailingWriter = [System.IO.StreamWriter]::new($trailingEntry.Open())
+            try { $trailingWriter.Write("trailing-dot-name") }
+            finally { $trailingWriter.Dispose() }
+          }
+          finally {
+            $trailingNameArchive.Dispose()
+          }
+          $manifestLines = foreach ($name in $manifestFiles) {
+            $fileHash = (Get-FileHash -LiteralPath (Join-Path $probeBundle $name) -Algorithm SHA256).Hash.ToLowerInvariant()
+            "$fileHash  $name"
+          }
+          [System.IO.File]::WriteAllLines(
+            (Join-Path $probeBundle "manifest.sha256"),
+            [string[]]$manifestLines,
+            [System.Text.UTF8Encoding]::new($false)
+          )
+          $trailingNameRejected = $false
+          try {
+            & $restoreScript -BackupBundleDir $probeBundle -TargetDatabase promogest_zip_trailing_name_probe -RestoreStorageDir (Join-Path $restoreProbeRoot "zip-storage") -RestoreDataProtectionDir (Join-Path $restoreProbeRoot "zip-keys") -RestoreConfigDir (Join-Path $restoreProbeRoot "zip-config")
+          }
+          catch {
+            Write-Host "Trailing-name ZIP probe returned: $($_.Exception.Message)"
+            $trailingNameRejected = $_.Exception.Message -like "*Windows-incompatible ZIP path segment*"
+          }
+          if (-not $trailingNameRejected) {
+            throw "The production restore script did not reject a Windows-normalized trailing-dot path."
+          }
+
+          foreach ($outputPath in @("zip-storage", "zip-keys", "zip-config")) {
+            if (Test-Path -LiteralPath (Join-Path $restoreProbeRoot $outputPath)) {
+              throw "Unsafe ZIP was rejected too late; restore output was already created: $outputPath"
+            }
+          }
+
+          Remove-Item -LiteralPath $restoreProbeRoot -Recurse -Force
+          Write-Host "Verified the production restore script rejects overlapping destinations before database access."
+
+

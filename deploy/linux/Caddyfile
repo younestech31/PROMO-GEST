@@ -1,0 +1,14 @@
+# Local LAN HTTPS for PROMO GEST. Replace the hostname/IP with the server's reserved LAN address.
+{
+    auto_https disable_redirects
+}
+
+https://promogest.lan {
+    tls internal
+    encode zstd gzip
+
+    reverse_proxy 127.0.0.1:5080 {
+        header_up X-Forwarded-Proto {scheme}
+        header_up X-Forwarded-For {remote_host}
+    }
+}

@@ -42,7 +42,7 @@ export function App() {
       ]);
       setHealth(healthRes);
       setSetupStatus(setupRes);
-      setConnectionState(healthRes.databaseConnected ? 'connected' : 'disconnected');
+      setConnectionState(healthRes.previewMode || healthRes.databaseConnected ? 'connected' : 'disconnected');
 
       if (setupRes.defaultLanguage === 'fr' || setupRes.defaultLanguage === 'ar') {
         setLanguage(setupRes.defaultLanguage);
@@ -82,7 +82,7 @@ export function App() {
       try {
         const h = await apiClient.healthReady();
         setHealth(h);
-        setConnectionState(h.databaseConnected ? 'connected' : 'disconnected');
+        setConnectionState(h.previewMode || h.databaseConnected ? 'connected' : 'disconnected');
       } catch {
         setConnectionState('disconnected');
       }

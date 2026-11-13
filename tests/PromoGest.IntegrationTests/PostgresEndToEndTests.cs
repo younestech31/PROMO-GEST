@@ -19,6 +19,7 @@ using PromoGest.Contracts.Projects;
 using PromoGest.Contracts.Setup;
 using PromoGest.Contracts.Users;
 using PromoGest.Domain.Entities;
+using PromoGest.Infrastructure;
 using PromoGest.Infrastructure.Persistence;
 using Testcontainers.PostgreSql;
 using Xunit;
@@ -122,19 +123,6 @@ public sealed class PostgreSql18IntegrationFixture : IAsyncLifetime
             Database = dbName
         }.ConnectionString;
 
-        await using (var ownerConnection = new NpgsqlConnection(migrationConnection))
-        {
-            await ownerConnection.OpenAsync();
-            await using var grants = new NpgsqlCommand(
-                "GRANT USAGE ON SCHEMA public TO promogest_app; " +
-                "ALTER DEFAULT PRIVILEGES FOR ROLE promogest_owner IN SCHEMA public " +
-                "GRANT SELECT, INSERT, UPDATE, DELETE ON TABLES TO promogest_app; " +
-                "ALTER DEFAULT PRIVILEGES FOR ROLE promogest_owner IN SCHEMA public " +
-                "GRANT USAGE, SELECT ON SEQUENCES TO promogest_app;",
-                ownerConnection);
-            await grants.ExecuteNonQueryAsync();
-        }
-
         var migrationOptions = new DbContextOptionsBuilder<AppDbContext>()
             .UseNpgsql(migrationConnection, npgsql =>
                 npgsql.MigrationsAssembly(typeof(AppDbContext).Assembly.FullName))
@@ -158,6 +146,11 @@ public sealed class PostgreSql18IntegrationFixture : IAsyncLifetime
             }
         }
 
+        // Apply the same post-migration grants used by the Google AI Studio Cloud SQL path.
+        // This also sets least-privilege defaults for tables created by later migrations.
+        await CloudSqlRuntimePermissions.ApplyAsync(migrationConnection, "promogest_app");
+        await VerifyFutureTableDefaultsAsync(migrationConnection, runtimeConnection);
+
         // Prove the restricted runtime identity can authenticate before any ASP.NET Core test host is created.
         await using (var runtimeProbe = new NpgsqlConnection(runtimeConnection))
         {
@@ -171,6 +164,53 @@ public sealed class PostgreSql18IntegrationFixture : IAsyncLifetime
         }
 
         return runtimeConnection;
+    }
+
+    private static async Task VerifyFutureTableDefaultsAsync(
+        string migrationConnectionString,
+        string runtimeConnectionString)
+    {
+        const string probeTable = "cloudsql_default_privilege_probe";
+
+        await using (var ownerConnection = new NpgsqlConnection(migrationConnectionString))
+        {
+            await ownerConnection.OpenAsync();
+            await using var createProbe = new NpgsqlCommand(
+                $"CREATE TABLE public.{probeTable} (id integer PRIMARY KEY, value text NOT NULL);",
+                ownerConnection);
+            await createProbe.ExecuteNonQueryAsync();
+        }
+
+        try
+        {
+            await using var runtimeConnection = new NpgsqlConnection(runtimeConnectionString);
+            await runtimeConnection.OpenAsync();
+            await using var privilegeCheck = new NpgsqlCommand(
+                "SELECT " +
+                $"has_table_privilege(current_user, 'public.{probeTable}', 'SELECT') AND " +
+                $"has_table_privilege(current_user, 'public.{probeTable}', 'INSERT') AND " +
+                $"has_table_privilege(current_user, 'public.{probeTable}', 'UPDATE') AND " +
+                $"has_table_privilege(current_user, 'public.{probeTable}', 'DELETE') AND " +
+                $"NOT has_table_privilege(current_user, 'public.{probeTable}', 'TRUNCATE') AND " +
+                "NOT has_table_privilege(current_user, (SELECT oid FROM pg_class WHERE relname = '__EFMigrationsHistory' AND relnamespace = 'public'::regnamespace), 'SELECT');",
+                runtimeConnection);
+
+            var hasExpectedPrivileges = (bool)(await privilegeCheck.ExecuteScalarAsync())!;
+            if (!hasExpectedPrivileges)
+            {
+                throw new InvalidOperationException(
+                    "Cloud SQL runtime role did not receive the expected future-table least-privilege grants.");
+            }
+        }
+        finally
+        {
+            await using var ownerConnection = new NpgsqlConnection(migrationConnectionString);
+            await ownerConnection.OpenAsync();
+            await using var dropProbe = new NpgsqlCommand(
+                $"DROP TABLE IF EXISTS public.{probeTable};",
+                ownerConnection);
+            await dropProbe.ExecuteNonQueryAsync();
+        }
     }
 
     public async Task DisposeAsync()

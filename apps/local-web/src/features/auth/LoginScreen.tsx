@@ -7,6 +7,7 @@ import { apiClient, ApiConnectionError, ApiError } from '../../services/apiClien
 import { LanguageSwitcher } from '../../components/LanguageSwitcher';
 import { ConnectionIndicator, type ServerConnectionState } from '../../components/ConnectionIndicator';
 import { FormField, inputBaseClass } from '../../components/FormField';
+import { PreviewAccessButton } from './PreviewAccessButton';
 
 interface LoginScreenProps {
   language: AppLanguage;
@@ -15,6 +16,8 @@ interface LoginScreenProps {
   connectionState: ServerConnectionState;
   onRetryConnection: () => void;
   onLoggedIn: (session: SessionResponse) => void;
+  isPreviewMode: boolean;
+  onPreviewLogin: () => Promise<void>;
 }
 
 export function LoginScreen({
@@ -24,6 +27,8 @@ export function LoginScreen({
   connectionState,
   onRetryConnection,
   onLoggedIn,
+  isPreviewMode,
+  onPreviewLogin,
 }: LoginScreenProps) {
   const t = getTranslations(language);
   const [usernameOrEmail, setUsernameOrEmail] = useState('');
@@ -140,6 +145,12 @@ export function LoginScreen({
               <span>{isSubmitting ? t.auth.signingIn : t.auth.signIn}</span>
             </button>
           </form>
+
+          {isPreviewMode && (
+            <div className="mt-5">
+              <PreviewAccessButton language={language} onOpen={onPreviewLogin} />
+            </div>
+          )}
 
           <div className="mt-6 pt-4 border-t border-slate-100 flex items-center justify-between gap-2 text-xs text-slate-500">
             <span>{t.auth.localServerBadge}</span>

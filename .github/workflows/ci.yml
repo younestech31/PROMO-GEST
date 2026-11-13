@@ -171,7 +171,7 @@ jobs:
             -in "$RUNNER_TEMP/promogest-dp.crt" \
             -passout env:PROMOGEST_DATA_PROTECTION_CERT_PASSWORD
           rm -f "$RUNNER_TEMP/promogest-dp.key" "$RUNNER_TEMP/promogest-dp.crt"
-          printf '%s\n' '{"ConnectionStrings":{"DefaultConnection":"Host=localhost;Port=5432;Database=promogest_ci;Username=promogest_app;Password=app_pass"}}' > "$config_path"
+          printf '%s\n' '{"ConnectionStrings":{"DefaultConnection":"Host=localhost;Port=5432;Database=promogest_ci;Username=promogest_app;Password=app_pass"},"Storage":{"RootDirectory":"/tmp/promogest-storage"},"Security":{"RequireHttpsCookies":true,"JwtSecret":"LINUX-JWT-SECRET-DO-NOT-BACKUP","ApiToken":"LINUX-API-TOKEN-DO-NOT-BACKUP","SigningKey":"LINUX-SIGNING-KEY-DO-NOT-BACKUP"},"External":{"ClientSecret":"LINUX-CLIENT-SECRET-DO-NOT-BACKUP","DisplayName":"CI fixture"}}' > "$config_path"
 
           probe_file="$storage_root/organization/2026/11/restore-probe.bin"
           probe_hash="$(sha256sum "$probe_file" | awk '{print $1}')"
@@ -502,15 +502,24 @@ jobs:
               ReportingConnection = "Host=127.0.0.1;Database=reporting;Password=SECOND-DB-SECRET-DO-NOT-BACKUP"
             }
             Storage = [PSCustomObject]@{ RootDirectory = "C:\PromoGest\storage" }
-            Security = [PSCustomObject]@{ RequireHttpsCookies = $true }
+            Security = [PSCustomObject]@{
+              RequireHttpsCookies = $true
+              JwtSecret = "WINDOWS-JWT-SECRET-DO-NOT-BACKUP"
+              ApiToken = "WINDOWS-API-TOKEN-DO-NOT-BACKUP"
+              SigningKey = "WINDOWS-SIGNING-KEY-DO-NOT-BACKUP"
+            }
+            External = [PSCustomObject]@{
+              ClientSecret = "WINDOWS-CLIENT-SECRET-DO-NOT-BACKUP"
+              DisplayName = "CI fixture"
+            }
           }
           $sanitizerProbe | ConvertTo-Json -Depth 8 |
             Set-Content -LiteralPath $sanitizerSourcePath -Encoding UTF8
           Write-PromoGestSanitizedConfig -SourcePath $sanitizerSourcePath -DestinationPath $sanitizerOutputPath
 
           $sanitizedText = Get-Content -LiteralPath $sanitizerOutputPath -Raw
-          if ($sanitizedText -match 'ConnectionStrings|DEFAULT-DB-SECRET-DO-NOT-BACKUP|SECOND-DB-SECRET-DO-NOT-BACKUP') {
-            throw "Windows backup configuration sanitizer leaked a connection string or database secret."
+          if ($sanitizedText -match 'ConnectionStrings|DEFAULT-DB-SECRET-DO-NOT-BACKUP|SECOND-DB-SECRET-DO-NOT-BACKUP|JwtSecret|ApiToken|SigningKey|ClientSecret|WINDOWS-.*DO-NOT-BACKUP') {
+            throw "Windows backup configuration sanitizer leaked a connection string or nested secret-bearing configuration field."
           }
           $sanitizedObject = $sanitizedText | ConvertFrom-Json
           if ($null -eq $sanitizedObject.Storage -or $null -eq $sanitizedObject.Security) {

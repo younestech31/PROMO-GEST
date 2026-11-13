@@ -206,6 +206,12 @@ Assert-SafeZipArchive -ArchivePath $ConfigArchivePath
 & pg_restore --list "$DbDumpPath" | Out-Null
 if ($LASTEXITCODE -ne 0) { throw "PostgreSQL dump is invalid (pg_restore --list exit $LASTEXITCODE)." }
 
+$restoreDatabaseCreated = $false
+$restoreStorageCreated = $false
+$restoreKeysCreated = $false
+$restoreConfigCreated = $false
+
+try {
 Write-Host "[3/6] Creating an isolated restore database with provisioning identity $ProvisionUser..."
 $existing = & psql --host=$DatabaseHost --port=$DatabasePort --username=$ProvisionUser --dbname=postgres --tuples-only --no-align -c "SELECT 1 FROM pg_database WHERE datname = '$TargetDatabase';"
 if ($LASTEXITCODE -ne 0) { throw "Could not query PostgreSQL database catalog using $ProvisionUser." }
@@ -215,6 +221,7 @@ if (-not [string]::IsNullOrWhiteSpace(($existing -join "").Trim())) {
 
 & createdb --host=$DatabaseHost --port=$DatabasePort --username=$ProvisionUser --owner=$DatabaseUser $TargetDatabase
 if ($LASTEXITCODE -ne 0) { throw "createdb failed with exit code $LASTEXITCODE." }
+$restoreDatabaseCreated = $true
 
 # Role/database identifiers are restricted above to safe ASCII characters. psql variables
 # are not interpolated inside --command, so quote the validated identifiers directly.
@@ -240,7 +247,12 @@ GRANT SELECT, INSERT ON TABLE audit_logs TO "$RuntimeDatabaseUser";
 if ($LASTEXITCODE -ne 0) { throw "Could not reapply least-privilege runtime grants after restore." }
 
 Write-Host "[5/6] Restoring local document storage, Data Protection keys, and sanitized configuration..."
-New-Item -ItemType Directory -Path $RestoreStorageDir, $RestoreDataProtectionDir, $RestoreConfigDir -ErrorAction Stop | Out-Null
+New-Item -ItemType Directory -Path $RestoreStorageDir -ErrorAction Stop | Out-Null
+$restoreStorageCreated = $true
+New-Item -ItemType Directory -Path $RestoreDataProtectionDir -ErrorAction Stop | Out-Null
+$restoreKeysCreated = $true
+New-Item -ItemType Directory -Path $RestoreConfigDir -ErrorAction Stop | Out-Null
+$restoreConfigCreated = $true
 Expand-Archive -LiteralPath $StorageArchivePath -DestinationPath $RestoreStorageDir -Force
 Expand-Archive -LiteralPath $DpKeysArchivePath -DestinationPath $RestoreDataProtectionDir -Force
 Expand-Archive -LiteralPath $ConfigArchivePath -DestinationPath $RestoreConfigDir -Force
@@ -341,3 +353,27 @@ if ($verifiedCount -ne $fileCount) {
 
 Write-Host "Restore verified: $verifiedCount of $fileCount stored files match size and SHA-256."
 Write-Host "Restore operation completed. Review Data Protection recovery notes before switching production traffic."
+}
+catch {
+    $restoreFailure = $_
+
+    if ($restoreDatabaseCreated) {
+        Write-Warning "Restore failed; removing only the scratch database created by this invocation: $TargetDatabase"
+        & dropdb --host=$DatabaseHost --port=$DatabasePort --username=$ProvisionUser --if-exists --force $TargetDatabase
+        if ($LASTEXITCODE -ne 0) {
+            Write-Warning "Could not automatically remove scratch database '$TargetDatabase'. Remove it manually after checking active sessions."
+        }
+    }
+
+    foreach ($cleanupTarget in @(
+        @{ Path = $RestoreStorageDir; Created = $restoreStorageCreated },
+        @{ Path = $RestoreDataProtectionDir; Created = $restoreKeysCreated },
+        @{ Path = $RestoreConfigDir; Created = $restoreConfigCreated }
+    )) {
+        if ($cleanupTarget.Created -and (Test-Path -LiteralPath $cleanupTarget.Path)) {
+            Remove-Item -LiteralPath $cleanupTarget.Path -Recurse -Force -ErrorAction Continue
+        }
+    }
+
+    throw $restoreFailure
+}

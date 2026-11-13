@@ -407,3 +407,36 @@ jobs:
           $releasedLock.Dispose()
           Remove-Item -LiteralPath $lockPath -Force
           Write-Host "Verified the Windows backup lock is released after completion."
+
+          $junctionTarget = Join-Path $env:RUNNER_TEMP "promogest-backup-junction-target"
+          $backupJunction = Join-Path $env:RUNNER_TEMP "promogest-backup-junction"
+          New-Item -ItemType Directory -Force -Path $junctionTarget | Out-Null
+          New-Item -ItemType Junction -Path $backupJunction -Target $junctionTarget | Out-Null
+          try {
+            $backupScriptBlocked = $false
+            try {
+              & .\scripts\backup-promogest.ps1 -BackupRoot (Join-Path $backupJunction "destination")
+            }
+            catch {
+              $backupScriptBlocked = $_.Exception.Message -like "*junction or symbolic link*"
+            }
+            if (-not $backupScriptBlocked) {
+              throw "Windows backup script did not reject a destination traversing a junction."
+            }
+
+            $installerBlocked = $false
+            try {
+              & .\deploy\windows\install-service.ps1 -BackupRoot (Join-Path $backupJunction "destination")
+            }
+            catch {
+              $installerBlocked = $_.Exception.Message -like "*junction or symbolic link*"
+            }
+            if (-not $installerBlocked) {
+              throw "Windows installer did not reject a backup destination traversing a junction."
+            }
+          }
+          finally {
+            Remove-Item -LiteralPath $backupJunction -Force
+            Remove-Item -LiteralPath $junctionTarget -Recurse -Force
+          }
+          Write-Host "Verified backup script and installer reject junction-based destinations."

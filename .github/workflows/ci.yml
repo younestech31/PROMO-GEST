@@ -82,6 +82,17 @@ jobs:
         run: dotnet restore src/PromoGest.sln
       - name: Build solution with warnings as errors
         run: dotnet build src/PromoGest.sln --configuration Release --no-restore
+      - name: Validate Linux shell scripts
+        shell: bash
+        run: |
+          set -euo pipefail
+          for script in scripts/*.sh; do
+            bash -n "$script"
+          done
+          if grep -nF '\${' scripts/*.sh; then
+            echo "Escaped Bash parameter expansion found in a shell script." >&2
+            exit 1
+          fi
       - name: Domain tests
         run: dotnet test tests/PromoGest.Domain.Tests/PromoGest.Domain.Tests.csproj --configuration Release --no-build
       - name: Application tests

@@ -171,7 +171,7 @@ jobs:
             -in "$RUNNER_TEMP/promogest-dp.crt" \
             -passout env:PROMOGEST_DATA_PROTECTION_CERT_PASSWORD
           rm -f "$RUNNER_TEMP/promogest-dp.key" "$RUNNER_TEMP/promogest-dp.crt"
-          printf '%s\n' '{"ConnectionStrings":{"DefaultConnection":"Host=localhost;Port=5432;Database=promogest_ci;Username=promogest_app;Password=app_pass"},"Storage":{"RootDirectory":"/tmp/promogest-storage"},"Security":{"RequireHttpsCookies":true,"TokenLifetimeMinutes":30,"PrivateKeyPath":"/var/lib/promogest/keys/private.key","JwtSecret":"LINUX-JWT-SECRET-DO-NOT-BACKUP","ApiToken":"LINUX-API-TOKEN-DO-NOT-BACKUP","SigningKey":"LINUX-SIGNING-KEY-DO-NOT-BACKUP"},"External":{"ClientSecret":"LINUX-CLIENT-SECRET-DO-NOT-BACKUP","DisplayName":"CI fixture"}}' > "$config_path"
+          printf '%s\n' '{"ConnectionStrings":{"DefaultConnection":"Host=localhost;Port=5432;Database=promogest_ci;Username=promogest_app;Password=app_pass"},"Storage":{"RootDirectory":"/tmp/promogest-storage"},"Security":{"RequireHttpsCookies":true,"TokenLifetimeMinutes":30,"PrivateKeyPath":"/var/lib/promogest/keys/private.key","JwtSecret":"LINUX-JWT-SECRET-DO-NOT-BACKUP","JwtSecretKey":"LINUX-JWT-SECRET-KEY-DO-NOT-BACKUP","EncryptionKey":"LINUX-ENCRYPTION-KEY-DO-NOT-BACKUP","ApiToken":"LINUX-API-TOKEN-DO-NOT-BACKUP","SigningKey":"LINUX-SIGNING-KEY-DO-NOT-BACKUP"},"External":{"ClientSecret":"LINUX-CLIENT-SECRET-DO-NOT-BACKUP","DisplayName":"CI fixture"}}' > "$config_path"
 
           probe_file="$storage_root/organization/2026/11/restore-probe.bin"
           probe_hash="$(sha256sum "$probe_file" | awk '{print $1}')"
@@ -544,6 +544,8 @@ jobs:
               TokenLifetimeMinutes = 30
               PrivateKeyPath = "C:\\PromoGest\\keys\\private.key"
               JwtSecret = "WINDOWS-JWT-SECRET-DO-NOT-BACKUP"
+              JwtSecretKey = "WINDOWS-JWT-SECRET-KEY-DO-NOT-BACKUP"
+              EncryptionKey = "WINDOWS-ENCRYPTION-KEY-DO-NOT-BACKUP"
               ApiToken = "WINDOWS-API-TOKEN-DO-NOT-BACKUP"
               SigningKey = "WINDOWS-SIGNING-KEY-DO-NOT-BACKUP"
             }
@@ -557,7 +559,7 @@ jobs:
           Write-PromoGestSanitizedConfig -SourcePath $sanitizerSourcePath -DestinationPath $sanitizerOutputPath
 
           $sanitizedText = Get-Content -LiteralPath $sanitizerOutputPath -Raw
-          if ($sanitizedText -match 'ConnectionStrings|DEFAULT-DB-SECRET-DO-NOT-BACKUP|SECOND-DB-SECRET-DO-NOT-BACKUP|JwtSecret|ApiToken|SigningKey|ClientSecret|WINDOWS-.*DO-NOT-BACKUP') {
+          if ($sanitizedText -match 'ConnectionStrings|DEFAULT-DB-SECRET-DO-NOT-BACKUP|SECOND-DB-SECRET-DO-NOT-BACKUP|JwtSecret|JwtSecretKey|EncryptionKey|ApiToken|SigningKey|ClientSecret|WINDOWS-.*DO-NOT-BACKUP') {
             throw "Windows backup configuration sanitizer leaked a connection string or nested secret-bearing configuration field."
           }
           $sanitizedObject = $sanitizedText | ConvertFrom-Json

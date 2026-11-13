@@ -63,7 +63,8 @@ for command_name in pg_dump pg_restore tar sha256sum flock systemctl python3; do
   }
 done
 
-install -d -o root -g root -m 0700 "$BACKUP_ROOT" /run/lock
+install -d -o root -g root -m 0700 "$BACKUP_ROOT"
+[[ -d /run/lock ]] || { echo "ERROR: System lock directory is missing: /run/lock" >&2; exit 1; }
 exec 9>/run/lock/promogest-backup.lock
 flock -n 9 || { echo "ERROR: Another PROMO GEST backup is already running." >&2; exit 1; }
 

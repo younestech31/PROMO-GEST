@@ -107,20 +107,38 @@ else
   tar -czf "$WORK_DIR/storage.tar.gz" -C "$STORAGE_DIR" .
   tar -czf "$WORK_DIR/dataprotection-keys.tar.gz" -C "$DP_KEYS_DIR" .
   mkdir -p "$WORK_DIR/config_stage"
-  perl -pe 's/(\bPassword\s*=\s*)(?:"(?:[^"\\]|\\.)*"|[^;"]+)/\1REDACTED_FOR_BACKUP/ig' \
-    "$CONFIG_PATH" > "$WORK_DIR/config_stage/appsettings.sanitized.json"
-
-  python3 - "$WORK_DIR/config_stage/appsettings.sanitized.json" <<'PY'
+  python3 - "$CONFIG_PATH" "$WORK_DIR/config_stage/appsettings.sanitized.json" <<'PY'
+import json
 import pathlib
 import re
 import sys
 
-text = pathlib.Path(sys.argv[1]).read_text(encoding="utf-8-sig")
-values = re.findall(r'(?i)\bPassword\s*=\s*(?:"([^"]*)"|([^;"]+))', text)
-leaked = [quoted or unquoted for quoted, unquoted in values
-          if (quoted or unquoted).strip().casefold() != "redacted_for_backup"]
-if leaked:
-    raise SystemExit("ERROR: Sanitized config still contains a connection-string password.")
+source = pathlib.Path(sys.argv[1])
+destination = pathlib.Path(sys.argv[2])
+data = json.loads(source.read_text(encoding="utf-8-sig"))
+if not isinstance(data, dict):
+    raise SystemExit("ERROR: Production configuration must be a JSON object.")
+
+sensitive_name = re.compile(
+    r"(?i)(^connectionstrings?$|password|passwd|pwd|secret|token|credential|private.?key|api.?key|access.?key|signing.?key)"
+)
+
+def strip_sensitive(value):
+    if isinstance(value, dict):
+        return {
+            key: strip_sensitive(item)
+            for key, item in value.items()
+            if not sensitive_name.search(str(key))
+        }
+    if isinstance(value, list):
+        return [strip_sensitive(item) for item in value]
+    return value
+
+sanitized = strip_sensitive(data)
+serialized = json.dumps(sanitized, ensure_ascii=False, indent=2) + "\n"
+if sensitive_name.search(serialized):
+    raise SystemExit("ERROR: Secret-bearing property name remained in sanitized configuration.")
+destination.write_text(serialized, encoding="utf-8")
 PY
 
   tar -czf "$WORK_DIR/config-sanitized.tar.gz" -C "$WORK_DIR/config_stage" .

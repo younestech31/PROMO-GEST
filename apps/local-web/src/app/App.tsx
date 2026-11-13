@@ -107,6 +107,17 @@ export function App() {
     }
   };
 
+  const handleOpenPreview = async () => {
+    const previewSession = await apiClient.openPreviewSession();
+    setSetupStatus({
+      isInitialized: true,
+      organizationLegalName: previewSession.organization.legalName,
+      defaultLanguage: previewSession.organization.defaultLanguage,
+      initializedAtUtc: new Date().toISOString(),
+    });
+    await handleLoggedIn(previewSession);
+  };
+
   const handleLogout = async () => {
     try {
       await apiClient.logout();
@@ -135,6 +146,8 @@ export function App() {
         language={language}
         onLanguageChange={setLanguage}
         onInitialized={() => void handleInitialized()}
+        isPreviewMode={health?.environmentMode === 'ViteDevContractPreview'}
+        onPreviewLogin={handleOpenPreview}
       />
     );
   }
@@ -148,6 +161,8 @@ export function App() {
         connectionState={connectionState}
         onRetryConnection={() => void checkHealthAndBootstrap()}
         onLoggedIn={(s) => void handleLoggedIn(s)}
+        isPreviewMode={health?.environmentMode === 'ViteDevContractPreview'}
+        onPreviewLogin={handleOpenPreview}
       />
     );
   }

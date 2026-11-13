@@ -25,7 +25,7 @@ PROMO GEST enforces **at most one System Administrator per installation** at thr
 ## 3. CSRF Protection (`SameSite=Strict` + ASP.NET Core Antiforgery)
 `SameSite=Strict` alone is insufficient on local LAN deployments where multiple ports or sibling local services may share the same host/site boundary. Therefore:
 - ASP.NET Core Antiforgery (`IAntiforgery`) is configured with `.PromoGest.Antiforgery` (`HttpOnly = true`, `SameSite = Strict`), paired with the `promogest_csrf` cookie and `X-CSRF-TOKEN` header.
-- `DataProtection` keys are persisted locally (`Security:DataProtectionKeyDirectory`) so antiforgery tokens remain valid across server restarts.
+- `DataProtection` keys are persisted locally (`Security:DataProtectionKeyDirectory`) so antiforgery tokens remain valid across server restarts. On Windows they are encrypted with machine-scope DPAPI (`ProtectKeysWithDpapi(protectToLocalMachine: true)`) so the virtual service account and local maintenance identity can read the same key ring; filesystem ACLs restrict the key directory to the service account, SYSTEM, and local Administrators. On Linux the local key ring remains protected by the server's filesystem permissions and must be stored on encrypted/secured media.
 - `CsrfValidationMiddleware` validates `X-CSRF-TOKEN` on **every** state-changing `/api/*` request (`POST`, `PUT`, `PATCH`, `DELETE`), rejecting missing/invalid tokens with `403 CSRF_TOKEN_INVALID`.
 - `AuthController` rotates CSRF tokens whenever authentication state changes (`login` / `logout`).
 

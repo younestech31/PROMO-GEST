@@ -6,6 +6,7 @@ param(
     [string]$InstallRoot = "C:\PromoGest",
     [string]$ServiceName = "PromoGestLocalErp",
     [string]$BindUrl = "http://127.0.0.1:5080",
+    [string]$BackupRoot = "",
     [string]$ServiceAccount = "",
     [switch]$ConfigureFirewall
 )
@@ -20,7 +21,7 @@ $InstallRoot = [IO.Path]::GetFullPath($InstallRoot)
 $AppDir = Join-Path $InstallRoot "app"
 $StorageDir = Join-Path $InstallRoot "storage"
 $DataProtectionDir = Join-Path $InstallRoot "dataprotection-keys"
-$BackupDir = Join-Path $InstallRoot "backups"
+$BackupDir = if ([string]::IsNullOrWhiteSpace($BackupRoot)) { Join-Path $InstallRoot "backups" } else { [IO.Path]::GetFullPath($BackupRoot) }
 $ScriptsDir = Join-Path $InstallRoot "scripts"
 $LogsDir = Join-Path $InstallRoot "logs"
 $ExePath = Join-Path $AppDir "PromoGest.Api.exe"

@@ -19,6 +19,7 @@ using PromoGest.Contracts.Projects;
 using PromoGest.Contracts.Setup;
 using PromoGest.Contracts.Users;
 using PromoGest.Domain.Entities;
+using PromoGest.Infrastructure;
 using PromoGest.Infrastructure.Persistence;
 using Testcontainers.PostgreSql;
 using Xunit;
@@ -122,19 +123,6 @@ public sealed class PostgreSql18IntegrationFixture : IAsyncLifetime
             Database = dbName
         }.ConnectionString;
 
-        await using (var ownerConnection = new NpgsqlConnection(migrationConnection))
-        {
-            await ownerConnection.OpenAsync();
-            await using var grants = new NpgsqlCommand(
-                "GRANT USAGE ON SCHEMA public TO promogest_app; " +
-                "ALTER DEFAULT PRIVILEGES FOR ROLE promogest_owner IN SCHEMA public " +
-                "GRANT SELECT, INSERT, UPDATE, DELETE ON TABLES TO promogest_app; " +
-                "ALTER DEFAULT PRIVILEGES FOR ROLE promogest_owner IN SCHEMA public " +
-                "GRANT USAGE, SELECT ON SEQUENCES TO promogest_app;",
-                ownerConnection);
-            await grants.ExecuteNonQueryAsync();
-        }
-
         var migrationOptions = new DbContextOptionsBuilder<AppDbContext>()
             .UseNpgsql(migrationConnection, npgsql =>
                 npgsql.MigrationsAssembly(typeof(AppDbContext).Assembly.FullName))
@@ -157,6 +145,10 @@ public sealed class PostgreSql18IntegrationFixture : IAsyncLifetime
                     "The AuditLogRuntimePermissions migration was not discovered and applied.");
             }
         }
+
+        // Apply the same post-migration grants used by the Google AI Studio Cloud SQL path.
+        // This also sets least-privilege defaults for tables created by later migrations.
+        await CloudSqlRuntimePermissions.ApplyAsync(migrationConnection, "promogest_app");
 
         // Prove the restricted runtime identity can authenticate before any ASP.NET Core test host is created.
         await using (var runtimeProbe = new NpgsqlConnection(runtimeConnection))

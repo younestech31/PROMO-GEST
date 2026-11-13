@@ -245,6 +245,67 @@ jobs:
             PROMOGEST_DATA_PROTECTION_CERT_PASSWORD="$PROMOGEST_DATA_PROTECTION_CERT_PASSWORD" \
             bash scripts/verify-backup-restore.sh promogest_ci "" "" "" "$bundle_dir"
 
+          echo "[Linux restore verifier] Rejecting path-traversal entries from a checksummed production bundle..."
+          malicious_bundle="$RUNNER_TEMP/promogest-malicious-tar-bundle"
+          sudo cp -a "$bundle_dir" "$malicious_bundle"
+          sudo python3 - "$malicious_bundle/storage.tar.gz" <<'PY'
+          import io
+          import sys
+          import tarfile
+
+          with tarfile.open(sys.argv[1], "w:gz") as archive:
+              payload = b"must-not-escape"
+              item = tarfile.TarInfo("../escape.txt")
+              item.size = len(payload)
+              archive.addfile(item, io.BytesIO(payload))
+          PY
+          sudo bash -c 'cd "$1" && sha256sum database.dump storage.tar.gz dataprotection-keys.tar.gz config-sanitized.tar.gz > manifest.sha256' _ "$malicious_bundle"
+          traversal_log="$RUNNER_TEMP/promogest-tar-traversal.log"
+          if sudo env \
+            PGHOST="$PGHOST" PGPORT="$PGPORT" PGUSER="$PGUSER" \
+            PGPROVISION_USER=postgres PROMOGEST_APP_USER=promogest_app \
+            PGPASSFILE=/etc/promogest/pgpass \
+            PROMOGEST_DATA_PROTECTION_CERT_PASSWORD="$PROMOGEST_DATA_PROTECTION_CERT_PASSWORD" \
+            bash scripts/verify-backup-restore.sh promogest_ci "" "" "" "$malicious_bundle" > "$traversal_log" 2>&1; then
+            echo "Linux restore verifier accepted a tar path-traversal entry." >&2
+            exit 1
+          fi
+          grep -F "Unsafe archive path" "$traversal_log" >/dev/null || {
+            cat "$traversal_log" >&2
+            echo "Linux restore verifier failed for an unexpected reason during the traversal probe." >&2
+            exit 1
+          }
+
+          echo "[Linux restore verifier] Rejecting symbolic-link entries from a checksummed production bundle..."
+          sudo python3 - "$malicious_bundle/storage.tar.gz" <<'PY'
+          import sys
+          import tarfile
+
+          with tarfile.open(sys.argv[1], "w:gz") as archive:
+              item = tarfile.TarInfo("linked-outside-storage")
+              item.type = tarfile.SYMTYPE
+              item.linkname = "../../outside"
+              archive.addfile(item)
+          PY
+          sudo bash -c 'cd "$1" && sha256sum database.dump storage.tar.gz dataprotection-keys.tar.gz config-sanitized.tar.gz > manifest.sha256' _ "$malicious_bundle"
+          symlink_log="$RUNNER_TEMP/promogest-tar-symlink.log"
+          if sudo env \
+            PGHOST="$PGHOST" PGPORT="$PGPORT" PGUSER="$PGUSER" \
+            PGPROVISION_USER=postgres PROMOGEST_APP_USER=promogest_app \
+            PGPASSFILE=/etc/promogest/pgpass \
+            PROMOGEST_DATA_PROTECTION_CERT_PASSWORD="$PROMOGEST_DATA_PROTECTION_CERT_PASSWORD" \
+            bash scripts/verify-backup-restore.sh promogest_ci "" "" "" "$malicious_bundle" > "$symlink_log" 2>&1; then
+            echo "Linux restore verifier accepted a tar symbolic-link entry." >&2
+            exit 1
+          fi
+          grep -F "Links/devices are not allowed" "$symlink_log" >/dev/null || {
+            cat "$symlink_log" >&2
+            echo "Linux restore verifier failed for an unexpected reason during the symlink probe." >&2
+            exit 1
+          }
+          sudo rm -rf -- "$malicious_bundle"
+          rm -f -- "$traversal_log" "$symlink_log"
+
           echo "[Linux backup script] Verifying failed backups are cleaned and the service is restarted..."
           fake_systemd_dir="$RUNNER_TEMP/promogest-fake-systemctl"
           failed_backup_root="$RUNNER_TEMP/promogest-failed-backups"

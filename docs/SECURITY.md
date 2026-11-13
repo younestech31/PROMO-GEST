@@ -11,7 +11,7 @@ PROMO GEST enforces **at most one System Administrator per installation** at thr
 4. **Local Server-Console-Only Admin Recovery**: If the single System Administrator is locked out or loses their password, recovery is **never** exposed over HTTP. An OS administrator with physical/console access to the local server runs:
    - `PromoGest.Api.exe --unlock-admin`
    - `PromoGest.Api.exe --reset-admin-password` (reads new password from `--password-env <VAR>` or interactive masked console input)
-   This executes `AdminRecoveryService`, revokes all prior admin sessions, and records `ADMIN_LOCAL_UNLOCK` / `ADMIN_LOCAL_PASSWORD_RECOVERY` in `audit_logs`.
+   This executes `AdminRecoveryService`, revokes all prior admin sessions, and records `ADMIN_LOCAL_UNLOCK` / `ADMIN_LOCAL_PASSWORD_RECOVERY` in `audit_logs`. The CLI-only recovery modes intentionally skip Data Protection initialization, so a missing or damaged Linux certificate/key ring does not block database-backed administrator recovery; a valid local runtime database connection is still required.
 
 ## 2. Password, Session & Timing-Safe Authentication Security
 - **Zero hard-coded credentials**: No default admin account exists prior to running the First-Run Installation Wizard.

@@ -359,9 +359,14 @@ catch {
 
     if ($restoreDatabaseCreated) {
         Write-Warning "Restore failed; removing only the scratch database created by this invocation: $TargetDatabase"
-        & dropdb --host=$DatabaseHost --port=$DatabasePort --username=$ProvisionUser --if-exists --force $TargetDatabase
-        if ($LASTEXITCODE -ne 0) {
-            Write-Warning "Could not automatically remove scratch database '$TargetDatabase'. Remove it manually after checking active sessions."
+        try {
+            & dropdb --host=$DatabaseHost --port=$DatabasePort --username=$ProvisionUser --if-exists --force $TargetDatabase
+            if ($LASTEXITCODE -ne 0) {
+                Write-Warning "Could not automatically remove scratch database '$TargetDatabase'. Remove it manually after checking active sessions."
+            }
+        }
+        catch {
+            Write-Warning "Scratch database cleanup raised an error: $($_.Exception.Message). Remove '$TargetDatabase' manually after checking active sessions."
         }
     }
 

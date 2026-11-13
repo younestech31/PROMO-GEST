@@ -50,6 +50,13 @@ public sealed class ExceptionHandlingMiddleware
             context.Response.StatusCode = (int)HttpStatusCode.Conflict;
             await context.Response.WriteAsJsonAsync(new ApiErrorResponse(code, "The requested operation conflicted with an existing or concurrent change."));
         }
+        catch (DbUpdateConcurrencyException ex)
+        {
+            _logger.LogWarning(ex, "Optimistic concurrency conflict on {Method} {Path}", context.Request.Method, context.Request.Path);
+            context.Response.StatusCode = (int)HttpStatusCode.Conflict;
+            await context.Response.WriteAsJsonAsync(
+                new ApiErrorResponse("CONCURRENCY_CONFLICT", "The record was changed by another operation. Reload the data and try again."));
+        }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Unhandled exception while processing {Method} {Path}", context.Request.Method, context.Request.Path);

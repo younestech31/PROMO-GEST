@@ -185,6 +185,27 @@ jobs:
           FROM probe_user;
           SQL
 
+          echo "[Linux backup script] Creating a real protected backup bundle as root..."
+          sudo install -d -o root -g root -m 0750 /etc/promogest
+          sudo install -o root -g root -m 0600 "$PGPASSFILE" /etc/promogest/pgpass
+          backup_root="$RUNNER_TEMP/promogest-backups"
+          sudo env \
+            PGHOST="$PGHOST" PGPORT="$PGPORT" PGUSER="$PGUSER" \
+            PGPASSFILE=/etc/promogest/pgpass \
+            PROMOGEST_DB_NAME=promogest_ci \
+            PROMOGEST_STORAGE_DIR="$storage_root" \
+            PROMOGEST_DATA_PROTECTION_KEY_DIR="$key_root" \
+            PROMOGEST_CONFIG_PATH="$config_path" \
+            PROMOGEST_CADDYFILE_PATH="$GITHUB_WORKSPACE/deploy/linux/Caddyfile" \
+            PROMOGEST_BACKUP_ROOT="$backup_root" \
+            PROMOGEST_DATA_PROTECTION_CERT_PASSWORD="$PROMOGEST_DATA_PROTECTION_CERT_PASSWORD" \
+            bash scripts/backup-promogest.sh
+          bundle_dir="$(sudo find "$backup_root" -mindepth 1 -maxdepth 1 -type d -name 'promogest_backup_*' -print -quit)"
+          test -n "$bundle_dir"
+          for component in database.dump storage.tar.gz dataprotection-keys.tar.gz config-sanitized.tar.gz manifest.sha256; do
+            sudo test -s "$bundle_dir/$component"
+          done
+          sudo bash -c 'cd "$1" && sha256sum -c manifest.sha256' _ "$bundle_dir"
           bash scripts/verify-backup-restore.sh promogest_ci "$storage_root" "$config_path" "$key_root"
 
   windows-publish-and-powershell:

@@ -18,6 +18,22 @@ if ([string]::IsNullOrWhiteSpace($ServiceAccount)) {
 }
 
 $InstallRoot = [IO.Path]::GetFullPath($InstallRoot)
+$pathComponent = $InstallRoot
+while (-not [string]::IsNullOrWhiteSpace($pathComponent)) {
+    if (Test-Path -LiteralPath $pathComponent) {
+        $pathItem = Get-Item -LiteralPath $pathComponent -Force -ErrorAction Stop
+        if (($pathItem.Attributes -band [IO.FileAttributes]::ReparsePoint) -ne 0) {
+            throw "InstallRoot must not traverse a junction or symbolic link: $pathComponent"
+        }
+    }
+
+    $parentPath = Split-Path -Path $pathComponent -Parent
+    if ([string]::IsNullOrWhiteSpace($parentPath) -or
+        [string]::Equals($parentPath, $pathComponent, [StringComparison]::OrdinalIgnoreCase)) {
+        break
+    }
+    $pathComponent = $parentPath
+}
 $customBackupRoot = -not [string]::IsNullOrWhiteSpace($BackupRoot)
 $AppDir = Join-Path $InstallRoot "app"
 $StorageDir = Join-Path $InstallRoot "storage"

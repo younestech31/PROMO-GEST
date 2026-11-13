@@ -130,6 +130,13 @@ function Assert-SafeZipArchive {
                 $segments -contains "") {
                 throw "Unsafe ZIP entry path in '$ArchivePath': $($entry.FullName)"
             }
+            foreach ($segment in $segments) {
+                if ($segment.EndsWith(" ") -or $segment.EndsWith(".") -or
+                    $segment.IndexOfAny([IO.Path]::GetInvalidFileNameChars()) -ge 0 -or
+                    $segment -match '^(?i:CON|PRN|AUX|NUL|COM[1-9]|LPT[1-9])(?:\.|$)') {
+                    throw "Windows-incompatible ZIP path segment in '$ArchivePath': $segment"
+                }
+            }
             if (-not $seenEntries.Add($normalizedEntryName)) {
                 throw "Duplicate or case-colliding ZIP entry in '$ArchivePath': $($entry.FullName)"
             }

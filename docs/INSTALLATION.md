@@ -18,7 +18,7 @@
 
 ## 3. Step 1 — Provision PostgreSQL 18
 1. Install PostgreSQL 18 locally binding `listen_addresses = '127.0.0.1'` (`deploy/postgresql/postgresql.recommended.conf`).
-2. Edit `deploy/postgresql/00-init-db.sql` to set a strong local password for `promogest_app`.
+2. Edit `deploy/postgresql/00-init-db.sql` to set independent strong local passwords for both `promogest_owner` and `promogest_app`. The owner is deliberately `NOCREATEDB`/`NOCREATEROLE`; the `postgres` provisioning identity creates the database, while the owner only owns application objects and runs migrations. The app identity has no database/schema creation or migration privileges.
 3. Execute as `postgres` superuser:
    ```bash
    psql -U postgres -f deploy/postgresql/00-init-db.sql
@@ -47,7 +47,7 @@ This runs the unified workspace lint/test/build in `apps/local-web`, copies stat
    - `http://127.0.0.1:5080/health/ready` -> `200 OK` (`databaseConnected: true`, `isInitialized: false`)
 
 ## 6. Step 4 — Automated Daily Backups (Windows Task Scheduler)
-Register a daily local backup task running as `SYSTEM` (using `.pgpass` or local service account):
+Register a daily local backup task running as `SYSTEM` (using the SYSTEM account's protected PostgreSQL `pgpass` file). The backup task stops `PromoGestLocalErp` during the backup window and restarts it automatically after the dump and file/key archives finish:
 ```powershell
 $action = New-ScheduledTaskAction -Execute "PowerShell.exe" -Argument "-NoProfile -ExecutionPolicy Bypass -File C:\PromoGest\scripts\backup-promogest.ps1 -BackupRoot D:\PromoGestBackups"
 $trigger = New-ScheduledTaskTrigger -Daily -At 22:00

@@ -52,7 +52,11 @@ var dpBuilder = builder.Services.AddDataProtection()
 
 if (OperatingSystem.IsWindows())
 {
-    dpBuilder.ProtectKeysWithDpapi();
+    // The service runs under a virtual service account, while maintenance and recovery
+    // may run under SYSTEM or an administrator account. Machine-scope DPAPI keeps the
+    // key ring decryptable on this Windows installation by those identities; filesystem
+    // ACLs on the key directory remain restricted to the service, SYSTEM, and Administrators.
+    dpBuilder.ProtectKeysWithDpapi(protectToLocalMachine: true);
 }
 
 builder.Services.AddAntiforgery(options =>

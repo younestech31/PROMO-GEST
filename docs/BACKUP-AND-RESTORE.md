@@ -48,14 +48,31 @@ The script requires all four archive components and a complete SHA-256 manifest,
 
 ### Linux
 
-Use `promogest_owner` for dump/restore and a provisioning account for creating/dropping the scratch database:
+Use `promogest_owner` for the dump/restore operations, `postgres` (or another maintenance identity) to create and remove the uniquely named scratch database, and `promogest_app` only for the runtime-access checks.
+
+To verify the **actual production backup bundle** created by the systemd job, pass its directory as the fifth argument. Use the exact path printed by `backup-promogest.sh`:
+
+```bash
+sudo env \
+  PGHOST=127.0.0.1 PGUSER=promogest_owner PGPROVISION_USER=postgres \
+  PROMOGEST_APP_USER=promogest_app \
+  PGPASSFILE=/etc/promogest/pgpass \
+  PROMOGEST_DATA_PROTECTION_CERT_PASSWORD='<secret-from-vault>' \
+  ./scripts/verify-backup-restore.sh promogest "" "" "" \
+  /var/backups/promogest/promogest_backup_YYYYMMDD_HHMMSS
+```
+
+The fifth argument makes the drill validate and restore the exact `database.dump`, `storage.tar.gz`, `dataprotection-keys.tar.gz`, and `config-sanitized.tar.gz` files from that bundle. It checks the SHA-256 manifest, rejects unsafe archive paths and links, verifies the restored Data Protection certificate, restores into temporary directories and a new scratch database, reapplies least-privilege grants, and checks each database-referenced document by path, byte length, and SHA-256. The drill removes only the uniquely named scratch database it created; it never drops the source database or changes the selected backup bundle.
+
+For a source-based drill that builds a temporary verification payload instead of using a saved production bundle, omit the fifth argument and provide the storage, configuration, and Data Protection key directories:
 
 ```bash
 PGHOST=127.0.0.1 PGUSER=promogest_owner PGPROVISION_USER=postgres \
-  ./scripts/verify-backup-restore.sh promogest ./storage ./src/PromoGest.Api/appsettings.json ./dataprotection-keys
+  ./scripts/verify-backup-restore.sh promogest ./storage \
+  ./src/PromoGest.Api/appsettings.Production.json ./dataprotection-keys
 ```
 
-For the Linux systemd backup service, store the PostgreSQL client credentials in `/etc/promogest/pgpass`, owned by `root:root` with mode `0600`; the unit runs with `ProtectHome=true`, so `/root/.pgpass` is deliberately not used by that service. For a manual drill, set `PGPASSFILE` to a protected file readable only by the operator. The Linux drill restores the database, storage, Data Protection keys, and sanitized configuration into temporary locations. It reapplies and tests runtime grants (including future-object default privileges and append-only audit restrictions), then verifies every database-referenced file. It removes only the uniquely named scratch database created by the drill; it never drops the source database.
+For the Linux systemd backup service, store PostgreSQL client credentials in `/etc/promogest/pgpass`, owned by `root:root` with mode `0600`; the unit runs with `ProtectHome=true`, so `/root/.pgpass` is deliberately not used by that service. For a manual drill, set `PGPASSFILE` to a protected file readable only by the operator. The service's default destination is `/var/backups/promogest`. If you change `PROMOGEST_BACKUP_ROOT`, pre-create a dedicated root-owned directory and update the backup unit's `ReadWritePaths` to include that exact destination; do not use shared system directories or a path overlapping storage, Data Protection keys, application configuration, or Caddy configuration.
 
 ## 5. Data Protection recovery
 

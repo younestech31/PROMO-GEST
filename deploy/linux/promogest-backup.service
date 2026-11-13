@@ -11,6 +11,7 @@ WorkingDirectory=/opt/promogest/app
 EnvironmentFile=/etc/promogest/promogest.env
 Environment=PGPASSFILE=/etc/promogest/pgpass
 Environment=PROMOGEST_BACKUP_ROOT=/var/backups/promogest
+Environment=PROMOGEST_SYSTEMD_PROTECT_HOME=true
 ExecStart=/usr/local/sbin/backup-promogest.sh
 UMask=0077
 NoNewPrivileges=true

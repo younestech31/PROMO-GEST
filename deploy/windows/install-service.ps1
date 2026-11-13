@@ -13,6 +13,25 @@ param(
 
 $ErrorActionPreference = "Stop"
 
+function Assert-PromoGestLoopbackBindUrl {
+    param([Parameter(Mandatory = $true)][string]$Value)
+
+    $parsedUri = $null
+    if (-not [Uri]::TryCreate($Value, [UriKind]::Absolute, [ref]$parsedUri)) {
+        throw "BindUrl must be an absolute HTTP loopback URL."
+    }
+    if ($parsedUri.Scheme -ne "http" -or -not $parsedUri.IsLoopback -or
+        $parsedUri.Port -lt 1 -or $parsedUri.Port -gt 65535 -or
+        $parsedUri.AbsolutePath -ne "/" -or
+        -not [string]::IsNullOrEmpty($parsedUri.Query) -or
+        -not [string]::IsNullOrEmpty($parsedUri.Fragment) -or
+        -not [string]::IsNullOrEmpty($parsedUri.UserInfo)) {
+        throw "BindUrl must use HTTP on a loopback address only; LAN/WAN addresses and URL paths are not allowed. Caddy provides LAN HTTPS."
+    }
+}
+
+Assert-PromoGestLoopbackBindUrl -Value $BindUrl
+
 if ([string]::IsNullOrWhiteSpace($ServiceAccount)) {
     $ServiceAccount = "NT SERVICE\" + $ServiceName
 }

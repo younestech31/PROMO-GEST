@@ -115,6 +115,10 @@ function Write-PromoGestSanitizedConfig {
         throw "Production configuration must contain a JSON object."
     }
 
+    if ($null -eq $config.Storage -or $null -eq $config.Security) {
+        throw "Production configuration is missing required Storage or Security sections."
+    }
+
     # Connection strings and named credentials are reintroduced from the
     # protected secret store after restore. Remove them recursively, including
     # future secret-bearing fields nested inside arrays or section objects.

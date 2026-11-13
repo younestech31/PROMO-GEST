@@ -67,6 +67,25 @@ if ([string]::Equals($backupRootNormalized, $backupVolumeRoot, [StringComparison
     throw "BackupRoot must be a dedicated directory, not a volume root."
 }
 
+# Resolve no existing path components through junctions/symlinks. Otherwise a
+# lexically safe BackupRoot could redirect into live storage or another target.
+$pathComponent = $BackupRoot
+while (-not [string]::IsNullOrWhiteSpace($pathComponent)) {
+    if (Test-Path -LiteralPath $pathComponent) {
+        $pathItem = Get-Item -LiteralPath $pathComponent -Force -ErrorAction Stop
+        if (($pathItem.Attributes -band [IO.FileAttributes]::ReparsePoint) -ne 0) {
+            throw "BackupRoot must not traverse a junction or symbolic link: $pathComponent"
+        }
+    }
+
+    $parentPath = Split-Path -Path $pathComponent -Parent
+    if ([string]::IsNullOrWhiteSpace($parentPath) -or
+        [string]::Equals($parentPath, $pathComponent, [StringComparison]::OrdinalIgnoreCase)) {
+        break
+    }
+    $pathComponent = $parentPath
+}
+
 $protectedSourceDirectories = @(
     $StorageDir,
     $DataProtectionDir,

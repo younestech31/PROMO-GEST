@@ -88,9 +88,10 @@ if ($cfgJson.ConnectionStrings -and $cfgJson.ConnectionStrings.DefaultConnection
     $cfgJson.ConnectionStrings.DefaultConnection = $connectionBuilder.ConnectionString
 }
 $cfgJson | ConvertTo-Json -Depth 10 | Set-Content -LiteralPath (Join-Path $SanitizedStage "appsettings.Production.sanitized.json") -Encoding UTF8
-if (Test-Path -LiteralPath $CaddyfilePath -PathType Leaf) {
-    Copy-Item -LiteralPath $CaddyfilePath -Destination (Join-Path $SanitizedStage "Caddyfile") -Force
+if (-not (Test-Path -LiteralPath $CaddyfilePath -PathType Leaf)) {
+    throw "Local HTTPS Caddyfile not found: $CaddyfilePath"
 }
+Copy-Item -LiteralPath $CaddyfilePath -Destination (Join-Path $SanitizedStage "Caddyfile") -Force
 Compress-Archive -Path (Join-Path $SanitizedStage "*") -DestinationPath $ConfigArchivePath -Force
 Remove-Item -Recurse -Force $SanitizedStage
 

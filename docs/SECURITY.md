@@ -34,7 +34,7 @@ PROMO GEST enforces **at most one System Administrator per installation** at thr
 - Every project query filters by `ProjectMembers` for non-admin employees. Non-admin access to `GET /api/projects/{projectId}` verifies membership first and returns `403 Forbidden` (`PROJECT_ACCESS_DENIED`) even for non-existent UUIDs, preventing project ID probing.
 - Every authorization failure records an `ACCESS_DENIED` entry in `audit_logs`.
 - Audit records sanitize CR/LF characters and truncate oversized headers (e.g., `User-Agent`) to column limits so logging never fails with SQL `22001`.
-- Audit immutability is enforced both in EF Core (`AppDbContext.SaveChangesAsync` rejects `Modified`/`Deleted` `AuditLog` entries) and in PostgreSQL (`trg_audit_logs_immutable` trigger raising SQLSTATE `42501`).
+- Audit immutability is enforced in EF Core (`AppDbContext.SaveChangesAsync` rejects `Modified`/`Deleted` entries), by the PostgreSQL `trg_audit_logs_immutable` trigger, and by the runtime role's table ACL. The `promogest_app` role receives only `SELECT` and `INSERT` on `audit_logs`; `UPDATE`, `DELETE`, `TRUNCATE`, and `TRIGGER` are explicitly revoked by migration `20261113000004_AuditLogRuntimePermissions`.
 
 ## 5. HTTP Security Headers & Reverse Proxy Trust
 - `UseForwardedHeaders()` trusts only loopback reverse proxies (`127.0.0.1`, `::1`) for `X-Forwarded-For` and `X-Forwarded-Proto` with `ForwardLimit = 1`.

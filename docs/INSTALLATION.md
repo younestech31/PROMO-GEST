@@ -111,7 +111,7 @@ The Linux deployment uses the supplied systemd units and the self-contained Linu
    ```
    Replace the runtime database secret and Data Protection certificate password with values from the organization's protected secret store. The environment file is read by systemd and must not be committed or copied into backup archives.
 
-4. **Create the Linux Data Protection certificate.** Generate a password-protected PKCS#12 file at the exact path configured in `appsettings.Production.json`. Keep the temporary private key files in a root-only temporary directory and delete them after exporting the PFX:
+4. **Create the Linux Data Protection certificate.** Run this step in a root shell (`sudo -i`). Generate a password-protected PKCS#12 file at the exact path configured in `appsettings.Production.json`. Keep the temporary private key files in a root-only temporary directory and delete them after exporting the PFX:
    ```bash
    sudo install -d -o root -g root -m 0700 /root/promogest-dp-cert
    read -r -s -p 'Data Protection certificate password: ' PROMOGEST_DATA_PROTECTION_CERT_PASSWORD

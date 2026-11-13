@@ -408,6 +408,7 @@ export function createPromoGestDevApiPlugin(): Plugin {
             isInitialized: Boolean(organization),
             timestampUtc: new Date().toISOString(),
             environmentMode: 'ViteDevContractPreview',
+            previewMode: true,
           });
         }
 

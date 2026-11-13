@@ -7,17 +7,22 @@ import { checkPasswordStrength, validateSetupRequest, type ValidationErrors } fr
 import { apiClient, ApiConnectionError, ApiError } from '../../services/apiClient';
 import { LanguageSwitcher } from '../../components/LanguageSwitcher';
 import { FormField, inputBaseClass } from '../../components/FormField';
+import { PreviewAccessButton } from '../auth/PreviewAccessButton';
 
 interface FirstRunSetupWizardProps {
   language: AppLanguage;
   onLanguageChange: (lang: AppLanguage) => void;
   onInitialized: () => void;
+  isPreviewMode: boolean;
+  onPreviewLogin: () => Promise<void>;
 }
 
 export function FirstRunSetupWizard({
   language,
   onLanguageChange,
   onInitialized,
+  isPreviewMode,
+  onPreviewLogin,
 }: FirstRunSetupWizardProps) {
   const t = getTranslations(language);
 
@@ -113,6 +118,11 @@ export function FirstRunSetupWizard({
             <p className="text-xs font-semibold text-teal-800 mb-1">{t.setup.eyebrow}</p>
             <h1 className="text-2xl font-bold text-slate-900 tracking-tight">{t.setup.title}</h1>
             <p className="text-sm text-slate-600 mt-1.5 max-w-3xl">{t.setup.subtitle}</p>
+            {isPreviewMode && (
+              <div className="mt-4 max-w-md">
+                <PreviewAccessButton language={language} onOpen={onPreviewLogin} />
+              </div>
+            )}
           </div>
 
           {submitError && (

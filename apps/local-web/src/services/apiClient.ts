@@ -178,6 +178,9 @@ export const apiClient = {
       body: JSON.stringify(payload),
     }),
 
+  openPreviewSession: () =>
+    requestJson<SessionResponse>('/api/auth/preview-session', { method: 'GET' }),
+
   logout: () => requestJson<void>('/api/auth/logout', { method: 'POST' }),
 
   getSession: () => requestJson<SessionResponse>('/api/auth/me', { method: 'GET' }),

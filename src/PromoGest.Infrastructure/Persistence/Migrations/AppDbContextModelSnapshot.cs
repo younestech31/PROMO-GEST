@@ -11,7 +11,9 @@ namespace PromoGest.Infrastructure.Persistence.Migrations
     [DbContext(typeof(AppDbContext))]
     partial class AppDbContextModelSnapshot : ModelSnapshot
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        protected override void BuildModel(ModelBuilder modelBuilder) => BuildModelCore(modelBuilder);
+
+        internal static void BuildModelCore(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder

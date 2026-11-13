@@ -153,9 +153,12 @@ foreach ($requiredFile in $requiredFiles) {
     }
 }
 
-Write-Host "[2/6] Validating PostgreSQL dump..."
+Write-Host "[2/6] Validating PostgreSQL dump and ZIP archive paths before creating a restore database..."
 & pg_restore --list "$DbDumpPath" | Out-Null
 if ($LASTEXITCODE -ne 0) { throw "PostgreSQL dump is invalid (pg_restore --list exit $LASTEXITCODE)." }
+Assert-SafeZipArchive -ArchivePath $StorageArchivePath
+Assert-SafeZipArchive -ArchivePath $DpKeysArchivePath
+Assert-SafeZipArchive -ArchivePath $ConfigArchivePath
 
 Write-Host "[3/6] Creating an isolated restore database with provisioning identity $ProvisionUser..."
 $existing = & psql --host=$DatabaseHost --port=$DatabasePort --username=$ProvisionUser --dbname=postgres --tuples-only --no-align -c "SELECT 1 FROM pg_database WHERE datname = '$TargetDatabase';"
@@ -189,11 +192,6 @@ GRANT SELECT, INSERT ON TABLE audit_logs TO "$RuntimeDatabaseUser";
 "@
 & psql --host=$DatabaseHost --port=$DatabasePort --username=$DatabaseUser --dbname=$TargetDatabase --set=ON_ERROR_STOP=1 --command=$grantSql
 if ($LASTEXITCODE -ne 0) { throw "Could not reapply least-privilege runtime grants after restore." }
-
-Write-Host "[4/6] Validating ZIP paths before extraction..."
-Assert-SafeZipArchive -ArchivePath $StorageArchivePath
-Assert-SafeZipArchive -ArchivePath $DpKeysArchivePath
-Assert-SafeZipArchive -ArchivePath $ConfigArchivePath
 
 Write-Host "[5/6] Restoring local document storage, Data Protection keys, and sanitized configuration..."
 New-Item -ItemType Directory -Path $RestoreStorageDir, $RestoreDataProtectionDir, $RestoreConfigDir -ErrorAction Stop | Out-Null

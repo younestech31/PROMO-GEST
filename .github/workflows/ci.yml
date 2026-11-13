@@ -471,6 +471,18 @@ jobs:
           if (-not $overlapRejected) {
             throw "The production restore script did not reject overlapping restore destinations."
           }
+
+          $liveRootRejected = $false
+          try {
+            & $restoreScript -BackupBundleDir $probeBundle -ProtectedInstallRoot $restoreProbeRoot -RestoreStorageDir (Join-Path $restoreProbeRoot "live-storage-restore") -RestoreDataProtectionDir (Join-Path $env:RUNNER_TEMP "isolated-restore-keys") -RestoreConfigDir (Join-Path $env:RUNNER_TEMP "isolated-restore-config")
+          }
+          catch {
+            Write-Host "Live installation root probe returned: $($_.Exception.Message)"
+            $liveRootRejected = $_.Exception.Message -like "*outside the live installation root*"
+          }
+          if (-not $liveRootRejected) {
+            throw "The production restore script did not reject an output directory inside the live installation root."
+          }
           Remove-Item -LiteralPath $restoreProbeRoot -Recurse -Force
           Write-Host "Verified the production restore script rejects overlapping destinations before database access."
 

@@ -146,11 +146,26 @@ restore_service() {
 }
 trap restore_service EXIT
 
-if systemctl is-active --quiet "$SERVICE_NAME"; then
-  service_was_running=1
-  echo "Stopping $SERVICE_NAME to obtain a consistent database, file, and key-ring snapshot..."
-  systemctl stop "$SERVICE_NAME"
-fi
+service_state="$(systemctl show -p ActiveState --value "$SERVICE_NAME")"
+case "$service_state" in
+  active)
+    service_was_running=1
+    echo "Stopping $SERVICE_NAME to obtain a consistent database, file, and key-ring snapshot..."
+    systemctl stop "$SERVICE_NAME"
+    stopped_state="$(systemctl show -p ActiveState --value "$SERVICE_NAME")"
+    if [[ "$stopped_state" != "inactive" ]]; then
+      echo "ERROR: $SERVICE_NAME did not reach the inactive state after stop (state: $stopped_state)." >&2
+      exit 1
+    fi
+    ;;
+  inactive|failed)
+    echo "$SERVICE_NAME is $service_state; proceeding without a restart requirement."
+    ;;
+  *)
+    echo "ERROR: Cannot create a consistent backup while $SERVICE_NAME is in transitional state '$service_state'." >&2
+    exit 1
+    ;;
+esac
 
 echo "[1/5] Dumping PostgreSQL database '$DB_NAME' as '$PGUSER'..."
 pg_dump --host="$PGHOST" --port="$PGPORT" --username="$PGUSER" \

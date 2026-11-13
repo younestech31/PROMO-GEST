@@ -12,7 +12,7 @@ import { PreviewAccessButton } from '../auth/PreviewAccessButton';
 interface FirstRunSetupWizardProps {
   language: AppLanguage;
   onLanguageChange: (lang: AppLanguage) => void;
-  onInitialized: () => void;
+  onInitialized: () => void | Promise<void>;
   isPreviewMode: boolean;
   onPreviewLogin: () => Promise<void>;
 }
@@ -66,27 +66,42 @@ export function FirstRunSetupWizard({
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     setSubmitError(null);
-
-    const validation = validateSetupRequest(form, confirmPassword, language);
-    setErrors(validation);
-    if (Object.keys(validation).length > 0) {
-      return;
-    }
-
     setIsSubmitting(true);
+
     try {
+      // The preview page can outlive the API process or retain an older setup screen.
+      // Re-read the authoritative database-backed status before attempting a POST.
+      // This avoids sending a request that the embedded preview gateway may block
+      // when the installation was already completed in another browser/session.
+      const currentSetup = await apiClient.getSetupStatus();
+      if (currentSetup.isInitialized) {
+        setErrors({});
+        await onInitialized();
+        return;
+      }
+
+      const validation = validateSetupRequest(form, confirmPassword, language);
+      setErrors(validation);
+      if (Object.keys(validation).length > 0) {
+        return;
+      }
+
       await apiClient.initializeInstallation({
         ...form,
         shareCapitalDzd: form.shareCapitalDzd ?? null,
       });
-      onInitialized();
+      await onInitialized();
     } catch (err) {
-      if (err instanceof ApiConnectionError) {
+      // A concurrent first-run request may have initialized the installation
+      // after the status check. Treat the API conflict as completed setup.
+      if (err instanceof ApiError && err.code === 'SETUP_ALREADY_INITIALIZED') {
+        await onInitialized();
+      } else if (err instanceof ApiConnectionError) {
         setSubmitError(t.serverDisconnectedBannerTitle);
       } else if (err instanceof ApiError) {
         setSubmitError(translateApiError(err.code, err.message, language));
       } else {
-        setSubmitError(language === 'ar' ? 'حدث خطأ غير متوقع أثناء التهيئة.' : 'Erreur inattendue lors de l\'initialisation.');
+        setSubmitError(language === 'ar' ? 'حدث خطأ غير متوقع أثناء التهيئة.' : "Erreur inattendue lors de l'initialisation.");
       }
     } finally {
       setIsSubmitting(false);

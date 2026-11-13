@@ -114,6 +114,7 @@ jobs:
           PGUSER: promogest_owner
           PGPROVISION_USER: postgres
           PROMOGEST_APP_USER: promogest_app
+          PROMOGEST_DATA_PROTECTION_CERT_PASSWORD: Restore-CI-Pfx-Password-2026
           PGPASSFILE: ${{ runner.temp }}/promogest.pgpass
         shell: bash
         run: |
@@ -130,6 +131,15 @@ jobs:
           mkdir -p "$storage_root/organization/2026/11" "$key_root"
           printf 'PROMO GEST restore verification file\n' > "$storage_root/organization/2026/11/restore-probe.bin"
           printf '<key id="ci-restore-probe">test-only-key-material</key>\n' > "$key_root/key-ci-probe.xml"
+          openssl req -x509 -newkey rsa:2048 -nodes \
+            -keyout "$RUNNER_TEMP/promogest-dp.key" \
+            -out "$RUNNER_TEMP/promogest-dp.crt" \
+            -days 2 -subj "/CN=PromoGest CI Data Protection"
+          openssl pkcs12 -export -out "$key_root/protection.pfx" \
+            -inkey "$RUNNER_TEMP/promogest-dp.key" \
+            -in "$RUNNER_TEMP/promogest-dp.crt" \
+            -passout env:PROMOGEST_DATA_PROTECTION_CERT_PASSWORD
+          rm -f "$RUNNER_TEMP/promogest-dp.key" "$RUNNER_TEMP/promogest-dp.crt"
           printf '%s\n' '{"ConnectionStrings":{"DefaultConnection":"Host=localhost;Port=5432;Database=promogest_ci;Username=promogest_app;Password=app_pass"}}' > "$config_path"
 
           probe_file="$storage_root/organization/2026/11/restore-probe.bin"

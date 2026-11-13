@@ -53,6 +53,10 @@ DP_CERTIFICATE_PATH="$DP_KEYS_DIR/protection.pfx"
   echo "ERROR: Linux Data Protection certificate missing: $DP_CERTIFICATE_PATH" >&2
   exit 1
 }
+command -v openssl >/dev/null || {
+  echo "ERROR: Required command not found: openssl" >&2
+  exit 1
+}
 openssl pkcs12 -in "$DP_CERTIFICATE_PATH" -noout \
   -passin env:PROMOGEST_DATA_PROTECTION_CERT_PASSWORD >/dev/null
 

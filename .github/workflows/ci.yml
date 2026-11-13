@@ -248,8 +248,8 @@ jobs:
           #!/usr/bin/env bash
           set -euo pipefail
           case "${1:-}" in
-            is-active) exit 0 ;;
-            stop) printf 'stopped\n' > "$PROMOGEST_TEST_SYSTEMD_STATE" ;;
+            show) cat "$PROMOGEST_TEST_SYSTEMD_STATE" ;;
+            stop) printf 'inactive\n' > "$PROMOGEST_TEST_SYSTEMD_STATE" ;;
             start) printf 'active\n' > "$PROMOGEST_TEST_SYSTEMD_STATE" ;;
             *) echo "Unexpected fake systemctl command: ${1:-}" >&2; exit 2 ;;
           esac
@@ -276,9 +276,33 @@ jobs:
           test "$(cat "$systemd_state")" = "active"
           remaining_partial="$(sudo find "$failed_backup_root" -mindepth 1 -maxdepth 1 -type d -name 'promogest_backup_*' -print -quit)"
           test -z "$remaining_partial"
-          sudo rm -rf -- "$failed_backup_root" "$fake_systemd_dir"
+
+          echo "[Linux backup script] Verifying transitional systemd states are rejected..."
+          transient_backup_root="$RUNNER_TEMP/promogest-transient-backups"
+          printf 'activating\n' > "$systemd_state"
+          if sudo env \
+            PATH="$fake_systemd_dir:$PATH" \
+            PGHOST="$PGHOST" PGPORT="$PGPORT" PGUSER="$PGUSER" \
+            PGPASSFILE=/etc/promogest/pgpass \
+            PROMOGEST_TEST_SYSTEMD_STATE="$systemd_state" \
+            PROMOGEST_SERVICE_NAME=promogest-transient-probe.service \
+            PROMOGEST_DB_NAME=promogest_ci \
+            PROMOGEST_STORAGE_DIR="$storage_root" \
+            PROMOGEST_DATA_PROTECTION_KEY_DIR="$key_root" \
+            PROMOGEST_CONFIG_PATH="$config_path" \
+            PROMOGEST_CADDYFILE_PATH="$GITHUB_WORKSPACE/deploy/linux/Caddyfile" \
+            PROMOGEST_BACKUP_ROOT="$transient_backup_root" \
+            PROMOGEST_DATA_PROTECTION_CERT_PASSWORD="$PROMOGEST_DATA_PROTECTION_CERT_PASSWORD" \
+            bash scripts/backup-promogest.sh; then
+            echo "Backup unexpectedly proceeded while the service was activating." >&2
+            exit 1
+          fi
+          test "$(cat "$systemd_state")" = "activating"
+          remaining_transient="$(sudo find "$transient_backup_root" -mindepth 1 -maxdepth 1 -type d -name 'promogest_backup_*' -print -quit)"
+          test -z "$remaining_transient"
+          sudo rm -rf -- "$failed_backup_root" "$transient_backup_root" "$fake_systemd_dir"
           rm -f -- "$systemd_state"
-          echo "Verified failed backup cleanup and service restart."
+          echo "Verified failed-backup cleanup, service restart, and transitional-state rejection."
 
           echo "[Linux backup script] Verifying unsafe backup destinations are rejected..."
           if sudo env \

@@ -45,10 +45,19 @@ function Assert-NoPathOverlap {
         for ($j = $i + 1; $j -lt $normalized.Count; $j++) {
             $left = $normalized[$i]
             $right = $normalized[$j]
-            $overlaps = [string]::Equals($left, $right, [StringComparison]::OrdinalIgnoreCase) -or
-                $left.StartsWith($right + [IO.Path]::DirectorySeparatorChar, [StringComparison]::OrdinalIgnoreCase) -or
-                $right.StartsWith($left + [IO.Path]::DirectorySeparatorChar, [StringComparison]::OrdinalIgnoreCase)
-            if ($overlaps) {
+            $samePath = [string]::Equals($left, $right, [StringComparison]::OrdinalIgnoreCase)
+            $rightRelativeToLeft = [IO.Path]::GetRelativePath($left, $right)
+            $leftRelativeToRight = [IO.Path]::GetRelativePath($right, $left)
+            $separator = [string][IO.Path]::DirectorySeparatorChar
+            $rightInsideLeft = -not [IO.Path]::IsPathRooted($rightRelativeToLeft) -and
+                $rightRelativeToLeft -ne "." -and
+                $rightRelativeToLeft -ne ".." -and
+                -not $rightRelativeToLeft.StartsWith(".." + $separator, [StringComparison]::Ordinal)
+            $leftInsideRight = -not [IO.Path]::IsPathRooted($leftRelativeToRight) -and
+                $leftRelativeToRight -ne "." -and
+                $leftRelativeToRight -ne ".." -and
+                -not $leftRelativeToRight.StartsWith(".." + $separator, [StringComparison]::Ordinal)
+            if ($samePath -or $rightInsideLeft -or $leftInsideRight) {
                 throw "$Description paths must be distinct and non-overlapping: '$left' and '$right'."
             }
         }

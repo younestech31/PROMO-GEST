@@ -17,6 +17,7 @@ public sealed class ProjectConfiguration : IEntityTypeConfiguration<Project>
 
         builder.HasKey(x => x.Id);
         builder.Property(x => x.Id).HasColumnName("id");
+        builder.Navigation(x => x.Members).HasField("_members").UsePropertyAccessMode(PropertyAccessMode.Field);
         builder.Property(x => x.Code).HasColumnName("code").HasMaxLength(40).IsRequired();
         builder.Property(x => x.NormalizedCode).HasColumnName("normalized_code").HasMaxLength(40).IsRequired();
         builder.Property(x => x.NameAr).HasColumnName("name_ar").HasMaxLength(200).IsRequired();

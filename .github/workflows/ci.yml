@@ -82,6 +82,8 @@ jobs:
         run: dotnet restore src/PromoGest.sln
       - name: Build solution with warnings as errors
         run: dotnet build src/PromoGest.sln --configuration Release --no-restore
+      - name: Publish Linux runtime artifact
+        run: dotnet publish src/PromoGest.Api/PromoGest.Api.csproj --configuration Release --runtime linux-x64 --self-contained true --output artifacts/linux-x64
       - name: Validate Linux shell scripts
         shell: bash
         run: |

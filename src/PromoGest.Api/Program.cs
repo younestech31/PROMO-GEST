@@ -24,6 +24,9 @@ if (OperatingSystem.IsWindows())
 }
 
 var migrationMode = args.Contains("--migrate", StringComparer.OrdinalIgnoreCase);
+var localRecoveryMode =
+    args.Contains("--unlock-admin", StringComparer.OrdinalIgnoreCase) ||
+    args.Contains("--reset-admin-password", StringComparer.OrdinalIgnoreCase);
 if (migrationMode)
 {
     var migrationConnection = Environment.GetEnvironmentVariable("PROMOGEST_MIGRATE_DB_CONNECTION");
@@ -44,7 +47,9 @@ builder.Services.AddPromoGestInfrastructure(builder.Configuration);
 // the runtime application's Data Protection key ring or platform encryption secrets.
 // The runtime host configures Data Protection below; the --migrate path resolves only
 // AppDbContext and therefore does not need to create or unlock application keys.
-if (!migrationMode)
+// Console-only admin recovery must remain available even when the runtime Data Protection
+// certificate/key ring is damaged or missing. These commands do not issue HTTP tokens.
+if (!migrationMode && !localRecoveryMode)
 {
     var storageRoot = builder.Configuration["Storage:RootDirectory"] ?? Path.Combine(AppContext.BaseDirectory, "storage");
     var defaultKeyDirectory = Path.Combine(

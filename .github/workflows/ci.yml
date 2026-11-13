@@ -32,7 +32,10 @@ jobs:
         run: |
           set -euo pipefail
           test -s apps/local-web/dist/index.html
-          test -n "$(find apps/local-web/dist -type f | grep -E '\\.(js|css)$' | head -n 1)"
+          if ! find apps/local-web/dist -type f \( -name '*.js' -o -name '*.css' \) -print -quit | grep -q .; then
+            echo "Missing frontend JavaScript/CSS assets" >&2
+            exit 1
+          fi
           if grep -R -n -E 'dev-api-middleware|createPromoGestDevApiPlugin|ViteDevContractPreview' apps/local-web/dist; then
             echo "Development preview code leaked into production frontend." >&2
             exit 1
@@ -44,7 +47,10 @@ jobs:
         run: |
           set -euo pipefail
           test -s src/PromoGest.Api/wwwroot/index.html
-          test -n "$(find src/PromoGest.Api/wwwroot -type f | grep -E '\\.(js|css)$' | head -n 1)"
+          if ! find src/PromoGest.Api/wwwroot -type f \( -name '*.js' -o -name '*.css' \) -print -quit | grep -q .; then
+            echo "Missing wwwroot JavaScript/CSS assets" >&2
+            exit 1
+          fi
           if grep -R -n -E 'dev-api-middleware|createPromoGestDevApiPlugin|ViteDevContractPreview' src/PromoGest.Api/wwwroot; then
             echo "Development preview code leaked into ASP.NET Core wwwroot." >&2
             exit 1

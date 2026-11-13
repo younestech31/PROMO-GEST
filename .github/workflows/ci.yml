@@ -223,6 +223,12 @@ jobs:
             bash scripts/backup-promogest.sh
           bundle_dir="$(sudo find "$backup_root" -mindepth 1 -maxdepth 1 -type d -name 'promogest_backup_*' -print -quit)"
           test -n "$bundle_dir"
+          sudo test -f "$backup_root/.promogest-backup.lock"
+          test "$(sudo stat -c '%u:%a' "$backup_root/.promogest-backup.lock")" = "0:600"
+          if grep -nF '/run/lock' deploy/linux/promogest-backup.service; then
+            echo "Backup systemd unit must not receive write access to the shared /run/lock directory." >&2
+            exit 1
+          fi
           for component in database.dump storage.tar.gz dataprotection-keys.tar.gz config-sanitized.tar.gz manifest.sha256; do
             sudo test -s "$bundle_dir/$component"
           done

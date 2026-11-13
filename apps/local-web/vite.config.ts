@@ -1,10 +1,11 @@
 import tailwindcss from '@tailwindcss/vite';
 import react from '@vitejs/plugin-react';
 import path from 'node:path';
-import { defineConfig } from 'vite';
+import { defineConfig, loadEnv } from 'vite';
 
-export default defineConfig(async ({ command }) => {
-  const aspNetCoreUrl = process.env.ASPNETCORE_URL;
+export default defineConfig(async ({ command, mode }) => {
+  const env = loadEnv(mode, path.resolve(__dirname, '../..'), '');
+  const aspNetCoreUrl = process.env.ASPNETCORE_URL || env.ASPNETCORE_URL;
   const plugins: any[] = [react(), tailwindcss()];
 
   if (command === 'serve' && !aspNetCoreUrl) {

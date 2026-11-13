@@ -114,7 +114,7 @@ function Assert-NoSensitiveConfigurationProperties {
     )
 
     if ($null -eq $Value) { return }
-    $sensitivePropertyPattern = '(?i)(^connectionstrings?$|(?:password|passwd|pwd|secret|tokens?|credentials?|private.?key|api.?key|access.?key|signing.?key)(?:value|text|string|hash)?$)'
+    $sensitivePropertyPattern = '(?i)(^connectionstrings?$|(?:password|passwd|pwd|secret|secret.?key|encryption.?key|master.?key|tokens?|credentials?|private.?key|api.?key|access.?key|signing.?key)(?:value|text|string|hash)?$)'
 
     if ($Value -is [PSCustomObject]) {
         foreach ($property in $Value.PSObject.Properties) {

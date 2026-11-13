@@ -18,6 +18,7 @@ import type {
   RoleDto,
   UserDto,
 } from './src/types/erp';
+import { getDevPreviewCookieAttributes } from './src/utils/devPreviewCookies';
 
 interface StoredUserRecord extends UserDto {
   passwordHash: string;
@@ -184,14 +185,20 @@ export function createPromoGestDevApiPlugin(): Plugin {
     return crypto.createHmac('sha256', csrfSecret).update(`${sessionKey}:${nonce}`).digest('base64url');
   }
 
-  function createCsrfPair(sessionKey: string): { token: string; cookies: string[] } {
+  function getCookieAttributes(req: IncomingMessage): string {
+    const forwardedProto = req.headers['x-forwarded-proto'];
+    const socketEncrypted = Boolean((req.socket as unknown as { encrypted?: boolean }).encrypted);
+    return getDevPreviewCookieAttributes(forwardedProto, socketEncrypted);
+  }
+
+  function createCsrfPair(sessionKey: string, cookieAttributes: string): { token: string; cookies: string[] } {
     const nonce = crypto.randomBytes(16).toString('base64url');
     const token = `${nonce}.${signCsrfToken(sessionKey, nonce)}`;
     return {
       token,
       cookies: [
-        `${ANTIFORGERY_COOKIE_NAME}=${nonce}; Path=/; HttpOnly; SameSite=Strict`,
-        `${CSRF_COOKIE_NAME}=${encodeURIComponent(token)}; Path=/; SameSite=Strict`,
+        `${ANTIFORGERY_COOKIE_NAME}=${nonce}; ${cookieAttributes}; HttpOnly`,
+        `${CSRF_COOKIE_NAME}=${encodeURIComponent(token)}; ${cookieAttributes}`,
       ],
     };
   }
@@ -301,7 +308,7 @@ export function createPromoGestDevApiPlugin(): Plugin {
 
         // CSRF Token Endpoint
         if (method === 'GET' && pathname === '/api/auth/csrf') {
-          const csrf = createCsrfPair(sessionKey);
+          const csrf = createCsrfPair(sessionKey, getCookieAttributes(req));
           return sendJson(
             res,
             200,
@@ -469,7 +476,8 @@ export function createPromoGestDevApiPlugin(): Plugin {
           });
 
           addAudit('AUTH_LOGIN_SUCCESS', 'Info', `User '${user.username}' signed in.`, user, 'UserSession');
-          const nextCsrf = createCsrfPair(user.id);
+          const cookieAttributes = getCookieAttributes(req);
+          const nextCsrf = createCsrfPair(user.id, cookieAttributes);
 
           return sendJson(
             res,
@@ -492,7 +500,7 @@ export function createPromoGestDevApiPlugin(): Plugin {
             },
             {
               'Set-Cookie': [
-                `${COOKIE_NAME}=${rawToken}; Path=/; HttpOnly; SameSite=Strict`,
+                `${COOKIE_NAME}=${rawToken}; ${cookieAttributes}; HttpOnly`,
                 ...nextCsrf.cookies,
               ],
               [CSRF_HEADER_NAME]: nextCsrf.token,
@@ -512,10 +520,11 @@ export function createPromoGestDevApiPlugin(): Plugin {
               addAudit('AUTH_LOGOUT', 'Info', `User '${user?.username ?? 'unknown'}' signed out.`, user, 'UserSession');
             }
           }
-          const anonCsrf = createCsrfPair('anon');
+          const cookieAttributes = getCookieAttributes(req);
+          const anonCsrf = createCsrfPair('anon', cookieAttributes);
           res.statusCode = 204;
           res.setHeader('Set-Cookie', [
-            `${COOKIE_NAME}=; Path=/; Max-Age=0; HttpOnly; SameSite=Strict`,
+            `${COOKIE_NAME}=; ${cookieAttributes}; Max-Age=0; HttpOnly`,
             ...anonCsrf.cookies,
           ]);
           res.setHeader(CSRF_HEADER_NAME, anonCsrf.token);

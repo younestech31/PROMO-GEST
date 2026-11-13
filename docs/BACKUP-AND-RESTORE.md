@@ -1,38 +1,64 @@
 # PROMO GEST — Backup and Restoration Procedures
 
-## 1. Backup Scope
-A complete PROMO GEST backup bundle (`promogest_backup_YYYYMMDD_HHMMSS/`) consists of:
-1. **PostgreSQL 18 database dump** (`database.dump`, `pg_dump --format=custom`)
-2. **Local document storage archive** (`storage.zip` / `storage.tar.gz` from `Storage:RootDirectory`)
-3. **Sanitized installation configuration** (`config-sanitized.zip` containing `appsettings.Production.sanitized.json` with database password redacted + `Caddyfile`)
-4. **SHA-256 verification manifest** (`manifest.sha256` covering all archive files)
+## 1. Backup scope
 
-Backing up only the database without `storage/` leaves uploaded property deeds, building permits, and contracts orphaned. Scrubbing secrets from `config-sanitized.zip` preserves topology/port/DataProtection configuration without exposing database passwords in backup media.
+A complete backup must preserve a consistent set of:
 
-## 2. Creating a Backup
-On Windows Server:
+1. PostgreSQL 18 database dump.
+2. Local document storage referenced by `stored_files`.
+3. ASP.NET Core Data Protection key ring.
+4. Sanitized installation configuration and local HTTPS configuration.
+5. SHA-256 manifest covering every archive component.
+
+Backing up only PostgreSQL leaves documents orphaned. Backing up database and documents without the Data Protection key ring can make previously protected payloads unreadable after restoration. Store backup bundles on encrypted media or an encrypted NAS and restrict access to the service and maintenance administrators.
+
+## 2. Database identities
+
+Use separate credentials:
+
+- `promogest_app`: runtime database operations only. It must not create databases, alter schema, or run migrations.
+- `promogest_owner`: owns the PROMO GEST database objects and applies EF Core migrations. It is not the Windows service identity.
+- A PostgreSQL provisioning/maintenance account: creates a new empty restore database and assigns its owner. Use this account only for backup/restore maintenance.
+
+Do not put production passwords in scripts, source control, command history, or backup archives. For PostgreSQL client tools, use a protected `pgpass` file or an approved secret-injection method.
+
+## 3. Creating backups
+
+On Windows Server, run the backup script from an elevated maintenance session:
+
 ```powershell
 .\scripts\backup-promogest.ps1 -DatabaseName promogest -StorageDir C:\PromoGest\storage -BackupRoot D:\PromoGestBackups
 ```
-Store copies on an external encrypted drive or secondary NAS inside the premises.
 
-## 3. Mandatory Restoration Verification Rule
-**A backup is NOT considered verified until a restoration test succeeds against a scratch database.**
+Confirm that the resulting bundle contains the database dump, storage archive, Data Protection key archive, sanitized configuration archive, and manifest.
 
-Run the verification drill regularly:
-- **Windows**:
-  ```powershell
-  createdb -U promogest_app promogest_restore_verify
-  .\scripts\restore-promogest.ps1 -BackupBundleDir D:\PromoGestBackups\promogest_backup_YYYYMMDD_HHMMSS -TargetDatabase promogest_restore_verify
-  ```
-- **Linux**:
-  ```bash
-  ./scripts/verify-backup-restore.sh promogest ./storage ./src/PromoGest.Api/appsettings.json
-  ```
+## 4. Mandatory full restoration drill
 
-Both restore scripts automatically verify:
-1. `manifest.sha256` passes with zero checksum mismatches.
-2. `pg_restore` exits with code `0`.
-3. `organization_settings`, `users`, `projects`, and `stored_files` row counts are queried and printed.
-4. Files referenced in `stored_files` exist in the restored storage directory and match their stored `sha256_checksum`.
-5. Note: When performing a full disaster recovery cutover on a new machine, re-enter the PostgreSQL password in `appsettings.Production.json` from your offline password vault before starting the service.
+A backup is not considered verified until it has been restored into a separate scratch database and all referenced files have been checked.
+
+### Windows
+
+Configure PostgreSQL client credentials for both the provisioning user and `promogest_owner` in the protected pgpass file. The restore script deliberately refuses to overwrite an existing target database.
+
+```powershell
+.\scripts\restore-promogest.ps1 -BackupBundleDir D:\PromoGestBackups\promogest_backup_YYYYMMDD_HHMMSS -TargetDatabase promogest_restore_verify -ProvisionUser postgres -DatabaseUser promogest_owner
+```
+
+The script validates the dump and manifest, creates a new database with the requested owner, restores as the maintenance owner, restores storage and Data Protection keys, and verifies every stored file by existence, byte length, and SHA-256.
+
+### Linux
+
+Use `promogest_owner` for dump/restore and a provisioning account for creating/dropping the scratch database:
+
+```bash
+PGHOST=127.0.0.1 PGUSER=promogest_owner PGPROVISION_USER=postgres \
+  ./scripts/verify-backup-restore.sh promogest ./storage ./src/PromoGest.Api/appsettings.json ./dataprotection-keys
+```
+
+The Linux drill restores the database, storage, Data Protection keys, and sanitized configuration into temporary locations, then verifies every database-referenced file. It removes only the uniquely named scratch database created by the drill; it never drops the source database.
+
+## 5. Data Protection recovery
+
+On Windows, DPAPI-protected key material is machine-bound. A byte-for-byte copy of the key-ring files to a different Windows machine does not by itself make them decryptable there. For same-machine recovery, restore the key ring on the same machine identity with the required filesystem ACLs intact. For a new-machine recovery, use a separately configured certificate-based key-protection strategy and securely preserve that certificate and its private key; validate the recovery procedure before relying on it.
+
+Never treat a sanitized configuration archive as a substitute for the offline secret store. Re-enter the production database connection, HTTPS certificate configuration, and any platform key-protection secrets from the organization's protected vault before starting the recovered service.

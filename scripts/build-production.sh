@@ -8,14 +8,27 @@ PUBLISH_DIR="$ROOT_DIR/artifacts/publish"
 
 echo "[1/4] Building React production frontend (monorepo root)..."
 cd "$ROOT_DIR"
-npm install --no-audit --no-fund
+npm ci --no-audit --no-fund
 npm run lint
 npm run test
 npm run build
 
-echo "[2/4] Copying compiled React static files into ASP.NET Core wwwroot..."
+echo "[2/4] Verifying and copying compiled React static files into ASP.NET Core wwwroot..."
+test -s "$WEB_DIR/dist/index.html"
+find "$WEB_DIR/dist" -type f | grep -Eq '\.(js|css)
+
+echo "[3/4] Running .NET unit tests..."
+dotnet test src/PromoGest.sln --filter "FullyQualifiedName~Domain.Tests|FullyQualifiedName~Application.Tests" --configuration Release
+
+echo "[4/4] Publishing self-contained ASP.NET Core 10 runtime..."
+dotnet publish src/PromoGest.Api/PromoGest.Api.csproj --configuration Release --output "$PUBLISH_DIR"
+
+echo "Production artifact ready at: $PUBLISH_DIR (no Node.js runtime required)."
+
+mkdir -p "$WWWROOT_DIR"
 find "$WWWROOT_DIR" -mindepth 1 ! -name '.gitkeep' -exec rm -rf {} +
-cp -R "$WEB_DIR/dist/"* "$WWWROOT_DIR/"
+cp -R "$WEB_DIR/dist/." "$WWWROOT_DIR/"
+test -s "$WWWROOT_DIR/index.html"
 
 echo "[3/4] Running .NET unit tests..."
 dotnet test src/PromoGest.sln --filter "FullyQualifiedName~Domain.Tests|FullyQualifiedName~Application.Tests" --configuration Release

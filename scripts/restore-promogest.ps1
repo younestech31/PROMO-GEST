@@ -149,12 +149,12 @@ foreach ($requiredFile in $requiredFiles) {
     }
 }
 
-Write-Host "[2/6] Validating PostgreSQL dump and ZIP archive paths before creating a restore database..."
-& pg_restore --list "$DbDumpPath" | Out-Null
-if ($LASTEXITCODE -ne 0) { throw "PostgreSQL dump is invalid (pg_restore --list exit $LASTEXITCODE)." }
+Write-Host "[2/6] Validating ZIP archive paths and PostgreSQL dump before creating a restore database..."
 Assert-SafeZipArchive -ArchivePath $StorageArchivePath
 Assert-SafeZipArchive -ArchivePath $DpKeysArchivePath
 Assert-SafeZipArchive -ArchivePath $ConfigArchivePath
+& pg_restore --list "$DbDumpPath" | Out-Null
+if ($LASTEXITCODE -ne 0) { throw "PostgreSQL dump is invalid (pg_restore --list exit $LASTEXITCODE)." }
 
 Write-Host "[3/6] Creating an isolated restore database with provisioning identity $ProvisionUser..."
 $existing = & psql --host=$DatabaseHost --port=$DatabasePort --username=$ProvisionUser --dbname=postgres --tuples-only --no-align -c "SELECT 1 FROM pg_database WHERE datname = '$TargetDatabase';"

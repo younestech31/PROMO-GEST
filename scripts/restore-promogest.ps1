@@ -55,6 +55,27 @@ function Assert-NoPathOverlap {
     }
 }
 
+function Assert-NoExistingReparsePoint {
+    param([Parameter(Mandatory = $true)][string]$Path)
+
+    $pathComponent = [IO.Path]::GetFullPath($Path)
+    while (-not [string]::IsNullOrWhiteSpace($pathComponent)) {
+        if (Test-Path -LiteralPath $pathComponent) {
+            $pathItem = Get-Item -LiteralPath $pathComponent -Force -ErrorAction Stop
+            if (($pathItem.Attributes -band [IO.FileAttributes]::ReparsePoint) -ne 0) {
+                throw "Restore destination must not traverse a junction or symbolic link: $pathComponent"
+            }
+        }
+
+        $parentPath = Split-Path -Path $pathComponent -Parent
+        if ([string]::IsNullOrWhiteSpace($parentPath) -or
+            [string]::Equals($parentPath, $pathComponent, [StringComparison]::OrdinalIgnoreCase)) {
+            break
+        }
+        $pathComponent = $parentPath
+    }
+}
+
 function Assert-SafeZipArchive {
     param([Parameter(Mandatory = $true)][string]$ArchivePath)
 
@@ -111,6 +132,7 @@ if ([string]::Equals($DatabaseUser, $RuntimeDatabaseUser, [StringComparison]::Or
 $restoreDestinations = @($RestoreStorageDir, $RestoreDataProtectionDir, $RestoreConfigDir)
 Assert-NoPathOverlap -Paths (@($restoreDestinations) + @($BackupBundleDir)) -Description "Backup and restore"
 foreach ($restorePath in $restoreDestinations) {
+    Assert-NoExistingReparsePoint -Path $restorePath
     if (Test-Path -LiteralPath $restorePath) {
         throw "Restore destination already exists. Choose a new path: $restorePath"
     }

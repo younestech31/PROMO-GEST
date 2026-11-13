@@ -55,7 +55,7 @@ PGHOST=127.0.0.1 PGUSER=promogest_owner PGPROVISION_USER=postgres \
   ./scripts/verify-backup-restore.sh promogest ./storage ./src/PromoGest.Api/appsettings.json ./dataprotection-keys
 ```
 
-The Linux drill restores the database, storage, Data Protection keys, and sanitized configuration into temporary locations. It reapplies and tests runtime grants (including future-object default privileges and append-only audit restrictions), then verifies every database-referenced file. It removes only the uniquely named scratch database created by the drill; it never drops the source database.
+For the Linux systemd backup service, store the PostgreSQL client credentials in `/etc/promogest/pgpass`, owned by `root:root` with mode `0600`; the unit runs with `ProtectHome=true`, so `/root/.pgpass` is deliberately not used by that service. For a manual drill, set `PGPASSFILE` to a protected file readable only by the operator. The Linux drill restores the database, storage, Data Protection keys, and sanitized configuration into temporary locations. It reapplies and tests runtime grants (including future-object default privileges and append-only audit restrictions), then verifies every database-referenced file. It removes only the uniquely named scratch database created by the drill; it never drops the source database.
 
 ## 5. Data Protection recovery
 

@@ -40,15 +40,17 @@ if [[ ! -d "$DP_KEYS_DIR" ]] || ! find "$DP_KEYS_DIR" -type f -print -quit | gre
   exit 1
 fi
 
-VERIFY_DB="${SOURCE_DB}_restore_$(date +%s)_$RANDOM"
+SOURCE_PREFIX="${SOURCE_DB:0:32}"
+VERIFY_DB="${SOURCE_PREFIX}_restore_$(date +%s)_$RANDOM"
+VERIFY_DB_CREATED=0
 WORK_DIR="$(mktemp -d)"
 RESTORE_STORAGE="$WORK_DIR/restored_storage"
 RESTORE_KEYS="$WORK_DIR/restored_dataprotection_keys"
 RESTORE_CONFIG="$WORK_DIR/restored_config"
 
 cleanup() {
-  if [[ -n "${VERIFY_DB:-}" ]]; then
-    dropdb --if-exists --host="$PGHOST" --port="$PGPORT" --username="$PROVISION_USER" "$VERIFY_DB" >/dev/null 2>&1 || true
+  if [[ "$VERIFY_DB_CREATED" -eq 1 ]]; then
+    dropdb --host="$PGHOST" --port="$PGPORT" --username="$PROVISION_USER" "$VERIFY_DB" >/dev/null 2>&1 || true
   fi
   rm -rf "$WORK_DIR"
 }
@@ -89,6 +91,7 @@ echo "[3/8] Verifying every backup component checksum..."
 
 echo "[4/8] Creating an isolated restore database as '$PROVISION_USER'..."
 createdb --host="$PGHOST" --port="$PGPORT" --username="$PROVISION_USER" --owner="$OWNER_USER" "$VERIFY_DB"
+VERIFY_DB_CREATED=1
 
 psql --host="$PGHOST" --port="$PGPORT" --username="$PROVISION_USER" --dbname=postgres \
   --set=ON_ERROR_STOP=1 --set=verify_db="$VERIFY_DB" --set=app_role="$APP_USER" \

@@ -23,8 +23,12 @@ function New-PromoGestZipFromDirectory {
         [Parameter(Mandatory = $true)][string]$DestinationArchive
     )
 
-    # Reject junctions and symbolic links: backups must not silently include
-    # data from outside the configured storage/key directories.
+    # Reject a linked source root as well as nested junctions/symbolic links:
+    # backups must not silently include data from outside configured directories.
+    $sourceItem = Get-Item -LiteralPath $SourceDirectory -Force -ErrorAction Stop
+    if (($sourceItem.Attributes -band [IO.FileAttributes]::ReparsePoint) -ne 0) {
+        throw "Backup source root must not be a junction or symbolic link: $SourceDirectory"
+    }
     $reparsePoints = @(Get-ChildItem -LiteralPath $SourceDirectory -Force -Recurse -ErrorAction Stop |
         Where-Object { ($_.Attributes -band [IO.FileAttributes]::ReparsePoint) -ne 0 })
     if ($reparsePoints.Count -gt 0) {
@@ -83,8 +87,13 @@ foreach ($sourceDirectory in $protectedSourceDirectories) {
 New-Item -ItemType Directory -Force -Path $BackupRoot | Out-Null
 
 try {
-    if (-not $SkipServiceStop) {
-        $service = Get-Service -Name $ServiceName -ErrorAction Stop
+    $service = Get-Service -Name $ServiceName -ErrorAction Stop
+    if ($SkipServiceStop) {
+        if ($service.Status -ne [System.ServiceProcess.ServiceControllerStatus]::Stopped) {
+            throw "-SkipServiceStop is permitted only when $ServiceName is already stopped."
+        }
+    }
+    else {
         $serviceWasRunning = $service.Status -eq [System.ServiceProcess.ServiceControllerStatus]::Running
         if ($serviceWasRunning) {
             Write-Host "Stopping $ServiceName to obtain a consistent database, storage, and Data Protection backup..."

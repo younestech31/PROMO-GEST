@@ -476,6 +476,24 @@ public sealed class PostgresEndToEndTests : IClassFixture<PostgreSql18Integratio
                 $"Project member assignment failed with {(int)assignResp.StatusCode} {assignResp.StatusCode}: {assignBody}" +
                 $"{Environment.NewLine}Captured ASP.NET Core server logs:{Environment.NewLine}{string.Join(Environment.NewLine, _serverLogs.Snapshot())}");
 
+            // Reassign the same employee to cover the existing-membership UPDATE path.
+            var updateMembershipResp = await adminClient.PutAsJsonAsync($"/api/projects/{createdProject.Id}/members",
+                new AssignProjectMemberRequest(createdEmployee.Id, "CommercialAgent", true, false, false, false));
+            Assert.Equal(HttpStatusCode.OK, updateMembershipResp.StatusCode);
+
+            using (var scope = factory.Services.CreateScope())
+            {
+                var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+                var updatedMembership = await db.ProjectMembers.SingleAsync(
+                    member => member.ProjectId == createdProject.Id && member.UserId == createdEmployee.Id);
+                Assert.True(updatedMembership.CanViewFinancials);
+                Assert.False(updatedMembership.CanManageSales);
+                Assert.False(updatedMembership.CanManageConstruction);
+                Assert.False(updatedMembership.CanManageDocuments);
+                Assert.Equal(1, await db.ProjectMembers.CountAsync(
+                    member => member.ProjectId == createdProject.Id && member.UserId == createdEmployee.Id));
+            }
+
             var allowedAttempt = await employeeClient.GetAsync($"/api/projects/{createdProject.Id}");
             Assert.Equal(HttpStatusCode.OK, allowedAttempt.StatusCode);
 

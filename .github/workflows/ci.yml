@@ -239,6 +239,56 @@ jobs:
             PROMOGEST_DATA_PROTECTION_CERT_PASSWORD="$PROMOGEST_DATA_PROTECTION_CERT_PASSWORD" \
             bash scripts/verify-backup-restore.sh promogest_ci "" "" "" "$bundle_dir"
 
+          echo "[Linux backup script] Verifying unsafe backup destinations are rejected..."
+          if sudo env \
+            PGHOST="$PGHOST" PGPORT="$PGPORT" PGUSER="$PGUSER" \
+            PGPASSFILE=/etc/promogest/pgpass \
+            PROMOGEST_DATA_PROTECTION_CERT_PASSWORD="$PROMOGEST_DATA_PROTECTION_CERT_PASSWORD" \
+            PROMOGEST_DB_NAME=promogest_ci \
+            PROMOGEST_STORAGE_DIR="$storage_root" \
+            PROMOGEST_DATA_PROTECTION_KEY_DIR="$key_root" \
+            PROMOGEST_CONFIG_PATH="$config_path" \
+            PROMOGEST_CADDYFILE_PATH="$GITHUB_WORKSPACE/deploy/linux/Caddyfile" \
+            PROMOGEST_BACKUP_ROOT="$storage_root/backup-under-storage" \
+            bash scripts/backup-promogest.sh; then
+            echo "Backup script accepted a destination nested inside document storage." >&2
+            exit 1
+          fi
+
+          echo "[Linux backup script] Verifying shared system backup roots are rejected..."
+          if sudo env \
+            PGHOST="$PGHOST" PGPORT="$PGPORT" PGUSER="$PGUSER" \
+            PGPASSFILE=/etc/promogest/pgpass \
+            PROMOGEST_DATA_PROTECTION_CERT_PASSWORD="$PROMOGEST_DATA_PROTECTION_CERT_PASSWORD" \
+            PROMOGEST_DB_NAME=promogest_ci \
+            PROMOGEST_STORAGE_DIR="$storage_root" \
+            PROMOGEST_DATA_PROTECTION_KEY_DIR="$key_root" \
+            PROMOGEST_CONFIG_PATH="$config_path" \
+            PROMOGEST_CADDYFILE_PATH="$GITHUB_WORKSPACE/deploy/linux/Caddyfile" \
+            PROMOGEST_BACKUP_ROOT=/var/backups \
+            bash scripts/backup-promogest.sh; then
+            echo "Backup script accepted the shared /var/backups directory." >&2
+            exit 1
+          fi
+
+          echo "[Linux backup script] Verifying linked Data Protection roots are rejected..."
+          key_root_link="$RUNNER_TEMP/promogest-dpkeys-link"
+          ln -s "$key_root" "$key_root_link"
+          if sudo env \
+            PGHOST="$PGHOST" PGPORT="$PGPORT" PGUSER="$PGUSER" \
+            PGPASSFILE=/etc/promogest/pgpass \
+            PROMOGEST_DATA_PROTECTION_CERT_PASSWORD="$PROMOGEST_DATA_PROTECTION_CERT_PASSWORD" \
+            PROMOGEST_DB_NAME=promogest_ci \
+            PROMOGEST_STORAGE_DIR="$storage_root" \
+            PROMOGEST_DATA_PROTECTION_KEY_DIR="$key_root_link" \
+            PROMOGEST_CONFIG_PATH="$config_path" \
+            PROMOGEST_CADDYFILE_PATH="$GITHUB_WORKSPACE/deploy/linux/Caddyfile" \
+            PROMOGEST_BACKUP_ROOT="$RUNNER_TEMP/promogest-symlink-backup-probe" \
+            bash scripts/backup-promogest.sh; then
+            echo "Backup script accepted a symbolic-link Data Protection root." >&2
+            exit 1
+          fi
+
   windows-publish-and-powershell:
     name: Windows publish and PowerShell validation
     needs: frontend

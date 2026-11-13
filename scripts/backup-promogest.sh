@@ -127,6 +127,7 @@ fi
 install -d -o root -g root -m 0700 "$bundle_dir"
 
 service_was_running=0
+backup_completed=0
 restore_service() {
   status=$?
   if [[ "$service_was_running" -eq 1 ]]; then
@@ -135,6 +136,11 @@ restore_service() {
       echo "ERROR: Backup finished, but $SERVICE_NAME could not be restarted. Check systemd immediately." >&2
       status=1
     fi
+  fi
+
+  if [[ "$backup_completed" -eq 0 && -d "$bundle_dir" ]]; then
+    echo "Removing incomplete backup bundle after failure: $bundle_dir" >&2
+    rm -rf -- "$bundle_dir"
   fi
   exit "$status"
 }
@@ -182,6 +188,7 @@ echo "[4/5] Verifying all four archive components and writing the SHA-256 manife
 )
 chmod 0600 "$bundle_dir"/*
 chmod 0700 "$bundle_dir"
+backup_completed=1
 
 echo "[5/5] Backup bundle created: $bundle_dir"
 echo "The service will be restarted automatically. Run the separate restore drill before relying on this backup."

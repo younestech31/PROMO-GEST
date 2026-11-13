@@ -20,7 +20,7 @@ Use separate credentials:
 - `promogest_owner`: owns the PROMO GEST database objects and applies EF Core migrations. It is not the Windows service identity.
 - A PostgreSQL provisioning/maintenance account: creates a new empty restore database and assigns its owner. Use this account only for backup/restore maintenance.
 
-Do not put production passwords in scripts, source control, command history, or backup archives. For PostgreSQL client tools, use a protected `pgpass` file or an approved secret-injection method.
+Do not put production passwords in scripts, source control, command history, or backup archives. For PostgreSQL client tools, use a protected `pgpass` file or an approved secret-injection method. Because restore tools connect to a uniquely named scratch database, provisioner and owner entries in `pgpass` must use `*` in the database field (for example `127.0.0.1:5432:*:promogest_owner:...`); keep the file readable only by the maintenance account. The app role also needs a wildcard database entry for the runtime access test.
 
 ## 3. Creating backups
 

@@ -151,7 +151,7 @@ The Linux deployment uses the supplied systemd units and the self-contained Linu
    sudo install -m 0644 deploy/linux/Caddyfile /etc/caddy/Caddyfile
    ```
 
-7. **Configure the backup credential file and enable services.** The backup unit runs with `ProtectHome=true` and therefore reads `/etc/promogest/pgpass`, not `/root/.pgpass`. Create it as root with mode `0600`; add the `promogest_owner` entry for `127.0.0.1:5432:promogest`. Then:
+7. **Configure the backup credential file and enable services.** The backup unit runs with `ProtectHome=true` and therefore reads `/etc/promogest/pgpass`, not `/root/.pgpass`. Create it as root with mode `0600`. Add a `promogest_owner` entry for the production database; for the full restore drill also add wildcard database entries for `postgres`, `promogest_owner`, and `promogest_app`, because the scratch database name is generated at runtime. See [BACKUP-AND-RESTORE.md](BACKUP-AND-RESTORE.md) for the exact format. Then:
    ```bash
    sudo install -o root -g root -m 0600 /dev/null /etc/promogest/pgpass
    sudoedit /etc/promogest/pgpass

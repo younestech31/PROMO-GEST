@@ -58,6 +58,7 @@ jobs:
 
   backend-and-postgres:
     name: .NET 10 and PostgreSQL 18 least-privilege tests
+    needs: frontend
     runs-on: ubuntu-latest
     services:
       postgres:
@@ -218,6 +219,7 @@ jobs:
 
   windows-publish-and-powershell:
     name: Windows publish and PowerShell validation
+    needs: frontend
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v4

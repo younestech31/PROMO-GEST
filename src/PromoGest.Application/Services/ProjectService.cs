@@ -163,7 +163,8 @@ public sealed class ProjectService
             throw new DomainException("PROJECT_ROLE_INVALID", "Invalid project role.");
 
         var nowUtc = _clock.UtcNow;
-        project.AssignMember(
+        var isNewMembership = project.Members.All(member => member.UserId != targetUser.Id);
+        var membership = project.AssignMember(
             targetUser.Id,
             roleInProject,
             request.CanViewFinancials,
@@ -172,6 +173,11 @@ public sealed class ProjectService
             request.CanManageDocuments,
             actor.Id,
             nowUtc);
+
+        if (isNewMembership)
+        {
+            await _projectRepository.AddMemberAsync(membership, ct);
+        }
 
         await _auditWriter.WriteAsync(
             AuditLog.Record(

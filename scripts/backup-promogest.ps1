@@ -104,6 +104,9 @@ foreach ($sourceDirectory in $protectedSourceDirectories) {
     }
 }
 New-Item -ItemType Directory -Force -Path $BackupRoot | Out-Null
+# The root directory itself protects the lock file and prevents other local
+# users from deleting or replacing completed backup bundles.
+Set-PromoGestBackupBundleAcl -Path $BackupRoot
 
 $BackupLockStream = $null
 $BackupLockPath = Join-Path $BackupRoot ".promogest-backup.lock"

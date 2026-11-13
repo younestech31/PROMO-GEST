@@ -368,3 +368,42 @@ jobs:
           }
           Remove-Item -LiteralPath $zipPath, $zipSource -Recurse -Force
           Write-Host "Verified ZIP creation includes hidden and ordinary files."
+
+          $lockPath = Join-Path $env:RUNNER_TEMP "promogest-lock-smoke.lock"
+          $firstLock = [System.IO.File]::Open(
+            $lockPath,
+            [System.IO.FileMode]::OpenOrCreate,
+            [System.IO.FileAccess]::ReadWrite,
+            [System.IO.FileShare]::None
+          )
+          $secondLockAcquired = $false
+          try {
+            try {
+              $secondLock = [System.IO.File]::Open(
+                $lockPath,
+                [System.IO.FileMode]::OpenOrCreate,
+                [System.IO.FileAccess]::ReadWrite,
+                [System.IO.FileShare]::None
+              )
+              $secondLockAcquired = $true
+              $secondLock.Dispose()
+            }
+            catch [System.IO.IOException] {
+              Write-Host "Verified a concurrent Windows backup lock is rejected."
+            }
+          }
+          finally {
+            $firstLock.Dispose()
+          }
+          if ($secondLockAcquired) {
+            throw "Windows backup lock smoke test allowed a second concurrent lock."
+          }
+          $releasedLock = [System.IO.File]::Open(
+            $lockPath,
+            [System.IO.FileMode]::OpenOrCreate,
+            [System.IO.FileAccess]::ReadWrite,
+            [System.IO.FileShare]::None
+          )
+          $releasedLock.Dispose()
+          Remove-Item -LiteralPath $lockPath -Force
+          Write-Host "Verified the Windows backup lock is released after completion."

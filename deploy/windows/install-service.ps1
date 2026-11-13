@@ -21,6 +21,8 @@ $InstallRoot = [IO.Path]::GetFullPath($InstallRoot)
 $AppDir = Join-Path $InstallRoot "app"
 $StorageDir = Join-Path $InstallRoot "storage"
 $DataProtectionDir = Join-Path $InstallRoot "dataprotection-keys"
+$ScriptsDir = Join-Path $InstallRoot "scripts"
+$LogsDir = Join-Path $InstallRoot "logs"
 $BackupDir = if ([string]::IsNullOrWhiteSpace($BackupRoot)) { Join-Path $InstallRoot "backups" } else { [IO.Path]::GetFullPath($BackupRoot) }
 
 $backupDirNormalized = $BackupDir.TrimEnd([IO.Path]::DirectorySeparatorChar, [IO.Path]::AltDirectorySeparatorChar)
@@ -41,8 +43,6 @@ foreach ($protectedPath in @($AppDir, $StorageDir, $DataProtectionDir, $ScriptsD
         throw "BackupRoot must not overlap application, storage, Data Protection, scripts, or logs directories."
     }
 }
-$ScriptsDir = Join-Path $InstallRoot "scripts"
-$LogsDir = Join-Path $InstallRoot "logs"
 $ExePath = Join-Path $AppDir "PromoGest.Api.exe"
 
 New-Item -ItemType Directory -Force -Path $InstallRoot, $AppDir, $StorageDir, $DataProtectionDir, $BackupDir, $ScriptsDir, $LogsDir | Out-Null

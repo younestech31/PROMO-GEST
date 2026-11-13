@@ -22,6 +22,25 @@ $AppDir = Join-Path $InstallRoot "app"
 $StorageDir = Join-Path $InstallRoot "storage"
 $DataProtectionDir = Join-Path $InstallRoot "dataprotection-keys"
 $BackupDir = if ([string]::IsNullOrWhiteSpace($BackupRoot)) { Join-Path $InstallRoot "backups" } else { [IO.Path]::GetFullPath($BackupRoot) }
+
+$backupDirNormalized = $BackupDir.TrimEnd([IO.Path]::DirectorySeparatorChar, [IO.Path]::AltDirectorySeparatorChar)
+$backupVolumeRoot = [IO.Path]::GetPathRoot($BackupDir).TrimEnd(
+    [IO.Path]::DirectorySeparatorChar,
+    [IO.Path]::AltDirectorySeparatorChar)
+if ([string]::Equals($backupDirNormalized, $backupVolumeRoot, [StringComparison]::OrdinalIgnoreCase)) {
+    throw "BackupRoot must be a dedicated directory, not a volume root."
+}
+
+foreach ($protectedPath in @($AppDir, $StorageDir, $DataProtectionDir, $ScriptsDir, $LogsDir)) {
+    $protectedNormalized = [IO.Path]::GetFullPath($protectedPath).TrimEnd(
+        [IO.Path]::DirectorySeparatorChar,
+        [IO.Path]::AltDirectorySeparatorChar)
+    if ([string]::Equals($backupDirNormalized, $protectedNormalized, [StringComparison]::OrdinalIgnoreCase) -or
+        $backupDirNormalized.StartsWith($protectedNormalized + [IO.Path]::DirectorySeparatorChar, [StringComparison]::OrdinalIgnoreCase) -or
+        $protectedNormalized.StartsWith($backupDirNormalized + [IO.Path]::DirectorySeparatorChar, [StringComparison]::OrdinalIgnoreCase)) {
+        throw "BackupRoot must not overlap application, storage, Data Protection, scripts, or logs directories."
+    }
+}
 $ScriptsDir = Join-Path $InstallRoot "scripts"
 $LogsDir = Join-Path $InstallRoot "logs"
 $ExePath = Join-Path $AppDir "PromoGest.Api.exe"

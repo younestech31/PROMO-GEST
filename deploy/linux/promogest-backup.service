@@ -24,4 +24,4 @@ ProtectControlGroups=true
 RestrictSUIDSGID=true
 LockPersonality=true
 ReadOnlyPaths=/opt/promogest/app /var/lib/promogest /etc/caddy
-ReadWritePaths=/var/backups/promogest /run/lock
+ReadWritePaths=/var/backups/promogest

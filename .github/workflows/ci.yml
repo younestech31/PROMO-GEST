@@ -484,6 +484,16 @@ jobs:
             [ref]$backupTokens,
             [ref]$backupParseErrors
           )
+          $sensitiveHelperAst = $backupAst.Find({
+            param($node)
+            $node -is [System.Management.Automation.Language.FunctionDefinitionAst] -and
+              $node.Name -eq "Remove-PromoGestSensitiveConfigProperties"
+          }, $true)
+          if ($null -eq $sensitiveHelperAst) {
+            throw "Production backup sensitive-property sanitizer helper was not found."
+          }
+          . ([ScriptBlock]::Create($sensitiveHelperAst.Extent.Text))
+
           $sanitizerAst = $backupAst.Find({
             param($node)
             $node -is [System.Management.Automation.Language.FunctionDefinitionAst] -and

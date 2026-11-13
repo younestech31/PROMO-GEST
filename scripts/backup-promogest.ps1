@@ -7,10 +7,27 @@ param(
     [string]$DataProtectionDir = "C:\PromoGest\dataprotection-keys",
     [string]$AppConfigPath = "C:\PromoGest\app\appsettings.Production.json",
     [string]$CaddyfilePath = "C:\PromoGest\caddy\Caddyfile",
-    [string]$BackupRoot = "C:\PromoGest\backups"
+    [string]$BackupRoot = "C:\PromoGest\backups",
+    [string]$ServiceName = "PromoGestLocalErp",
+    [switch]$SkipServiceStop
 )
 
 $ErrorActionPreference = "Stop"
+$serviceWasRunning = $false
+
+try {
+    if (-not $SkipServiceStop) {
+        $service = Get-Service -Name $ServiceName -ErrorAction Stop
+        $serviceWasRunning = $service.Status -eq [System.ServiceProcess.ServiceControllerStatus]::Running
+        if ($serviceWasRunning) {
+            Write-Host "Stopping $ServiceName to obtain a consistent database, storage, and Data Protection backup..."
+            Stop-Service -Name $ServiceName -Force
+            (Get-Service -Name $ServiceName).WaitForStatus(
+                [System.ServiceProcess.ServiceControllerStatus]::Stopped,
+                [TimeSpan]::FromSeconds(90))
+        }
+    }
+
 $Timestamp = (Get-Date).ToString("yyyyMMdd_HHmmss")
 $BundleDir = Join-Path $BackupRoot "promogest_backup_$Timestamp"
 New-Item -ItemType Directory -Force -Path $BundleDir | Out-Null
@@ -60,7 +77,15 @@ $SanitizedStage = Join-Path $BundleDir "_config_stage"
 New-Item -ItemType Directory -Force -Path $SanitizedStage | Out-Null
 $cfgJson = Get-Content -LiteralPath $AppConfigPath -Raw | ConvertFrom-Json
 if ($cfgJson.ConnectionStrings -and $cfgJson.ConnectionStrings.DefaultConnection) {
-    $cfgJson.ConnectionStrings.DefaultConnection = ($cfgJson.ConnectionStrings.DefaultConnection -replace '(?i)(Password\s*=\s*)[^;]+', '$1REDACTED_FOR_BACKUP')
+    # Use the .NET parser so quoted passwords and escaped semicolons are redacted as a whole value.
+    $connectionBuilder = [System.Data.Common.DbConnectionStringBuilder]::new()
+    $connectionBuilder.ConnectionString = [string]$cfgJson.ConnectionStrings.DefaultConnection
+    foreach ($key in @($connectionBuilder.Keys)) {
+        if ([string]$key -match '^(?i:Password|Pwd)$') {
+            $connectionBuilder[$key] = "REDACTED_FOR_BACKUP"
+        }
+    }
+    $cfgJson.ConnectionStrings.DefaultConnection = $connectionBuilder.ConnectionString
 }
 $cfgJson | ConvertTo-Json -Depth 10 | Set-Content -LiteralPath (Join-Path $SanitizedStage "appsettings.Production.sanitized.json") -Encoding UTF8
 if (Test-Path -LiteralPath $CaddyfilePath -PathType Leaf) {
@@ -76,3 +101,16 @@ Get-ChildItem -LiteralPath $BundleDir -File | Sort-Object Name | ForEach-Object 
 } | Set-Content -LiteralPath $ManifestPath -Encoding UTF8
 
 Write-Host "Backup bundle created at $BundleDir. Verify restoration before relying on it."
+}
+finally {
+    if ($serviceWasRunning) {
+        Write-Host "Restarting $ServiceName after backup..."
+        $service = Get-Service -Name $ServiceName -ErrorAction Stop
+        if ($service.Status -ne [System.ServiceProcess.ServiceControllerStatus]::Running) {
+            Start-Service -Name $ServiceName
+            (Get-Service -Name $ServiceName).WaitForStatus(
+                [System.ServiceProcess.ServiceControllerStatus]::Running,
+                [TimeSpan]::FromSeconds(90))
+        }
+    }
+}

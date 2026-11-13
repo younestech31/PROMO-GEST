@@ -5,6 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite --port=3000 --host=0.0.0.0",
+    "dev:cloudsql": "bash scripts/run-ai-studio-cloudsql.sh",
     "build": "vite build",
     "build:aspnetcore": "vite build --config apps/local-web/vite.config.ts --outDir ../../src/PromoGest.Api/wwwroot --emptyOutDir",
     "preview": "vite preview",

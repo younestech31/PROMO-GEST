@@ -524,6 +524,59 @@ jobs:
           if (-not $liveRootRejected) {
             throw "The production restore script did not reject an output directory inside the live installation root."
           }
+
+          $databaseDumpProbe = Join-Path $probeBundle "database.dump"
+          [System.IO.File]::WriteAllText($databaseDumpProbe, "not-a-real-dump")
+          $storageArchiveProbe = Join-Path $probeBundle "storage.zip"
+          $dpArchiveProbe = Join-Path $probeBundle "dataprotection-keys.zip"
+          $configArchiveProbe = Join-Path $probeBundle "config-sanitized.zip"
+          $maliciousArchive = [System.IO.Compression.ZipFile]::Open(
+            $storageArchiveProbe,
+            [System.IO.Compression.ZipArchiveMode]::Create
+          )
+          try {
+            $maliciousEntry = $maliciousArchive.CreateEntry("../escape.txt")
+            $maliciousWriter = [System.IO.StreamWriter]::new($maliciousEntry.Open())
+            try { $maliciousWriter.Write("must-not-escape") }
+            finally { $maliciousWriter.Dispose() }
+          }
+          finally {
+            $maliciousArchive.Dispose()
+          }
+          foreach ($archivePath in @($dpArchiveProbe, $configArchiveProbe)) {
+            $emptyArchive = [System.IO.Compression.ZipFile]::Open(
+              $archivePath,
+              [System.IO.Compression.ZipArchiveMode]::Create
+            )
+            $emptyArchive.Dispose()
+          }
+          $manifestFiles = @("database.dump", "storage.zip", "dataprotection-keys.zip", "config-sanitized.zip")
+          $manifestLines = foreach ($name in $manifestFiles) {
+            $fileHash = (Get-FileHash -LiteralPath (Join-Path $probeBundle $name) -Algorithm SHA256).Hash.ToLowerInvariant()
+            "$fileHash  $name"
+          }
+          [System.IO.File]::WriteAllLines(
+            (Join-Path $probeBundle "manifest.sha256"),
+            [string[]]$manifestLines,
+            [System.Text.UTF8Encoding]::new($false)
+          )
+          $unsafeArchiveRejected = $false
+          try {
+            & $restoreScript -BackupBundleDir $probeBundle -TargetDatabase promogest_zip_traversal_probe -RestoreStorageDir (Join-Path $restoreProbeRoot "zip-storage") -RestoreDataProtectionDir (Join-Path $restoreProbeRoot "zip-keys") -RestoreConfigDir (Join-Path $restoreProbeRoot "zip-config")
+          }
+          catch {
+            Write-Host "Unsafe ZIP probe returned: $($_.Exception.Message)"
+            $unsafeArchiveRejected = $_.Exception.Message -like "*Unsafe ZIP entry path*"
+          }
+          if (-not $unsafeArchiveRejected) {
+            throw "The production restore script did not reject a ZIP traversal entry before database access."
+          }
+          foreach ($outputPath in @("zip-storage", "zip-keys", "zip-config")) {
+            if (Test-Path -LiteralPath (Join-Path $restoreProbeRoot $outputPath)) {
+              throw "Unsafe ZIP was rejected too late; restore output was already created: $outputPath"
+            }
+          }
+
           Remove-Item -LiteralPath $restoreProbeRoot -Recurse -Force
           Write-Host "Verified the production restore script rejects overlapping destinations before database access."
 

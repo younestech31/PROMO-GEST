@@ -12,6 +12,8 @@ A complete backup must preserve a consistent set of:
 
 Backing up only PostgreSQL leaves documents orphaned. Backing up database and documents without the Data Protection key ring can make previously protected payloads unreadable after restoration. Store backup bundles on encrypted media or an encrypted NAS and restrict access to the service and maintenance administrators.
 
+**Operational limitation:** the scripts do not automatically delete old bundles or replicate them off the server. The configured destination is the first local copy, not a disaster-recovery copy. Monitor free space, define the organization's retention period, and copy each successful bundle to a separate encrypted disk or NAS before relying on it for disaster recovery. Automatic pruning is intentionally not enabled until that retention policy is explicitly selected.
+
 ## 2. Database identities
 
 Use separate credentials:

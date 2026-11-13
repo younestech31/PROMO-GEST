@@ -19,7 +19,7 @@ var builder = WebApplication.CreateBuilder(new WebApplicationOptions
 builder.Host.UseWindowsService();
 if (OperatingSystem.IsWindows())
 {
-    builder.Logging.AddEventLog(options => options.SourceName = "PromoGestLocalErp");
+    builder.Logging.AddEventLog();
 }
 
 var migrationMode = args.Contains("--migrate", StringComparer.OrdinalIgnoreCase);

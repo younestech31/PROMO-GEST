@@ -1,3 +1,4 @@
+using System.Collections.Concurrent;
 using System.Net;
 using System.Net.Http.Json;
 using Microsoft.AspNetCore.Hosting;
@@ -7,6 +8,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
+using Microsoft.Extensions.Logging;
 using Npgsql;
 using PromoGest.Contracts.Auth;
 using PromoGest.Contracts.Audit;
@@ -169,9 +171,53 @@ public sealed class PostgreSql18IntegrationFixture : IAsyncLifetime
     }
 }
 
+internal sealed class BufferingLoggerProvider : ILoggerProvider
+{
+    private readonly ConcurrentQueue<string> _entries = new();
+
+    public IReadOnlyList<string> Snapshot() => _entries.ToArray();
+
+    public ILogger CreateLogger(string categoryName) => new BufferingLogger(categoryName, _entries);
+
+    public void Dispose()
+    {
+    }
+
+    private sealed class BufferingLogger(
+        string categoryName,
+        ConcurrentQueue<string> entries) : ILogger
+    {
+        public IDisposable? BeginScope<TState>(TState state) where TState : notnull => null;
+
+        public bool IsEnabled(LogLevel logLevel) => logLevel >= LogLevel.Information;
+
+        public void Log<TState>(
+            LogLevel logLevel,
+            EventId eventId,
+            TState state,
+            Exception? exception,
+            Func<TState, Exception?, string> formatter)
+        {
+            if (!IsEnabled(logLevel))
+            {
+                return;
+            }
+
+            var message = formatter(state, exception);
+            if (exception is not null)
+            {
+                message += Environment.NewLine + exception;
+            }
+
+            entries.Enqueue($"[{logLevel}] {categoryName}: {message}");
+        }
+    }
+}
+
 public sealed class PostgresEndToEndTests : IClassFixture<PostgreSql18IntegrationFixture>
 {
     private readonly PostgreSql18IntegrationFixture _fixture;
+    private readonly BufferingLoggerProvider _serverLogs = new();
 
     public PostgresEndToEndTests(PostgreSql18IntegrationFixture fixture)
     {
@@ -184,6 +230,11 @@ public sealed class PostgresEndToEndTests : IClassFixture<PostgreSql18Integratio
         return new WebApplicationFactory<Program>().WithWebHostBuilder(builder =>
         {
             builder.UseEnvironment("Development");
+            builder.ConfigureLogging(logging =>
+            {
+                logging.AddProvider(_serverLogs);
+                logging.SetMinimumLevel(LogLevel.Information);
+            });
             builder.ConfigureAppConfiguration((_, config) =>
             {
                 config.AddInMemoryCollection(new Dictionary<string, string?>
@@ -406,7 +457,8 @@ public sealed class PostgresEndToEndTests : IClassFixture<PostgreSql18Integratio
                 new AssignProjectMemberRequest(createdEmployee!.Id, "CommercialAgent", false, true, false, true));
             var assignBody = await assignResp.Content.ReadAsStringAsync();
             Assert.True(assignResp.StatusCode == HttpStatusCode.OK,
-                $"Project member assignment failed with {(int)assignResp.StatusCode} {assignResp.StatusCode}: {assignBody}");
+                $"Project member assignment failed with {(int)assignResp.StatusCode} {assignResp.StatusCode}: {assignBody}" +
+                $"{Environment.NewLine}Captured ASP.NET Core server logs:{Environment.NewLine}{string.Join(Environment.NewLine, _serverLogs.Snapshot())}");
 
             var allowedAttempt = await employeeClient.GetAsync($"/api/projects/{createdProject.Id}");
             Assert.Equal(HttpStatusCode.OK, allowedAttempt.StatusCode);

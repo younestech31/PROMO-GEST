@@ -121,6 +121,8 @@ public sealed class ApplicationSecurityAndFoundationTests
         public Task<ProjectMember?> GetMemberAsync(Guid projectId, Guid userId, CancellationToken ct = default)
             => Task.FromResult(Projects.FirstOrDefault(p => p.Id == projectId)?.Members.FirstOrDefault(m => m.UserId == userId));
         public Task AddProjectAsync(Project project, CancellationToken ct = default) { Projects.Add(project); return Task.CompletedTask; }
+        // The in-memory store retains the aggregate instance, so AssignMember has already updated its collection.
+        public Task AddMemberAsync(ProjectMember member, CancellationToken ct = default) => Task.CompletedTask;
         public Task WriteAsync(AuditLog entry, CancellationToken ct = default) { AuditLogs.Add(entry); return Task.CompletedTask; }
         public Task<IReadOnlyList<AuditLog>> ListRecentAsync(int limit, CancellationToken ct = default)
             => Task.FromResult<IReadOnlyList<AuditLog>>(AuditLogs.OrderByDescending(a => a.OccurredAtUtc).Take(limit).ToList());

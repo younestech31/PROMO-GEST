@@ -68,7 +68,12 @@ echo "[2/4] Applying EF Core migrations with the Cloud SQL migration identity...
 dotnet run --project "$API_PROJECT" --configuration Debug --no-launch-profile -- --migrate
 
 echo "[3/4] Starting ASP.NET Core with the restricted runtime identity..."
-dotnet run --project "$API_PROJECT" --configuration Debug --no-build --no-launch-profile >"$API_LOG" 2>&1 &
+API_DLL="$ROOT_DIR/src/PromoGest.Api/bin/Debug/net10.0/PromoGest.Api.dll"
+if [[ ! -s "$API_DLL" ]]; then
+  echo "ERROR: the API assembly was not produced by the migration build." >&2
+  exit 1
+fi
+dotnet "$API_DLL" >"$API_LOG" 2>&1 &
 API_PID=$!
 
 ready=false

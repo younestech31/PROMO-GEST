@@ -119,6 +119,10 @@ catch [IO.IOException] {
     throw "Another PROMO GEST backup is already running (lock: $BackupLockPath)."
 }
 
+$BundleDir = $null
+$BackupBundleCreated = $false
+$BackupBundleCompleted = $false
+
 try {
     $service = Get-Service -Name $ServiceName -ErrorAction Stop
     if ($service.Status -eq [System.ServiceProcess.ServiceControllerStatus]::Stopped) {
@@ -146,6 +150,7 @@ $UniqueSuffix = [Guid]::NewGuid().ToString("N").Substring(0, 8)
 $BundleDir = Join-Path $BackupRoot ("promogest_backup_{0}_{1}" -f $Timestamp, $UniqueSuffix)
 # No -Force: an existing destination is an error, never a reason to reuse old data.
 New-Item -ItemType Directory -Path $BundleDir -ErrorAction Stop | Out-Null
+$BackupBundleCreated = $true
 Set-PromoGestBackupBundleAcl -Path $BundleDir
 
 $DbDumpPath = Join-Path $BundleDir "database.dump"
@@ -207,6 +212,7 @@ Get-ChildItem -LiteralPath $BundleDir -File | Sort-Object Name | ForEach-Object 
     $hash = (Get-FileHash -LiteralPath $_.FullName -Algorithm SHA256).Hash.ToLowerInvariant()
     "$hash  $($_.Name)"
 } | Set-Content -LiteralPath $ManifestPath -Encoding UTF8
+$BackupBundleCompleted = $true
 
 Write-Host "Backup bundle created at $BundleDir. Verify restoration before relying on it."
 }
@@ -224,6 +230,18 @@ finally {
         }
     }
     finally {
+        if ($BackupBundleCreated -and -not $BackupBundleCompleted -and
+            -not [string]::IsNullOrWhiteSpace($BundleDir) -and
+            (Test-Path -LiteralPath $BundleDir -PathType Container)) {
+            try {
+                Write-Warning "Removing incomplete backup bundle after failure: $BundleDir"
+                Remove-Item -LiteralPath $BundleDir -Recurse -Force -ErrorAction Stop
+            }
+            catch {
+                Write-Warning "Could not remove incomplete backup bundle '$BundleDir': $($_.Exception.Message)"
+            }
+        }
+
         if ($null -ne $BackupLockStream) {
             $BackupLockStream.Dispose()
         }

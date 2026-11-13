@@ -165,3 +165,17 @@ The Linux deployment uses the supplied systemd units and the self-contained Linu
 8. **Validate LAN access and recovery.** Confirm the API is healthy on `127.0.0.1:5080`, open `https://promogest.lan` from a workstation whose DNS/hosts entry points to the server, and install Caddy's internal root CA certificate on trusted workstations. Allow inbound LAN TCP `443` only; keep `5080` and `5432` on loopback. Before production use, perform the mandatory Linux restore drill in [BACKUP-AND-RESTORE.md](BACKUP-AND-RESTORE.md).
 
 Do not copy a Windows DPAPI key ring to Linux or vice versa. A Linux restore requires the matching PFX certificate and its password; a same-machine Windows restore depends on that machine's DPAPI scope.
+
+### Linux local administrator recovery
+
+The console recovery commands do not initialize Data Protection, so they remain usable if the Linux PFX/key ring is missing or damaged. They still require the runtime database connection. Do not source `promogest.env` as a shell script: its PostgreSQL connection string contains semicolons and is a systemd environment file, not a Bash file. Supply the connection securely for the one-off command:
+
+```bash
+read -r -s -p 'promogest_app database password: ' PROMOGEST_RUNTIME_DB_PASSWORD
+printf '\n'
+export ConnectionStrings__DefaultConnection="Host=127.0.0.1;Port=5432;Database=promogest;Username=promogest_app;Password=${PROMOGEST_RUNTIME_DB_PASSWORD}"
+/opt/promogest/app/PromoGest.Api --unlock-admin
+unset ConnectionStrings__DefaultConnection PROMOGEST_RUNTIME_DB_PASSWORD
+```
+
+For password reset, use the same environment setup and run `/opt/promogest/app/PromoGest.Api --reset-admin-password`; enter the new administrator password at the masked console prompt. These commands must be run from a trusted local administrative session. They are not HTTP endpoints.

@@ -1,0 +1,11 @@
+{
+  "name": "PROMO GEST",
+  "short_name": "PROMO GEST",
+  "description": "Local-first Algerian Real Estate Development ERP",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#f8fafc",
+  "theme_color": "#0f172a",
+  "lang": "ar",
+  "dir": "rtl"
+}

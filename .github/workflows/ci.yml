@@ -1,0 +1,98 @@
+name: PROMO GEST CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  frontend:
+    name: Frontend Typecheck, Unit Tests & Production Build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Install Dependencies
+        run: npm ci --no-audit --no-fund
+      - name: Lint
+        run: npm run lint
+      - name: Build Frontend
+        run: npm run build
+      - name: Verify Build Output Exists
+        run: |
+          if [ ! -d "apps/local-web/dist" ]; then
+            echo "ERROR: apps/local-web/dist directory missing!" >&2
+            exit 1
+          fi
+          if [ ! -f "apps/local-web/dist/index.html" ]; then
+            echo "ERROR: index.html missing in build output!" >&2
+            exit 1
+          fi
+      - name: Verify dev middleware is not bundled into production dist
+        run: |
+          if grep -rn "dev-api-middleware\|createPromoGestDevApiPlugin\|ViteDevContractPreview" apps/local-web/dist; then
+            echo "ERROR: Dev preview middleware leaked into production dist!" >&2
+            exit 1
+          fi
+
+  backend-and-postgres:
+    name: .NET 10 Build, Unit Tests & PostgreSQL 18 Integration Tests (Least-Privilege Roles)
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:18-alpine
+        env:
+          POSTGRES_DB: postgres
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres_password
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "10.0.x"
+      - name: Restore Solution
+        run: dotnet restore src/PromoGest.sln
+      - name: Build Solution (Warnings as Errors)
+        run: dotnet build src/PromoGest.sln --configuration Release --no-restore
+      - name: Domain Tests
+        run: dotnet test tests/PromoGest.Domain.Tests/PromoGest.Domain.Tests.csproj --configuration Release --no-build
+      - name: Application Security Tests
+        run: dotnet test tests/PromoGest.Application.Tests/PromoGest.Application.Tests.csproj --configuration Release --no-build
+      - name: Provision Roles & Database in PostgreSQL 18
+        run: |
+          PGPASSWORD=postgres_password psql -h localhost -U postgres -c "
+            CREATE ROLE promogest_owner WITH LOGIN PASSWORD 'owner_pass' CREATEDB;
+            CREATE ROLE promogest_app WITH LOGIN PASSWORD 'app_pass';
+            CREATE DATABASE promogest OWNER promogest_owner;
+          "
+          PGPASSWORD=postgres_password psql -h localhost -U postgres -d promogest -c "
+            GRANT USAGE ON SCHEMA public TO promogest_app;
+            ALTER DEFAULT PRIVILEGES FOR ROLE promogest_owner IN SCHEMA public GRANT SELECT, INSERT, UPDATE, DELETE ON TABLES TO promogest_app;
+            ALTER DEFAULT PRIVILEGES FOR ROLE promogest_owner IN SCHEMA public GRANT USAGE, SELECT ON SEQUENCES TO promogest_app;
+          "
+      - name: PostgreSQL 18 Integration Tests (Migrations as Owner, Workflows as App Role)
+        env:
+          PROMOGEST_TEST_DB_CONNECTION: Host=localhost;Port=5432;Database=promogest;Username=promogest_app;Password=app_pass
+          PROMOGEST_MIGRATE_DB_CONNECTION: Host=localhost;Port=5432;Database=promogest;Username=promogest_owner;Password=owner_pass
+        run: dotnet test tests/PromoGest.IntegrationTests/PromoGest.IntegrationTests.csproj --configuration Release --no-build
+
+  powershell-and-publish:
+    name: PowerShell Syntax & Publish Verification
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install PowerShell (pwsh)
+        run: sudo apt-get update && sudo apt-get install -y powershell
+      - name: Syntax Check PowerShell Scripts
+        run: |
+          pwsh -Command "Get-ChildItem -Path scripts, deploy -Recurse -Filter *.ps1 | ForEach-Object { \$null = [System.Management.Automation.Language.Parser]::ParseFile(\$_.FullName, [ref]\$null, [ref]\$null); Write-Host 'Validated syntax: ' \$_.FullName }"

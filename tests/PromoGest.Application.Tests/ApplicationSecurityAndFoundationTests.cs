@@ -1,0 +1,365 @@
+using PromoGest.Application.Interfaces;
+using PromoGest.Application.Services;
+using PromoGest.Contracts.Auth;
+using PromoGest.Contracts.Projects;
+using PromoGest.Contracts.Setup;
+using PromoGest.Contracts.Users;
+using PromoGest.Domain.Entities;
+using PromoGest.Domain.Enums;
+using PromoGest.Domain.Exceptions;
+using PromoGest.Domain.Interfaces;
+using PromoGest.Infrastructure.Security;
+using Xunit;
+
+namespace PromoGest.Application.Tests;
+
+public sealed class ApplicationSecurityAndFoundationTests
+{
+    private sealed class FakeClock : IClock
+    {
+        public DateTimeOffset UtcNow { get; set; } = new(2026, 11, 13, 12, 0, 0, TimeSpan.Zero);
+    }
+
+    private sealed class FailingAuditWriter : IAuditWriter
+    {
+        public Task WriteAsync(AuditLog entry, CancellationToken ct = default)
+            => throw new IOException("Simulated audit persistence failure.");
+    }
+
+    private sealed class InMemoryStore :
+        IInstallationRepository,
+        IUserRepository,
+        IProjectRepository,
+        IAuditWriter,
+        IAuditQueryRepository
+    {
+        public OrganizationSettings? Org { get; set; }
+        public List<User> Users { get; } = new();
+        public List<Role> Roles { get; } = new();
+        public List<Permission> Permissions { get; } = new();
+        public List<RolePermission> RolePermissions { get; } = new();
+        public List<UserRole> UserRoles { get; } = new();
+        public List<UserSession> Sessions { get; } = new();
+        public List<Project> Projects { get; } = new();
+        public List<AuditLog> AuditLogs { get; } = new();
+
+        public InMemoryStore()
+        {
+            var t = new DateTimeOffset(2026, 1, 1, 0, 0, 0, TimeSpan.Zero);
+            var adminRole = Role.Create(Guid.NewGuid(), Role.SystemAdminCode, "مدير النظام", "Administrateur Système", "Admin", "Admin", true, t);
+            var commRole = Role.Create(Guid.NewGuid(), Role.CommercialManagerCode, "مسؤول المبيعات", "Responsable Commercial", "Sales", "Sales", false, t);
+            Roles.AddRange(new[] { adminRole, commRole });
+
+            var pRead = Permission.Create(Guid.NewGuid(), "projects.read", "Projects", "قراءة", "Lire", t);
+            var pUsers = Permission.Create(Guid.NewGuid(), "users.manage", "Admin", "مستخدمين", "Utilisateurs", t);
+            var pAudit = Permission.Create(Guid.NewGuid(), "audit.read", "Security", "تدقيق", "Audit", t);
+            Permissions.AddRange(new[] { pRead, pUsers, pAudit });
+
+            RolePermissions.Add(RolePermission.Create(adminRole.Id, pRead.Id));
+            RolePermissions.Add(RolePermission.Create(adminRole.Id, pUsers.Id));
+            RolePermissions.Add(RolePermission.Create(adminRole.Id, pAudit.Id));
+            RolePermissions.Add(RolePermission.Create(commRole.Id, pRead.Id));
+        }
+
+        public Task<OrganizationSettings?> GetOrganizationSettingsAsync(CancellationToken ct = default) => Task.FromResult(Org);
+        public Task<bool> IsInitializedAsync(CancellationToken ct = default) => Task.FromResult(Org?.IsInitialized ?? false);
+        public Task<bool> HasSystemAdministratorAsync(CancellationToken ct = default) => Task.FromResult(Users.Any(u => u.IsSystemAdministrator));
+        public Task<Role?> GetRoleByCodeAsync(string code, CancellationToken ct = default) => Task.FromResult(Roles.FirstOrDefault(r => r.Code == code.ToUpperInvariant()));
+        public Task<IReadOnlyList<Role>> GetRolesAsync(CancellationToken ct = default) => Task.FromResult<IReadOnlyList<Role>>(Roles);
+        public Task AddOrganizationSettingsAsync(OrganizationSettings settings, CancellationToken ct = default) { Org = settings; return Task.CompletedTask; }
+        public Task AddUserAsync(User user, CancellationToken ct = default) { Users.Add(user); return Task.CompletedTask; }
+        public Task AddUserRoleAsync(UserRole userRole, CancellationToken ct = default) { UserRoles.Add(userRole); return Task.CompletedTask; }
+        public Task ExecuteInSerializableTransactionAsync(Func<CancellationToken, Task> action, CancellationToken ct = default) => action(ct);
+        public Task SaveChangesAsync(CancellationToken ct = default) => Task.CompletedTask;
+
+        public Task<User?> GetByIdWithRolesAsync(Guid userId, CancellationToken ct = default) => Task.FromResult(Users.FirstOrDefault(u => u.Id == userId));
+        public Task<User?> GetSystemAdministratorAsync(CancellationToken ct = default) => Task.FromResult(Users.FirstOrDefault(u => u.IsSystemAdministrator));
+        public Task<User?> GetByUsernameOrEmailWithRolesAsync(string usernameOrEmail, CancellationToken ct = default)
+        {
+            var norm = usernameOrEmail.Trim().ToUpperInvariant();
+            return Task.FromResult(Users.FirstOrDefault(u => u.NormalizedUsername == norm || u.NormalizedEmail == norm));
+        }
+        public Task<IReadOnlyList<User>> ListUsersWithRolesAsync(CancellationToken ct = default) => Task.FromResult<IReadOnlyList<User>>(Users);
+        public Task<bool> ExistsUsernameOrEmailAsync(string username, string email, Guid? excludeUserId = null, CancellationToken ct = default)
+            => Task.FromResult(Users.Any(u => (!excludeUserId.HasValue || u.Id != excludeUserId.Value) &&
+                (u.NormalizedUsername == username.ToUpperInvariant() || u.NormalizedEmail == email.ToUpperInvariant())));
+        public Task<IReadOnlyList<Role>> GetRolesByCodesAsync(IEnumerable<string> roleCodes, CancellationToken ct = default)
+        {
+            var codes = roleCodes.Select(c => c.ToUpperInvariant()).ToHashSet();
+            return Task.FromResult<IReadOnlyList<Role>>(Roles.Where(r => codes.Contains(r.Code)).ToList());
+        }
+        public Task<IReadOnlyList<string>> GetEffectivePermissionsAsync(Guid userId, CancellationToken ct = default)
+        {
+            var roleIds = UserRoles.Where(ur => ur.UserId == userId).Select(ur => ur.RoleId).ToHashSet();
+            var permIds = RolePermissions.Where(rp => roleIds.Contains(rp.RoleId)).Select(rp => rp.PermissionId).ToHashSet();
+            return Task.FromResult<IReadOnlyList<string>>(Permissions.Where(p => permIds.Contains(p.Id)).Select(p => p.Code).ToList());
+        }
+        public Task ReplaceUserRolesAsync(Guid userId, IEnumerable<UserRole> newRoles, CancellationToken ct = default)
+        {
+            UserRoles.RemoveAll(ur => ur.UserId == userId);
+            UserRoles.AddRange(newRoles);
+            return Task.CompletedTask;
+        }
+        public Task AddSessionAsync(UserSession session, CancellationToken ct = default) { Sessions.Add(session); return Task.CompletedTask; }
+        public Task<UserSession?> GetSessionByTokenHashAsync(string tokenHash, CancellationToken ct = default)
+            => Task.FromResult(Sessions.FirstOrDefault(s => s.TokenHash == tokenHash));
+        public Task RevokeAllUserSessionsAsync(Guid userId, DateTimeOffset revokedAtUtc, CancellationToken ct = default)
+        {
+            foreach (var s in Sessions.Where(s => s.UserId == userId && !s.IsRevoked))
+                s.Revoke(revokedAtUtc);
+            return Task.CompletedTask;
+        }
+
+        public Task<Project?> GetByIdWithMembersAsync(Guid projectId, CancellationToken ct = default)
+            => Task.FromResult(Projects.FirstOrDefault(p => p.Id == projectId));
+        public Task<bool> ExistsCodeAsync(string normalizedCode, CancellationToken ct = default)
+            => Task.FromResult(Projects.Any(p => p.NormalizedCode == normalizedCode));
+        public Task<IReadOnlyList<Project>> ListAllWithMembersAsync(CancellationToken ct = default)
+            => Task.FromResult<IReadOnlyList<Project>>(Projects);
+        public Task<IReadOnlyList<Project>> ListForUserWithMembersAsync(Guid userId, CancellationToken ct = default)
+            => Task.FromResult<IReadOnlyList<Project>>(Projects.Where(p => p.Members.Any(m => m.UserId == userId)).ToList());
+        public Task<ProjectMember?> GetMemberAsync(Guid projectId, Guid userId, CancellationToken ct = default)
+            => Task.FromResult(Projects.FirstOrDefault(p => p.Id == projectId)?.Members.FirstOrDefault(m => m.UserId == userId));
+        public Task AddProjectAsync(Project project, CancellationToken ct = default) { Projects.Add(project); return Task.CompletedTask; }
+        public Task WriteAsync(AuditLog entry, CancellationToken ct = default) { AuditLogs.Add(entry); return Task.CompletedTask; }
+        public Task<IReadOnlyList<AuditLog>> ListRecentAsync(int limit, CancellationToken ct = default)
+            => Task.FromResult<IReadOnlyList<AuditLog>>(AuditLogs.OrderByDescending(a => a.OccurredAtUtc).Take(limit).ToList());
+    }
+
+    private static InitializeInstallationRequest ValidInitRequest() => new(
+        "SARL Promotion El-Bahdja",
+        "El-Bahdja",
+        "SARL",
+        "001616012345678",
+        null,
+        "16/00-1234567B20",
+        null,
+        20_000_000m,
+        "16",
+        "Alger",
+        "Hydra",
+        "+21321000000",
+        "contact@elbahdja.dz",
+        "ar",
+        "sysadmin",
+        "Karim Benali",
+        "admin@elbahdja.dz",
+        "+213550000001",
+        "StrongPass123");
+
+    [Fact]
+    public async Task FirstRunSetup_SucceedsOnce_AndRejectsSecondInitialization()
+    {
+        var store = new InMemoryStore();
+        var clock = new FakeClock();
+        var setup = new SetupService(store, new Pbkdf2PasswordHasher(), store, clock);
+        var meta = new RequestMetadata("127.0.0.1", "xUnit");
+
+        var statusBefore = await setup.GetStatusAsync();
+        Assert.False(statusBefore.IsInitialized);
+
+        var init = await setup.InitializeAsync(ValidInitRequest(), meta);
+        Assert.Equal("sysadmin", init.SystemAdminUsername);
+
+        var statusAfter = await setup.GetStatusAsync();
+        Assert.True(statusAfter.IsInitialized);
+
+        var ex = await Assert.ThrowsAsync<ConflictDomainException>(() => setup.InitializeAsync(ValidInitRequest(), meta));
+        Assert.Equal("SETUP_ALREADY_INITIALIZED", ex.Code);
+    }
+
+    [Fact]
+    public async Task UserManagement_RejectsCreatingSecondSystemAdministrator_AndLogsAccessDenied()
+    {
+        var store = new InMemoryStore();
+        var clock = new FakeClock();
+        var hasher = new Pbkdf2PasswordHasher();
+        var setup = new SetupService(store, hasher, store, clock);
+        var users = new UserManagementService(store, store, hasher, store, clock);
+        var meta = new RequestMetadata("127.0.0.1", "xUnit");
+
+        var init = await setup.InitializeAsync(ValidInitRequest(), meta);
+
+        var ex = await Assert.ThrowsAsync<ForbiddenDomainException>(() =>
+            users.CreateEmployeeAsync(
+                init.SystemAdminUserId,
+                new CreateEmployeeRequest("admin2", "Second Admin", "admin2@elbahdja.dz", null, "StrongPass123", "ar", new[] { Role.SystemAdminCode }),
+                meta));
+
+        Assert.Equal("SINGLE_SYSTEM_ADMIN_ONLY", ex.Code);
+        Assert.Contains(store.AuditLogs, a => a.EventType == "ACCESS_DENIED" && a.ActorUserId == init.SystemAdminUserId);
+    }
+
+    [Fact]
+    public async Task ProjectAuthorization_BlocksUnassignedEmployeeFromAccessingProjectById()
+    {
+        var store = new InMemoryStore();
+        var clock = new FakeClock();
+        var hasher = new Pbkdf2PasswordHasher();
+        var setup = new SetupService(store, hasher, store, clock);
+        var userSvc = new UserManagementService(store, store, hasher, store, clock);
+        var projectSvc = new ProjectService(store, store, store, clock);
+        var meta = new RequestMetadata("127.0.0.1", "xUnit");
+
+        var init = await setup.InitializeAsync(ValidInitRequest(), meta);
+        var employee = await userSvc.CreateEmployeeAsync(
+            init.SystemAdminUserId,
+            new CreateEmployeeRequest("amel.sales", "Amel Kaci", "amel@elbahdja.dz", null, "StrongPass123", "fr", new[] { Role.CommercialManagerCode }),
+            meta);
+
+        var project = await projectSvc.CreateProjectAsync(
+            init.SystemAdminUserId,
+            new CreateProjectRequest("PRJ-16-01", "إقامة الياسمين", "Résidence Yasmine", "16", "Alger", "Cheraga", null, null, null, null, "Commercialization", 150_000_000m, 2, 32),
+            meta);
+
+        // Employee without assignment gets empty list and 403 Forbidden on direct ID access
+        var visibleBefore = await projectSvc.ListAccessibleProjectsAsync(employee.Id, meta);
+        Assert.Empty(visibleBefore);
+
+        var deniedEx = await Assert.ThrowsAsync<ForbiddenDomainException>(() =>
+            projectSvc.GetProjectByIdAsync(employee.Id, project.Id, meta));
+        Assert.Equal("PROJECT_ACCESS_DENIED", deniedEx.Code);
+        Assert.Contains(store.AuditLogs, a => a.EventType == "ACCESS_DENIED" && a.ActorUserId == employee.Id);
+
+        // Also blocks probing nonexistent project UUIDs without leaking 404 existence
+        var probeEx = await Assert.ThrowsAsync<ForbiddenDomainException>(() =>
+            projectSvc.GetProjectByIdAsync(employee.Id, Guid.NewGuid(), meta));
+        Assert.Equal("PROJECT_ACCESS_DENIED", probeEx.Code);
+
+        // Assign employee -> now access succeeds
+        await projectSvc.AssignMemberAsync(
+            init.SystemAdminUserId,
+            project.Id,
+            new AssignProjectMemberRequest(employee.Id, nameof(ProjectRole.CommercialAgent), false, true, false, true),
+            meta);
+
+        var visibleAfter = await projectSvc.ListAccessibleProjectsAsync(employee.Id, meta);
+        Assert.Single(visibleAfter);
+        var accessed = await projectSvc.GetProjectByIdAsync(employee.Id, project.Id, meta);
+        Assert.Equal(project.Code, accessed.Code);
+    }
+
+    [Fact]
+    public async Task Authentication_ReturnsGenericErrorAcrossUnknownWrongInactiveAndLockedAccounts()
+    {
+        var store = new InMemoryStore();
+        var clock = new FakeClock();
+        var hasher = new Pbkdf2PasswordHasher();
+        var tokenGen = new CryptoSessionTokenGenerator();
+        var setup = new SetupService(store, hasher, store, clock);
+        var userSvc = new UserManagementService(store, store, hasher, store, clock);
+        var authSvc = new AuthService(store, store, hasher, tokenGen, store, clock);
+        var meta = new RequestMetadata("127.0.0.1", "xUnit");
+
+        var init = await setup.InitializeAsync(ValidInitRequest(), meta);
+        var emp = await userSvc.CreateEmployeeAsync(
+            init.SystemAdminUserId,
+            new CreateEmployeeRequest("farid.fin", "Farid Ziani", "farid@elbahdja.dz", null, "StrongPass123", "fr", new[] { Role.CommercialManagerCode }),
+            meta);
+
+        // Unknown account
+        var unknownEx = await Assert.ThrowsAsync<UnauthorizedDomainException>(() =>
+            authSvc.LoginAsync(new LoginRequest("nobody", "SomePassword123"), meta));
+        Assert.Equal("AUTH_INVALID_CREDENTIALS", unknownEx.Code);
+
+        // 5 failed attempts -> locks account, still returns generic 401 AUTH_INVALID_CREDENTIALS
+        for (var i = 0; i < User.MaxFailedLoginAttempts; i++)
+        {
+            var wrongEx = await Assert.ThrowsAsync<UnauthorizedDomainException>(() =>
+                authSvc.LoginAsync(new LoginRequest("farid.fin", "WrongPassword1"), meta));
+            Assert.Equal("AUTH_INVALID_CREDENTIALS", wrongEx.Code);
+        }
+        Assert.Contains(store.AuditLogs, a => a.EventType == "AUTH_LOCKOUT" && a.ActorUserId == emp.Id);
+
+        // Correct password while locked -> still generic 401 AUTH_INVALID_CREDENTIALS
+        var lockedEx = await Assert.ThrowsAsync<UnauthorizedDomainException>(() =>
+            authSvc.LoginAsync(new LoginRequest("farid.fin", "StrongPass123"), meta));
+        Assert.Equal("AUTH_INVALID_CREDENTIALS", lockedEx.Code);
+        Assert.Contains(store.AuditLogs, a => a.EventType == "AUTH_LOGIN_BLOCKED_LOCKED" && a.ActorUserId == emp.Id);
+
+        // Advance past lockout, then deactivate -> still generic 401 AUTH_INVALID_CREDENTIALS
+        clock.UtcNow = clock.UtcNow.AddMinutes(20);
+        await userSvc.SetUserActiveStatusAsync(init.SystemAdminUserId, emp.Id, false, meta);
+        var inactiveEx = await Assert.ThrowsAsync<UnauthorizedDomainException>(() =>
+            authSvc.LoginAsync(new LoginRequest("farid.fin", "StrongPass123"), meta));
+        Assert.Equal("AUTH_INVALID_CREDENTIALS", inactiveEx.Code);
+        Assert.Contains(store.AuditLogs, a => a.EventType == "AUTH_LOGIN_BLOCKED_INACTIVE" && a.ActorUserId == emp.Id);
+    }
+
+    [Fact]
+    public async Task InactiveUser_And_UnauthorizedAuditAccess_AreBlockedAndAudited()
+    {
+        var store = new InMemoryStore();
+        var clock = new FakeClock();
+        var hasher = new Pbkdf2PasswordHasher();
+        var setup = new SetupService(store, hasher, store, clock);
+        var userSvc = new UserManagementService(store, store, hasher, store, clock);
+        var projectSvc = new ProjectService(store, store, store, clock);
+        var auditSvc = new AuditQueryService(store, store, store, clock);
+        var meta = new RequestMetadata("127.0.0.1", "xUnit");
+
+        var init = await setup.InitializeAsync(ValidInitRequest(), meta);
+        var emp = await userSvc.CreateEmployeeAsync(
+            init.SystemAdminUserId,
+            new CreateEmployeeRequest("nadia.com", "Nadia Ali", "nadia@elbahdja.dz", null, "StrongPass123", "fr", new[] { Role.CommercialManagerCode }),
+            meta);
+
+        // Non-admin cannot view audit logs and failure is audited
+        await Assert.ThrowsAsync<ForbiddenDomainException>(() => auditSvc.ListRecentAsync(emp.Id, meta));
+        Assert.Contains(store.AuditLogs, a => a.EventType == "ACCESS_DENIED" && a.ActorUserId == emp.Id && a.TargetEntityType == "AuditLog");
+
+        // Deactivate user -> project listing & roles listing are rejected
+        await userSvc.SetUserActiveStatusAsync(init.SystemAdminUserId, emp.Id, false, meta);
+        await Assert.ThrowsAsync<ForbiddenDomainException>(() => projectSvc.ListAccessibleProjectsAsync(emp.Id, meta));
+        await Assert.ThrowsAsync<ForbiddenDomainException>(() => userSvc.ListRolesAsync(emp.Id, meta));
+    }
+
+    [Fact]
+    public async Task AdminRecoveryService_Unlocks_ResetsPassword_RevokesSessions_And_Audits()
+    {
+        var store = new InMemoryStore();
+        var clock = new FakeClock();
+        var hasher = new Pbkdf2PasswordHasher();
+        var tokenGen = new CryptoSessionTokenGenerator();
+        var setup = new SetupService(store, hasher, store, clock);
+        var authSvc = new AuthService(store, store, hasher, tokenGen, store, clock);
+        var recovery = new AdminRecoveryService(store, store, hasher, store, clock);
+        var meta = new RequestMetadata("127.0.0.1", "xUnit");
+
+        await setup.InitializeAsync(ValidInitRequest(), meta);
+        var login = await authSvc.LoginAsync(new LoginRequest("sysadmin", "StrongPass123"), meta);
+        Assert.NotNull(await authSvc.ValidateSessionAsync(login.OpaqueSessionToken));
+
+        // Lock out sysadmin via failed logins
+        for (var i = 0; i < User.MaxFailedLoginAttempts; i++)
+        {
+            await Assert.ThrowsAsync<UnauthorizedDomainException>(() =>
+                authSvc.LoginAsync(new LoginRequest("sysadmin", "BadPass999"), meta));
+        }
+
+        // Recover via local console service
+        await recovery.UnlockSystemAdministratorAsync("server-operator");
+        await recovery.ResetSystemAdministratorPasswordAsync("RecoveredPass#2026", "server-operator");
+
+        // Prior session token must now be invalid
+        Assert.Null(await authSvc.ValidateSessionAsync(login.OpaqueSessionToken));
+
+        // Login works with recovered password
+        var newLogin = await authSvc.LoginAsync(new LoginRequest("sysadmin", "RecoveredPass#2026"), meta);
+        Assert.Equal("sysadmin", newLogin.Session.User.Username);
+        Assert.Contains(store.AuditLogs, a => a.EventType == "ADMIN_LOCAL_UNLOCK");
+        Assert.Contains(store.AuditLogs, a => a.EventType == "ADMIN_LOCAL_PASSWORD_RECOVERY");
+    }
+
+    [Fact]
+    public async Task AuditFailure_PropagatesInsteadOfSilentlySucceeding()
+    {
+        var store = new InMemoryStore();
+        var clock = new FakeClock();
+        var hasher = new Pbkdf2PasswordHasher();
+        var setup = new SetupService(store, hasher, new FailingAuditWriter(), clock);
+        var meta = new RequestMetadata("127.0.0.1", "xUnit");
+
+        await Assert.ThrowsAsync<IOException>(() => setup.InitializeAsync(ValidInitRequest(), meta));
+    }
+}

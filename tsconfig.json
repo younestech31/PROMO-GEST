@@ -1,0 +1,10 @@
+{
+  "extends": "./apps/local-web/tsconfig.json",
+  "compilerOptions": {
+    "paths": {
+      "@/*": ["./apps/local-web/src/*"]
+    }
+  },
+  "include": ["apps/local-web/src", "apps/local-web/vite.config.ts", "vite.config.ts"],
+  "exclude": ["dist", "apps/local-web/dist", "src"]
+}

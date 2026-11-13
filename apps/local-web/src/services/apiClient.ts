@@ -1,0 +1,226 @@
+import type {
+  ApiErrorResponse,
+  AssignProjectMemberRequest,
+  AuditLogDto,
+  CreateEmployeeRequest,
+  CreateProjectRequest,
+  HealthStatusResponse,
+  InitializeInstallationRequest,
+  InitializeInstallationResponse,
+  LoginRequest,
+  ProjectDto,
+  RoleDto,
+  SessionResponse,
+  SetupStatusResponse,
+  UpdateEmployeeRequest,
+  UserDto,
+} from '../types/erp';
+import { isStateChangingMethod, parseCookieValue } from '../utils/csrf';
+
+export class ApiError extends Error {
+  public readonly status: number;
+  public readonly code: string;
+  public readonly validationErrors?: Record<string, string[]>;
+
+  constructor(status: number, code: string, message: string, validationErrors?: Record<string, string[]>) {
+    super(message);
+    this.name = 'ApiError';
+    this.status = status;
+    this.code = code;
+    this.validationErrors = validationErrors;
+  }
+}
+
+export class ApiConnectionError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = 'ApiConnectionError';
+  }
+}
+
+let cachedCsrfToken: string | null = null;
+
+async function ensureCsrfToken(): Promise<string> {
+  const fromCookie = typeof document !== 'undefined'
+    ? parseCookieValue(document.cookie, 'promogest_csrf')
+    : null;
+  if (fromCookie) {
+    cachedCsrfToken = fromCookie;
+    return fromCookie;
+  }
+  if (cachedCsrfToken) {
+    return cachedCsrfToken;
+  }
+
+  let response: Response;
+  try {
+    response = await fetch('/api/auth/csrf', {
+      method: 'GET',
+      credentials: 'include',
+    });
+  } catch (err) {
+    throw new ApiConnectionError(err instanceof Error ? err.message : 'Local server unreachable');
+  }
+
+  if (!response.ok) {
+    throw new ApiError(response.status, 'CSRF_FETCH_FAILED', 'Unable to acquire anti-forgery token from local server.');
+  }
+
+  const headerToken = response.headers.get('X-CSRF-TOKEN');
+  if (headerToken) {
+    cachedCsrfToken = headerToken;
+    return headerToken;
+  }
+
+  const data = (await response.json()) as { token?: string };
+  if (!data.token) {
+    throw new ApiConnectionError('Anti-forgery token response was empty.');
+  }
+  cachedCsrfToken = data.token;
+  return data.token;
+}
+
+function syncCsrfCacheFromResponse(response: Response, resetIfMissing: boolean) {
+  const headerToken = response.headers.get('X-CSRF-TOKEN');
+  if (headerToken) {
+    cachedCsrfToken = headerToken;
+    return;
+  }
+  const cookieToken = typeof document !== 'undefined'
+    ? parseCookieValue(document.cookie, 'promogest_csrf')
+    : null;
+  if (cookieToken) {
+    cachedCsrfToken = cookieToken;
+  } else if (resetIfMissing) {
+    cachedCsrfToken = null;
+  }
+}
+
+async function requestJson<T>(url: string, init?: RequestInit): Promise<T> {
+  const method = init?.method ?? 'GET';
+  const mutating = isStateChangingMethod(method);
+  const csrfHeaders: Record<string, string> = {};
+
+  if (mutating) {
+    csrfHeaders['X-CSRF-TOKEN'] = await ensureCsrfToken();
+  }
+
+  let response: Response;
+  try {
+    response = await fetch(url, {
+      ...init,
+      credentials: 'include',
+      headers: {
+        'Content-Type': 'application/json',
+        ...csrfHeaders,
+        ...(init?.headers ?? {}),
+      },
+    });
+  } catch (err) {
+    throw new ApiConnectionError(err instanceof Error ? err.message : 'Local server unreachable');
+  }
+
+  const isAuthTransition = url === '/api/auth/login' || url === '/api/auth/logout';
+  syncCsrfCacheFromResponse(response, isAuthTransition);
+
+  if (response.status === 204) {
+    return undefined as T;
+  }
+
+  const contentType = response.headers.get('content-type') ?? '';
+  const isJson = contentType.includes('application/json');
+
+  if (!response.ok) {
+    if (isJson) {
+      const payload = (await response.json()) as ApiErrorResponse;
+      throw new ApiError(
+        response.status,
+        payload.code ?? `HTTP_${response.status}`,
+        payload.message ?? `Request failed with status ${response.status}`,
+        payload.validationErrors
+      );
+    }
+    throw new ApiError(response.status, `HTTP_${response.status}`, `Server responded with status ${response.status}`);
+  }
+
+  if (!isJson) {
+    throw new ApiConnectionError('Unexpected non-JSON response from local server.');
+  }
+
+  return (await response.json()) as T;
+}
+
+export const apiClient = {
+  healthReady: () => requestJson<HealthStatusResponse>('/health/ready', { method: 'GET' }),
+
+  getSetupStatus: () => requestJson<SetupStatusResponse>('/api/setup/status', { method: 'GET' }),
+
+  initializeInstallation: (payload: InitializeInstallationRequest) =>
+    requestJson<InitializeInstallationResponse>('/api/setup/initialize', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    }),
+
+  login: (payload: LoginRequest) =>
+    requestJson<SessionResponse>('/api/auth/login', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    }),
+
+  logout: () => requestJson<void>('/api/auth/logout', { method: 'POST' }),
+
+  getSession: () => requestJson<SessionResponse>('/api/auth/me', { method: 'GET' }),
+
+  listRoles: () => requestJson<RoleDto[]>('/api/users/roles', { method: 'GET' }),
+
+  listUsers: () => requestJson<UserDto[]>('/api/users', { method: 'GET' }),
+
+  createEmployee: (payload: CreateEmployeeRequest) =>
+    requestJson<UserDto>('/api/users', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    }),
+
+  updateEmployee: (userId: string, payload: UpdateEmployeeRequest) =>
+    requestJson<UserDto>(`/api/users/${encodeURIComponent(userId)}`, {
+      method: 'PUT',
+      body: JSON.stringify(payload),
+    }),
+
+  setUserStatus: (userId: string, isActive: boolean) =>
+    requestJson<UserDto>(`/api/users/${encodeURIComponent(userId)}/status`, {
+      method: 'PATCH',
+      body: JSON.stringify({ isActive }),
+    }),
+
+  resetUserPassword: (userId: string, newPassword: string) =>
+    requestJson<void>(`/api/users/${encodeURIComponent(userId)}/reset-password`, {
+      method: 'POST',
+      body: JSON.stringify({ newPassword }),
+    }),
+
+  listProjects: () => requestJson<ProjectDto[]>('/api/projects', { method: 'GET' }),
+
+  getProject: (projectId: string) =>
+    requestJson<ProjectDto>(`/api/projects/${encodeURIComponent(projectId)}`, { method: 'GET' }),
+
+  createProject: (payload: CreateProjectRequest) =>
+    requestJson<ProjectDto>('/api/projects', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    }),
+
+  assignProjectMember: (projectId: string, payload: AssignProjectMemberRequest) =>
+    requestJson<ProjectDto>(`/api/projects/${encodeURIComponent(projectId)}/members`, {
+      method: 'PUT',
+      body: JSON.stringify(payload),
+    }),
+
+  removeProjectMember: (projectId: string, userId: string) =>
+    requestJson<ProjectDto>(`/api/projects/${encodeURIComponent(projectId)}/members/${encodeURIComponent(userId)}`, {
+      method: 'DELETE',
+    }),
+
+  listAuditLogs: (limit = 100) =>
+    requestJson<AuditLogDto[]>(`/api/audit?limit=${limit}`, { method: 'GET' }),
+};

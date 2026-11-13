@@ -1,0 +1,25 @@
+node_modules/
+build/
+dist/
+coverage/
+.DS_Store
+*.log
+.env*
+!.env.example
+.playwright-cli/
+
+# .NET build artifacts
+bin/
+obj/
+*.user
+*.suo
+.vs/
+TestResults/
+src/PromoGest.Api/wwwroot/
+!src/PromoGest.Api/wwwroot/.gitkeep
+
+# Local runtime storage & secrets
+storage/
+backups/
+appsettings.Local.json
+appsettings.*.Local.json

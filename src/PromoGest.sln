@@ -1,0 +1,64 @@
+
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.12.35527.113
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PromoGest.Domain", "PromoGest.Domain\PromoGest.Domain.csproj", "{A1111111-1111-4111-8111-111111111101}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PromoGest.Contracts", "PromoGest.Contracts\PromoGest.Contracts.csproj", "{A1111111-1111-4111-8111-111111111102}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PromoGest.Application", "PromoGest.Application\PromoGest.Application.csproj", "{A1111111-1111-4111-8111-111111111103}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PromoGest.Infrastructure", "PromoGest.Infrastructure\PromoGest.Infrastructure.csproj", "{A1111111-1111-4111-8111-111111111104}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PromoGest.Api", "PromoGest.Api\PromoGest.Api.csproj", "{A1111111-1111-4111-8111-111111111105}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PromoGest.Domain.Tests", "..\tests\PromoGest.Domain.Tests\PromoGest.Domain.Tests.csproj", "{B1111111-1111-4111-8111-111111111201}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PromoGest.Application.Tests", "..\tests\PromoGest.Application.Tests\PromoGest.Application.Tests.csproj", "{B1111111-1111-4111-8111-111111111202}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PromoGest.IntegrationTests", "..\tests\PromoGest.IntegrationTests\PromoGest.IntegrationTests.csproj", "{B1111111-1111-4111-8111-111111111203}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{A1111111-1111-4111-8111-111111111101}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A1111111-1111-4111-8111-111111111101}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A1111111-1111-4111-8111-111111111101}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A1111111-1111-4111-8111-111111111101}.Release|Any CPU.Build.0 = Release|Any CPU
+		{A1111111-1111-4111-8111-111111111102}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A1111111-1111-4111-8111-111111111102}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A1111111-1111-4111-8111-111111111102}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A1111111-1111-4111-8111-111111111102}.Release|Any CPU.Build.0 = Release|Any CPU
+		{A1111111-1111-4111-8111-111111111103}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A1111111-1111-4111-8111-111111111103}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A1111111-1111-4111-8111-111111111103}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A1111111-1111-4111-8111-111111111103}.Release|Any CPU.Build.0 = Release|Any CPU
+		{A1111111-1111-4111-8111-111111111104}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A1111111-1111-4111-8111-111111111104}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A1111111-1111-4111-8111-111111111104}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A1111111-1111-4111-8111-111111111104}.Release|Any CPU.Build.0 = Release|Any CPU
+		{A1111111-1111-4111-8111-111111111105}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A1111111-1111-4111-8111-111111111105}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A1111111-1111-4111-8111-111111111105}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A1111111-1111-4111-8111-111111111105}.Release|Any CPU.Build.0 = Release|Any CPU
+		{B1111111-1111-4111-8111-111111111201}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{B1111111-1111-4111-8111-111111111201}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{B1111111-1111-4111-8111-111111111201}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{B1111111-1111-4111-8111-111111111201}.Release|Any CPU.Build.0 = Release|Any CPU
+		{B1111111-1111-4111-8111-111111111202}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{B1111111-1111-4111-8111-111111111202}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{B1111111-1111-4111-8111-111111111202}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{B1111111-1111-4111-8111-111111111202}.Release|Any CPU.Build.0 = Release|Any CPU
+		{B1111111-1111-4111-8111-111111111203}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{B1111111-1111-4111-8111-111111111203}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{B1111111-1111-4111-8111-111111111203}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{B1111111-1111-4111-8111-111111111203}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+EndGlobal

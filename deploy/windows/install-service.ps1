@@ -33,6 +33,23 @@ if ([string]::Equals($backupDirNormalized, $backupVolumeRoot, [StringComparison]
     throw "BackupRoot must be a dedicated directory, not a volume root."
 }
 
+$pathComponent = $BackupDir
+while (-not [string]::IsNullOrWhiteSpace($pathComponent)) {
+    if (Test-Path -LiteralPath $pathComponent) {
+        $pathItem = Get-Item -LiteralPath $pathComponent -Force -ErrorAction Stop
+        if (($pathItem.Attributes -band [IO.FileAttributes]::ReparsePoint) -ne 0) {
+            throw "BackupRoot must not traverse a junction or symbolic link: $pathComponent"
+        }
+    }
+
+    $parentPath = Split-Path -Path $pathComponent -Parent
+    if ([string]::IsNullOrWhiteSpace($parentPath) -or
+        [string]::Equals($parentPath, $pathComponent, [StringComparison]::OrdinalIgnoreCase)) {
+        break
+    }
+    $pathComponent = $parentPath
+}
+
 foreach ($protectedPath in @($AppDir, $StorageDir, $DataProtectionDir, $ScriptsDir, $LogsDir)) {
     $protectedNormalized = [IO.Path]::GetFullPath($protectedPath).TrimEnd(
         [IO.Path]::DirectorySeparatorChar,

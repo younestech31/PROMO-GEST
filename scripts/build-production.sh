@@ -37,6 +37,6 @@ echo "[3/4] Running .NET unit and integration tests..."
 dotnet test src/PromoGest.sln --configuration Release
 
 echo "[4/4] Publishing ASP.NET Core application..."
-dotnet publish src/PromoGest.Api/PromoGest.Api.csproj --configuration Release --output "$PUBLISH_DIR"
+dotnet publish src/PromoGest.Api/PromoGest.Api.csproj --configuration Release --runtime linux-x64 --self-contained true --output "$PUBLISH_DIR"
 
 echo "Production artifact ready at: $PUBLISH_DIR"

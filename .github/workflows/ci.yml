@@ -84,6 +84,12 @@ jobs:
         run: dotnet build src/PromoGest.sln --configuration Release --no-restore
       - name: Publish Linux runtime artifact
         run: dotnet publish src/PromoGest.Api/PromoGest.Api.csproj --configuration Release --runtime linux-x64 --self-contained true --output artifacts/linux-x64
+      - name: Verify Linux published executable
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -x artifacts/linux-x64/PromoGest.Api
+          test -s artifacts/linux-x64/PromoGest.Api.dll
       - name: Validate Linux shell scripts
         shell: bash
         run: |

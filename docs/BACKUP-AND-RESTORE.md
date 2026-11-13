@@ -32,7 +32,7 @@ On Windows Server, run the backup script from an elevated maintenance session. B
 .\scripts\backup-promogest.ps1 -DatabaseName promogest -StorageDir C:\PromoGest\storage -BackupRoot D:\PromoGestBackups
 ```
 
-Confirm that the resulting bundle contains the database dump, storage archive, Data Protection key archive, sanitized configuration archive, and manifest.
+Confirm that the resulting bundle contains the database dump, storage archive, Data Protection key archive, sanitized configuration archive, and manifest. If backup creation fails, the script removes only the incomplete bundle it created and still attempts to restart a service it stopped; a completed bundle is retained even if service restart then fails, and the service state must be checked immediately.
 
 ## 4. Mandatory full restoration drill
 
@@ -66,7 +66,7 @@ sudo env \
   /var/backups/promogest/promogest_backup_YYYYMMDD_HHMMSS
 ```
 
-The fifth argument makes the drill validate and restore the exact `database.dump`, `storage.tar.gz`, `dataprotection-keys.tar.gz`, and `config-sanitized.tar.gz` files from that bundle. It checks the SHA-256 manifest, rejects unsafe archive paths and links, verifies the restored Data Protection certificate, restores into temporary directories and a new scratch database, reapplies least-privilege grants, and checks each database-referenced document by path, byte length, and SHA-256. The drill removes only the uniquely named scratch database it created; it never drops the source database or changes the selected backup bundle.
+The fifth argument makes the drill validate and restore the exact `database.dump`, `storage.tar.gz`, `dataprotection-keys.tar.gz`, and `config-sanitized.tar.gz` files from that bundle. The backup job removes a partial bundle if any backup stage fails, and its exit handler attempts to restart the service if it had stopped it; an error restarting the service is a critical operational alert. It checks the SHA-256 manifest, rejects unsafe archive paths and links, verifies the restored Data Protection certificate, restores into temporary directories and a new scratch database, reapplies least-privilege grants, and checks each database-referenced document by path, byte length, and SHA-256. The drill removes only the uniquely named scratch database it created; it never drops the source database or changes the selected backup bundle.
 
 For a source-based drill that builds a temporary verification payload instead of using a saved production bundle, omit the fifth argument and provide the storage, configuration, and Data Protection key directories:
 

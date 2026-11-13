@@ -102,20 +102,24 @@ catch [IO.IOException] {
 
 try {
     $service = Get-Service -Name $ServiceName -ErrorAction Stop
-    if ($SkipServiceStop) {
-        if ($service.Status -ne [System.ServiceProcess.ServiceControllerStatus]::Stopped) {
-            throw "-SkipServiceStop is permitted only when $ServiceName is already stopped."
+    if ($service.Status -eq [System.ServiceProcess.ServiceControllerStatus]::Stopped) {
+        if ($SkipServiceStop) {
+            Write-Host "$ServiceName is already stopped; proceeding with a stopped-service backup."
         }
     }
-    else {
-        $serviceWasRunning = $service.Status -eq [System.ServiceProcess.ServiceControllerStatus]::Running
-        if ($serviceWasRunning) {
-            Write-Host "Stopping $ServiceName to obtain a consistent database, storage, and Data Protection backup..."
-            Stop-Service -Name $ServiceName -Force
-            (Get-Service -Name $ServiceName).WaitForStatus(
-                [System.ServiceProcess.ServiceControllerStatus]::Stopped,
-                [TimeSpan]::FromSeconds(90))
+    elseif ($service.Status -eq [System.ServiceProcess.ServiceControllerStatus]::Running) {
+        if ($SkipServiceStop) {
+            throw "-SkipServiceStop is permitted only when $ServiceName is already stopped."
         }
+        $serviceWasRunning = $true
+        Write-Host "Stopping $ServiceName to obtain a consistent database, storage, and Data Protection backup..."
+        Stop-Service -Name $ServiceName -Force
+        (Get-Service -Name $ServiceName).WaitForStatus(
+            [System.ServiceProcess.ServiceControllerStatus]::Stopped,
+            [TimeSpan]::FromSeconds(90))
+    }
+    else {
+        throw "Cannot create a consistent backup while $ServiceName is in state '$($service.Status)'. Stop or start the service first."
     }
 
 $Timestamp = (Get-Date).ToString("yyyyMMdd_HHmmss_fff")

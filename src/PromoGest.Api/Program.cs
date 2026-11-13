@@ -19,6 +19,19 @@ var builder = WebApplication.CreateBuilder(new WebApplicationOptions
 builder.Host.UseWindowsService();
 builder.Logging.AddEventLog(options => options.SourceName = "PromoGestLocalErp");
 
+var migrationMode = args.Contains("--migrate", StringComparer.OrdinalIgnoreCase);
+if (migrationMode)
+{
+    var migrationConnection = Environment.GetEnvironmentVariable("PROMOGEST_MIGRATE_DB_CONNECTION");
+    if (string.IsNullOrWhiteSpace(migrationConnection))
+    {
+        throw new InvalidOperationException(
+            "PROMOGEST_MIGRATE_DB_CONNECTION must be supplied for --migrate. The runtime database identity must never perform schema migrations.");
+    }
+
+    builder.Configuration["ConnectionStrings:DefaultConnection"] = migrationConnection;
+}
+
 var requireHttpsCookies = builder.Configuration.GetValue<bool>("Security:RequireHttpsCookies", true);
 
 builder.Services.AddPromoGestInfrastructure(builder.Configuration);

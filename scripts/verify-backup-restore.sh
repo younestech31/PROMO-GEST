@@ -180,14 +180,14 @@ psql --host="$PGHOST" --port="$PGPORT" --username="$OWNER_USER" --dbname="$VERIF
 
 echo "[6/8] Enumerating every restored stored_files record..."
 psql --host="$PGHOST" --port="$PGPORT" --username="$OWNER_USER" --dbname="$VERIFY_DB" --set=ON_ERROR_STOP=1 \
-  --tuples-only --no-align --field-separator= \
+  --tuples-only --no-align --field-separator=$'\t' \
   -c "SELECT stored_relative_path, sha256_checksum, size_bytes FROM stored_files ORDER BY stored_relative_path;" \
   > "$WORK_DIR/stored-files.tsv"
 
 echo "[7/8] Verifying existence, byte length, and SHA-256 for every restored stored file..."
 RESTORE_ROOT="$(realpath "$RESTORE_STORAGE")"
 verified_count=0
-while IFS=$'\\t' read -r rel_path expected_hash expected_size; do
+while IFS=$'\t' read -r rel_path expected_hash expected_size; do
   [[ -z "$rel_path" ]] && continue
 
   if [[ "$rel_path" = /* || "$rel_path" == ".." || "$rel_path" == ../* || "$rel_path" == ** ]]; then
@@ -238,7 +238,7 @@ echo "[8/8] Full restore drill passed: $verified_count/$expected_count stored fi
 echo "[7/8] Verifying existence, byte length, and SHA-256 for every restored stored file..."
 RESTORE_ROOT="$(realpath "$RESTORE_STORAGE")"
 verified_count=0
-while IFS= read -r rel_path expected_hash expected_size; do
+while IFS=$'\t' read -r rel_path expected_hash expected_size; do
   [[ -z "$rel_path" ]] && continue
 
   if [[ "$rel_path" = /* || "$rel_path" == ".." || "$rel_path" == ../* || "$rel_path" == *$'\\n'* ]]; then
@@ -374,7 +374,7 @@ echo "[8/8] Full restore drill passed: $verified_count/$expected_count stored fi
 echo "[7/8] Verifying existence, byte length, and SHA-256 for every restored stored file..."
 RESTORE_ROOT="$(realpath "$RESTORE_STORAGE")"
 verified_count=0
-while IFS= read -r rel_path expected_hash expected_size; do
+while IFS=$'\t' read -r rel_path expected_hash expected_size; do
   [[ -z "$rel_path" ]] && continue
 
   if [[ "$rel_path" = /* || "$rel_path" == ".." || "$rel_path" == ../* || "$rel_path" == ** ]]; then

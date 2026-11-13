@@ -271,6 +271,23 @@ jobs:
             exit 1
           fi
 
+          echo "[Linux backup script] Verifying ProtectHome paths are rejected only in systemd mode..."
+          if sudo env \
+            PGHOST="$PGHOST" PGPORT="$PGPORT" PGUSER="$PGUSER" \
+            PGPASSFILE=/etc/promogest/pgpass \
+            PROMOGEST_DATA_PROTECTION_CERT_PASSWORD="$PROMOGEST_DATA_PROTECTION_CERT_PASSWORD" \
+            PROMOGEST_SYSTEMD_PROTECT_HOME=true \
+            PROMOGEST_DB_NAME=promogest_ci \
+            PROMOGEST_STORAGE_DIR="$storage_root" \
+            PROMOGEST_DATA_PROTECTION_KEY_DIR="$key_root" \
+            PROMOGEST_CONFIG_PATH="$config_path" \
+            PROMOGEST_CADDYFILE_PATH="$GITHUB_WORKSPACE/deploy/linux/Caddyfile" \
+            PROMOGEST_BACKUP_ROOT="$RUNNER_TEMP/protected-home-backup-probe" \
+            bash scripts/backup-promogest.sh; then
+            echo "Backup script accepted a protected-home destination in systemd mode." >&2
+            exit 1
+          fi
+
           echo "[Linux backup script] Verifying linked Data Protection roots are rejected..."
           key_root_link="$RUNNER_TEMP/promogest-dpkeys-link"
           ln -s "$key_root" "$key_root_link"

@@ -145,6 +145,11 @@ public sealed class PostgreSql18IntegrationFixture : IAsyncLifetime
                 throw new InvalidOperationException(
                     "The SystemAdministratorInvariant migration was not discovered and applied.");
             }
+            if (!applied.Contains("20261113000004_AuditLogRuntimePermissions"))
+            {
+                throw new InvalidOperationException(
+                    "The AuditLogRuntimePermissions migration was not discovered and applied.");
+            }
         }
 
         // Prove the restricted runtime identity can authenticate before any ASP.NET Core test host is created.
@@ -428,6 +433,18 @@ public sealed class PostgresEndToEndTests : IClassFixture<PostgreSql18Integratio
                     rawConn);
                 var pgDdlEx = await Assert.ThrowsAsync<PostgresException>(() => ddlCmd.ExecuteNonQueryAsync());
                 Assert.Equal("42501", pgDdlEx.SqlState);
+
+                const string auditPrivilegesSql =
+                    "SELECT has_table_privilege(current_user, 'public.audit_logs', 'SELECT') " +
+                    "AND has_table_privilege(current_user, 'public.audit_logs', 'INSERT') " +
+                    "AND NOT has_table_privilege(current_user, 'public.audit_logs', 'UPDATE') " +
+                    "AND NOT has_table_privilege(current_user, 'public.audit_logs', 'DELETE') " +
+                    "AND NOT has_table_privilege(current_user, 'public.audit_logs', 'TRUNCATE') " +
+                    "AND NOT has_table_privilege(current_user, 'public.audit_logs', 'TRIGGER');";
+                await using var auditPrivilegesCommand = new NpgsqlCommand(auditPrivilegesSql, rawConn);
+                var auditPrivilegesAreLeastPrivilege = (bool)(await auditPrivilegesCommand.ExecuteScalarAsync())!;
+                Assert.True(auditPrivilegesAreLeastPrivilege,
+                    "The runtime role must only read and append audit logs, not change them or their triggers.");
             }
 
             // 7. Generic login error on bad password -> valid login -> rotate CSRF -> create employee & project

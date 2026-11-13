@@ -27,13 +27,36 @@ var migrationMode = args.Contains("--migrate", StringComparer.OrdinalIgnoreCase)
 var localRecoveryMode =
     args.Contains("--unlock-admin", StringComparer.OrdinalIgnoreCase) ||
     args.Contains("--reset-admin-password", StringComparer.OrdinalIgnoreCase);
+
+// SQL_HOST is supplied by the Google AI Studio Cloud SQL integration. It is accepted
+// only in Development and only through the Linux Unix-domain socket; production always
+// retains the local PostgreSQL connection configured for the organization.
+var cloudSql = CloudSqlDevelopmentConnectionStrings.TryCreate(
+    key => builder.Configuration[key],
+    builder.Environment.IsDevelopment());
+
+if (cloudSql is not null)
+{
+    builder.Configuration["ConnectionStrings:DefaultConnection"] = cloudSql.RuntimeConnectionString;
+}
+
+var usingCloudSqlMigrationIdentity = false;
+string? migrationConnection = null;
 if (migrationMode)
 {
-    var migrationConnection = Environment.GetEnvironmentVariable("PROMOGEST_MIGRATE_DB_CONNECTION");
+    migrationConnection = Environment.GetEnvironmentVariable("PROMOGEST_MIGRATE_DB_CONNECTION")
+        ?? builder.Configuration["PROMOGEST_MIGRATE_DB_CONNECTION"];
+
+    if (string.IsNullOrWhiteSpace(migrationConnection) && cloudSql is not null)
+    {
+        migrationConnection = cloudSql.MigrationConnectionString;
+        usingCloudSqlMigrationIdentity = true;
+    }
+
     if (string.IsNullOrWhiteSpace(migrationConnection))
     {
         throw new InvalidOperationException(
-            "PROMOGEST_MIGRATE_DB_CONNECTION must be supplied for --migrate. The runtime database identity must never perform schema migrations.");
+            "PROMOGEST_MIGRATE_DB_CONNECTION must be supplied for --migrate, or SQL_ADMIN_USER/SQL_ADMIN_PASSWORD must be configured for the Development Cloud SQL integration. The runtime database identity must never perform schema migrations.");
     }
 
     builder.Configuration["ConnectionStrings:DefaultConnection"] = migrationConnection;
@@ -51,71 +74,86 @@ builder.Services.AddPromoGestInfrastructure(builder.Configuration);
 // certificate/key ring is damaged or missing. These commands do not issue HTTP tokens.
 if (!migrationMode && !localRecoveryMode)
 {
-    var storageRoot = builder.Configuration["Storage:RootDirectory"] ?? Path.Combine(AppContext.BaseDirectory, "storage");
-    var defaultKeyDirectory = Path.Combine(
-        Path.GetDirectoryName(Path.GetFullPath(storageRoot)) ?? AppContext.BaseDirectory,
-        "dataprotection-keys");
-    var dpKeyDirectory = builder.Configuration["Security:DataProtectionKeyDirectory"] ?? defaultKeyDirectory;
-    Directory.CreateDirectory(dpKeyDirectory);
+    var certificatePath = builder.Configuration["Security:DataProtectionCertificatePath"];
+    var certificatePassword = builder.Configuration["PROMOGEST_DATA_PROTECTION_CERT_PASSWORD"]
+        ?? Environment.GetEnvironmentVariable("PROMOGEST_DATA_PROTECTION_CERT_PASSWORD");
 
-    var dpBuilder = builder.Services.AddDataProtection()
-        .SetApplicationName("PromoGest")
-        .PersistKeysToFileSystem(new DirectoryInfo(dpKeyDirectory));
-
-    if (OperatingSystem.IsWindows())
+    if (OperatingSystem.IsLinux() &&
+        builder.Environment.IsDevelopment() &&
+        string.IsNullOrWhiteSpace(certificatePath) &&
+        string.IsNullOrWhiteSpace(certificatePassword))
     {
-        // The service runs under a virtual service account, while maintenance and recovery
-        // may run under SYSTEM or an administrator account. Machine-scope DPAPI keeps the
-        // key ring decryptable on this Windows installation by those identities; filesystem
-        // ACLs on the key directory remain restricted to the service, SYSTEM, and Administrators.
-        dpBuilder.ProtectKeysWithDpapi(protectToLocalMachine: true);
-    }
-    else if (OperatingSystem.IsLinux())
-    {
-        // PersistKeysToFileSystem disables the default at-rest encryption heuristic.
-        // Linux deployments must provide a local PKCS#12 certificate and its password
-        // through the service environment; never fall back to plaintext key-ring files.
-        var certificatePath = builder.Configuration["Security:DataProtectionCertificatePath"];
-        var certificatePassword = builder.Configuration["PROMOGEST_DATA_PROTECTION_CERT_PASSWORD"]
-            ?? Environment.GetEnvironmentVariable("PROMOGEST_DATA_PROTECTION_CERT_PASSWORD");
-
-        if (string.IsNullOrWhiteSpace(certificatePath) || !Path.IsPathRooted(certificatePath))
-        {
-            throw new InvalidOperationException(
-                "Security:DataProtectionCertificatePath must be an absolute path to a local PKCS#12 certificate on Linux.");
-        }
-
-        if (!File.Exists(certificatePath))
-        {
-            throw new FileNotFoundException(
-                "The Linux Data Protection certificate file was not found.",
-                certificatePath);
-        }
-
-        if (string.IsNullOrWhiteSpace(certificatePassword))
-        {
-            throw new InvalidOperationException(
-                "PROMOGEST_DATA_PROTECTION_CERT_PASSWORD must be supplied by the Linux service environment.");
-        }
-
-        var dataProtectionCertificate = X509CertificateLoader.LoadPkcs12FromFile(
-            certificatePath,
-            certificatePassword,
-            X509KeyStorageFlags.EphemeralKeySet);
-
-        if (!dataProtectionCertificate.HasPrivateKey)
-        {
-            dataProtectionCertificate.Dispose();
-            throw new InvalidOperationException(
-                "The Linux Data Protection certificate must contain its private key.");
-        }
-
-        dpBuilder.ProtectKeysWithCertificate(dataProtectionCertificate);
+        // AI Studio is a disposable development host. Ephemeral keys avoid weakening
+        // the Linux production certificate requirement; protected cookies are invalid
+        // after this development process exits and users simply sign in again.
+        builder.Services.AddDataProtection()
+            .SetApplicationName("PromoGest")
+            .UseEphemeralDataProtectionProvider();
     }
     else
     {
-        throw new PlatformNotSupportedException(
-            "PROMO GEST requires Windows DPAPI or a Linux X.509 Data Protection certificate for key-at-rest protection.");
+        var storageRoot = builder.Configuration["Storage:RootDirectory"] ?? Path.Combine(AppContext.BaseDirectory, "storage");
+        var defaultKeyDirectory = Path.Combine(
+            Path.GetDirectoryName(Path.GetFullPath(storageRoot)) ?? AppContext.BaseDirectory,
+            "dataprotection-keys");
+        var dpKeyDirectory = builder.Configuration["Security:DataProtectionKeyDirectory"] ?? defaultKeyDirectory;
+        Directory.CreateDirectory(dpKeyDirectory);
+
+        var dpBuilder = builder.Services.AddDataProtection()
+            .SetApplicationName("PromoGest")
+            .PersistKeysToFileSystem(new DirectoryInfo(dpKeyDirectory));
+
+        if (OperatingSystem.IsWindows())
+        {
+            // The service runs under a virtual service account, while maintenance and recovery
+            // may run under SYSTEM or an administrator account. Machine-scope DPAPI keeps the
+            // key ring decryptable on this Windows installation by those identities; filesystem
+            // ACLs on the key directory remain restricted to the service, SYSTEM, and Administrators.
+            dpBuilder.ProtectKeysWithDpapi(protectToLocalMachine: true);
+        }
+        else if (OperatingSystem.IsLinux())
+        {
+            // PersistKeysToFileSystem disables the default at-rest encryption heuristic.
+            // Production Linux deployments must provide a local PKCS#12 certificate and its password;
+            // never fall back to plaintext key-ring files.
+            if (string.IsNullOrWhiteSpace(certificatePath) || !Path.IsPathRooted(certificatePath))
+            {
+                throw new InvalidOperationException(
+                    "Security:DataProtectionCertificatePath must be an absolute path to a local PKCS#12 certificate on Linux.");
+            }
+
+            if (!File.Exists(certificatePath))
+            {
+                throw new FileNotFoundException(
+                    "The Linux Data Protection certificate file was not found.",
+                    certificatePath);
+            }
+
+            if (string.IsNullOrWhiteSpace(certificatePassword))
+            {
+                throw new InvalidOperationException(
+                    "PROMOGEST_DATA_PROTECTION_CERT_PASSWORD must be supplied by the Linux service environment.");
+            }
+
+            var dataProtectionCertificate = X509CertificateLoader.LoadPkcs12FromFile(
+                certificatePath,
+                certificatePassword,
+                X509KeyStorageFlags.EphemeralKeySet);
+
+            if (!dataProtectionCertificate.HasPrivateKey)
+            {
+                dataProtectionCertificate.Dispose();
+                throw new InvalidOperationException(
+                    "The Linux Data Protection certificate must contain its private key.");
+            }
+
+            dpBuilder.ProtectKeysWithCertificate(dataProtectionCertificate);
+        }
+        else
+        {
+            throw new PlatformNotSupportedException(
+                "PROMO GEST requires Windows DPAPI or a Linux X.509 Data Protection certificate for key-at-rest protection.");
+        }
     }
 }
 
@@ -182,6 +220,15 @@ if (args.Contains("--migrate", StringComparer.OrdinalIgnoreCase))
     var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
     await dbContext.Database.MigrateAsync();
     await DbInitializer.SeedRolesAndPermissionsAsync(dbContext);
+
+    if (usingCloudSqlMigrationIdentity && cloudSql is not null && migrationConnection is not null)
+    {
+        await CloudSqlRuntimePermissions.ApplyAsync(
+            migrationConnection,
+            cloudSql.RuntimeUsername);
+        Console.WriteLine("Cloud SQL development runtime permissions applied successfully.");
+    }
+
     Console.WriteLine("Database migrations and seeding completed successfully.");
     return;
 }

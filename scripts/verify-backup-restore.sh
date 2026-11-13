@@ -93,9 +93,11 @@ echo "[4/8] Creating an isolated restore database as '$PROVISION_USER'..."
 createdb --host="$PGHOST" --port="$PGPORT" --username="$PROVISION_USER" --owner="$OWNER_USER" "$VERIFY_DB"
 VERIFY_DB_CREATED=1
 
+# Identifiers were validated above to contain only ASCII letters, digits, and underscores.
+# psql variable interpolation does not apply to command strings passed with --command.
 psql --host="$PGHOST" --port="$PGPORT" --username="$PROVISION_USER" --dbname=postgres \
-  --set=ON_ERROR_STOP=1 --set=verify_db="$VERIFY_DB" --set=app_role="$APP_USER" \
-  --command='GRANT CONNECT ON DATABASE :"verify_db" TO :"app_role";'
+  --set=ON_ERROR_STOP=1 \
+  --command="GRANT CONNECT ON DATABASE \"$VERIFY_DB\" TO \"$APP_USER\";"
 
 pg_restore --host="$PGHOST" --port="$PGPORT" --username="$OWNER_USER" --no-owner --no-acl --dbname="$VERIFY_DB" "$WORK_DIR/database.dump"
 

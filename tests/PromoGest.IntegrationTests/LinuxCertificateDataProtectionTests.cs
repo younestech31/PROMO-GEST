@@ -55,7 +55,7 @@ public sealed class LinuxCertificateDataProtectionTests
             using (var firstProvider = CreateProvider(keyDirectory, applicationName, certificate))
             {
                 protectedPayload = firstProvider
-                    .CreateProtector(purpose)
+                    .GetRequiredService<IDataProtectionProvider>().CreateProtector(purpose)
                     .Protect(plainText);
             }
 

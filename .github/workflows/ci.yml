@@ -564,28 +564,6 @@ jobs:
             throw "Windows installer did not reject BackupRoot containing InstallRoot."
           }
 
-          $installRootBackupRejected = $false
-          try {
-            & .\deploy\windows\install-service.ps1 -InstallRoot $restoreProbeRoot -BackupRoot $restoreProbeRoot
-          }
-          catch {
-            $installRootBackupRejected = $_.Exception.Message -like "*custom BackupRoot must be outside InstallRoot*"
-          }
-          if (-not $installRootBackupRejected) {
-            throw "Windows installer did not reject BackupRoot equal to InstallRoot."
-          }
-
-          $installParentBackupRejected = $false
-          try {
-            & .\deploy\windows\install-service.ps1 -InstallRoot (Join-Path $restoreProbeRoot "live-install") -BackupRoot $restoreProbeRoot
-          }
-          catch {
-            $installParentBackupRejected = $_.Exception.Message -like "*custom BackupRoot must be outside InstallRoot*"
-          }
-          if (-not $installParentBackupRejected) {
-            throw "Windows installer did not reject BackupRoot containing InstallRoot."
-          }
-
           $overlapRejected = $false
           try {
             & $restoreScript -BackupBundleDir $probeBundle -RestoreStorageDir (Join-Path $restoreProbeRoot "overlap-output") -RestoreDataProtectionDir (Join-Path (Join-Path $restoreProbeRoot "overlap-output") "nested") -RestoreConfigDir (Join-Path $restoreProbeRoot "other-output")
@@ -697,6 +675,76 @@ jobs:
           }
           if (-not $collisionArchiveRejected) {
             throw "The production restore script did not reject case-colliding ZIP entries."
+          }
+
+          Remove-Item -LiteralPath $storageArchiveProbe -Force
+          $reservedNameArchive = [System.IO.Compression.ZipFile]::Open(
+            $storageArchiveProbe,
+            [System.IO.Compression.ZipArchiveMode]::Create
+          )
+          try {
+            $reservedEntry = $reservedNameArchive.CreateEntry("docs/CON.txt")
+            $reservedWriter = [System.IO.StreamWriter]::new($reservedEntry.Open())
+            try { $reservedWriter.Write("reserved-device-name") }
+            finally { $reservedWriter.Dispose() }
+          }
+          finally {
+            $reservedNameArchive.Dispose()
+          }
+          $manifestLines = foreach ($name in $manifestFiles) {
+            $fileHash = (Get-FileHash -LiteralPath (Join-Path $probeBundle $name) -Algorithm SHA256).Hash.ToLowerInvariant()
+            "$fileHash  $name"
+          }
+          [System.IO.File]::WriteAllLines(
+            (Join-Path $probeBundle "manifest.sha256"),
+            [string[]]$manifestLines,
+            [System.Text.UTF8Encoding]::new($false)
+          )
+          $reservedNameRejected = $false
+          try {
+            & $restoreScript -BackupBundleDir $probeBundle -TargetDatabase promogest_zip_reserved_name_probe -RestoreStorageDir (Join-Path $restoreProbeRoot "zip-storage") -RestoreDataProtectionDir (Join-Path $restoreProbeRoot "zip-keys") -RestoreConfigDir (Join-Path $restoreProbeRoot "zip-config")
+          }
+          catch {
+            Write-Host "Reserved-name ZIP probe returned: $($_.Exception.Message)"
+            $reservedNameRejected = $_.Exception.Message -like "*Windows-incompatible ZIP path segment*"
+          }
+          if (-not $reservedNameRejected) {
+            throw "The production restore script did not reject a reserved Windows device name."
+          }
+
+          Remove-Item -LiteralPath $storageArchiveProbe -Force
+          $trailingNameArchive = [System.IO.Compression.ZipFile]::Open(
+            $storageArchiveProbe,
+            [System.IO.Compression.ZipArchiveMode]::Create
+          )
+          try {
+            $trailingEntry = $trailingNameArchive.CreateEntry("docs/trailing-name.")
+            $trailingWriter = [System.IO.StreamWriter]::new($trailingEntry.Open())
+            try { $trailingWriter.Write("trailing-dot-name") }
+            finally { $trailingWriter.Dispose() }
+          }
+          finally {
+            $trailingNameArchive.Dispose()
+          }
+          $manifestLines = foreach ($name in $manifestFiles) {
+            $fileHash = (Get-FileHash -LiteralPath (Join-Path $probeBundle $name) -Algorithm SHA256).Hash.ToLowerInvariant()
+            "$fileHash  $name"
+          }
+          [System.IO.File]::WriteAllLines(
+            (Join-Path $probeBundle "manifest.sha256"),
+            [string[]]$manifestLines,
+            [System.Text.UTF8Encoding]::new($false)
+          )
+          $trailingNameRejected = $false
+          try {
+            & $restoreScript -BackupBundleDir $probeBundle -TargetDatabase promogest_zip_trailing_name_probe -RestoreStorageDir (Join-Path $restoreProbeRoot "zip-storage") -RestoreDataProtectionDir (Join-Path $restoreProbeRoot "zip-keys") -RestoreConfigDir (Join-Path $restoreProbeRoot "zip-config")
+          }
+          catch {
+            Write-Host "Trailing-name ZIP probe returned: $($_.Exception.Message)"
+            $trailingNameRejected = $_.Exception.Message -like "*Windows-incompatible ZIP path segment*"
+          }
+          if (-not $trailingNameRejected) {
+            throw "The production restore script did not reject a Windows-normalized trailing-dot path."
           }
 
           foreach ($outputPath in @("zip-storage", "zip-keys", "zip-config")) {

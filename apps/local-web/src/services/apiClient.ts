@@ -183,7 +183,7 @@ async function requestJson<T>(url: string, init?: RequestInit): Promise<T> {
 export const apiClient = {
   healthReady: () => requestJson<HealthStatusResponse>('/health/ready', { method: 'GET' }),
 
-  getSetupStatus: () => requestJson<SetupStatusResponse>('/api/setup/status', { method: 'GET' }),
+  getSetupStatus: () => requestJson<SetupStatusResponse>('/api/setup/status', { method: 'GET', cache: 'no-store' }),
 
   initializeInstallation: (payload: InitializeInstallationRequest) =>
     requestJson<InitializeInstallationResponse>('/api/setup/initialize', {

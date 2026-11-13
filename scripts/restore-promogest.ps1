@@ -7,6 +7,7 @@ param(
     [string]$ProvisionUser = "postgres",
     [string]$DatabaseUser = "promogest_owner",
     [string]$RuntimeDatabaseUser = "promogest_app",
+    [string]$ServiceName = "PromoGestLocalErp",
     [string]$ProtectedInstallRoot = "C:\PromoGest",
     [string]$RestoreStorageDir = "C:\PromoGest-Restore\storage",
     [string]$RestoreDataProtectionDir = "C:\PromoGest-Restore\dataprotection-keys",
@@ -83,6 +84,26 @@ function Assert-NoExistingReparsePoint {
             break
         }
         $pathComponent = $parentPath
+    }
+}
+
+function Set-PromoGestRestoreDirectoryAcl {
+    param(
+        [Parameter(Mandatory = $true)][string]$Path,
+        [switch]$GrantServiceModify
+    )
+
+    $systemAce = "*S-1-5-18:(OI)(CI)F"
+    $administratorsAce = "*S-1-5-32-544:(OI)(CI)F"
+    $accessEntries = @($systemAce, $administratorsAce)
+    if ($GrantServiceModify) {
+        $serviceAccount = "NT SERVICE\" + $ServiceName
+        $accessEntries += ($serviceAccount + ":(OI)(CI)M")
+    }
+
+    & icacls.exe $Path "/inheritance:r" "/grant:r" @accessEntries "/q" | Out-Null
+    if ($LASTEXITCODE -ne 0) {
+        throw "Could not apply restricted restore ACL to '$Path' (icacls exit $LASTEXITCODE)."
     }
 }
 
@@ -252,10 +273,13 @@ if ($LASTEXITCODE -ne 0) { throw "Could not reapply least-privilege runtime gran
 Write-Host "[5/6] Restoring local document storage, Data Protection keys, and sanitized configuration..."
 New-Item -ItemType Directory -Path $RestoreStorageDir -ErrorAction Stop | Out-Null
 $restoreStorageCreated = $true
+Set-PromoGestRestoreDirectoryAcl -Path $RestoreStorageDir -GrantServiceModify
 New-Item -ItemType Directory -Path $RestoreDataProtectionDir -ErrorAction Stop | Out-Null
 $restoreKeysCreated = $true
+Set-PromoGestRestoreDirectoryAcl -Path $RestoreDataProtectionDir -GrantServiceModify
 New-Item -ItemType Directory -Path $RestoreConfigDir -ErrorAction Stop | Out-Null
 $restoreConfigCreated = $true
+Set-PromoGestRestoreDirectoryAcl -Path $RestoreConfigDir
 Expand-Archive -LiteralPath $StorageArchivePath -DestinationPath $RestoreStorageDir -Force
 Expand-Archive -LiteralPath $DpKeysArchivePath -DestinationPath $RestoreDataProtectionDir -Force
 Expand-Archive -LiteralPath $ConfigArchivePath -DestinationPath $RestoreConfigDir -Force

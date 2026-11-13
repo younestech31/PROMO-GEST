@@ -149,6 +149,7 @@ public sealed class PostgreSql18IntegrationFixture : IAsyncLifetime
         // Apply the same post-migration grants used by the Google AI Studio Cloud SQL path.
         // This also sets least-privilege defaults for tables created by later migrations.
         await CloudSqlRuntimePermissions.ApplyAsync(migrationConnection, "promogest_app");
+        await VerifyFutureTableDefaultsAsync(migrationConnection, runtimeConnection);
 
         // Prove the restricted runtime identity can authenticate before any ASP.NET Core test host is created.
         await using (var runtimeProbe = new NpgsqlConnection(runtimeConnection))
@@ -163,6 +164,53 @@ public sealed class PostgreSql18IntegrationFixture : IAsyncLifetime
         }
 
         return runtimeConnection;
+    }
+
+    private static async Task VerifyFutureTableDefaultsAsync(
+        string migrationConnectionString,
+        string runtimeConnectionString)
+    {
+        const string probeTable = "cloudsql_default_privilege_probe";
+
+        await using (var ownerConnection = new NpgsqlConnection(migrationConnectionString))
+        {
+            await ownerConnection.OpenAsync();
+            await using var createProbe = new NpgsqlCommand(
+                $"CREATE TABLE public.{probeTable} (id integer PRIMARY KEY, value text NOT NULL);",
+                ownerConnection);
+            await createProbe.ExecuteNonQueryAsync();
+        }
+
+        try
+        {
+            await using var runtimeConnection = new NpgsqlConnection(runtimeConnectionString);
+            await runtimeConnection.OpenAsync();
+            await using var privilegeCheck = new NpgsqlCommand(
+                "SELECT " +
+                $"has_table_privilege(current_user, 'public.{probeTable}', 'SELECT') AND " +
+                $"has_table_privilege(current_user, 'public.{probeTable}', 'INSERT') AND " +
+                $"has_table_privilege(current_user, 'public.{probeTable}', 'UPDATE') AND " +
+                $"has_table_privilege(current_user, 'public.{probeTable}', 'DELETE') AND " +
+                $"NOT has_table_privilege(current_user, 'public.{probeTable}', 'TRUNCATE') AND " +
+                "NOT has_table_privilege(current_user, 'public.\\"__EFMigrationsHistory\\"', 'SELECT');",
+                runtimeConnection);
+
+            var hasExpectedPrivileges = (bool)(await privilegeCheck.ExecuteScalarAsync())!;
+            if (!hasExpectedPrivileges)
+            {
+                throw new InvalidOperationException(
+                    "Cloud SQL runtime role did not receive the expected future-table least-privilege grants.");
+            }
+        }
+        finally
+        {
+            await using var ownerConnection = new NpgsqlConnection(migrationConnectionString);
+            await ownerConnection.OpenAsync();
+            await using var dropProbe = new NpgsqlCommand(
+                $"DROP TABLE IF EXISTS public.{probeTable};",
+                ownerConnection);
+            await dropProbe.ExecuteNonQueryAsync();
+        }
     }
 
     public async Task DisposeAsync()

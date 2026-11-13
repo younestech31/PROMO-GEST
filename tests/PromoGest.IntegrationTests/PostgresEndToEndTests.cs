@@ -1,10 +1,12 @@
 using System.Net;
 using System.Net.Http.Json;
 using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.TestHost;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 using Npgsql;
 using PromoGest.Contracts.Auth;
 using PromoGest.Contracts.Audit;
@@ -143,6 +145,18 @@ public sealed class PostgreSql18IntegrationFixture : IAsyncLifetime
             }
         }
 
+        // Prove the restricted runtime identity can authenticate before any ASP.NET Core test host is created.
+        await using (var runtimeProbe = new NpgsqlConnection(runtimeConnection))
+        {
+            await runtimeProbe.OpenAsync();
+            await using var identityCommand = new NpgsqlCommand("SELECT current_user;", runtimeProbe);
+            var currentUser = (string?)await identityCommand.ExecuteScalarAsync();
+            if (!string.Equals(currentUser, "promogest_app", StringComparison.Ordinal))
+            {
+                throw new InvalidOperationException($"Expected runtime database identity 'promogest_app', got '{currentUser}'.");
+            }
+        }
+
         return runtimeConnection;
     }
 
@@ -179,6 +193,14 @@ public sealed class PostgresEndToEndTests : IClassFixture<PostgreSql18Integratio
                     ["Storage:RootDirectory"] = Path.Combine(tempRoot, "storage"),
                     ["Security:DataProtectionKeyDirectory"] = Path.Combine(tempRoot, "dp-keys")
                 });
+            });
+            builder.ConfigureTestServices(services =>
+            {
+                services.RemoveAll<AppDbContext>();
+                services.RemoveAll<DbContextOptions<AppDbContext>>();
+                services.AddDbContext<AppDbContext>(options =>
+                    options.UseNpgsql(connectionString, npgsql =>
+                        npgsql.MigrationsAssembly(typeof(AppDbContext).Assembly.FullName)));
             });
         });
     }

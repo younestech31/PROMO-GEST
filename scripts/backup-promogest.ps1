@@ -28,53 +28,51 @@ if ($LASTEXITCODE -ne 0) {
 }
 
 Write-Host "[2/5] Archiving local document storage..."
-if (Test-Path $StorageDir) {
-    $StorageItems = Get-ChildItem -Path $StorageDir
-    if ($StorageItems.Count -gt 0) {
-        Compress-Archive -Path (Join-Path $StorageDir "*") -DestinationPath $StorageArchivePath -Force
-    } else {
-        $EmptyDir = Join-Path $BundleDir "_empty_storage"
-        New-Item -ItemType Directory -Force -Path $EmptyDir | Out-Null
-        Compress-Archive -Path $EmptyDir -DestinationPath $StorageArchivePath -Force
-        Remove-Item -Recurse -Force $EmptyDir
-    }
+if (-not (Test-Path -LiteralPath $StorageDir -PathType Container)) {
+    throw "Storage directory not found: $StorageDir"
+}
+$StorageItems = @(Get-ChildItem -LiteralPath $StorageDir -Force)
+if ($StorageItems.Count -gt 0) {
+    Compress-Archive -Path (Join-Path $StorageDir "*") -DestinationPath $StorageArchivePath -Force
+} else {
+    $EmptyDir = Join-Path $BundleDir "_empty_storage"
+    New-Item -ItemType Directory -Force -Path $EmptyDir | Out-Null
+    Compress-Archive -Path $EmptyDir -DestinationPath $StorageArchivePath -Force
+    Remove-Item -Recurse -Force $EmptyDir
 }
 
-Write-Host "[3/5] Archiving Data Protection keys (same-machine DPAPI recovery or certificate-protected cross-machine restoration)..."
-if (Test-Path $DataProtectionDir) {
-    $DpItems = Get-ChildItem -Path $DataProtectionDir
-    if ($DpItems.Count -gt 0) {
-        Compress-Archive -Path (Join-Path $DataProtectionDir "*") -DestinationPath $DpKeysArchivePath -Force
-    } else {
-        $EmptyDp = Join-Path $BundleDir "_empty_dp"
-        New-Item -ItemType Directory -Force -Path $EmptyDp | Out-Null
-        Compress-Archive -Path $EmptyDp -DestinationPath $DpKeysArchivePath -Force
-        Remove-Item -Recurse -Force $EmptyDp
-    }
+Write-Host "[3/5] Archiving Data Protection keys..."
+if (-not (Test-Path -LiteralPath $DataProtectionDir -PathType Container)) {
+    throw "Data Protection key directory not found: $DataProtectionDir. Refusing to create a backup without the key ring."
+}
+$DpItems = @(Get-ChildItem -LiteralPath $DataProtectionDir -Force)
+if ($DpItems.Count -gt 0) {
+    Compress-Archive -Path (Join-Path $DataProtectionDir "*") -DestinationPath $DpKeysArchivePath -Force
+} else {
+    throw "Data Protection key directory is empty. Verify that the application has initialized its key ring."
 }
 
-Write-Host "[4/5] Archiving sanitized installation configuration (secrets redacted)..."
+Write-Host "[4/5] Archiving sanitized installation configuration..."
+if (-not (Test-Path -LiteralPath $AppConfigPath -PathType Leaf)) {
+    throw "Production configuration not found: $AppConfigPath"
+}
 $SanitizedStage = Join-Path $BundleDir "_config_stage"
 New-Item -ItemType Directory -Force -Path $SanitizedStage | Out-Null
-if (Test-Path $AppConfigPath) {
-    $cfgJson = Get-Content -Path $AppConfigPath -Raw | ConvertFrom-Json
-    if ($cfgJson.ConnectionStrings -and $cfgJson.ConnectionStrings.DefaultConnection) {
-        $cfgJson.ConnectionStrings.DefaultConnection = ($cfgJson.ConnectionStrings.DefaultConnection -replace '(Password\s*=\s*)[^;]+', '$1REDACTED_FOR_BACKUP')
-    }
-    $cfgJson | ConvertTo-Json -Depth 10 | Set-Content -Path (Join-Path $SanitizedStage "appsettings.Production.sanitized.json") -Encoding UTF8
+$cfgJson = Get-Content -LiteralPath $AppConfigPath -Raw | ConvertFrom-Json
+if ($cfgJson.ConnectionStrings -and $cfgJson.ConnectionStrings.DefaultConnection) {
+    $cfgJson.ConnectionStrings.DefaultConnection = ($cfgJson.ConnectionStrings.DefaultConnection -replace '(?i)(Password\s*=\s*)[^;]+', '$1REDACTED_FOR_BACKUP')
 }
-if (Test-Path $CaddyfilePath) {
-    Copy-Item -Path $CaddyfilePath -Destination (Join-Path $SanitizedStage "Caddyfile") -Force
+$cfgJson | ConvertTo-Json -Depth 10 | Set-Content -LiteralPath (Join-Path $SanitizedStage "appsettings.Production.sanitized.json") -Encoding UTF8
+if (Test-Path -LiteralPath $CaddyfilePath -PathType Leaf) {
+    Copy-Item -LiteralPath $CaddyfilePath -Destination (Join-Path $SanitizedStage "Caddyfile") -Force
 }
-if ((Get-ChildItem -Path $SanitizedStage).Count -gt 0) {
-    Compress-Archive -Path (Join-Path $SanitizedStage "*") -DestinationPath $ConfigArchivePath -Force
-}
+Compress-Archive -Path (Join-Path $SanitizedStage "*") -DestinationPath $ConfigArchivePath -Force
 Remove-Item -Recurse -Force $SanitizedStage
 
 Write-Host "[5/5] Generating SHA-256 verification manifest..."
-Get-ChildItem -Path $BundleDir -File | Sort-Object Name | ForEach-Object {
-    $hash = (Get-FileHash -Path $_.FullName -Algorithm SHA256).Hash.ToLowerInvariant()
+Get-ChildItem -LiteralPath $BundleDir -File | Sort-Object Name | ForEach-Object {
+    $hash = (Get-FileHash -LiteralPath $_.FullName -Algorithm SHA256).Hash.ToLowerInvariant()
     "$hash  $($_.Name)"
-} | Set-Content -Path $ManifestPath -Encoding UTF8
+} | Set-Content -LiteralPath $ManifestPath -Encoding UTF8
 
-Write-Host "Backup bundle created at $BundleDir. IMPORTANT: Test restoration with restore-promogest.ps1 before relying on backup."
+Write-Host "Backup bundle created at $BundleDir. Verify restoration before relying on it."

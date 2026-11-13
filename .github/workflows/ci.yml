@@ -55,6 +55,13 @@ jobs:
             echo "Development preview code leaked into ASP.NET Core wwwroot." >&2
             exit 1
           fi
+      - name: Upload verified production SPA assets
+        uses: actions/upload-artifact@v4
+        with:
+          name: promogest-wwwroot
+          path: src/PromoGest.Api/wwwroot/
+          if-no-files-found: error
+          retention-days: 1
 
   backend-and-postgres:
     name: .NET 10 and PostgreSQL 18 least-privilege tests

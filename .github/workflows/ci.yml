@@ -2,44 +2,56 @@ name: PROMO GEST CI
 
 on:
   push:
-    branches: [main]
+    branches: [main, "fix/**"]
   pull_request:
     branches: [main]
 
+permissions:
+  contents: read
+
 jobs:
   frontend:
-    name: Frontend Typecheck, Unit Tests & Production Build
+    name: Frontend install, checks, and static hosting
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
           node-version: "22"
-      - name: Install Dependencies
+          cache: npm
+      - name: Install locked dependencies
         run: npm ci --no-audit --no-fund
-      - name: Lint
+      - name: TypeScript strict check
         run: npm run lint
-      - name: Build Frontend
+      - name: Frontend unit tests
+        run: npm test
+      - name: Build frontend
         run: npm run build
-      - name: Verify Build Output Exists
+      - name: Verify frontend production output
+        shell: bash
         run: |
-          if [ ! -d "apps/local-web/dist" ]; then
-            echo "ERROR: apps/local-web/dist directory missing!" >&2
+          set -euo pipefail
+          test -s apps/local-web/dist/index.html
+          test -n "$(find apps/local-web/dist -type f | grep -E '\\.(js|css)$' | head -n 1)"
+          if grep -R -n -E 'dev-api-middleware|createPromoGestDevApiPlugin|ViteDevContractPreview' apps/local-web/dist; then
+            echo "Development preview code leaked into production frontend." >&2
             exit 1
           fi
-          if [ ! -f "apps/local-web/dist/index.html" ]; then
-            echo "ERROR: index.html missing in build output!" >&2
-            exit 1
-          fi
-      - name: Verify dev middleware is not bundled into production dist
+      - name: Build frontend into ASP.NET Core wwwroot
+        run: npm run build:aspnetcore
+      - name: Verify ASP.NET Core static hosting output
+        shell: bash
         run: |
-          if grep -rn "dev-api-middleware\|createPromoGestDevApiPlugin\|ViteDevContractPreview" apps/local-web/dist; then
-            echo "ERROR: Dev preview middleware leaked into production dist!" >&2
+          set -euo pipefail
+          test -s src/PromoGest.Api/wwwroot/index.html
+          test -n "$(find src/PromoGest.Api/wwwroot -type f | grep -E '\\.(js|css)$' | head -n 1)"
+          if grep -R -n -E 'dev-api-middleware|createPromoGestDevApiPlugin|ViteDevContractPreview' src/PromoGest.Api/wwwroot; then
+            echo "Development preview code leaked into ASP.NET Core wwwroot." >&2
             exit 1
           fi
 
   backend-and-postgres:
-    name: .NET 10 Build, Unit Tests & PostgreSQL 18 Integration Tests (Least-Privilege Roles)
+    name: .NET 10 and PostgreSQL 18 least-privilege tests
     runs-on: ubuntu-latest
     services:
       postgres:
@@ -51,48 +63,70 @@ jobs:
         ports:
           - 5432:5432
         options: >-
-          --health-cmd pg_isready
+          --health-cmd "pg_isready -U postgres"
           --health-interval 10s
           --health-timeout 5s
-          --health-retries 5
+          --health-retries 10
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-dotnet@v4
         with:
           dotnet-version: "10.0.x"
-      - name: Restore Solution
+      - name: Restore solution
         run: dotnet restore src/PromoGest.sln
-      - name: Build Solution (Warnings as Errors)
+      - name: Build solution with warnings as errors
         run: dotnet build src/PromoGest.sln --configuration Release --no-restore
-      - name: Domain Tests
+      - name: Domain tests
         run: dotnet test tests/PromoGest.Domain.Tests/PromoGest.Domain.Tests.csproj --configuration Release --no-build
-      - name: Application Security Tests
+      - name: Application tests
         run: dotnet test tests/PromoGest.Application.Tests/PromoGest.Application.Tests.csproj --configuration Release --no-build
-      - name: Provision Roles & Database in PostgreSQL 18
-        run: |
-          PGPASSWORD=postgres_password psql -h localhost -U postgres -c "
-            CREATE ROLE promogest_owner WITH LOGIN PASSWORD 'owner_pass' CREATEDB;
-            CREATE ROLE promogest_app WITH LOGIN PASSWORD 'app_pass';
-            CREATE DATABASE promogest OWNER promogest_owner;
-          "
-          PGPASSWORD=postgres_password psql -h localhost -U postgres -d promogest -c "
-            GRANT USAGE ON SCHEMA public TO promogest_app;
-            ALTER DEFAULT PRIVILEGES FOR ROLE promogest_owner IN SCHEMA public GRANT SELECT, INSERT, UPDATE, DELETE ON TABLES TO promogest_app;
-            ALTER DEFAULT PRIVILEGES FOR ROLE promogest_owner IN SCHEMA public GRANT USAGE, SELECT ON SEQUENCES TO promogest_app;
-          "
-      - name: PostgreSQL 18 Integration Tests (Migrations as Owner, Workflows as App Role)
+      - name: Provision PostgreSQL identities and initial database
         env:
-          PROMOGEST_TEST_DB_CONNECTION: Host=localhost;Port=5432;Database=promogest;Username=promogest_app;Password=app_pass
-          PROMOGEST_MIGRATE_DB_CONNECTION: Host=localhost;Port=5432;Database=promogest;Username=promogest_owner;Password=owner_pass
+          PGPASSWORD: postgres_password
+        run: |
+          set -euo pipefail
+          psql -h localhost -U postgres -d postgres -v ON_ERROR_STOP=1 <<'SQL'
+          CREATE ROLE promogest_owner WITH LOGIN NOSUPERUSER NOCREATEDB NOCREATEROLE NOINHERIT PASSWORD 'owner_pass';
+          CREATE ROLE promogest_app WITH LOGIN NOSUPERUSER NOCREATEDB NOCREATEROLE NOINHERIT PASSWORD 'app_pass';
+          CREATE DATABASE promogest_ci OWNER promogest_owner;
+          GRANT CONNECT ON DATABASE promogest_ci TO promogest_app;
+          SQL
+      - name: Apply migrations and seed roles as migration owner
+        env:
+          PROMOGEST_MIGRATE_DB_CONNECTION: Host=localhost;Port=5432;Database=promogest_ci;Username=promogest_owner;Password=owner_pass
+        run: dotnet run --project src/PromoGest.Api/PromoGest.Api.csproj --configuration Release --no-build -- --migrate
+      - name: Run integration tests with separate database identities
+        env:
+          PROMOGEST_TEST_PROVISION_DB_CONNECTION: Host=localhost;Port=5432;Database=postgres;Username=postgres;Password=postgres_password
+          PROMOGEST_TEST_MIGRATE_DB_CONNECTION: Host=localhost;Port=5432;Database=promogest_ci;Username=promogest_owner;Password=owner_pass
+          PROMOGEST_TEST_DB_CONNECTION: Host=localhost;Port=5432;Database=promogest_ci;Username=promogest_app;Password=app_pass
         run: dotnet test tests/PromoGest.IntegrationTests/PromoGest.IntegrationTests.csproj --configuration Release --no-build
 
-  powershell-and-publish:
-    name: PowerShell Syntax & Publish Verification
-    runs-on: ubuntu-latest
+  windows-publish-and-powershell:
+    name: Windows publish and PowerShell validation
+    runs-on: windows-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Install PowerShell (pwsh)
-        run: sudo apt-get update && sudo apt-get install -y powershell
-      - name: Syntax Check PowerShell Scripts
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "10.0.x"
+      - name: Restore solution
+        run: dotnet restore src/PromoGest.sln
+      - name: Build solution
+        run: dotnet build src/PromoGest.sln --configuration Release --no-restore
+      - name: Publish Windows x64 application
+        run: dotnet publish src/PromoGest.Api/PromoGest.Api.csproj --configuration Release --runtime win-x64 --self-contained true --output artifacts/win-x64
+      - name: Validate PowerShell scripts
+        shell: pwsh
         run: |
-          pwsh -Command "Get-ChildItem -Path scripts, deploy -Recurse -Filter *.ps1 | ForEach-Object { \$null = [System.Management.Automation.Language.Parser]::ParseFile(\$_.FullName, [ref]\$null, [ref]\$null); Write-Host 'Validated syntax: ' \$_.FullName }"
+          $files = Get-ChildItem -Path scripts, deploy -Recurse -Filter *.ps1
+          foreach ($file in $files) {
+            $tokens = $null
+            $errors = $null
+            [System.Management.Automation.Language.Parser]::ParseFile($file.FullName, [ref]$tokens, [ref]$errors) | Out-Null
+            if ($errors.Count -gt 0) {
+              $errors | ForEach-Object { Write-Error "$($file.FullName): $($_.Message)" }
+              exit 1
+            }
+            Write-Host "Validated syntax: $($file.FullName)"
+          }

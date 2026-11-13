@@ -118,6 +118,8 @@ destination = pathlib.Path(sys.argv[2])
 data = json.loads(source.read_text(encoding="utf-8-sig"))
 if not isinstance(data, dict):
     raise SystemExit("ERROR: Production configuration must be a JSON object.")
+if not isinstance(data.get("Storage"), dict) or not isinstance(data.get("Security"), dict):
+    raise SystemExit("ERROR: Production configuration is missing required Storage or Security sections.")
 
 sensitive_name = re.compile(
     r"(?i)(^connectionstrings?$|(?:password|passwd|pwd|secret|secret.?key|encryption.?key|master.?key|tokens?|credentials?|private.?key|api.?key|access.?key|signing.?key)(?:value|text|string|hash)?$)"

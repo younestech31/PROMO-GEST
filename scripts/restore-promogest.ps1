@@ -7,9 +7,10 @@ param(
     [string]$ProvisionUser = "postgres",
     [string]$DatabaseUser = "promogest_owner",
     [string]$RuntimeDatabaseUser = "promogest_app",
-    [string]$RestoreStorageDir = "C:\PromoGest\storage_restored",
-    [string]$RestoreDataProtectionDir = "C:\PromoGest\dataprotection-keys_restored",
-    [string]$RestoreConfigDir = "C:\PromoGest\config_restored"
+    [string]$ProtectedInstallRoot = "C:\PromoGest",
+    [string]$RestoreStorageDir = "C:\PromoGest-Restore\storage",
+    [string]$RestoreDataProtectionDir = "C:\PromoGest-Restore\dataprotection-keys",
+    [string]$RestoreConfigDir = "C:\PromoGest-Restore\config"
 )
 
 $ErrorActionPreference = "Stop"
@@ -140,6 +141,24 @@ if ([string]::Equals($DatabaseUser, $RuntimeDatabaseUser, [StringComparison]::Or
 }
 $restoreDestinations = @($RestoreStorageDir, $RestoreDataProtectionDir, $RestoreConfigDir)
 Assert-NoPathOverlap -Paths (@($restoreDestinations) + @($BackupBundleDir)) -Description "Backup and restore"
+$protectedRoot = Get-NormalizedPath -Path $ProtectedInstallRoot
+foreach ($restorePath in $restoreDestinations) {
+    $normalizedRestorePath = Get-NormalizedPath -Path $restorePath
+    $relativeToInstall = [IO.Path]::GetRelativePath($protectedRoot, $normalizedRestorePath)
+    $installRelativeToRestore = [IO.Path]::GetRelativePath($normalizedRestorePath, $protectedRoot)
+    $restoreInsideInstall = -not [IO.Path]::IsPathRooted($relativeToInstall) -and
+        $relativeToInstall -ne "." -and
+        $relativeToInstall -ne ".." -and
+        -not $relativeToInstall.StartsWith(".." + [string][IO.Path]::DirectorySeparatorChar, [StringComparison]::Ordinal)
+    $installInsideRestore = -not [IO.Path]::IsPathRooted($installRelativeToRestore) -and
+        $installRelativeToRestore -ne "." -and
+        $installRelativeToRestore -ne ".." -and
+        -not $installRelativeToRestore.StartsWith(".." + [string][IO.Path]::DirectorySeparatorChar, [StringComparison]::Ordinal)
+    if ([string]::Equals($normalizedRestorePath, $protectedRoot, [StringComparison]::OrdinalIgnoreCase) -or
+        $restoreInsideInstall -or $installInsideRestore) {
+        throw "Restore destinations must remain outside the live installation root '$protectedRoot': '$normalizedRestorePath'."
+    }
+}
 foreach ($restorePath in $restoreDestinations) {
     Assert-NoExistingReparsePoint -Path $restorePath
     if (Test-Path -LiteralPath $restorePath) {

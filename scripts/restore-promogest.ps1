@@ -20,6 +20,74 @@ $StorageArchivePath = Join-Path $BackupBundleDir "storage.zip"
 $DpKeysArchivePath = Join-Path $BackupBundleDir "dataprotection-keys.zip"
 $ConfigArchivePath = Join-Path $BackupBundleDir "config-sanitized.zip"
 
+Add-Type -AssemblyName System.IO.Compression.FileSystem
+
+function Get-NormalizedPath {
+    param([Parameter(Mandatory = $true)][string]$Path)
+    return [IO.Path]::GetFullPath($Path).TrimEnd(
+        [IO.Path]::DirectorySeparatorChar,
+        [IO.Path]::AltDirectorySeparatorChar
+    )
+}
+
+function Assert-NoPathOverlap {
+    param(
+        [Parameter(Mandatory = $true)][string[]]$Paths,
+        [Parameter(Mandatory = $true)][string]$Description
+    )
+
+    $normalized = @($Paths | ForEach-Object { Get-NormalizedPath -Path $_ })
+    for ($i = 0; $i -lt $normalized.Count; $i++) {
+        $volumeRoot = [IO.Path]::GetPathRoot($normalized[$i]).TrimEnd(
+            [IO.Path]::DirectorySeparatorChar,
+            [IO.Path]::AltDirectorySeparatorChar
+        )
+        if ([string]::Equals($normalized[$i], $volumeRoot, [StringComparison]::OrdinalIgnoreCase)) {
+            throw "$Description must not be a volume root: $($normalized[$i])"
+        }
+
+        for ($j = $i + 1; $j -lt $normalized.Count; $j++) {
+            $left = $normalized[$i]
+            $right = $normalized[$j]
+            $overlaps = [string]::Equals($left, $right, [StringComparison]::OrdinalIgnoreCase) -or
+                $left.StartsWith($right + [IO.Path]::DirectorySeparatorChar, [StringComparison]::OrdinalIgnoreCase) -or
+                $right.StartsWith($left + [IO.Path]::DirectorySeparatorChar, [StringComparison]::OrdinalIgnoreCase)
+            if ($overlaps) {
+                throw "$Description paths must be distinct and non-overlapping: '$left' and '$right'."
+            }
+        }
+    }
+}
+
+function Assert-SafeZipArchive {
+    param([Parameter(Mandatory = $true)][string]$ArchivePath)
+
+    $archive = [System.IO.Compression.ZipFile]::OpenRead($ArchivePath)
+    try {
+        foreach ($entry in $archive.Entries) {
+            $entryName = $entry.FullName.Replace("`", "/")
+            $segments = $entryName.Split("/")
+            if ([string]::IsNullOrWhiteSpace($entryName) -or
+                $entryName.StartsWith("/") -or
+                $entryName -match '^[A-Za-z]:' -or
+                $entryName.Contains(":") -or
+                $segments -contains "..") {
+                throw "Unsafe ZIP entry path in '$ArchivePath': $($entry.FullName)"
+            }
+
+            # Reject Unix symbolic-link entries even when the archive was produced
+            # on a non-Windows host and later moved to this Windows restore server.
+            $unixFileType = ($entry.ExternalAttributes -shr 16) -band 0xF000
+            if ($unixFileType -eq 0xA000) {
+                throw "Symbolic links are not allowed in backup ZIP archives: $($entry.FullName)"
+            }
+        }
+    }
+    finally {
+        $archive.Dispose()
+    }
+}
+
 if (-not (Test-Path -LiteralPath $ManifestPath -PathType Leaf)) {
     throw "Missing manifest.sha256 in $BackupBundleDir"
 }
@@ -44,7 +112,9 @@ foreach ($roleName in @($ProvisionUser, $DatabaseUser, $RuntimeDatabaseUser)) {
 if ([string]::Equals($DatabaseUser, $RuntimeDatabaseUser, [StringComparison]::OrdinalIgnoreCase)) {
     throw "Migration owner and runtime application role must be different identities."
 }
-foreach ($restorePath in @($RestoreStorageDir, $RestoreDataProtectionDir, $RestoreConfigDir)) {
+$restoreDestinations = @($RestoreStorageDir, $RestoreDataProtectionDir, $RestoreConfigDir)
+Assert-NoPathOverlap -Paths (@($restoreDestinations) + @($BackupBundleDir)) -Description "Backup and restore"
+foreach ($restorePath in $restoreDestinations) {
     if (Test-Path -LiteralPath $restorePath) {
         throw "Restore destination already exists. Choose a new path: $restorePath"
     }
@@ -120,8 +190,13 @@ GRANT SELECT, INSERT ON TABLE audit_logs TO "$RuntimeDatabaseUser";
 & psql --host=$DatabaseHost --port=$DatabasePort --username=$DatabaseUser --dbname=$TargetDatabase --set=ON_ERROR_STOP=1 --command=$grantSql
 if ($LASTEXITCODE -ne 0) { throw "Could not reapply least-privilege runtime grants after restore." }
 
-Write-Host "[4/6] Restoring local document storage, Data Protection keys, and sanitized configuration..."
-New-Item -ItemType Directory -Force -Path $RestoreStorageDir, $RestoreDataProtectionDir, $RestoreConfigDir | Out-Null
+Write-Host "[4/6] Validating ZIP paths before extraction..."
+Assert-SafeZipArchive -ArchivePath $StorageArchivePath
+Assert-SafeZipArchive -ArchivePath $DpKeysArchivePath
+Assert-SafeZipArchive -ArchivePath $ConfigArchivePath
+
+Write-Host "[5/6] Restoring local document storage, Data Protection keys, and sanitized configuration..."
+New-Item -ItemType Directory -Path $RestoreStorageDir, $RestoreDataProtectionDir, $RestoreConfigDir -ErrorAction Stop | Out-Null
 Expand-Archive -LiteralPath $StorageArchivePath -DestinationPath $RestoreStorageDir -Force
 Expand-Archive -LiteralPath $DpKeysArchivePath -DestinationPath $RestoreDataProtectionDir -Force
 Expand-Archive -LiteralPath $ConfigArchivePath -DestinationPath $RestoreConfigDir -Force
@@ -137,7 +212,7 @@ if (Select-String -LiteralPath $sanitizedConfig -Pattern '(?i)Password\s*=\s*(?!
     throw "Sanitized configuration appears to contain an unredacted connection-string password."
 }
 
-Write-Host "[5/6] Verifying restored database access as the least-privileged runtime identity..."
+Write-Host "[6/6] Verifying restored database access as the least-privileged runtime identity..."
 $runtimeValidationSql = @'
 DO $$
 BEGIN

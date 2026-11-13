@@ -119,8 +119,8 @@ jobs:
         run: |
           set -euo pipefail
           printf '%s\n' \
-            'localhost:5432:postgres:postgres:postgres_password' \
-            'localhost:5432:promogest_ci:promogest_owner:owner_pass' \
+            'localhost:5432:*:postgres:postgres_password' \
+            'localhost:5432:*:promogest_owner:owner_pass' \
             'localhost:5432:*:promogest_app:app_pass' > "$PGPASSFILE"
           chmod 600 "$PGPASSFILE"
 

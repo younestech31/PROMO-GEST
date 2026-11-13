@@ -4,6 +4,7 @@ param(
     [string]$TargetDatabase = "promogest_restore_verify",
     [string]$DatabaseHost = "127.0.0.1",
     [int]$DatabasePort = 5432,
+    [string]$ProvisionUser = "postgres",
     [string]$DatabaseUser = "promogest_owner",
     [string]$RestoreStorageDir = "C:\PromoGest\storage_restored",
     [string]$RestoreDataProtectionDir = "C:\PromoGest\dataprotection-keys_restored",
@@ -11,85 +12,134 @@ param(
 )
 
 $ErrorActionPreference = "Stop"
-
+$BackupBundleDir = (Resolve-Path -LiteralPath $BackupBundleDir).Path
 $ManifestPath = Join-Path $BackupBundleDir "manifest.sha256"
-if (-not (Test-Path $ManifestPath)) {
+$DbDumpPath = Join-Path $BackupBundleDir "database.dump"
+
+if (-not (Test-Path -LiteralPath $ManifestPath -PathType Leaf)) {
     throw "Missing manifest.sha256 in $BackupBundleDir"
 }
+if (-not (Test-Path -LiteralPath $DbDumpPath -PathType Leaf)) {
+    throw "Missing database.dump in $BackupBundleDir"
+}
+if ($TargetDatabase -notmatch '^[A-Za-z_][A-Za-z0-9_]{0,62}$') {
+    throw "TargetDatabase must be a safe PostgreSQL identifier."
+}
 
-Write-Host "[1/6] Verifying SHA-256 checksums..."
-foreach ($line in Get-Content $ManifestPath) {
+Write-Host "[1/7] Verifying every backup-bundle checksum..."
+foreach ($line in Get-Content -LiteralPath $ManifestPath) {
     if ([string]::IsNullOrWhiteSpace($line)) { continue }
     $parts = $line -split "\s+", 2
+    if ($parts.Count -ne 2) { throw "Invalid manifest entry: $line" }
+
     $expected = $parts[0].Trim().ToLowerInvariant()
-    $file = Join-Path $BackupBundleDir $parts[1].Trim()
-    if (-not (Test-Path $file)) {
-        throw "Missing expected backup file: $file"
+    $relativePath = $parts[1].Trim()
+    if ([IO.Path]::IsPathRooted($relativePath) -or $relativePath -match '(^|[\\/])\.\.([\\/]|$)') {
+        throw "Unsafe path in backup manifest: $relativePath"
     }
-    $actual = (Get-FileHash -Path $file -Algorithm SHA256).Hash.ToLowerInvariant()
+
+    $backupFile = Join-Path $BackupBundleDir $relativePath
+    if (-not (Test-Path -LiteralPath $backupFile -PathType Leaf)) {
+        throw "Missing expected backup file: $backupFile"
+    }
+    $actual = (Get-FileHash -LiteralPath $backupFile -Algorithm SHA256).Hash.ToLowerInvariant()
     if ($expected -ne $actual) {
-        throw "Checksum mismatch for $file (expected $expected, got $actual)"
+        throw "Checksum mismatch for $backupFile"
     }
 }
 
-Write-Host "[2/6] Restoring PostgreSQL dump into $TargetDatabase using maintenance role $DatabaseUser..."
-& pg_restore --host=$DatabaseHost --port=$DatabasePort --username=$DatabaseUser --clean --if-exists --dbname=$TargetDatabase "$DbDumpPath"
-if ($LASTEXITCODE -ne 0) {
-    throw "pg_restore failed with exit code $LASTEXITCODE"
+Write-Host "[2/7] Validating PostgreSQL dump..."
+& pg_restore --list "$DbDumpPath" | Out-Null
+if ($LASTEXITCODE -ne 0) { throw "PostgreSQL dump is invalid (pg_restore --list exit $LASTEXITCODE)." }
+
+Write-Host "[3/7] Creating an isolated restore database with provisioning identity $ProvisionUser..."
+$existing = & psql --host=$DatabaseHost --port=$DatabasePort --username=$ProvisionUser --dbname=postgres --tuples-only --no-align -c "SELECT 1 FROM pg_database WHERE datname = '$TargetDatabase';"
+if ($LASTEXITCODE -ne 0) { throw "Could not query PostgreSQL database catalog using $ProvisionUser." }
+if (-not [string]::IsNullOrWhiteSpace(($existing -join "").Trim())) {
+    throw "Target database '$TargetDatabase' already exists. Choose another name; existing databases are never dropped automatically."
 }
+
+& createdb --host=$DatabaseHost --port=$DatabasePort --username=$ProvisionUser --owner=$DatabaseUser $TargetDatabase
+if ($LASTEXITCODE -ne 0) { throw "createdb failed with exit code $LASTEXITCODE." }
+
+& pg_restore --host=$DatabaseHost --port=$DatabasePort --username=$DatabaseUser --no-owner --no-acl --dbname=$TargetDatabase "$DbDumpPath"
+if ($LASTEXITCODE -ne 0) { throw "pg_restore failed with exit code $LASTEXITCODE." }
 
 $StorageArchivePath = Join-Path $BackupBundleDir "storage.zip"
-if (Test-Path $StorageArchivePath) {
-    Write-Host "[3/6] Restoring local document storage into $RestoreStorageDir..."
+if (Test-Path -LiteralPath $StorageArchivePath -PathType Leaf) {
+    Write-Host "[4/7] Restoring local document storage..."
     New-Item -ItemType Directory -Force -Path $RestoreStorageDir | Out-Null
-    Expand-Archive -Path $StorageArchivePath -DestinationPath $RestoreStorageDir -Force
+    Expand-Archive -LiteralPath $StorageArchivePath -DestinationPath $RestoreStorageDir -Force
+} else {
+    New-Item -ItemType Directory -Force -Path $RestoreStorageDir | Out-Null
 }
 
 $DpKeysArchivePath = Join-Path $BackupBundleDir "dataprotection-keys.zip"
-if (Test-Path $DpKeysArchivePath) {
-    Write-Host "[4/6] Restoring Data Protection keys into $RestoreDataProtectionDir..."
+if (Test-Path -LiteralPath $DpKeysArchivePath -PathType Leaf) {
+    Write-Host "[5/7] Restoring Data Protection keys..."
     New-Item -ItemType Directory -Force -Path $RestoreDataProtectionDir | Out-Null
-    Expand-Archive -Path $DpKeysArchivePath -DestinationPath $RestoreDataProtectionDir -Force
+    Expand-Archive -LiteralPath $DpKeysArchivePath -DestinationPath $RestoreDataProtectionDir -Force
+} else {
+    Write-Warning "No Data Protection key archive was found. Existing protected payloads may not be decryptable after recovery."
 }
 
 $ConfigArchivePath = Join-Path $BackupBundleDir "config-sanitized.zip"
-if (Test-Path $ConfigArchivePath) {
-    Write-Host "[5/6] Extracting sanitized config archive into $RestoreConfigDir..."
+if (Test-Path -LiteralPath $ConfigArchivePath -PathType Leaf) {
+    Write-Host "[6/7] Restoring sanitized configuration..."
     New-Item -ItemType Directory -Force -Path $RestoreConfigDir | Out-Null
-    Expand-Archive -Path $ConfigArchivePath -DestinationPath $RestoreConfigDir -Force
+    Expand-Archive -LiteralPath $ConfigArchivePath -DestinationPath $RestoreConfigDir -Force
 }
 
-Write-Host "[6/6] Verifying restored table row counts & verifying EVERY stored_file..."
+Write-Host "[7/7] Verifying every restored stored file..."
 $counts = & psql --host=$DatabaseHost --port=$DatabasePort --username=$DatabaseUser --dbname=$TargetDatabase --tuples-only --no-align -c "SELECT (SELECT count(*) FROM organization_settings), (SELECT count(*) FROM users), (SELECT count(*) FROM projects), (SELECT count(*) FROM stored_files);"
-if ($LASTEXITCODE -ne 0) {
-    throw "Verification query failed on restored database $TargetDatabase"
-}
-Write-Host "Restored row counts (org|users|projects|stored_files): $counts"
+if ($LASTEXITCODE -ne 0) { throw "Could not query restored database counts." }
+Write-Host "Restored counts (organization|users|projects|stored_files): $counts"
 
 $storedFiles = & psql --host=$DatabaseHost --port=$DatabasePort --username=$DatabaseUser --dbname=$TargetDatabase --tuples-only --no-align -c "SELECT stored_relative_path || '|' || sha256_checksum || '|' || size_bytes FROM stored_files;"
+if ($LASTEXITCODE -ne 0) { throw "Could not enumerate stored_files in restored database." }
+
+$root = [IO.Path]::GetFullPath($RestoreStorageDir)
+New-Item -ItemType Directory -Force -Path $root | Out-Null
 $verifiedCount = 0
+
 foreach ($entry in $storedFiles) {
     if ([string]::IsNullOrWhiteSpace($entry)) { continue }
     $parts = $entry -split "\|", 3
-    $relPath = $parts[0].Trim()
+    if ($parts.Count -ne 3) { throw "Invalid stored_files result row: $entry" }
+
+    $relativeFile = $parts[0].Trim()
     $expectedHash = $parts[1].Trim().ToLowerInvariant()
     $expectedSize = [long]$parts[2].Trim()
 
-    $fullFile = Join-Path $RestoreStorageDir ($relPath -replace '/', '\')
-    if (-not (Test-Path $fullFile)) {
-        throw "Restored storage missing file referenced by stored_files: $fullFile"
+    if ([IO.Path]::IsPathRooted($relativeFile)) { throw "Rooted stored file path rejected: $relativeFile" }
+    $fullPath = [IO.Path]::GetFullPath((Join-Path $root $relativeFile))
+    $relativeCheck = [IO.Path]::GetRelativePath($root, $fullPath)
+    if ($relativeCheck -eq ".." -or
+        $relativeCheck.StartsWith(".." + [IO.Path]::DirectorySeparatorChar, [StringComparison]::Ordinal) -or
+        $relativeCheck.StartsWith(".." + [IO.Path]::AltDirectorySeparatorChar, [StringComparison]::Ordinal) -or
+        [IO.Path]::IsPathRooted($relativeCheck)) {
+        throw "Stored file path escapes restore storage root: $relativeFile"
     }
 
-    $fileInfo = Get-Item $fullFile
+    if (-not (Test-Path -LiteralPath $fullPath -PathType Leaf)) {
+        throw "Restored storage is missing: $relativeFile"
+    }
+    $fileInfo = Get-Item -LiteralPath $fullPath
     if ($fileInfo.Length -ne $expectedSize) {
-        throw "Restored file size mismatch for $relPath (expected $expectedSize bytes, got $($fileInfo.Length) bytes)"
+        throw "File length mismatch for $relativeFile (expected $expectedSize, actual $($fileInfo.Length))."
     }
-
-    $actualHash = (Get-FileHash -Path $fullFile -Algorithm SHA256).Hash.ToLowerInvariant()
+    $actualHash = (Get-FileHash -LiteralPath $fullPath -Algorithm SHA256).Hash.ToLowerInvariant()
     if ($actualHash -ne $expectedHash) {
-        throw "Restored file checksum mismatch for $relPath (expected $expectedHash, got $actualHash)"
+        throw "SHA-256 mismatch for $relativeFile."
     }
     $verifiedCount++
 }
 
-Write-Host "Restoration and integrity verification completed cleanly ($verifiedCount stored files verified successfully)."
+$fileCountText = ($counts -join "").Trim().Split("|")[-1].Trim()
+$fileCount = [int]$fileCountText
+if ($verifiedCount -ne $fileCount) {
+    throw "Stored file count mismatch: database has $fileCount records; verified $verifiedCount files."
+}
+
+Write-Host "Restore verified: $verifiedCount of $fileCount stored files match size and SHA-256."
+Write-Host "Restore operation completed. Review Data Protection recovery notes before switching production traffic."

@@ -58,6 +58,17 @@ function Set-RestrictedDirectoryAcl {
     Invoke-IcaclsChecked -Arguments ($pathArgs + @("/grant:r", $systemAce, $administratorsAce, $serviceAce))
 }
 
+function Set-MaintenanceOnlyDirectoryAcl {
+    param([Parameter(Mandatory = $true)][string]$Path)
+
+    $pathArgs = @($Path, "/t", "/c", "/q")
+    Invoke-IcaclsChecked -Arguments ($pathArgs + @("/inheritance:r"))
+
+    $systemAce = "*S-1-5-18:(OI)(CI)F"
+    $administratorsAce = "*S-1-5-32-544:(OI)(CI)F"
+    Invoke-IcaclsChecked -Arguments ($pathArgs + @("/grant:r", $systemAce, $administratorsAce))
+}
+
 $BinPath = '"' + $ExePath + '" --urls "' + $BindUrl + '"'
 $existingService = Get-Service -Name $ServiceName -ErrorAction SilentlyContinue
 
@@ -97,9 +108,13 @@ Set-RestrictedDirectoryAcl -Path $InstallRoot -ServiceRights "RX"
 Set-RestrictedDirectoryAcl -Path $AppDir -ServiceRights "RX" -Recursive
 Set-RestrictedDirectoryAcl -Path $ScriptsDir -ServiceRights "RX" -Recursive
 
-foreach ($directory in @($StorageDir, $DataProtectionDir, $BackupDir, $LogsDir)) {
+foreach ($directory in @($StorageDir, $DataProtectionDir, $LogsDir)) {
     Set-RestrictedDirectoryAcl -Path $directory -ServiceRights "M" -Recursive
 }
+
+# Backup archives contain the entire database and private Data Protection material.
+# Only SYSTEM (the scheduled backup/restore identity) and local Administrators may access them.
+Set-MaintenanceOnlyDirectoryAcl -Path $BackupDir
 
 & sc.exe failure $ServiceName "reset=" "86400" "actions=" "restart/5000/restart/15000/restart/30000" | Out-Null
 if ($LASTEXITCODE -ne 0) { throw "sc.exe failure configuration failed with exit code $LASTEXITCODE" }

@@ -535,6 +535,17 @@ jobs:
             if (-not $restoreReparseBlocked) {
               throw "Windows restore script did not reject a destination traversing a junction."
             }
+
+            $protectedRootReparseBlocked = $false
+            try {
+              & $restoreScript -BackupBundleDir $probeBundle -ProtectedInstallRoot $backupJunction -RestoreStorageDir (Join-Path $restoreProbeRoot "protected-root-storage") -RestoreDataProtectionDir (Join-Path $restoreProbeRoot "protected-root-keys") -RestoreConfigDir (Join-Path $restoreProbeRoot "protected-root-config")
+            }
+            catch {
+              $protectedRootReparseBlocked = $_.Exception.Message -like "*Restore destination must not traverse a junction or symbolic link*"
+            }
+            if (-not $protectedRootReparseBlocked) {
+              throw "Windows restore script did not reject a ProtectedInstallRoot traversing a junction."
+            }
           }
           finally {
             Remove-Item -LiteralPath $backupJunction -Force

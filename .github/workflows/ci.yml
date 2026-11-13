@@ -415,6 +415,49 @@ jobs:
             Write-Host "Validated syntax: $($file.FullName)"
           }
 
+          $backupScriptPath = Join-Path (Get-Location).Path "scripts/backup-promogest.ps1"
+          $backupTokens = $null
+          $backupParseErrors = $null
+          $backupAst = [System.Management.Automation.Language.Parser]::ParseFile(
+            $backupScriptPath,
+            [ref]$backupTokens,
+            [ref]$backupParseErrors
+          )
+          $sanitizerAst = $backupAst.Find({
+            param($node)
+            $node -is [System.Management.Automation.Language.FunctionDefinitionAst] -and
+              $node.Name -eq "Write-PromoGestSanitizedConfig"
+          }, $true)
+          if ($null -eq $sanitizerAst) {
+            throw "Production backup configuration sanitizer function was not found."
+          }
+          . ([ScriptBlock]::Create($sanitizerAst.Extent.Text))
+
+          $sanitizerSourcePath = Join-Path $env:RUNNER_TEMP "promogest-sanitizer-source.json"
+          $sanitizerOutputPath = Join-Path $env:RUNNER_TEMP "promogest-sanitizer-output.json"
+          $sanitizerProbe = [PSCustomObject]@{
+            ConnectionStrings = [PSCustomObject]@{
+              DefaultConnection = "Host=127.0.0.1;Database=promogest;Password=DEFAULT-DB-SECRET-DO-NOT-BACKUP"
+              ReportingConnection = "Host=127.0.0.1;Database=reporting;Password=SECOND-DB-SECRET-DO-NOT-BACKUP"
+            }
+            Storage = [PSCustomObject]@{ RootDirectory = "C:\PromoGest\storage" }
+            Security = [PSCustomObject]@{ RequireHttpsCookies = $true }
+          }
+          $sanitizerProbe | ConvertTo-Json -Depth 8 |
+            Set-Content -LiteralPath $sanitizerSourcePath -Encoding UTF8
+          Write-PromoGestSanitizedConfig -SourcePath $sanitizerSourcePath -DestinationPath $sanitizerOutputPath
+
+          $sanitizedText = Get-Content -LiteralPath $sanitizerOutputPath -Raw
+          if ($sanitizedText -match 'ConnectionStrings|DEFAULT-DB-SECRET-DO-NOT-BACKUP|SECOND-DB-SECRET-DO-NOT-BACKUP') {
+            throw "Windows backup configuration sanitizer leaked a connection string or database secret."
+          }
+          $sanitizedObject = $sanitizedText | ConvertFrom-Json
+          if ($null -eq $sanitizedObject.Storage -or $null -eq $sanitizedObject.Security) {
+            throw "Windows backup configuration sanitizer removed required non-secret configuration sections."
+          }
+          Remove-Item -LiteralPath $sanitizerSourcePath, $sanitizerOutputPath -Force
+          Write-Host "Verified production configuration sanitizer removes every connection string and preserves required settings."
+
           Add-Type -AssemblyName System.IO.Compression.FileSystem
           $zipSource = Join-Path $env:RUNNER_TEMP "promogest-zip-smoke-source"
           $zipPath = Join-Path $env:RUNNER_TEMP "promogest-zip-smoke.zip"

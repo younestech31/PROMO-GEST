@@ -97,8 +97,10 @@ if (-not [string]::IsNullOrWhiteSpace(($existing -join "").Trim())) {
 & createdb --host=$DatabaseHost --port=$DatabasePort --username=$ProvisionUser --owner=$DatabaseUser $TargetDatabase
 if ($LASTEXITCODE -ne 0) { throw "createdb failed with exit code $LASTEXITCODE." }
 
-$connectGrantSql = 'GRANT CONNECT ON DATABASE :"target_db" TO :"runtime_role";'
-& psql --host=$DatabaseHost --port=$DatabasePort --username=$ProvisionUser --dbname=postgres --set=ON_ERROR_STOP=1 --set=target_db=$TargetDatabase --set=runtime_role=$RuntimeDatabaseUser --command=$connectGrantSql
+# Role/database identifiers are restricted above to safe ASCII characters. psql variables
+# are not interpolated inside --command, so quote the validated identifiers directly.
+$connectGrantSql = "GRANT CONNECT ON DATABASE `"$TargetDatabase`" TO `"$RuntimeDatabaseUser`";"
+& psql --host=$DatabaseHost --port=$DatabasePort --username=$ProvisionUser --dbname=postgres --set=ON_ERROR_STOP=1 --command=$connectGrantSql
 if ($LASTEXITCODE -ne 0) { throw "Could not grant runtime CONNECT on restored database." }
 
 & pg_restore --host=$DatabaseHost --port=$DatabasePort --username=$DatabaseUser --no-owner --no-acl --dbname=$TargetDatabase "$DbDumpPath"

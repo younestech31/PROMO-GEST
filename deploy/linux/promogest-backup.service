@@ -9,7 +9,7 @@ User=root
 Group=root
 WorkingDirectory=/opt/promogest/app
 EnvironmentFile=/etc/promogest/promogest.env
-Environment=PGPASSFILE=/root/.pgpass
+Environment=PGPASSFILE=/etc/promogest/pgpass
 Environment=PROMOGEST_BACKUP_ROOT=/var/backups/promogest
 ExecStart=/usr/local/sbin/backup-promogest.sh
 UMask=0077

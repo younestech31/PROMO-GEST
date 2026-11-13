@@ -1,3 +1,4 @@
+using System.Runtime.Versioning;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.Extensions.DependencyInjection;
 using Xunit;
@@ -29,7 +30,7 @@ public sealed class WindowsDpapiMachineScopeTests
             using (var firstProvider = CreateProvider(keyDirectory, applicationName))
             {
                 protectedPayload = firstProvider
-                    .CreateProtector(purpose)
+                    .GetRequiredService<IDataProtectionProvider>().CreateProtector(purpose)
                     .Protect(plainText);
             }
 
@@ -54,6 +55,7 @@ public sealed class WindowsDpapiMachineScopeTests
         }
     }
 
+    [SupportedOSPlatform("windows")]
     private static ServiceProvider CreateProvider(string keyDirectory, string applicationName)
     {
         var services = new ServiceCollection();

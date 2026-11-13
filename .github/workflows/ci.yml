@@ -595,6 +595,44 @@ jobs:
           if (-not $unsafeArchiveRejected) {
             throw "The production restore script did not reject a ZIP traversal entry before database access."
           }
+
+          Remove-Item -LiteralPath $storageArchiveProbe -Force
+          $collisionArchive = [System.IO.Compression.ZipFile]::Open(
+            $storageArchiveProbe,
+            [System.IO.Compression.ZipArchiveMode]::Create
+          )
+          try {
+            foreach ($entryName in @("docs/Report.txt", "docs/report.txt")) {
+              $collisionEntry = $collisionArchive.CreateEntry($entryName)
+              $collisionWriter = [System.IO.StreamWriter]::new($collisionEntry.Open())
+              try { $collisionWriter.Write($entryName) }
+              finally { $collisionWriter.Dispose() }
+            }
+          }
+          finally {
+            $collisionArchive.Dispose()
+          }
+          $manifestLines = foreach ($name in $manifestFiles) {
+            $fileHash = (Get-FileHash -LiteralPath (Join-Path $probeBundle $name) -Algorithm SHA256).Hash.ToLowerInvariant()
+            "$fileHash  $name"
+          }
+          [System.IO.File]::WriteAllLines(
+            (Join-Path $probeBundle "manifest.sha256"),
+            [string[]]$manifestLines,
+            [System.Text.UTF8Encoding]::new($false)
+          )
+          $collisionArchiveRejected = $false
+          try {
+            & $restoreScript -BackupBundleDir $probeBundle -TargetDatabase promogest_zip_collision_probe -RestoreStorageDir (Join-Path $restoreProbeRoot "zip-storage") -RestoreDataProtectionDir (Join-Path $restoreProbeRoot "zip-keys") -RestoreConfigDir (Join-Path $restoreProbeRoot "zip-config")
+          }
+          catch {
+            Write-Host "Case-collision ZIP probe returned: $($_.Exception.Message)"
+            $collisionArchiveRejected = $_.Exception.Message -like "*Duplicate or case-colliding ZIP entry*"
+          }
+          if (-not $collisionArchiveRejected) {
+            throw "The production restore script did not reject case-colliding ZIP entries."
+          }
+
           foreach ($outputPath in @("zip-storage", "zip-keys", "zip-config")) {
             if (Test-Path -LiteralPath (Join-Path $restoreProbeRoot $outputPath)) {
               throw "Unsafe ZIP was rejected too late; restore output was already created: $outputPath"

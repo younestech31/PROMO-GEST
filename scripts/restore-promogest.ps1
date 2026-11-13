@@ -327,6 +327,9 @@ try {
 catch {
     throw "Sanitized production configuration is not valid JSON: $($_.Exception.Message)"
 }
+if ($null -ne $sanitizedConfigObject.PSObject.Properties["ConnectionStrings"]) {
+    throw "Sanitized production configuration must not contain ConnectionStrings; restore secrets from the protected secret store."
+}
 if ($null -eq $sanitizedConfigObject.Storage -or $null -eq $sanitizedConfigObject.Security) {
     throw "Sanitized production configuration is missing required Storage or Security sections."
 }

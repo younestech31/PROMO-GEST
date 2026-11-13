@@ -207,7 +207,7 @@ def strip_sensitive(value):
     return value
 
 sanitized = strip_sensitive(data)
-serialized = json.dumps(sanitized, ensure_ascii=False, indent=2) + "\\n"
+serialized = json.dumps(sanitized, ensure_ascii=False, indent=2) + "\n"
 if sensitive_name.search(serialized):
     raise SystemExit("ERROR: Secret-bearing property name remained in sanitized configuration.")
 destination.write_text(serialized, encoding="utf-8")

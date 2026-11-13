@@ -75,11 +75,16 @@ case "$BACKUP_ROOT" in
     echo "ERROR: PROMOGEST_BACKUP_ROOT must be a dedicated subdirectory, not a shared system directory: $BACKUP_ROOT" >&2
     exit 1
     ;;
-  /home|/home/*|/root|/root/*|/run/user|/run/user/*)
-    echo "ERROR: PROMOGEST_BACKUP_ROOT cannot be under a protected home directory because the systemd backup unit uses ProtectHome=true: $BACKUP_ROOT" >&2
-    exit 1
-    ;;
 esac
+
+if [[ "${PROMOGEST_SYSTEMD_PROTECT_HOME:-false}" == "true" ]]; then
+  case "$BACKUP_ROOT" in
+    /home|/home/*|/root|/root/*|/run/user|/run/user/*)
+      echo "ERROR: PROMOGEST_BACKUP_ROOT cannot be under a protected home directory because the systemd backup unit uses ProtectHome=true: $BACKUP_ROOT" >&2
+      exit 1
+      ;;
+  esac
+fi
 
 for source_directory in "$STORAGE_DIR" "$DP_KEYS_DIR" "$(dirname "$CONFIG_PATH")" "$(dirname "$CADDYFILE_PATH")"; do
   source_absolute="$(realpath -m -- "$source_directory")"

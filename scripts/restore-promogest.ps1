@@ -184,6 +184,7 @@ if ([string]::Equals($DatabaseUser, $RuntimeDatabaseUser, [StringComparison]::Or
 }
 $restoreDestinations = @($RestoreStorageDir, $RestoreDataProtectionDir, $RestoreConfigDir)
 Assert-NoPathOverlap -Paths (@($restoreDestinations) + @($BackupBundleDir)) -Description "Backup and restore"
+Assert-NoExistingReparsePoint -Path $ProtectedInstallRoot
 $protectedRoot = Get-NormalizedPath -Path $ProtectedInstallRoot
 foreach ($restorePath in $restoreDestinations) {
     $normalizedRestorePath = Get-NormalizedPath -Path $restorePath

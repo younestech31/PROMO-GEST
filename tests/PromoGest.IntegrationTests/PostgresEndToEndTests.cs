@@ -192,7 +192,7 @@ public sealed class PostgreSql18IntegrationFixture : IAsyncLifetime
                 $"has_table_privilege(current_user, 'public.{probeTable}', 'UPDATE') AND " +
                 $"has_table_privilege(current_user, 'public.{probeTable}', 'DELETE') AND " +
                 $"NOT has_table_privilege(current_user, 'public.{probeTable}', 'TRUNCATE') AND " +
-                "NOT has_table_privilege(current_user, 'public.\\"__EFMigrationsHistory\\"', 'SELECT');",
+                "NOT has_table_privilege(current_user, (SELECT oid FROM pg_class WHERE relname = '__EFMigrationsHistory' AND relnamespace = 'public'::regnamespace), 'SELECT');",
                 runtimeConnection);
 
             var hasExpectedPrivileges = (bool)(await privilegeCheck.ExecuteScalarAsync())!;

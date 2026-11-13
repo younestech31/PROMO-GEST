@@ -71,7 +71,8 @@ if (!migrationMode)
         // Linux deployments must provide a local PKCS#12 certificate and its password
         // through the service environment; never fall back to plaintext key-ring files.
         var certificatePath = builder.Configuration["Security:DataProtectionCertificatePath"];
-        var certificatePassword = Environment.GetEnvironmentVariable("PROMOGEST_DATA_PROTECTION_CERT_PASSWORD");
+        var certificatePassword = builder.Configuration["PROMOGEST_DATA_PROTECTION_CERT_PASSWORD"]
+            ?? Environment.GetEnvironmentVariable("PROMOGEST_DATA_PROTECTION_CERT_PASSWORD");
 
         if (string.IsNullOrWhiteSpace(certificatePath) || !Path.IsPathRooted(certificatePath))
         {

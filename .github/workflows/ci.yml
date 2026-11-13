@@ -408,6 +408,14 @@ jobs:
           Remove-Item -LiteralPath $lockPath -Force
           Write-Host "Verified the Windows backup lock is released after completion."
 
+          $restoreProbeRoot = Join-Path $env:RUNNER_TEMP "promogest-restore-overlap-smoke"
+          $probeBundle = Join-Path $restoreProbeRoot "bundle"
+          New-Item -ItemType Directory -Force -Path $probeBundle | Out-Null
+          foreach ($component in @("database.dump", "storage.zip", "dataprotection-keys.zip", "config-sanitized.zip", "manifest.sha256")) {
+            [System.IO.File]::WriteAllText((Join-Path $probeBundle $component), "validation-probe")
+          }
+          $restoreScript = Join-Path (Get-Location).Path "scripts/restore-promogest.ps1"
+
           $junctionTarget = Join-Path $env:RUNNER_TEMP "promogest-backup-junction-target"
           $backupJunction = Join-Path $env:RUNNER_TEMP "promogest-backup-junction"
           New-Item -ItemType Directory -Force -Path $junctionTarget | Out-Null
@@ -434,12 +442,36 @@ jobs:
             if (-not $installerBlocked) {
               throw "Windows installer did not reject a backup destination traversing a junction."
             }
+
+            $restoreReparseBlocked = $false
+            try {
+              & $restoreScript -BackupBundleDir $probeBundle -RestoreStorageDir (Join-Path $backupJunction "restore-storage") -RestoreDataProtectionDir (Join-Path $restoreProbeRoot "restore-keys") -RestoreConfigDir (Join-Path $restoreProbeRoot "restore-config")
+            }
+            catch {
+              $restoreReparseBlocked = $_.Exception.Message -like "*junction or symbolic link*"
+            }
+            if (-not $restoreReparseBlocked) {
+              throw "Windows restore script did not reject a destination traversing a junction."
+            }
           }
           finally {
             Remove-Item -LiteralPath $backupJunction -Force
             Remove-Item -LiteralPath $junctionTarget -Recurse -Force
           }
-          Write-Host "Verified backup script and installer reject junction-based destinations."
+          Write-Host "Verified backup, install, and restore scripts reject junction-based destinations."
+
+          $overlapRejected = $false
+          try {
+            & $restoreScript -BackupBundleDir $probeBundle -RestoreStorageDir (Join-Path $restoreProbeRoot "overlap-output") -RestoreDataProtectionDir (Join-Path (Join-Path $restoreProbeRoot "overlap-output") "nested") -RestoreConfigDir (Join-Path $restoreProbeRoot "other-output")
+          }
+          catch {
+            $overlapRejected = $_.Exception.Message -like "*distinct and non-overlapping*"
+          }
+          if (-not $overlapRejected) {
+            throw "The production restore script did not reject overlapping restore destinations."
+          }
+          Remove-Item -LiteralPath $restoreProbeRoot -Recurse -Force
+          Write-Host "Verified the production restore script rejects overlapping destinations before database access."
 
           $restoreProbeRoot = Join-Path $env:RUNNER_TEMP "promogest-restore-overlap-smoke"
           $probeBundle = Join-Path $restoreProbeRoot "bundle"

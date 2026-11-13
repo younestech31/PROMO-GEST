@@ -158,8 +158,8 @@ jobs:
 
           storage_root="$RUNNER_TEMP/promogest-storage"
           key_root="$RUNNER_TEMP/promogest-dpkeys"
-          config_path="$RUNNER_TEMP/promogest-appsettings.json"
-          mkdir -p "$storage_root/organization/2026/11" "$key_root"
+          config_path="$RUNNER_TEMP/config/appsettings.json"
+          mkdir -p "$storage_root/organization/2026/11" "$key_root" "$(dirname "$config_path")"
           printf 'PROMO GEST restore verification file\n' > "$storage_root/organization/2026/11/restore-probe.bin"
           printf '<key id="ci-restore-probe">test-only-key-material</key>\n' > "$key_root/key-ci-probe.xml"
           openssl req -x509 -newkey rsa:2048 -nodes \

@@ -94,35 +94,77 @@ if (-not [string]::IsNullOrWhiteSpace(($existing -join "").Trim())) {
 & createdb --host=$DatabaseHost --port=$DatabasePort --username=$ProvisionUser --owner=$DatabaseUser $TargetDatabase
 if ($LASTEXITCODE -ne 0) { throw "createdb failed with exit code $LASTEXITCODE." }
 
+$connectGrantSql = 'GRANT CONNECT ON DATABASE :"target_db" TO :"runtime_role";'
+& psql --host=$DatabaseHost --port=$DatabasePort --username=$ProvisionUser --dbname=postgres --set=ON_ERROR_STOP=1 --set=target_db=$TargetDatabase --set=runtime_role=$RuntimeDatabaseUser --command=$connectGrantSql
+if ($LASTEXITCODE -ne 0) { throw "Could not grant runtime CONNECT on restored database." }
+
 & pg_restore --host=$DatabaseHost --port=$DatabasePort --username=$DatabaseUser --no-owner --no-acl --dbname=$TargetDatabase "$DbDumpPath"
 if ($LASTEXITCODE -ne 0) { throw "pg_restore failed with exit code $LASTEXITCODE." }
 
-$StorageArchivePath = Join-Path $BackupBundleDir "storage.zip"
-if (Test-Path -LiteralPath $StorageArchivePath -PathType Leaf) {
-    Write-Host "[4/7] Restoring local document storage..."
-    New-Item -ItemType Directory -Force -Path $RestoreStorageDir | Out-Null
-    Expand-Archive -LiteralPath $StorageArchivePath -DestinationPath $RestoreStorageDir -Force
-} else {
-    New-Item -ItemType Directory -Force -Path $RestoreStorageDir | Out-Null
+$grantSql = @"
+GRANT USAGE ON SCHEMA public TO "$RuntimeDatabaseUser";
+GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA public TO "$RuntimeDatabaseUser";
+GRANT USAGE, SELECT ON ALL SEQUENCES IN SCHEMA public TO "$RuntimeDatabaseUser";
+ALTER DEFAULT PRIVILEGES FOR ROLE "$DatabaseUser" IN SCHEMA public
+    GRANT SELECT, INSERT, UPDATE, DELETE ON TABLES TO "$RuntimeDatabaseUser";
+ALTER DEFAULT PRIVILEGES FOR ROLE "$DatabaseUser" IN SCHEMA public
+    GRANT USAGE, SELECT ON SEQUENCES TO "$RuntimeDatabaseUser";
+REVOKE UPDATE, DELETE, TRUNCATE, TRIGGER ON TABLE audit_logs FROM "$RuntimeDatabaseUser";
+GRANT SELECT, INSERT ON TABLE audit_logs TO "$RuntimeDatabaseUser";
+"@
+& psql --host=$DatabaseHost --port=$DatabasePort --username=$DatabaseUser --dbname=$TargetDatabase --set=ON_ERROR_STOP=1 --command=$grantSql
+if ($LASTEXITCODE -ne 0) { throw "Could not reapply least-privilege runtime grants after restore." }
+
+Write-Host "[4/8] Restoring local document storage, Data Protection keys, and sanitized configuration..."
+New-Item -ItemType Directory -Force -Path $RestoreStorageDir, $RestoreDataProtectionDir, $RestoreConfigDir | Out-Null
+Expand-Archive -LiteralPath $StorageArchivePath -DestinationPath $RestoreStorageDir -Force
+Expand-Archive -LiteralPath $DpKeysArchivePath -DestinationPath $RestoreDataProtectionDir -Force
+Expand-Archive -LiteralPath $ConfigArchivePath -DestinationPath $RestoreConfigDir -Force
+
+$dpKeyFiles = @(Get-ChildItem -LiteralPath $RestoreDataProtectionDir -File -Recurse -Force)
+if ($dpKeyFiles.Count -eq 0) { throw "Data Protection archive restored no key-ring files." }
+
+$sanitizedConfig = Join-Path $RestoreConfigDir "appsettings.Production.sanitized.json"
+if (-not (Test-Path -LiteralPath $sanitizedConfig -PathType Leaf)) {
+    throw "Sanitized production configuration is missing from the backup archive."
+}
+if (Select-String -LiteralPath $sanitizedConfig -Pattern '(?i)Password\s*=\s*(?!REDACTED_FOR_BACKUP)[^;"]+' -Quiet) {
+    throw "Sanitized configuration appears to contain an unredacted connection-string password."
 }
 
-$DpKeysArchivePath = Join-Path $BackupBundleDir "dataprotection-keys.zip"
-if (Test-Path -LiteralPath $DpKeysArchivePath -PathType Leaf) {
-    Write-Host "[5/7] Restoring Data Protection keys..."
-    New-Item -ItemType Directory -Force -Path $RestoreDataProtectionDir | Out-Null
-    Expand-Archive -LiteralPath $DpKeysArchivePath -DestinationPath $RestoreDataProtectionDir -Force
-} else {
-    Write-Warning "No Data Protection key archive was found. Existing protected payloads may not be decryptable after recovery."
+Write-Host "[5/8] Verifying restored database access as the least-privileged runtime identity..."
+$runtimeValidationSql = @'
+DO $
+BEGIN
+    IF NOT has_table_privilege(current_user, 'public.projects', 'SELECT,INSERT,UPDATE,DELETE') THEN
+        RAISE EXCEPTION 'Runtime role is missing DML privileges on projects';
+    END IF;
+    IF NOT has_table_privilege(current_user, 'public.project_members', 'SELECT,INSERT,UPDATE,DELETE') THEN
+        RAISE EXCEPTION 'Runtime role is missing DML privileges on project_members';
+    END IF;
+    IF has_table_privilege(current_user, 'public.audit_logs', 'UPDATE')
+       OR has_table_privilege(current_user, 'public.audit_logs', 'DELETE')
+       OR has_table_privilege(current_user, 'public.audit_logs', 'TRUNCATE')
+       OR has_table_privilege(current_user, 'public.audit_logs', 'TRIGGER') THEN
+        RAISE EXCEPTION 'Runtime role has excessive audit_logs privileges';
+    END IF;
+    IF has_schema_privilege(current_user, 'public', 'CREATE')
+       OR has_database_privilege(current_user, current_database(), 'CREATE') THEN
+        RAISE EXCEPTION 'Runtime role has schema or database creation privileges';
+    END IF;
+END
+$;
+SELECT count(*) FROM organization_settings;
+SELECT count(*) FROM users;
+SELECT count(*) FROM projects;
+SELECT count(*) FROM stored_files;
+'@
+& psql --host=$DatabaseHost --port=$DatabasePort --username=$RuntimeDatabaseUser --dbname=$TargetDatabase --set=ON_ERROR_STOP=1 --command=$runtimeValidationSql
+if ($LASTEXITCODE -ne 0) {
+    throw "Restored database is not usable with runtime identity $RuntimeDatabaseUser."
 }
 
-$ConfigArchivePath = Join-Path $BackupBundleDir "config-sanitized.zip"
-if (Test-Path -LiteralPath $ConfigArchivePath -PathType Leaf) {
-    Write-Host "[6/7] Restoring sanitized configuration..."
-    New-Item -ItemType Directory -Force -Path $RestoreConfigDir | Out-Null
-    Expand-Archive -LiteralPath $ConfigArchivePath -DestinationPath $RestoreConfigDir -Force
-}
-
-Write-Host "[7/7] Verifying every restored stored file..."
+Write-Host "[8/8] Verifying every restored stored file..."
 $counts = & psql --host=$DatabaseHost --port=$DatabasePort --username=$DatabaseUser --dbname=$TargetDatabase --tuples-only --no-align -c "SELECT (SELECT count(*) FROM organization_settings), (SELECT count(*) FROM users), (SELECT count(*) FROM projects), (SELECT count(*) FROM stored_files);"
 if ($LASTEXITCODE -ne 0) { throw "Could not query restored database counts." }
 Write-Host "Restored counts (organization|users|projects|stored_files): $counts"

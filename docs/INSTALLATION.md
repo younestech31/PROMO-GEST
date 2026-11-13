@@ -60,7 +60,7 @@ This runs the unified workspace lint/test/build in `apps/local-web`, copies stat
    ```powershell
    .\deploy\windows\install-service.ps1 -ConfigureFirewall -BackupRoot "D:\PromoGestBackups"
    ```
-   The installer creates a read-only `C:\PromoGest\scripts` directory ACL for the service identity; the Task Scheduler maintenance task runs with its own administrative/SYSTEM rights.
+   A custom `BackupRoot` must be a dedicated directory outside `InstallRoot`; the installer rejects the live install root, its parents, and paths that would overlap the application tree. When omitting `-BackupRoot`, the default `C:\PromoGest\backups` directory is used and receives maintenance-only ACLs. The installer creates a read-only `C:\PromoGest\scripts` directory ACL for the service identity; the Task Scheduler maintenance task runs with its own administrative/SYSTEM rights.
 6. Verify local loopback health endpoints:
    - `http://127.0.0.1:5080/health/live` -> `200 OK`
    - `http://127.0.0.1:5080/health/ready` -> `200 OK` (`databaseConnected: true`, `isInitialized: false`)

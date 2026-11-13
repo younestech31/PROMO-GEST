@@ -48,6 +48,8 @@ Configure PostgreSQL client credentials for the provisioning user (`postgres`), 
 
 The script requires all four archive components and a complete SHA-256 manifest, validates the PostgreSQL dump, and refuses to reuse an existing target database or restore directory. It creates the new database with the migration owner, restores as that owner, then explicitly re-applies runtime `CONNECT`, schema, table, sequence, and default privileges for `promogest_app`. It reasserts the `audit_logs` restriction (runtime can `SELECT`/`INSERT`, not `UPDATE`/`DELETE`/`TRUNCATE`/manage triggers) and proves the restored database can be read by the runtime identity without schema/database creation privileges. It restores storage and Data Protection keys, rejects an unredacted connection-string password in the sanitized configuration, and verifies every stored file by existence, byte length, and SHA-256.
 
+Restore output defaults to isolated directories under `C:\PromoGest-Restore\`, outside the live `C:\PromoGest\` installation. The script rejects overlapping destinations, destinations inside the live installation root, and paths traversing junctions/symbolic links. After a successful drill, the scratch database and restored output directories are deliberately retained for inspection; remove them manually after review. If the restore fails after creating its scratch database or any output directory, it attempts to remove only the database and directories created by that invocation.
+
 ### Linux
 
 Use `promogest_owner` for the dump/restore operations, `postgres` (or another maintenance identity) to create and remove the uniquely named scratch database, and `promogest_app` only for the runtime-access checks.

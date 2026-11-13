@@ -194,7 +194,7 @@ if not isinstance(data.get("Storage"), dict) or not isinstance(data.get("Securit
     raise SystemExit("ERROR: Production configuration is missing required Storage or Security sections.")
 
 sensitive_name = re.compile(
-    r"(?i)(^connectionstrings?$|(?:password|passwd|pwd|secret|tokens?|credentials?|private.?key|api.?key|access.?key|signing.?key)(?:value|text|string|hash)?$)"
+    r"(?i)(^connectionstrings?$|(?:password|passwd|pwd|secret|secret.?key|encryption.?key|master.?key|tokens?|credentials?|private.?key|api.?key|access.?key|signing.?key)(?:value|text|string|hash)?$)"
 )
 
 def strip_sensitive(value):

@@ -56,11 +56,48 @@ DP_CERTIFICATE_PATH="$DP_KEYS_DIR/protection.pfx"
 openssl pkcs12 -in "$DP_CERTIFICATE_PATH" -noout \
   -passin env:PROMOGEST_DATA_PROTECTION_CERT_PASSWORD >/dev/null
 
-for command_name in pg_dump pg_restore tar sha256sum flock systemctl python3; do
+for command_name in pg_dump pg_restore tar sha256sum flock systemctl python3 realpath find; do
   command -v "$command_name" >/dev/null || {
     echo "ERROR: Required command not found: $command_name" >&2
     exit 1
   }
+done
+
+# The backup root must be a dedicated directory. Never chmod a shared system
+# directory or place a backup inside the data it is meant to protect.
+BACKUP_ROOT="$(realpath -m -- "$BACKUP_ROOT")"
+case "$BACKUP_ROOT" in
+  /|/var|/var/backups|/tmp|/run|/run/lock)
+    echo "ERROR: PROMOGEST_BACKUP_ROOT must be a dedicated subdirectory, not a shared system directory: $BACKUP_ROOT" >&2
+    exit 1
+    ;;
+esac
+
+for source_directory in "$STORAGE_DIR" "$DP_KEYS_DIR" "$(dirname "$CONFIG_PATH")" "$(dirname "$CADDYFILE_PATH")"; do
+  source_absolute="$(realpath -m -- "$source_directory")"
+  case "$BACKUP_ROOT/" in
+    "$source_absolute/"*)
+      echo "ERROR: Backup root overlaps a protected source directory: $source_absolute" >&2
+      exit 1
+      ;;
+  esac
+  case "$source_absolute/" in
+    "$BACKUP_ROOT/"*)
+      echo "ERROR: Backup root overlaps a protected source directory: $source_absolute" >&2
+      exit 1
+      ;;
+  esac
+done
+
+for source_directory in "$STORAGE_DIR" "$DP_KEYS_DIR"; do
+  [[ ! -L "$source_directory" ]] || {
+    echo "ERROR: Backup source root must not be a symbolic link: $source_directory" >&2
+    exit 1
+  }
+  if find "$source_directory" -type l -print -quit | grep -q .; then
+    echo "ERROR: Symbolic links are not allowed inside backup source: $source_directory" >&2
+    exit 1
+  fi
 done
 
 install -d -o root -g root -m 0700 "$BACKUP_ROOT"

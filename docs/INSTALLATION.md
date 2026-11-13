@@ -58,7 +58,7 @@ This runs the unified workspace lint/test/build in `apps/local-web`, copies stat
    Do not run the service as the owner identity. Normal service operation must use `promogest_app`.
 5. Run in an elevated PowerShell prompt:
    ```powershell
-   .\deploy\windows\install-service.ps1 -ConfigureFirewall
+   .\deploy\windows\install-service.ps1 -ConfigureFirewall -BackupRoot "D:\PromoGestBackups"
    ```
    The installer creates a read-only `C:\PromoGest\scripts` directory ACL for the service identity; the Task Scheduler maintenance task runs with its own administrative/SYSTEM rights.
 6. Verify local loopback health endpoints:

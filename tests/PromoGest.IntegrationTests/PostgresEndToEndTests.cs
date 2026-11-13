@@ -21,14 +21,31 @@ namespace PromoGest.IntegrationTests;
 public sealed class PostgreSql18IntegrationFixture : IAsyncLifetime
 {
     private PostgreSqlContainer? _container;
-    private string _adminConnectionString = string.Empty;
+    private string _provisionConnectionString = string.Empty;
+    private string _migrationConnectionString = string.Empty;
+    private string _runtimeConnectionString = string.Empty;
 
     public async Task InitializeAsync()
     {
-        var externalConnection = Environment.GetEnvironmentVariable("PROMOGEST_TEST_DB_CONNECTION");
-        if (!string.IsNullOrWhiteSpace(externalConnection))
+        var provision = Environment.GetEnvironmentVariable("PROMOGEST_TEST_PROVISION_DB_CONNECTION");
+        var migration = Environment.GetEnvironmentVariable("PROMOGEST_TEST_MIGRATE_DB_CONNECTION");
+        var runtime = Environment.GetEnvironmentVariable("PROMOGEST_TEST_DB_CONNECTION");
+
+        if (!string.IsNullOrWhiteSpace(provision) ||
+            !string.IsNullOrWhiteSpace(migration) ||
+            !string.IsNullOrWhiteSpace(runtime))
         {
-            _adminConnectionString = externalConnection;
+            if (string.IsNullOrWhiteSpace(provision) ||
+                string.IsNullOrWhiteSpace(migration) ||
+                string.IsNullOrWhiteSpace(runtime))
+            {
+                throw new InvalidOperationException(
+                    "Set all three PostgreSQL test connections: provision, migration-owner, and runtime-app.");
+            }
+
+            _provisionConnectionString = provision;
+            _migrationConnectionString = migration;
+            _runtimeConnectionString = runtime;
             return;
         }
 
@@ -40,24 +57,92 @@ public sealed class PostgreSql18IntegrationFixture : IAsyncLifetime
             .Build();
 
         await _container.StartAsync();
-        _adminConnectionString = _container.GetConnectionString();
+        _provisionConnectionString = _container.GetConnectionString();
+
+        await using var provisionConnection = new NpgsqlConnection(_provisionConnectionString);
+        await provisionConnection.OpenAsync();
+
+        await using (var createOwner = new NpgsqlCommand(
+            "CREATE ROLE promogest_owner LOGIN NOSUPERUSER NOCREATEDB NOCREATEROLE NOINHERIT PASSWORD 'owner_test_password';",
+            provisionConnection))
+        {
+            await createOwner.ExecuteNonQueryAsync();
+        }
+
+        await using (var createApp = new NpgsqlCommand(
+            "CREATE ROLE promogest_app LOGIN NOSUPERUSER NOCREATEDB NOCREATEROLE NOINHERIT PASSWORD 'app_test_password';",
+            provisionConnection))
+        {
+            await createApp.ExecuteNonQueryAsync();
+        }
+
+        _migrationConnectionString = new NpgsqlConnectionStringBuilder(_provisionConnectionString)
+        {
+            Username = "promogest_owner",
+            Password = "owner_test_password"
+        }.ConnectionString;
+
+        _runtimeConnectionString = new NpgsqlConnectionStringBuilder(_provisionConnectionString)
+        {
+            Username = "promogest_app",
+            Password = "app_test_password"
+        }.ConnectionString;
     }
 
     public async Task<string> CreateIsolatedDatabaseConnectionStringAsync()
     {
         var dbName = $"promogest_it_{Guid.NewGuid():N}"[..28];
-        await using var conn = new NpgsqlConnection(_adminConnectionString);
-        await conn.OpenAsync();
-        await using (var cmd = new NpgsqlCommand($"CREATE DATABASE \"{dbName}\";", conn))
+
+        await using (var provisionConnection = new NpgsqlConnection(_provisionConnectionString))
         {
-            await cmd.ExecuteNonQueryAsync();
+            await provisionConnection.OpenAsync();
+            await using var createDatabase = new NpgsqlCommand(
+                $"CREATE DATABASE \"{dbName}\" OWNER promogest_owner;",
+                provisionConnection);
+            await createDatabase.ExecuteNonQueryAsync();
         }
 
-        var builder = new NpgsqlConnectionStringBuilder(_adminConnectionString)
+        var migrationConnection = new NpgsqlConnectionStringBuilder(_migrationConnectionString)
         {
             Database = dbName
-        };
-        return builder.ConnectionString;
+        }.ConnectionString;
+        var runtimeConnection = new NpgsqlConnectionStringBuilder(_runtimeConnectionString)
+        {
+            Database = dbName
+        }.ConnectionString;
+
+        await using (var ownerConnection = new NpgsqlConnection(migrationConnection))
+        {
+            await ownerConnection.OpenAsync();
+            await using var grants = new NpgsqlCommand(
+                "GRANT USAGE ON SCHEMA public TO promogest_app; " +
+                "ALTER DEFAULT PRIVILEGES FOR ROLE promogest_owner IN SCHEMA public " +
+                "GRANT SELECT, INSERT, UPDATE, DELETE ON TABLES TO promogest_app; " +
+                "ALTER DEFAULT PRIVILEGES FOR ROLE promogest_owner IN SCHEMA public " +
+                "GRANT USAGE, SELECT ON SEQUENCES TO promogest_app;",
+                ownerConnection);
+            await grants.ExecuteNonQueryAsync();
+        }
+
+        var migrationOptions = new DbContextOptionsBuilder<AppDbContext>()
+            .UseNpgsql(migrationConnection, npgsql =>
+                npgsql.MigrationsAssembly(typeof(AppDbContext).Assembly.FullName))
+            .Options;
+
+        await using (var migrationDb = new AppDbContext(migrationOptions))
+        {
+            await migrationDb.Database.MigrateAsync();
+            await DbInitializer.SeedRolesAndPermissionsAsync(migrationDb);
+
+            var applied = await migrationDb.Database.GetAppliedMigrationsAsync();
+            if (!applied.Contains("20261113000003_SystemAdministratorInvariant"))
+            {
+                throw new InvalidOperationException(
+                    "The SystemAdministratorInvariant migration was not discovered and applied.");
+            }
+        }
+
+        return runtimeConnection;
     }
 
     public async Task DisposeAsync()

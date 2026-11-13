@@ -55,14 +55,14 @@ public sealed class LinuxCertificateDataProtectionTests
             using (var firstProvider = CreateProvider(keyDirectory, applicationName, certificate))
             {
                 protectedPayload = firstProvider
-                    .GetRequiredService<IDataProtectionProvider>().CreateProtector(purpose)
+                    .GetRequiredService<IDataProtectionProvider>().GetRequiredService<IDataProtectionProvider>().CreateProtector(purpose)
                     .Protect(plainText);
             }
 
             using (var restartedProvider = CreateProvider(keyDirectory, applicationName, certificate))
             {
                 var restored = restartedProvider
-                    .CreateProtector(purpose)
+                    .GetRequiredService<IDataProtectionProvider>().CreateProtector(purpose)
                     .Unprotect(protectedPayload);
 
                 Assert.Equal(plainText, restored);

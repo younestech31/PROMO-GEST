@@ -209,6 +209,22 @@ internal sealed class BufferingLoggerProvider : ILoggerProvider
                 message += Environment.NewLine + exception;
             }
 
+            if (exception is DbUpdateConcurrencyException concurrencyException)
+            {
+                foreach (var entry in concurrencyException.Entries)
+                {
+                    var keyNames = entry.Metadata.FindPrimaryKey()?.Properties
+                        .Select(property => property.Name)
+                        .ToHashSet(StringComparer.Ordinal) ?? new HashSet<string>();
+                    var concurrencyValues = entry.Properties
+                        .Where(property => keyNames.Contains(property.Metadata.Name) || property.Metadata.IsConcurrencyToken)
+                        .Select(property => $"{property.Metadata.Name}: original={property.OriginalValue}, current={property.CurrentValue}");
+                    message += Environment.NewLine +
+                        $"Concurrency entity={entry.Metadata.ClrType.Name}, state={entry.State}: " +
+                        string.Join("; ", concurrencyValues);
+                }
+            }
+
             entries.Enqueue($"[{logLevel}] {categoryName}: {message}");
         }
     }

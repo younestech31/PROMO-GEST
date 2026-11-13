@@ -508,6 +508,17 @@ jobs:
               throw "Windows installer did not reject a backup destination traversing a junction."
             }
 
+            $installRootReparseBlocked = $false
+            try {
+              & .\deploy\windows\install-service.ps1 -InstallRoot (Join-Path $backupJunction "install-root") -BackupRoot (Join-Path $restoreProbeRoot "external-backups")
+            }
+            catch {
+              $installRootReparseBlocked = $_.Exception.Message -like "*InstallRoot must not traverse a junction or symbolic link*"
+            }
+            if (-not $installRootReparseBlocked) {
+              throw "Windows installer did not reject an InstallRoot traversing a junction."
+            }
+
             $restoreReparseBlocked = $false
             try {
               & $restoreScript -BackupBundleDir $probeBundle -RestoreStorageDir (Join-Path $backupJunction "restore-storage") -RestoreDataProtectionDir (Join-Path $restoreProbeRoot "restore-keys") -RestoreConfigDir (Join-Path $restoreProbeRoot "restore-config")
@@ -524,6 +535,28 @@ jobs:
             Remove-Item -LiteralPath $junctionTarget -Recurse -Force
           }
           Write-Host "Verified backup, install, and restore scripts reject junction-based destinations."
+
+          $installRootBackupRejected = $false
+          try {
+            & .\deploy\windows\install-service.ps1 -InstallRoot $restoreProbeRoot -BackupRoot $restoreProbeRoot
+          }
+          catch {
+            $installRootBackupRejected = $_.Exception.Message -like "*custom BackupRoot must be outside InstallRoot*"
+          }
+          if (-not $installRootBackupRejected) {
+            throw "Windows installer did not reject BackupRoot equal to InstallRoot."
+          }
+
+          $installParentBackupRejected = $false
+          try {
+            & .\deploy\windows\install-service.ps1 -InstallRoot (Join-Path $restoreProbeRoot "live-install") -BackupRoot $restoreProbeRoot
+          }
+          catch {
+            $installParentBackupRejected = $_.Exception.Message -like "*custom BackupRoot must be outside InstallRoot*"
+          }
+          if (-not $installParentBackupRejected) {
+            throw "Windows installer did not reject BackupRoot containing InstallRoot."
+          }
 
           $installRootBackupRejected = $false
           try {

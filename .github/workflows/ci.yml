@@ -525,6 +525,28 @@ jobs:
           }
           Write-Host "Verified backup, install, and restore scripts reject junction-based destinations."
 
+          $installRootBackupRejected = $false
+          try {
+            & .\deploy\windows\install-service.ps1 -InstallRoot $restoreProbeRoot -BackupRoot $restoreProbeRoot
+          }
+          catch {
+            $installRootBackupRejected = $_.Exception.Message -like "*custom BackupRoot must be outside InstallRoot*"
+          }
+          if (-not $installRootBackupRejected) {
+            throw "Windows installer did not reject BackupRoot equal to InstallRoot."
+          }
+
+          $installParentBackupRejected = $false
+          try {
+            & .\deploy\windows\install-service.ps1 -InstallRoot (Join-Path $restoreProbeRoot "live-install") -BackupRoot $restoreProbeRoot
+          }
+          catch {
+            $installParentBackupRejected = $_.Exception.Message -like "*custom BackupRoot must be outside InstallRoot*"
+          }
+          if (-not $installParentBackupRejected) {
+            throw "Windows installer did not reject BackupRoot containing InstallRoot."
+          }
+
           $overlapRejected = $false
           try {
             & $restoreScript -BackupBundleDir $probeBundle -RestoreStorageDir (Join-Path $restoreProbeRoot "overlap-output") -RestoreDataProtectionDir (Join-Path (Join-Path $restoreProbeRoot "overlap-output") "nested") -RestoreConfigDir (Join-Path $restoreProbeRoot "other-output")

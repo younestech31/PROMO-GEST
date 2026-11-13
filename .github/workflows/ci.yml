@@ -107,6 +107,64 @@ jobs:
           PROMOGEST_TEST_MIGRATE_DB_CONNECTION: Host=localhost;Port=5432;Database=promogest_ci;Username=promogest_owner;Password=owner_pass
           PROMOGEST_TEST_DB_CONNECTION: Host=localhost;Port=5432;Database=promogest_ci;Username=promogest_app;Password=app_pass
         run: dotnet test tests/PromoGest.IntegrationTests/PromoGest.IntegrationTests.csproj --configuration Release --no-build
+      - name: Run full database, storage, and Data Protection restore drill
+        env:
+          PGHOST: localhost
+          PGPORT: "5432"
+          PGUSER: promogest_owner
+          PGPROVISION_USER: postgres
+          PROMOGEST_APP_USER: promogest_app
+          PGPASSFILE: ${{ runner.temp }}/promogest.pgpass
+        shell: bash
+        run: |
+          set -euo pipefail
+          printf '%s\n' \
+            'localhost:5432:postgres:postgres:postgres_password' \
+            'localhost:5432:promogest_ci:promogest_owner:owner_pass' \
+            'localhost:5432:*:promogest_app:app_pass' > "$PGPASSFILE"
+          chmod 600 "$PGPASSFILE"
+
+          storage_root="$RUNNER_TEMP/promogest-storage"
+          key_root="$RUNNER_TEMP/promogest-dpkeys"
+          config_path="$RUNNER_TEMP/promogest-appsettings.json"
+          mkdir -p "$storage_root/organization/2026/11" "$key_root"
+          printf 'PROMO GEST restore verification file\n' > "$storage_root/organization/2026/11/restore-probe.bin"
+          printf '<key id="ci-restore-probe">test-only-key-material</key>\n' > "$key_root/key-ci-probe.xml"
+          printf '%s\n' '{"ConnectionStrings":{"DefaultConnection":"Host=localhost;Port=5432;Database=promogest_ci;Username=promogest_app;Password=app_pass"}}' > "$config_path"
+
+          probe_file="$storage_root/organization/2026/11/restore-probe.bin"
+          probe_hash="$(sha256sum "$probe_file" | awk '{print $1}')"
+          probe_size="$(stat -c '%s' "$probe_file")"
+
+          psql --host="$PGHOST" --port="$PGPORT" --username="$PGUSER" --dbname=promogest_ci \
+            --set=ON_ERROR_STOP=1 --set=probe_hash="$probe_hash" --set=probe_size="$probe_size" <<'SQL'
+          WITH probe_user AS (
+              INSERT INTO users (
+                  id, username, normalized_username, full_name, email, normalized_email, phone,
+                  password_hash, is_system_administrator, is_active, preferred_language,
+                  failed_login_attempts, lockout_end_utc, last_login_at_utc, security_stamp,
+                  created_at_utc, updated_at_utc, concurrency_stamp
+              )
+              VALUES (
+                  gen_random_uuid(), 'backup.restore.probe', 'BACKUP.RESTORE.PROBE',
+                  'Backup Restore Probe', 'backup-restore-probe@example.invalid',
+                  'BACKUP-RESTORE-PROBE@EXAMPLE.INVALID', NULL, 'test-only-password-hash',
+                  FALSE, TRUE, 'ar', 0, NULL, NULL, gen_random_uuid(), now(), now(), gen_random_uuid()
+              )
+              RETURNING id
+          )
+          INSERT INTO stored_files (
+              id, original_file_name, stored_relative_path, content_type, size_bytes,
+              sha256_checksum, scope, project_id, uploaded_by_user_id,
+              created_at_utc, updated_at_utc, concurrency_stamp
+          )
+          SELECT gen_random_uuid(), 'restore-probe.bin', 'organization/2026/11/restore-probe.bin',
+                 'application/octet-stream', :'probe_size'::bigint, :'probe_hash',
+                 'Organization', NULL, probe_user.id, now(), now(), gen_random_uuid()
+          FROM probe_user;
+          SQL
+
+          bash scripts/verify-backup-restore.sh promogest_ci "$storage_root" "$config_path" "$key_root"
 
   windows-publish-and-powershell:
     name: Windows publish and PowerShell validation

@@ -68,7 +68,7 @@ echo "[2/8] Archiving storage, Data Protection keys, and sanitized config..."
 mkdir -p "$WORK_DIR/config_stage" "$RESTORE_STORAGE" "$RESTORE_KEYS" "$RESTORE_CONFIG"
 tar -czf "$WORK_DIR/storage.tar.gz" -C "$STORAGE_DIR" .
 tar -czf "$WORK_DIR/dataprotection-keys.tar.gz" -C "$DP_KEYS_DIR" .
-perl -pe 's/(\\bPassword\\s*=\\s*)(?:"(?:[^"\\\\]|\\\\.)*"|[^;"]+)/\\1REDACTED_FOR_BACKUP/ig' \
+perl -pe 's/(\bPassword\s*=\s*)(?:"(?:[^"\\]|\\.)*"|[^;"]+)/\1REDACTED_FOR_BACKUP/ig' \
   "$CONFIG_PATH" > "$WORK_DIR/config_stage/appsettings.sanitized.json"
 
 if [[ ! -s "$WORK_DIR/config_stage/appsettings.sanitized.json" ]]; then
@@ -82,7 +82,7 @@ import re
 import sys
 
 text = pathlib.Path(sys.argv[1]).read_text(encoding="utf-8-sig")
-values = re.findall(r'(?i)\\bPassword\\s*=\\s*(?:"([^"]*)"|([^;"]+))', text)
+values = re.findall(r'(?i)\bPassword\s*=\s*(?:"([^"]*)"|([^;"]+))', text)
 leaked = [quoted or unquoted for quoted, unquoted in values
           if (quoted or unquoted).strip().casefold() != "redacted_for_backup"]
 if leaked:
@@ -180,7 +180,7 @@ psql --host="$PGHOST" --port="$PGPORT" --username="$OWNER_USER" --dbname="$VERIF
 
 echo "[6/8] Enumerating every restored stored_files record..."
 psql --host="$PGHOST" --port="$PGPORT" --username="$OWNER_USER" --dbname="$VERIFY_DB" --set=ON_ERROR_STOP=1 \
-  --tuples-only --no-align --field-separator=$'\\t' \
+  --tuples-only --no-align --field-separator= \
   -c "SELECT stored_relative_path, sha256_checksum, size_bytes FROM stored_files ORDER BY stored_relative_path;" \
   > "$WORK_DIR/stored-files.tsv"
 
@@ -190,7 +190,364 @@ verified_count=0
 while IFS=$'\\t' read -r rel_path expected_hash expected_size; do
   [[ -z "$rel_path" ]] && continue
 
+  if [[ "$rel_path" = /* || "$rel_path" == ".." || "$rel_path" == ../* || "$rel_path" == ** ]]; then
+    echo "ERROR: Unsafe stored_relative_path in database: $rel_path" >&2
+    exit 1
+  fi
+
+  full_path="$(realpath -m -- "$RESTORE_ROOT/$rel_path")"
+  case "$full_path" in
+    "$RESTORE_ROOT"/*) ;;
+    *)
+      echo "ERROR: Stored path escapes restored storage root: $rel_path" >&2
+      exit 1
+      ;;
+  esac
+
+  if [[ ! -f "$full_path" ]]; then
+    echo "ERROR: Missing restored file: $rel_path" >&2
+    exit 1
+  fi
+
+  actual_size="$(stat -c '%s' -- "$full_path")"
+  if [[ "$actual_size" != "$expected_size" ]]; then
+    echo "ERROR: Byte-length mismatch for $rel_path (expected $expected_size, got $actual_size)" >&2
+    exit 1
+  fi
+
+  actual_hash="$(sha256sum -- "$full_path" | awk '{print $1}')"
+  if [[ "$actual_hash" != "$expected_hash" ]]; then
+    echo "ERROR: SHA-256 mismatch for $rel_path" >&2
+    exit 1
+  fi
+
+  verified_count=$((verified_count + 1))
+done < "$WORK_DIR/stored-files.tsv"
+
+expected_count="$(psql --host="$PGHOST" --port="$PGPORT" --username="$OWNER_USER" --dbname="$VERIFY_DB" --set=ON_ERROR_STOP=1 --tuples-only --no-align -c "SELECT count(*) FROM stored_files;")"
+if [[ "$verified_count" -ne "$expected_count" ]]; then
+  echo "ERROR: Verified $verified_count files but database references $expected_count." >&2
+  exit 1
+fi
+
+echo "[8/8] Full restore drill passed: $verified_count/$expected_count stored files verified; runtime grants and audit-log restrictions verified; database, storage, Data Protection keys, and sanitized configuration restored."
+\t' \
+  -c "SELECT stored_relative_path, sha256_checksum, size_bytes FROM stored_files ORDER BY stored_relative_path;" \
+  > "$WORK_DIR/stored-files.tsv"
+
+echo "[7/8] Verifying existence, byte length, and SHA-256 for every restored stored file..."
+RESTORE_ROOT="$(realpath "$RESTORE_STORAGE")"
+verified_count=0
+while IFS= read -r rel_path expected_hash expected_size; do
+  [[ -z "$rel_path" ]] && continue
+
   if [[ "$rel_path" = /* || "$rel_path" == ".." || "$rel_path" == ../* || "$rel_path" == *$'\\n'* ]]; then
+    echo "ERROR: Unsafe stored_relative_path in database: $rel_path" >&2
+    exit 1
+  fi
+
+  full_path="$(realpath -m -- "$RESTORE_ROOT/$rel_path")"
+  case "$full_path" in
+    "$RESTORE_ROOT"/*) ;;
+    *)
+      echo "ERROR: Stored path escapes restored storage root: $rel_path" >&2
+      exit 1
+      ;;
+  esac
+
+  if [[ ! -f "$full_path" ]]; then
+    echo "ERROR: Missing restored file: $rel_path" >&2
+    exit 1
+  fi
+
+  actual_size="$(stat -c '%s' -- "$full_path")"
+  if [[ "$actual_size" != "$expected_size" ]]; then
+    echo "ERROR: Byte-length mismatch for $rel_path (expected $expected_size, got $actual_size)" >&2
+    exit 1
+  fi
+
+  actual_hash="$(sha256sum -- "$full_path" | awk '{print $1}')"
+  if [[ "$actual_hash" != "$expected_hash" ]]; then
+    echo "ERROR: SHA-256 mismatch for $rel_path" >&2
+    exit 1
+  fi
+
+  verified_count=$((verified_count + 1))
+done < "$WORK_DIR/stored-files.tsv"
+
+expected_count="$(psql --host="$PGHOST" --port="$PGPORT" --username="$OWNER_USER" --dbname="$VERIFY_DB" --set=ON_ERROR_STOP=1 --tuples-only --no-align -c "SELECT count(*) FROM stored_files;")"
+if [[ "$verified_count" -ne "$expected_count" ]]; then
+  echo "ERROR: Verified $verified_count files but database references $expected_count." >&2
+  exit 1
+fi
+
+echo "[8/8] Full restore drill passed: $verified_count/$expected_count stored files verified; runtime grants and audit-log restrictions verified; database, storage, Data Protection keys, and sanitized configuration restored."
+\t' read -r rel_path expected_hash expected_size; do
+  [[ -z "$rel_path" ]] && continue
+
+  if [[ "$rel_path" = /* || "$rel_path" == ".." || "$rel_path" == ../* || "$rel_path" == *$'\\n'* ]]; then
+    echo "ERROR: Unsafe stored_relative_path in database: $rel_path" >&2
+    exit 1
+  fi
+
+  full_path="$(realpath -m -- "$RESTORE_ROOT/$rel_path")"
+  case "$full_path" in
+    "$RESTORE_ROOT"/*) ;;
+    *)
+      echo "ERROR: Stored path escapes restored storage root: $rel_path" >&2
+      exit 1
+      ;;
+  esac
+
+  if [[ ! -f "$full_path" ]]; then
+    echo "ERROR: Missing restored file: $rel_path" >&2
+    exit 1
+  fi
+
+  actual_size="$(stat -c '%s' -- "$full_path")"
+  if [[ "$actual_size" != "$expected_size" ]]; then
+    echo "ERROR: Byte-length mismatch for $rel_path (expected $expected_size, got $actual_size)" >&2
+    exit 1
+  fi
+
+  actual_hash="$(sha256sum -- "$full_path" | awk '{print $1}')"
+  if [[ "$actual_hash" != "$expected_hash" ]]; then
+    echo "ERROR: SHA-256 mismatch for $rel_path" >&2
+    exit 1
+  fi
+
+  verified_count=$((verified_count + 1))
+done < "$WORK_DIR/stored-files.tsv"
+
+expected_count="$(psql --host="$PGHOST" --port="$PGPORT" --username="$OWNER_USER" --dbname="$VERIFY_DB" --set=ON_ERROR_STOP=1 --tuples-only --no-align -c "SELECT count(*) FROM stored_files;")"
+if [[ "$verified_count" -ne "$expected_count" ]]; then
+  echo "ERROR: Verified $verified_count files but database references $expected_count." >&2
+  exit 1
+fi
+
+echo "[8/8] Full restore drill passed: $verified_count/$expected_count stored files verified; runtime grants and audit-log restrictions verified; database, storage, Data Protection keys, and sanitized configuration restored."
+\n'* ]]; then
+    echo "ERROR: Unsafe stored_relative_path in database: $rel_path" >&2
+    exit 1
+  fi
+
+  full_path="$(realpath -m -- "$RESTORE_ROOT/$rel_path")"
+  case "$full_path" in
+    "$RESTORE_ROOT"/*) ;;
+    *)
+      echo "ERROR: Stored path escapes restored storage root: $rel_path" >&2
+      exit 1
+      ;;
+  esac
+
+  if [[ ! -f "$full_path" ]]; then
+    echo "ERROR: Missing restored file: $rel_path" >&2
+    exit 1
+  fi
+
+  actual_size="$(stat -c '%s' -- "$full_path")"
+  if [[ "$actual_size" != "$expected_size" ]]; then
+    echo "ERROR: Byte-length mismatch for $rel_path (expected $expected_size, got $actual_size)" >&2
+    exit 1
+  fi
+
+  actual_hash="$(sha256sum -- "$full_path" | awk '{print $1}')"
+  if [[ "$actual_hash" != "$expected_hash" ]]; then
+    echo "ERROR: SHA-256 mismatch for $rel_path" >&2
+    exit 1
+  fi
+
+  verified_count=$((verified_count + 1))
+done < "$WORK_DIR/stored-files.tsv"
+
+expected_count="$(psql --host="$PGHOST" --port="$PGPORT" --username="$OWNER_USER" --dbname="$VERIFY_DB" --set=ON_ERROR_STOP=1 --tuples-only --no-align -c "SELECT count(*) FROM stored_files;")"
+if [[ "$verified_count" -ne "$expected_count" ]]; then
+  echo "ERROR: Verified $verified_count files but database references $expected_count." >&2
+  exit 1
+fi
+
+echo "[8/8] Full restore drill passed: $verified_count/$expected_count stored files verified; runtime grants and audit-log restrictions verified; database, storage, Data Protection keys, and sanitized configuration restored."
+\t' \
+  -c "SELECT stored_relative_path, sha256_checksum, size_bytes FROM stored_files ORDER BY stored_relative_path;" \
+  > "$WORK_DIR/stored-files.tsv"
+
+echo "[7/8] Verifying existence, byte length, and SHA-256 for every restored stored file..."
+RESTORE_ROOT="$(realpath "$RESTORE_STORAGE")"
+verified_count=0
+while IFS= read -r rel_path expected_hash expected_size; do
+  [[ -z "$rel_path" ]] && continue
+
+  if [[ "$rel_path" = /* || "$rel_path" == ".." || "$rel_path" == ../* || "$rel_path" == ** ]]; then
+    echo "ERROR: Unsafe stored_relative_path in database: $rel_path" >&2
+    exit 1
+  fi
+
+  full_path="$(realpath -m -- "$RESTORE_ROOT/$rel_path")"
+  case "$full_path" in
+    "$RESTORE_ROOT"/*) ;;
+    *)
+      echo "ERROR: Stored path escapes restored storage root: $rel_path" >&2
+      exit 1
+      ;;
+  esac
+
+  if [[ ! -f "$full_path" ]]; then
+    echo "ERROR: Missing restored file: $rel_path" >&2
+    exit 1
+  fi
+
+  actual_size="$(stat -c '%s' -- "$full_path")"
+  if [[ "$actual_size" != "$expected_size" ]]; then
+    echo "ERROR: Byte-length mismatch for $rel_path (expected $expected_size, got $actual_size)" >&2
+    exit 1
+  fi
+
+  actual_hash="$(sha256sum -- "$full_path" | awk '{print $1}')"
+  if [[ "$actual_hash" != "$expected_hash" ]]; then
+    echo "ERROR: SHA-256 mismatch for $rel_path" >&2
+    exit 1
+  fi
+
+  verified_count=$((verified_count + 1))
+done < "$WORK_DIR/stored-files.tsv"
+
+expected_count="$(psql --host="$PGHOST" --port="$PGPORT" --username="$OWNER_USER" --dbname="$VERIFY_DB" --set=ON_ERROR_STOP=1 --tuples-only --no-align -c "SELECT count(*) FROM stored_files;")"
+if [[ "$verified_count" -ne "$expected_count" ]]; then
+  echo "ERROR: Verified $verified_count files but database references $expected_count." >&2
+  exit 1
+fi
+
+echo "[8/8] Full restore drill passed: $verified_count/$expected_count stored files verified; runtime grants and audit-log restrictions verified; database, storage, Data Protection keys, and sanitized configuration restored."
+\t' read -r rel_path expected_hash expected_size; do
+  [[ -z "$rel_path" ]] && continue
+
+  if [[ "$rel_path" = /* || "$rel_path" == ".." || "$rel_path" == ../* || "$rel_path" == *$'\\n'* ]]; then
+    echo "ERROR: Unsafe stored_relative_path in database: $rel_path" >&2
+    exit 1
+  fi
+
+  full_path="$(realpath -m -- "$RESTORE_ROOT/$rel_path")"
+  case "$full_path" in
+    "$RESTORE_ROOT"/*) ;;
+    *)
+      echo "ERROR: Stored path escapes restored storage root: $rel_path" >&2
+      exit 1
+      ;;
+  esac
+
+  if [[ ! -f "$full_path" ]]; then
+    echo "ERROR: Missing restored file: $rel_path" >&2
+    exit 1
+  fi
+
+  actual_size="$(stat -c '%s' -- "$full_path")"
+  if [[ "$actual_size" != "$expected_size" ]]; then
+    echo "ERROR: Byte-length mismatch for $rel_path (expected $expected_size, got $actual_size)" >&2
+    exit 1
+  fi
+
+  actual_hash="$(sha256sum -- "$full_path" | awk '{print $1}')"
+  if [[ "$actual_hash" != "$expected_hash" ]]; then
+    echo "ERROR: SHA-256 mismatch for $rel_path" >&2
+    exit 1
+  fi
+
+  verified_count=$((verified_count + 1))
+done < "$WORK_DIR/stored-files.tsv"
+
+expected_count="$(psql --host="$PGHOST" --port="$PGPORT" --username="$OWNER_USER" --dbname="$VERIFY_DB" --set=ON_ERROR_STOP=1 --tuples-only --no-align -c "SELECT count(*) FROM stored_files;")"
+if [[ "$verified_count" -ne "$expected_count" ]]; then
+  echo "ERROR: Verified $verified_count files but database references $expected_count." >&2
+  exit 1
+fi
+
+echo "[8/8] Full restore drill passed: $verified_count/$expected_count stored files verified; runtime grants and audit-log restrictions verified; database, storage, Data Protection keys, and sanitized configuration restored."
+\n'* ]]; then
+    echo "ERROR: Unsafe stored_relative_path in database: $rel_path" >&2
+    exit 1
+  fi
+
+  full_path="$(realpath -m -- "$RESTORE_ROOT/$rel_path")"
+  case "$full_path" in
+    "$RESTORE_ROOT"/*) ;;
+    *)
+      echo "ERROR: Stored path escapes restored storage root: $rel_path" >&2
+      exit 1
+      ;;
+  esac
+
+  if [[ ! -f "$full_path" ]]; then
+    echo "ERROR: Missing restored file: $rel_path" >&2
+    exit 1
+  fi
+
+  actual_size="$(stat -c '%s' -- "$full_path")"
+  if [[ "$actual_size" != "$expected_size" ]]; then
+    echo "ERROR: Byte-length mismatch for $rel_path (expected $expected_size, got $actual_size)" >&2
+    exit 1
+  fi
+
+  actual_hash="$(sha256sum -- "$full_path" | awk '{print $1}')"
+  if [[ "$actual_hash" != "$expected_hash" ]]; then
+    echo "ERROR: SHA-256 mismatch for $rel_path" >&2
+    exit 1
+  fi
+
+  verified_count=$((verified_count + 1))
+done < "$WORK_DIR/stored-files.tsv"
+
+expected_count="$(psql --host="$PGHOST" --port="$PGPORT" --username="$OWNER_USER" --dbname="$VERIFY_DB" --set=ON_ERROR_STOP=1 --tuples-only --no-align -c "SELECT count(*) FROM stored_files;")"
+if [[ "$verified_count" -ne "$expected_count" ]]; then
+  echo "ERROR: Verified $verified_count files but database references $expected_count." >&2
+  exit 1
+fi
+
+echo "[8/8] Full restore drill passed: $verified_count/$expected_count stored files verified; runtime grants and audit-log restrictions verified; database, storage, Data Protection keys, and sanitized configuration restored."
+\t' read -r rel_path expected_hash expected_size; do
+  [[ -z "$rel_path" ]] && continue
+
+  if [[ "$rel_path" = /* || "$rel_path" == ".." || "$rel_path" == ../* || "$rel_path" == ** ]]; then
+    echo "ERROR: Unsafe stored_relative_path in database: $rel_path" >&2
+    exit 1
+  fi
+
+  full_path="$(realpath -m -- "$RESTORE_ROOT/$rel_path")"
+  case "$full_path" in
+    "$RESTORE_ROOT"/*) ;;
+    *)
+      echo "ERROR: Stored path escapes restored storage root: $rel_path" >&2
+      exit 1
+      ;;
+  esac
+
+  if [[ ! -f "$full_path" ]]; then
+    echo "ERROR: Missing restored file: $rel_path" >&2
+    exit 1
+  fi
+
+  actual_size="$(stat -c '%s' -- "$full_path")"
+  if [[ "$actual_size" != "$expected_size" ]]; then
+    echo "ERROR: Byte-length mismatch for $rel_path (expected $expected_size, got $actual_size)" >&2
+    exit 1
+  fi
+
+  actual_hash="$(sha256sum -- "$full_path" | awk '{print $1}')"
+  if [[ "$actual_hash" != "$expected_hash" ]]; then
+    echo "ERROR: SHA-256 mismatch for $rel_path" >&2
+    exit 1
+  fi
+
+  verified_count=$((verified_count + 1))
+done < "$WORK_DIR/stored-files.tsv"
+
+expected_count="$(psql --host="$PGHOST" --port="$PGPORT" --username="$OWNER_USER" --dbname="$VERIFY_DB" --set=ON_ERROR_STOP=1 --tuples-only --no-align -c "SELECT count(*) FROM stored_files;")"
+if [[ "$verified_count" -ne "$expected_count" ]]; then
+  echo "ERROR: Verified $verified_count files but database references $expected_count." >&2
+  exit 1
+fi
+
+echo "[8/8] Full restore drill passed: $verified_count/$expected_count stored files verified; runtime grants and audit-log restrictions verified; database, storage, Data Protection keys, and sanitized configuration restored."
+\n'* ]]; then
     echo "ERROR: Unsafe stored_relative_path in database: $rel_path" >&2
     exit 1
   fi

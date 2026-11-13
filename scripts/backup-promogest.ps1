@@ -57,6 +57,48 @@ function Set-PromoGestBackupBundleAcl {
     }
 }
 
+function Remove-PromoGestSensitiveConfigProperties {
+    param([AllowNull()][object]$Value)
+
+    if ($null -eq $Value) {
+        return $null
+    }
+
+    $sensitivePropertyPattern = '(?i)(^connectionstrings?$|password|passwd|pwd|secret|token|credential|private.?key|api.?key|access.?key|signing.?key)'
+
+    if ($Value -is [PSCustomObject]) {
+        foreach ($property in @($Value.PSObject.Properties)) {
+            if ($property.Name -match $sensitivePropertyPattern) {
+                $Value.PSObject.Properties.Remove($property.Name)
+            }
+            else {
+                $property.Value = Remove-PromoGestSensitiveConfigProperties -Value $property.Value
+            }
+        }
+        return $Value
+    }
+
+    if ($Value -is [System.Collections.IDictionary]) {
+        foreach ($key in @($Value.Keys)) {
+            if ([string]$key -match $sensitivePropertyPattern) {
+                $Value.Remove($key)
+            }
+            else {
+                $Value[$key] = Remove-PromoGestSensitiveConfigProperties -Value $Value[$key]
+            }
+        }
+        return $Value
+    }
+
+    if ($Value -is [System.Collections.IList] -and $Value -isnot [string]) {
+        for ($index = 0; $index -lt $Value.Count; $index++) {
+            $Value[$index] = Remove-PromoGestSensitiveConfigProperties -Value $Value[$index]
+        }
+    }
+
+    return $Value
+}
+
 function Write-PromoGestSanitizedConfig {
     param(
         [Parameter(Mandatory = $true)][string]$SourcePath,
@@ -73,12 +115,10 @@ function Write-PromoGestSanitizedConfig {
         throw "Production configuration must contain a JSON object."
     }
 
-    # Connection strings are reintroduced from the protected secret store after
-    # restore. Remove the entire object so additional/future connection names
-    # cannot accidentally carry credentials into the backup archive.
-    if ($null -ne $config.PSObject.Properties["ConnectionStrings"]) {
-        $config.PSObject.Properties.Remove("ConnectionStrings")
-    }
+    # Connection strings and named credentials are reintroduced from the
+    # protected secret store after restore. Remove them recursively, including
+    # future secret-bearing fields nested inside arrays or section objects.
+    $config = Remove-PromoGestSensitiveConfigProperties -Value $config
 
     $config | ConvertTo-Json -Depth 32 |
         Set-Content -LiteralPath $DestinationPath -Encoding UTF8

@@ -31,9 +31,13 @@ public sealed class PostgreSql18IntegrationFixture : IAsyncLifetime
     private string _provisionConnectionString = string.Empty;
     private string _migrationConnectionString = string.Empty;
     private string _runtimeConnectionString = string.Empty;
+    private readonly Dictionary<string, string?> _previousEnvironment = new(StringComparer.Ordinal);
+    private string? _dataProtectionTestRoot;
 
     public async Task InitializeAsync()
     {
+        ConfigureLinuxDataProtectionEnvironment();
+
         var provision = Environment.GetEnvironmentVariable("PROMOGEST_TEST_PROVISION_DB_CONNECTION");
         var migration = Environment.GetEnvironmentVariable("PROMOGEST_TEST_MIGRATE_DB_CONNECTION");
         var runtime = Environment.GetEnvironmentVariable("PROMOGEST_TEST_DB_CONNECTION");
@@ -171,10 +175,74 @@ public sealed class PostgreSql18IntegrationFixture : IAsyncLifetime
 
     public async Task DisposeAsync()
     {
-        if (_container is not null)
+        try
         {
-            await _container.DisposeAsync();
+            if (_container is not null)
+            {
+                await _container.DisposeAsync();
+            }
         }
+        finally
+        {
+            foreach (var (name, value) in _previousEnvironment)
+            {
+                Environment.SetEnvironmentVariable(name, value);
+            }
+
+            if (_dataProtectionTestRoot is not null && Directory.Exists(_dataProtectionTestRoot))
+            {
+                Directory.Delete(_dataProtectionTestRoot, recursive: true);
+            }
+        }
+    }
+
+    private void ConfigureLinuxDataProtectionEnvironment()
+    {
+        if (!OperatingSystem.IsLinux())
+        {
+            return;
+        }
+
+        var variables = new[]
+        {
+            "Security__DataProtectionCertificatePath",
+            "Security__DataProtectionKeyDirectory",
+            "Security__RequireHttpsCookies",
+            "Storage__RootDirectory",
+            "PROMOGEST_DATA_PROTECTION_CERT_PASSWORD"
+        };
+        foreach (var name in variables)
+        {
+            _previousEnvironment[name] = Environment.GetEnvironmentVariable(name);
+        }
+
+        _dataProtectionTestRoot = Path.Combine(
+            Path.GetTempPath(),
+            $"promogest-api-dp-tests-{Guid.NewGuid():N}");
+        var keyDirectory = Path.Combine(_dataProtectionTestRoot, "keys");
+        Directory.CreateDirectory(keyDirectory);
+
+        var certificatePath = Path.Combine(keyDirectory, "protection.pfx");
+        var password = Convert.ToHexString(RandomNumberGenerator.GetBytes(32));
+
+        using (var rsa = RSA.Create(2048))
+        {
+            var request = new CertificateRequest(
+                "CN=PromoGest PostgreSQL API Integration Test",
+                rsa,
+                HashAlgorithmName.SHA256,
+                RSASignaturePadding.Pkcs1);
+            using var certificate = request.CreateSelfSigned(
+                DateTimeOffset.UtcNow.AddMinutes(-5),
+                DateTimeOffset.UtcNow.AddYears(1));
+            File.WriteAllBytes(certificatePath, certificate.Export(X509ContentType.Pfx, password));
+        }
+
+        Environment.SetEnvironmentVariable("Security__DataProtectionCertificatePath", certificatePath);
+        Environment.SetEnvironmentVariable("Security__DataProtectionKeyDirectory", keyDirectory);
+        Environment.SetEnvironmentVariable("Security__RequireHttpsCookies", "false");
+        Environment.SetEnvironmentVariable("Storage__RootDirectory", Path.Combine(_dataProtectionTestRoot, "storage"));
+        Environment.SetEnvironmentVariable("PROMOGEST_DATA_PROTECTION_CERT_PASSWORD", password);
     }
 }
 
@@ -250,30 +318,6 @@ public sealed class PostgresEndToEndTests : IClassFixture<PostgreSql18Integratio
     private WebApplicationFactory<Program> CreateFactory(string connectionString, string tempRoot)
     {
         Directory.CreateDirectory(tempRoot);
-
-        // Linux requires an explicit certificate because PersistKeysToFileSystem disables
-        // the default key-at-rest protection heuristic. Generate a per-test certificate so
-        // API integration tests remain self-contained and exercise the real Linux setup.
-        var dataProtectionPassword = Convert.ToHexString(RandomNumberGenerator.GetBytes(32));
-        var dataProtectionDirectory = Path.Combine(tempRoot, "dp-keys");
-        Directory.CreateDirectory(dataProtectionDirectory);
-        var certificatePath = Path.Combine(dataProtectionDirectory, "protection.pfx");
-
-        using (var rsa = RSA.Create(2048))
-        {
-            var request = new CertificateRequest(
-                "CN=PromoGest API Integration Test",
-                rsa,
-                HashAlgorithmName.SHA256,
-                RSASignaturePadding.Pkcs1);
-            using var certificate = request.CreateSelfSigned(
-                DateTimeOffset.UtcNow.AddMinutes(-5),
-                DateTimeOffset.UtcNow.AddYears(1));
-            File.WriteAllBytes(
-                certificatePath,
-                certificate.Export(X509ContentType.Pfx, dataProtectionPassword));
-        }
-
         return new WebApplicationFactory<Program>().WithWebHostBuilder(builder =>
         {
             builder.UseEnvironment("Development");
@@ -288,10 +332,7 @@ public sealed class PostgresEndToEndTests : IClassFixture<PostgreSql18Integratio
                 {
                     ["ConnectionStrings:DefaultConnection"] = connectionString,
                     ["Security:RequireHttpsCookies"] = "false",
-                    ["Storage:RootDirectory"] = Path.Combine(tempRoot, "storage"),
-                    ["Security:DataProtectionKeyDirectory"] = dataProtectionDirectory,
-                    ["Security:DataProtectionCertificatePath"] = certificatePath,
-                    ["PROMOGEST_DATA_PROTECTION_CERT_PASSWORD"] = dataProtectionPassword
+                    ["Storage:RootDirectory"] = Path.Combine(tempRoot, "storage")
                 });
             });
             builder.ConfigureTestServices(services =>

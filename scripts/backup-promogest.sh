@@ -56,7 +56,7 @@ DP_CERTIFICATE_PATH="$DP_KEYS_DIR/protection.pfx"
 openssl pkcs12 -in "$DP_CERTIFICATE_PATH" -noout \
   -passin env:PROMOGEST_DATA_PROTECTION_CERT_PASSWORD >/dev/null
 
-for command_name in pg_dump pg_restore tar sha256sum flock systemctl python3 realpath find; do
+for command_name in openssl pg_dump pg_restore tar sha256sum flock systemctl python3 realpath find; do
   command -v "$command_name" >/dev/null || {
     echo "ERROR: Required command not found: $command_name" >&2
     exit 1

@@ -182,15 +182,35 @@ stage_dir="$(mktemp -d "$bundle_dir/.config-stage.XXXXXX")"
 python3 - "$CONFIG_PATH" "$stage_dir/appsettings.Production.sanitized.json" <<'PY'
 import json
 import pathlib
+import re
 import sys
 
 source = pathlib.Path(sys.argv[1])
 destination = pathlib.Path(sys.argv[2])
 data = json.loads(source.read_text(encoding="utf-8-sig"))
-# Connection strings and certificate passwords are restored from the protected
-# secret store/environment, never from a backup archive.
-data.pop("ConnectionStrings", None)
-destination.write_text(json.dumps(data, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+if not isinstance(data, dict):
+    raise SystemExit("ERROR: Production configuration must be a JSON object.")
+
+sensitive_name = re.compile(
+    r"(?i)(^connectionstrings?$|password|passwd|pwd|secret|token|credential|private.?key|api.?key|access.?key|signing.?key)"
+)
+
+def strip_sensitive(value):
+    if isinstance(value, dict):
+        return {
+            key: strip_sensitive(item)
+            for key, item in value.items()
+            if not sensitive_name.search(str(key))
+        }
+    if isinstance(value, list):
+        return [strip_sensitive(item) for item in value]
+    return value
+
+sanitized = strip_sensitive(data)
+serialized = json.dumps(sanitized, ensure_ascii=False, indent=2) + "\\n"
+if sensitive_name.search(serialized):
+    raise SystemExit("ERROR: Secret-bearing property name remained in sanitized configuration.")
+destination.write_text(serialized, encoding="utf-8")
 PY
 cp -- "$CADDYFILE_PATH" "$stage_dir/Caddyfile"
 tar -czf "$bundle_dir/config-sanitized.tar.gz" -C "$stage_dir" .

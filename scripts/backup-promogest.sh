@@ -192,7 +192,7 @@ if not isinstance(data, dict):
     raise SystemExit("ERROR: Production configuration must be a JSON object.")
 
 sensitive_name = re.compile(
-    r"(?i)(^connectionstrings?$|password|passwd|pwd|secret|token|credential|private.?key|api.?key|access.?key|signing.?key)"
+    r"(?i)(^connectionstrings?$|(?:password|passwd|pwd|secret|tokens?|credentials?|private.?key|api.?key|access.?key|signing.?key)(?:value|text|string|hash)?$)"
 )
 
 def strip_sensitive(value):

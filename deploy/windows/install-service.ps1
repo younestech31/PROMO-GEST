@@ -21,10 +21,11 @@ $AppDir = Join-Path $InstallRoot "app"
 $StorageDir = Join-Path $InstallRoot "storage"
 $DataProtectionDir = Join-Path $InstallRoot "dataprotection-keys"
 $BackupDir = Join-Path $InstallRoot "backups"
+$ScriptsDir = Join-Path $InstallRoot "scripts"
 $LogsDir = Join-Path $InstallRoot "logs"
 $ExePath = Join-Path $AppDir "PromoGest.Api.exe"
 
-New-Item -ItemType Directory -Force -Path $InstallRoot, $AppDir, $StorageDir, $DataProtectionDir, $BackupDir, $LogsDir | Out-Null
+New-Item -ItemType Directory -Force -Path $InstallRoot, $AppDir, $StorageDir, $DataProtectionDir, $BackupDir, $ScriptsDir, $LogsDir | Out-Null
 if (-not (Test-Path -LiteralPath $ExePath -PathType Leaf)) {
     throw "PromoGest.Api.exe not found at $ExePath. Publish and copy the application before installing the service."
 }
@@ -94,6 +95,7 @@ Invoke-IcaclsChecked -Arguments @($InstallRoot, "/reset", "/t", "/c", "/q")
 Set-RestrictedDirectoryAcl -Path $InstallRoot -ServiceRights "RX"
 
 Set-RestrictedDirectoryAcl -Path $AppDir -ServiceRights "RX" -Recursive
+Set-RestrictedDirectoryAcl -Path $ScriptsDir -ServiceRights "RX" -Recursive
 
 foreach ($directory in @($StorageDir, $DataProtectionDir, $BackupDir, $LogsDir)) {
     Set-RestrictedDirectoryAcl -Path $directory -ServiceRights "M" -Recursive

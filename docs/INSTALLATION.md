@@ -148,6 +148,7 @@ The Linux deployment uses the supplied systemd units and the self-contained Linu
    sudo install -m 0644 deploy/linux/promogest.service /etc/systemd/system/promogest.service
    sudo install -m 0644 deploy/linux/promogest-backup.service /etc/systemd/system/promogest-backup.service
    sudo install -m 0644 deploy/linux/promogest-backup.timer /etc/systemd/system/promogest-backup.timer
+   sudo install -o root -g root -m 0750 scripts/backup-promogest.sh /usr/local/sbin/backup-promogest.sh
    sudo install -m 0644 deploy/linux/Caddyfile /etc/caddy/Caddyfile
    ```
 

@@ -57,6 +57,33 @@ function Set-PromoGestBackupBundleAcl {
     }
 }
 
+function Write-PromoGestSanitizedConfig {
+    param(
+        [Parameter(Mandatory = $true)][string]$SourcePath,
+        [Parameter(Mandatory = $true)][string]$DestinationPath
+    )
+
+    if (-not (Test-Path -LiteralPath $SourcePath -PathType Leaf)) {
+        throw "Production configuration not found: $SourcePath"
+    }
+
+    $config = Get-Content -LiteralPath $SourcePath -Raw -ErrorAction Stop |
+        ConvertFrom-Json -ErrorAction Stop
+    if ($null -eq $config -or $config -isnot [PSCustomObject]) {
+        throw "Production configuration must contain a JSON object."
+    }
+
+    # Connection strings are reintroduced from the protected secret store after
+    # restore. Remove the entire object so additional/future connection names
+    # cannot accidentally carry credentials into the backup archive.
+    if ($null -ne $config.PSObject.Properties["ConnectionStrings"]) {
+        $config.PSObject.Properties.Remove("ConnectionStrings")
+    }
+
+    $config | ConvertTo-Json -Depth 32 |
+        Set-Content -LiteralPath $DestinationPath -Encoding UTF8
+}
+
 $BackupRoot = [IO.Path]::GetFullPath($BackupRoot)
 $backupRootNormalized = $BackupRoot.TrimEnd([IO.Path]::DirectorySeparatorChar, [IO.Path]::AltDirectorySeparatorChar)
 $backupVolumeRoot = [IO.Path]::GetPathRoot($BackupRoot).TrimEnd(
@@ -190,14 +217,7 @@ if (-not (Test-Path -LiteralPath $AppConfigPath -PathType Leaf)) {
 }
 $SanitizedStage = Join-Path $BundleDir "_config_stage"
 New-Item -ItemType Directory -Force -Path $SanitizedStage | Out-Null
-$cfgJson = Get-Content -LiteralPath $AppConfigPath -Raw | ConvertFrom-Json
-# Connection strings are supplied again from the protected secret store after
-# restore. Remove the entire object so additional/future connection names cannot
-# accidentally carry credentials into the backup archive.
-if ($null -ne $cfgJson.PSObject.Properties["ConnectionStrings"]) {
-    $cfgJson.PSObject.Properties.Remove("ConnectionStrings")
-}
-$cfgJson | ConvertTo-Json -Depth 10 | Set-Content -LiteralPath (Join-Path $SanitizedStage "appsettings.Production.sanitized.json") -Encoding UTF8
+Write-PromoGestSanitizedConfig -SourcePath $AppConfigPath -DestinationPath (Join-Path $SanitizedStage "appsettings.Production.sanitized.json")
 if (-not (Test-Path -LiteralPath $CaddyfilePath -PathType Leaf)) {
     throw "Local HTTPS Caddyfile not found: $CaddyfilePath"
 }

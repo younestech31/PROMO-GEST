@@ -1,3 +1,4 @@
+using System.Security.Cryptography.X509Certificates;
 using System.Threading.RateLimiting;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.DataProtection;
@@ -57,6 +58,52 @@ if (OperatingSystem.IsWindows())
     // key ring decryptable on this Windows installation by those identities; filesystem
     // ACLs on the key directory remain restricted to the service, SYSTEM, and Administrators.
     dpBuilder.ProtectKeysWithDpapi(protectToLocalMachine: true);
+}
+else if (OperatingSystem.IsLinux())
+{
+    // PersistKeysToFileSystem disables the default at-rest encryption heuristic.
+    // Linux deployments must provide a local PKCS#12 certificate and its password
+    // through the service environment; never fall back to plaintext key-ring files.
+    var certificatePath = builder.Configuration["Security:DataProtectionCertificatePath"];
+    var certificatePassword = Environment.GetEnvironmentVariable("PROMOGEST_DATA_PROTECTION_CERT_PASSWORD");
+
+    if (string.IsNullOrWhiteSpace(certificatePath) || !Path.IsPathRooted(certificatePath))
+    {
+        throw new InvalidOperationException(
+            "Security:DataProtectionCertificatePath must be an absolute path to a local PKCS#12 certificate on Linux.");
+    }
+
+    if (!File.Exists(certificatePath))
+    {
+        throw new FileNotFoundException(
+            "The Linux Data Protection certificate file was not found.",
+            certificatePath);
+    }
+
+    if (string.IsNullOrWhiteSpace(certificatePassword))
+    {
+        throw new InvalidOperationException(
+            "PROMOGEST_DATA_PROTECTION_CERT_PASSWORD must be supplied by the Linux service environment.");
+    }
+
+    var dataProtectionCertificate = X509CertificateLoader.LoadPkcs12FromFile(
+        certificatePath,
+        certificatePassword,
+        X509KeyStorageFlags.EphemeralKeySet);
+
+    if (!dataProtectionCertificate.HasPrivateKey)
+    {
+        dataProtectionCertificate.Dispose();
+        throw new InvalidOperationException(
+            "The Linux Data Protection certificate must contain its private key.");
+    }
+
+    dpBuilder.ProtectKeysWithCertificate(dataProtectionCertificate);
+}
+else
+{
+    throw new PlatformNotSupportedException(
+        "PROMO GEST requires Windows DPAPI or a Linux X.509 Data Protection certificate for key-at-rest protection.");
 }
 
 builder.Services.AddAntiforgery(options =>

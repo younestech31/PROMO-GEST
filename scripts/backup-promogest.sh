@@ -114,8 +114,9 @@ for source_directory in "$STORAGE_DIR" "$DP_KEYS_DIR"; do
 done
 
 install -d -o root -g root -m 0700 "$BACKUP_ROOT"
-[[ -d /run/lock ]] || { echo "ERROR: System lock directory is missing: /run/lock" >&2; exit 1; }
-exec 9>/run/lock/promogest-backup.lock
+LOCK_FILE="$BACKUP_ROOT/.promogest-backup.lock"
+exec 9>"$LOCK_FILE"
+chmod 0600 "$LOCK_FILE"
 flock -n 9 || { echo "ERROR: Another PROMO GEST backup is already running." >&2; exit 1; }
 
 timestamp="$(date -u +%Y%m%d_%H%M%S)"

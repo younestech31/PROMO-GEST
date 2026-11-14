@@ -19,6 +19,7 @@ public sealed class EfProjectCustomerRepository : IProjectCustomerRepository
         CancellationToken ct = default)
         => await _dbContext.ProjectCustomers
             .AsNoTracking()
+            .Include(customer => customer.Interactions)
             .Where(customer => customer.ProjectId == projectId)
             .OrderByDescending(customer => customer.UpdatedAtUtc)
             .ToListAsync(ct);

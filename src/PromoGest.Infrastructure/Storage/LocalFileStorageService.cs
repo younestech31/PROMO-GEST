@@ -11,7 +11,7 @@ public sealed class LocalStorageOptions
     public string RootDirectory { get; set; } = "storage";
 }
 
-public sealed class LocalFileStorageService
+public sealed class LocalFileStorageService : IProjectFileStorage
 {
     private readonly string _rootDirectory;
     private readonly IClock _clock;

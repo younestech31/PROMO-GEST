@@ -497,15 +497,14 @@ public sealed class ProjectStructureService
             ? Array.Empty<string>()
             : await _userRepository.GetEffectivePermissionsAsync(actorUserId, ct);
 
-        var hasGlobalManagementPermission =
-            permissions.Contains("projects.manage", StringComparer.OrdinalIgnoreCase) ||
-            permissions.Contains("projects.structure.manage", StringComparer.OrdinalIgnoreCase);
-
-        var canRead = actor.IsSystemAdministrator || membership is not null || hasGlobalManagementPermission;
+        var hasProjectMembership = membership is not null;
+        var canRead = actor.IsSystemAdministrator ||
+            (hasProjectMembership &&
+             permissions.Contains("projects.read", StringComparer.OrdinalIgnoreCase));
         var canManageStructure = actor.IsSystemAdministrator ||
-            hasGlobalManagementPermission ||
-            membership?.CanManageConstruction == true ||
-            membership?.RoleInProject == ProjectRole.ProjectManager;
+            (hasProjectMembership &&
+             (membership!.CanManageConstruction ||
+              membership.RoleInProject == ProjectRole.ProjectManager));
 
         if ((canManage && !canManageStructure) || (!canManage && !canRead))
         {

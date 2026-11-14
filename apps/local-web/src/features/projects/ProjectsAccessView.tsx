@@ -276,6 +276,22 @@ export function ProjectsAccessView({
               setEditingProject(null);
               setFormErrors({});
               setModalError(null);
+              setCreateForm({
+                code: '',
+                nameAr: '',
+                nameFr: '',
+                wilayaCode: '16',
+                wilayaName: 'الجزائر / Alger',
+                municipality: '',
+                address: '',
+                landTitleReference: '',
+                buildingPermitNumber: '',
+                buildingPermitDate: '',
+                status: 'Planning',
+                estimatedBudgetDzd: 0,
+                plannedBlocksCount: 1,
+                plannedUnitsCount: 0,
+              });
               setCreateOpen(true);
             }}
             className="inline-flex items-center gap-2 rounded-md bg-teal-800 px-4 py-2 text-sm font-semibold text-white hover:bg-teal-900 transition-colors whitespace-nowrap shrink-0 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-teal-800"
@@ -542,6 +558,16 @@ export function ProjectsAccessView({
                   />
                 </FormField>
 
+                <FormField id="prj-address" label={t.projects.fieldAddress}>
+                  <input
+                    id="prj-address"
+                    type="text"
+                    value={createForm.address ?? ''}
+                    onChange={(e) => setCreateForm((p) => ({ ...p, address: e.target.value }))}
+                    className={inputBaseClass}
+                  />
+                </FormField>
+
                 <FormField id="prj-land" label={t.projects.fieldLandTitle}>
                   <input
                     id="prj-land"
@@ -551,6 +577,28 @@ export function ProjectsAccessView({
                     onChange={(e) =>
                       setCreateForm((p) => ({ ...p, landTitleReference: e.target.value }))
                     }
+                    className={`${inputBaseClass} font-data`}
+                  />
+                </FormField>
+
+                <FormField id="prj-permit-no" label={t.projects.fieldPermitNo}>
+                  <input
+                    id="prj-permit-no"
+                    type="text"
+                    dir="ltr"
+                    value={createForm.buildingPermitNumber ?? ''}
+                    onChange={(e) => setCreateForm((p) => ({ ...p, buildingPermitNumber: e.target.value }))}
+                    className={`${inputBaseClass} font-data`}
+                  />
+                </FormField>
+
+                <FormField id="prj-permit-date" label={t.projects.fieldPermitDate}>
+                  <input
+                    id="prj-permit-date"
+                    type="date"
+                    dir="ltr"
+                    value={createForm.buildingPermitDate ?? ''}
+                    onChange={(e) => setCreateForm((p) => ({ ...p, buildingPermitDate: e.target.value }))}
                     className={`${inputBaseClass} font-data`}
                   />
                 </FormField>

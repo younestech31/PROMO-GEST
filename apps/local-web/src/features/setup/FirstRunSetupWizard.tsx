@@ -2,7 +2,7 @@ import { useState, type FormEvent } from 'react';
 import { Building2, Check, ShieldCheck } from 'lucide-react';
 import type { AppLanguage, InitializeInstallationRequest } from '../../types/erp';
 import { getTranslations, translateApiError } from '../../localization/translations';
-import { ALGERIAN_LEGAL_FORMS, ALGERIAN_WILAYAS, findWilaya } from '../../utils/algerianFormat';
+import { ALGERIAN_LEGAL_FORMS, ALGERIAN_WILAYAS, findWilaya, formatAlgerianLegalForm } from '../../utils/algerianFormat';
 import { checkPasswordStrength, validateSetupRequest, type ValidationErrors } from '../../utils/validation';
 import { apiClient, ApiConnectionError, ApiError } from '../../services/apiClient';
 import { LanguageSwitcher } from '../../components/LanguageSwitcher';
@@ -181,7 +181,7 @@ export function FirstRunSetupWizard({
                   >
                     {ALGERIAN_LEGAL_FORMS.map((lf) => (
                       <option key={lf} value={lf}>
-                        {lf}
+                        {formatAlgerianLegalForm(lf, language)}
                       </option>
                     ))}
                   </select>

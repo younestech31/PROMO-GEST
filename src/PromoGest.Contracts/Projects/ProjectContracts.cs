@@ -28,6 +28,8 @@ public sealed record ProjectDto(
     decimal EstimatedBudgetDzd,
     int PlannedBlocksCount,
     int PlannedUnitsCount,
+    int ActualBuildingsCount,
+    int ActualUnitsCount,
     DateTimeOffset CreatedAtUtc,
     IReadOnlyList<ProjectMemberDto> Members);
 

@@ -15,6 +15,9 @@ public sealed class AppDbContext : DbContext
     public DbSet<UserRole> UserRoles => Set<UserRole>();
     public DbSet<Project> Projects => Set<Project>();
     public DbSet<ProjectMember> ProjectMembers => Set<ProjectMember>();
+    public DbSet<Building> Buildings => Set<Building>();
+    public DbSet<BuildingFloor> BuildingFloors => Set<BuildingFloor>();
+    public DbSet<PropertyUnit> PropertyUnits => Set<PropertyUnit>();
     public DbSet<AuditLog> AuditLogs => Set<AuditLog>();
     public DbSet<SystemSetting> SystemSettings => Set<SystemSetting>();
     public DbSet<StoredFile> StoredFiles => Set<StoredFile>();

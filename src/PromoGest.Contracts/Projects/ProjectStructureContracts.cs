@@ -23,6 +23,8 @@ public sealed record BuildingFloorDto(
     string NameAr,
     string NameFr,
     DateTimeOffset CreatedAtUtc,
+    DateTimeOffset UpdatedAtUtc,
+    Guid ConcurrencyStamp,
     IReadOnlyList<PropertyUnitDto> Units);
 
 public sealed record PropertyUnitDto(

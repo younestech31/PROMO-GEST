@@ -18,6 +18,7 @@ public sealed class SetupController : ControllerBase
 
     [HttpGet("status")]
     [AllowAnonymous]
+    [ResponseCache(NoStore = true, Location = ResponseCacheLocation.None)]
     public async Task<ActionResult<SetupStatusResponse>> GetStatus(CancellationToken ct)
     {
         var status = await _setupService.GetStatusAsync(ct);

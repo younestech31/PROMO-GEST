@@ -145,7 +145,7 @@ export function App() {
       <FirstRunSetupWizard
         language={language}
         onLanguageChange={setLanguage}
-        onInitialized={() => void handleInitialized()}
+        onInitialized={handleInitialized}
         isPreviewMode={health?.previewMode === true}
         onPreviewLogin={handleOpenPreview}
       />

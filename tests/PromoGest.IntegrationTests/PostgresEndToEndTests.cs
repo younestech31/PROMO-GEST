@@ -1148,11 +1148,12 @@ public sealed class PostgresEndToEndTests : IClassFixture<PostgreSql18Integratio
             using (var expiryScope = factory.Services.CreateScope())
             {
                 var db = expiryScope.ServiceProvider.GetRequiredService<AppDbContext>();
+                var expiryTimestamp = DateTimeOffset.UtcNow.AddMinutes(-1);
                 await db.ProjectSalesReservations
                     .Where(item => item.Id == expiringReservation!.Id)
-                    .ExecuteUpdateAsync(setters => setters.SetProperty(
-                        item => item.ExpiresAtUtc,
-                        DateTimeOffset.UtcNow.AddMinutes(-1)));
+                    .ExecuteUpdateAsync(setters => setters
+                        .SetProperty(item => item.ReservedAtUtc, expiryTimestamp.AddDays(-7))
+                        .SetProperty(item => item.ExpiresAtUtc, expiryTimestamp));
                 var expiryProcessor = expiryScope.ServiceProvider.GetRequiredService<ProjectSalesReservationExpiryProcessor>();
                 var processedCount = await expiryProcessor.ProcessDueAsync();
                 Assert.Equal(1, processedCount);
@@ -1177,11 +1178,12 @@ public sealed class PostgresEndToEndTests : IClassFixture<PostgreSql18Integratio
             using (var elapsedScope = factory.Services.CreateScope())
             {
                 var db = elapsedScope.ServiceProvider.GetRequiredService<AppDbContext>();
+                var elapsedExpiryTimestamp = DateTimeOffset.UtcNow.AddMinutes(-1);
                 await db.ProjectSalesReservations
                     .Where(item => item.Id == elapsedReservation!.Id)
-                    .ExecuteUpdateAsync(setters => setters.SetProperty(
-                        item => item.ExpiresAtUtc,
-                        DateTimeOffset.UtcNow.AddMinutes(-1)));
+                    .ExecuteUpdateAsync(setters => setters
+                        .SetProperty(item => item.ReservedAtUtc, elapsedExpiryTimestamp.AddDays(-7))
+                        .SetProperty(item => item.ExpiresAtUtc, elapsedExpiryTimestamp));
             }
             var cancelExpiredResponse = await adminClient.PostAsJsonAsync(
                 $"/api/projects/{createdProject.Id}/reservations/{elapsedReservation!.Id}/cancel",

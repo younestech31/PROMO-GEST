@@ -156,6 +156,11 @@ public sealed class PostgreSql18IntegrationFixture : IAsyncLifetime
                 throw new InvalidOperationException(
                     "The ProjectDocumentMetadata migration was not discovered and applied.");
             }
+            if (!applied.Contains("20261114190000_ProjectCustomerRegistry"))
+            {
+                throw new InvalidOperationException(
+                    "The ProjectCustomerRegistry migration was not discovered and applied.");
+            }
         }
 
         // Apply the same post-migration grants used by the Google AI Studio Cloud SQL path.
@@ -900,6 +905,111 @@ public sealed class PostgresEndToEndTests : IClassFixture<PostgreSql18Integratio
                     file.ProjectId == createdProject.Id && file.Scope == StoredFileScope.Project));
             }
 
+            // Customer records are project-scoped, deduplicated, and linked to an existing project document by reference only.
+            var customerRequest = new CreateProjectCustomerRequest(
+                "Individual",
+                "ليلى بن عيسى",
+                null,
+                "0550 123 456",
+                "leila.bensaissa@example.dz",
+                "وهران",
+                "ar",
+                "Referral",
+                uploadedDocumentId);
+            var createCustomerResponse = await adminClient.PostAsJsonAsync(
+                $"/api/projects/{createdProject.Id}/customers",
+                customerRequest);
+            Assert.Equal(HttpStatusCode.Created, createCustomerResponse.StatusCode);
+            var createdCustomer = await createCustomerResponse.Content.ReadFromJsonAsync<ProjectCustomerDto>();
+            Assert.NotNull(createdCustomer);
+            Assert.Equal("ليلى بن عيسى", createdCustomer!.DisplayName);
+            Assert.Equal("Prospect", createdCustomer.Status);
+            Assert.NotNull(createdCustomer.IdentityDocument);
+            Assert.Equal("building-permit.pdf", createdCustomer.IdentityDocument!.OriginalFileName);
+            Assert.Empty(createdCustomer.Interactions);
+            
+            var customerListResponse = await adminClient.GetAsync(
+                $"/api/projects/{createdProject.Id}/customers");
+            Assert.Equal(HttpStatusCode.OK, customerListResponse.StatusCode);
+            Assert.Equal("no-store, no-cache", customerListResponse.Headers.CacheControl?.ToString());
+            var customerList = await customerListResponse.Content.ReadFromJsonAsync<List<ProjectCustomerListItemDto>>();
+            Assert.NotNull(customerList);
+            Assert.Contains(customerList!, item => item.Id == createdCustomer.Id && item.HasIdentityDocument);
+
+            var duplicateCustomerResponse = await adminClient.PostAsJsonAsync(
+                $"/api/projects/{createdProject.Id}/customers",
+                customerRequest with { Phone = "0550-123-456" });
+            Assert.Equal(HttpStatusCode.Conflict, duplicateCustomerResponse.StatusCode);
+            var duplicateCustomerError = await duplicateCustomerResponse.Content.ReadFromJsonAsync<ApiErrorResponse>();
+            Assert.Equal("CUSTOMER_DUPLICATE", duplicateCustomerError!.Code);
+
+            var addInteractionResponse = await adminClient.PostAsJsonAsync(
+                $"/api/projects/{createdProject.Id}/customers/{createdCustomer.Id}/interactions",
+                new AddCustomerInteractionRequest(
+                    "Call",
+                    "Premier contact",
+                    "The prospect requested information about the project and the available plans.",
+                    null,
+                    DateTimeOffset.UtcNow.AddDays(2)));
+            Assert.Equal(HttpStatusCode.Created, addInteractionResponse.StatusCode);
+            var addedInteraction = await addInteractionResponse.Content.ReadFromJsonAsync<CustomerInteractionDto>();
+            Assert.NotNull(addedInteraction);
+            Assert.Equal("Call", addedInteraction!.Type);
+
+            var customerDetailsResponse = await adminClient.GetAsync(
+                $"/api/projects/{createdProject.Id}/customers/{createdCustomer.Id}");
+            Assert.Equal(HttpStatusCode.OK, customerDetailsResponse.StatusCode);
+            Assert.Equal("no-store, no-cache", customerDetailsResponse.Headers.CacheControl?.ToString());
+            var customerDetails = await customerDetailsResponse.Content.ReadFromJsonAsync<ProjectCustomerDto>();
+            Assert.NotNull(customerDetails);
+            Assert.Single(customerDetails!.Interactions);
+            Assert.Equal("Premier contact", customerDetails.Interactions[0].Subject);
+            Assert.Equal("Administrator", customerDetails.Interactions[0].CreatedByFullName);
+
+            var staleCustomerStamp = customerDetails.ConcurrencyStamp;
+            var updateCustomerRequest = new UpdateProjectCustomerRequest(
+                customerDetails.CustomerType,
+                customerDetails.DisplayName,
+                customerDetails.ContactPerson,
+                customerDetails.Phone,
+                customerDetails.Email,
+                customerDetails.Address,
+                customerDetails.PreferredLanguage,
+                customerDetails.Source,
+                "Qualified",
+                customerDetails.IdentityDocument?.Id,
+                staleCustomerStamp);
+            var updateCustomerResponse = await adminClient.PutAsJsonAsync(
+                $"/api/projects/{createdProject.Id}/customers/{createdCustomer.Id}",
+                updateCustomerRequest);
+            Assert.Equal(HttpStatusCode.OK, updateCustomerResponse.StatusCode);
+            var updatedCustomer = await updateCustomerResponse.Content.ReadFromJsonAsync<ProjectCustomerDto>();
+            Assert.NotNull(updatedCustomer);
+            Assert.Equal("Qualified", updatedCustomer!.Status);
+            Assert.NotEqual(staleCustomerStamp, updatedCustomer.ConcurrencyStamp);
+
+            var staleUpdateResponse = await adminClient.PutAsJsonAsync(
+                $"/api/projects/{createdProject.Id}/customers/{createdCustomer.Id}",
+                updateCustomerRequest);
+            Assert.Equal(HttpStatusCode.Conflict, staleUpdateResponse.StatusCode);
+
+            using (var customerAuditScope = factory.Services.CreateScope())
+            {
+                var db = customerAuditScope.ServiceProvider.GetRequiredService<AppDbContext>();
+                var createAudit = await db.AuditLogs.SingleAsync(entry =>
+                    entry.EventType == "PROJECT_CUSTOMER_CREATED" &&
+                    entry.TargetEntityId == createdCustomer.Id.ToString());
+                Assert.DoesNotContain(customerRequest.DisplayName, createAudit.Summary, StringComparison.Ordinal);
+                Assert.DoesNotContain(customerRequest.Phone, createAudit.MetadataJson ?? string.Empty, StringComparison.Ordinal);
+                Assert.DoesNotContain(customerRequest.Email!, createAudit.MetadataJson ?? string.Empty, StringComparison.Ordinal);
+                Assert.Contains(await db.AuditLogs.ToListAsync(), entry =>
+                    entry.EventType == "PROJECT_CUSTOMER_INTERACTION_ADDED" &&
+                    entry.TargetEntityType == "CustomerInteraction");
+                Assert.Contains(await db.AuditLogs.ToListAsync(), entry =>
+                    entry.EventType == "PROJECT_CUSTOMER_UPDATED" &&
+                    entry.TargetEntityId == createdCustomer.Id.ToString());
+            }
+
             // The seeded Project Director role must also be able to manage project structure via its explicit permission.
             var directorCreateResp = await adminClient.PostAsJsonAsync("/api/users", new CreateEmployeeRequest(
                 "youssef.director",
@@ -978,6 +1088,24 @@ public sealed class PostgresEndToEndTests : IClassFixture<PostgreSql18Integratio
                     updatedFloor.ConcurrencyStamp));
             Assert.Equal(HttpStatusCode.Forbidden, deniedFloorUpdate.StatusCode);
 
+            // A valid employee session without explicit membership cannot enumerate project documents or customer records.
+            var deniedCustomerList = await employeeClient.GetAsync(
+                $"/api/projects/{createdProject!.Id}/customers");
+            Assert.Equal(HttpStatusCode.Forbidden, deniedCustomerList.StatusCode);
+            var deniedCustomerDetails = await employeeClient.GetAsync(
+                $"/api/projects/{createdProject.Id}/customers/{createdCustomer!.Id}");
+            Assert.Equal(HttpStatusCode.Forbidden, deniedCustomerDetails.StatusCode);
+            var deniedCustomerCreate = await employeeClient.PostAsJsonAsync(
+                $"/api/projects/{createdProject.Id}/customers",
+                customerRequest with
+                {
+                    DisplayName = "Unauthorized prospect",
+                    Phone = "0550111222",
+                    Email = "unauthorized@example.dz",
+                    IdentityDocumentStoredFileId = null
+                });
+            Assert.Equal(HttpStatusCode.Forbidden, deniedCustomerCreate.StatusCode);
+
             // A valid employee session without explicit membership cannot enumerate or upload project documents.
             var deniedDocumentList = await employeeClient.GetAsync(
                 $"/api/projects/{createdProject!.Id}/documents");
@@ -1011,6 +1139,23 @@ public sealed class PostgresEndToEndTests : IClassFixture<PostgreSql18Integratio
             Assert.True(assignResp.StatusCode == HttpStatusCode.OK,
                 $"Project member assignment failed with {(int)assignResp.StatusCode} {assignResp.StatusCode}: {assignBody}" +
                 $"{Environment.NewLine}Captured ASP.NET Core server logs:{Environment.NewLine}{string.Join(Environment.NewLine, _serverLogs.Snapshot())}");
+
+            // Sales project membership plus customers.manage permits access to customer records.
+            var memberCustomerList = await employeeClient.GetAsync(
+                $"/api/projects/{createdProject.Id}/customers");
+            Assert.Equal(HttpStatusCode.OK, memberCustomerList.StatusCode);
+            var memberCustomerCreate = await employeeClient.PostAsJsonAsync(
+                $"/api/projects/{createdProject.Id}/customers",
+                customerRequest with
+                {
+                    DisplayName = "Yasmine Prospect",
+                    Phone = "0550777888",
+                    Email = "yasmine.prospect@example.dz",
+                    IdentityDocumentStoredFileId = null
+                });
+            Assert.Equal(HttpStatusCode.Created, memberCustomerCreate.StatusCode);
+            var memberCreatedCustomer = await memberCustomerCreate.Content.ReadFromJsonAsync<ProjectCustomerDto>();
+            Assert.NotNull(memberCreatedCustomer);
 
             // Explicit project membership allows document reads, and the CanManageDocuments flag allows uploads.
             var memberDocumentList = await employeeClient.GetAsync(
@@ -1047,7 +1192,33 @@ public sealed class PostgresEndToEndTests : IClassFixture<PostgreSql18Integratio
                     member => member.ProjectId == createdProject.Id && member.UserId == createdEmployee.Id));
             }
 
-            // Removing the per-project document-management flag preserves read access but blocks further uploads.
+            // Removing the per-project sales-management flag preserves read access but blocks customer mutations.
+            var readOnlyCustomerList = await employeeClient.GetAsync(
+                $"/api/projects/{createdProject.Id}/customers");
+            Assert.Equal(HttpStatusCode.OK, readOnlyCustomerList.StatusCode);
+            var readOnlyCustomerDetails = await employeeClient.GetAsync(
+                $"/api/projects/{createdProject.Id}/customers/{createdCustomer.Id}");
+            Assert.Equal(HttpStatusCode.OK, readOnlyCustomerDetails.StatusCode);
+            var readOnlyCustomerCreate = await employeeClient.PostAsJsonAsync(
+                $"/api/projects/{createdProject.Id}/customers",
+                customerRequest with
+                {
+                    DisplayName = "Read only prospect",
+                    Phone = "0550999888",
+                    Email = "readonly@example.dz",
+                    IdentityDocumentStoredFileId = null
+                });
+            Assert.Equal(HttpStatusCode.Forbidden, readOnlyCustomerCreate.StatusCode);
+            var readOnlyCustomerInteraction = await employeeClient.PostAsJsonAsync(
+                $"/api/projects/{createdProject.Id}/customers/{createdCustomer.Id}/interactions",
+                new AddCustomerInteractionRequest("Call", "Forbidden", "Must not be recorded.", null, null));
+            Assert.Equal(HttpStatusCode.Forbidden, readOnlyCustomerInteraction.StatusCode);
+            var readOnlyCustomerUpdate = await employeeClient.PutAsJsonAsync(
+                $"/api/projects/{createdProject.Id}/customers/{createdCustomer.Id}",
+                updateCustomerRequest with { Status = "Customer", ConcurrencyStamp = updatedCustomer!.ConcurrencyStamp });
+            Assert.Equal(HttpStatusCode.Forbidden, readOnlyCustomerUpdate.StatusCode);
+
+            // Removing the per-project document-management flag preserves document read access but blocks further uploads.
             var readOnlyDocumentList = await employeeClient.GetAsync(
                 $"/api/projects/{createdProject.Id}/documents");
             Assert.Equal(HttpStatusCode.OK, readOnlyDocumentList.StatusCode);
@@ -1079,6 +1250,12 @@ public sealed class PostgresEndToEndTests : IClassFixture<PostgreSql18Integratio
             var revokedDocumentDownload = await employeeClient.GetAsync(
                 $"/api/projects/{createdProject.Id}/documents/{uploadedDocumentId}/download");
             Assert.Equal(HttpStatusCode.Forbidden, revokedDocumentDownload.StatusCode);
+            var revokedCustomerList = await employeeClient.GetAsync(
+                $"/api/projects/{createdProject.Id}/customers");
+            Assert.Equal(HttpStatusCode.Forbidden, revokedCustomerList.StatusCode);
+            var revokedCustomerDetails = await employeeClient.GetAsync(
+                $"/api/projects/{createdProject.Id}/customers/{createdCustomer.Id}");
+            Assert.Equal(HttpStatusCode.Forbidden, revokedCustomerDetails.StatusCode);
 
             // Deactivate employee -> existing session cookie becomes invalid immediately (401)
             var deactivateResp = await adminClient.PatchAsJsonAsync($"/api/users/{createdEmployee.Id}/status", new SetUserStatusRequest(false));

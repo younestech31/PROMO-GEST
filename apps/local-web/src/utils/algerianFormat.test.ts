@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { ALGERIAN_WILAYAS, findWilaya, formatDzd, formatLocalDate } from './algerianFormat';
+import { ALGERIAN_WILAYAS, findWilaya, formatAlgerianLegalForm, formatDzd, formatLocalDate } from './algerianFormat';
 
 test('Algerian Wilayas catalog includes all 69 officially numbered wilayas', () => {
   assert.equal(ALGERIAN_WILAYAS.length, 69);
@@ -27,4 +27,12 @@ test('Local date formatting handles empty and valid ISO strings', () => {
   assert.equal(formatLocalDate(null, 'fr'), '—');
   const formatted = formatLocalDate('2026-11-13T10:00:00Z', 'fr');
   assert.ok(formatted.includes('2026'));
+});
+
+test('Algerian legal form labels are localized while keeping stored codes stable', () => {
+  assert.equal(formatAlgerianLegalForm('SPAS', 'ar'), 'شركة مساهمة مبسطة (SPAS)');
+  assert.equal(formatAlgerianLegalForm('SPAS', 'fr'), 'Société par actions simplifiée (SPAS)');
+  assert.equal(formatAlgerianLegalForm('OTHER', 'ar'), 'أخرى');
+  assert.equal(formatAlgerianLegalForm('OTHER', 'fr'), 'Autre');
+  assert.equal(formatAlgerianLegalForm('SARL', 'ar'), 'SARL');
 });

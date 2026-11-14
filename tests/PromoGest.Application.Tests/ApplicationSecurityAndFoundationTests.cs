@@ -145,12 +145,35 @@ public sealed class ApplicationSecurityAndFoundationTests
             => Task.FromResult(Buildings.FirstOrDefault(b => b.Id == buildingId));
         public Task<BuildingFloor?> GetFloorAsync(Guid floorId, CancellationToken ct = default)
             => Task.FromResult(Floors.FirstOrDefault(f => f.Id == floorId));
-        public Task<bool> ExistsBuildingCodeAsync(Guid projectId, string normalizedCode, CancellationToken ct = default)
-            => Task.FromResult(Buildings.Any(b => b.ProjectId == projectId && b.NormalizedCode == normalizedCode));
-        public Task<bool> ExistsFloorNumberAsync(Guid buildingId, int floorNumber, CancellationToken ct = default)
-            => Task.FromResult(Floors.Any(f => f.BuildingId == buildingId && f.FloorNumber == floorNumber));
-        public Task<bool> ExistsUnitNumberAsync(Guid floorId, string normalizedUnitNumber, CancellationToken ct = default)
-            => Task.FromResult(Units.Any(u => u.FloorId == floorId && u.NormalizedUnitNumber == normalizedUnitNumber));
+        public Task<PropertyUnit?> GetUnitAsync(Guid unitId, CancellationToken ct = default)
+            => Task.FromResult(Units.FirstOrDefault(u => u.Id == unitId));
+        public Task<bool> ExistsBuildingCodeAsync(
+            Guid projectId,
+            string normalizedCode,
+            Guid? excludeBuildingId = null,
+            CancellationToken ct = default)
+            => Task.FromResult(Buildings.Any(b =>
+                b.ProjectId == projectId &&
+                b.NormalizedCode == normalizedCode &&
+                (!excludeBuildingId.HasValue || b.Id != excludeBuildingId.Value)));
+        public Task<bool> ExistsFloorNumberAsync(
+            Guid buildingId,
+            int floorNumber,
+            Guid? excludeFloorId = null,
+            CancellationToken ct = default)
+            => Task.FromResult(Floors.Any(f =>
+                f.BuildingId == buildingId &&
+                f.FloorNumber == floorNumber &&
+                (!excludeFloorId.HasValue || f.Id != excludeFloorId.Value)));
+        public Task<bool> ExistsUnitNumberAsync(
+            Guid floorId,
+            string normalizedUnitNumber,
+            Guid? excludeUnitId = null,
+            CancellationToken ct = default)
+            => Task.FromResult(Units.Any(u =>
+                u.FloorId == floorId &&
+                u.NormalizedUnitNumber == normalizedUnitNumber &&
+                (!excludeUnitId.HasValue || u.Id != excludeUnitId.Value)));
         public Task AddBuildingAsync(Building building, CancellationToken ct = default) { Buildings.Add(building); return Task.CompletedTask; }
         public Task AddFloorAsync(BuildingFloor floor, CancellationToken ct = default) { Floors.Add(floor); return Task.CompletedTask; }
         public Task AddPropertyUnitAsync(PropertyUnit unit, CancellationToken ct = default) { Units.Add(unit); return Task.CompletedTask; }

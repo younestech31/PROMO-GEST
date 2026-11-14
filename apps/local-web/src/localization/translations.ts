@@ -129,6 +129,29 @@ export interface TranslationBundle {
     tableBudget: string;
     tableMembers: string;
     manageAccess: string;
+    structureButton: string;
+    structureTitle: string;
+    structureEmpty: string;
+    createBuilding: string;
+    buildingCode: string;
+    buildingNameAr: string;
+    buildingNameFr: string;
+    buildingStatus: string;
+    floors: string;
+    floorNumber: string;
+    floorNameAr: string;
+    floorNameFr: string;
+    addFloor: string;
+    noFloors: string;
+    units: string;
+    unitNumber: string;
+    unitType: string;
+    unitStatus: string;
+    addUnit: string;
+    noUnits: string;
+    grossArea: string;
+    netArea: string;
+    roomsCount: string;
     editButton: string;
     modalCreateTitle: string;
     modalEditTitle: string;
@@ -311,6 +334,29 @@ const AR: TranslationBundle = {
     tableBudget: 'الميزانية التقديرية',
     tableMembers: 'الأعضاء المصرح لهم',
     manageAccess: 'صلاحيات المشروع',
+    structureButton: 'العمارات والوحدات',
+    structureTitle: 'الهيكل العقاري للمشروع',
+    structureEmpty: 'لم تتم إضافة أي عمارات لهذا المشروع بعد.',
+    createBuilding: 'إضافة عمارة',
+    buildingCode: 'رمز العمارة',
+    buildingNameAr: 'اسم العمارة بالعربية',
+    buildingNameFr: 'اسم العمارة بالفرنسية',
+    buildingStatus: 'حالة العمارة',
+    floors: 'الطوابق',
+    floorNumber: 'رقم الطابق',
+    floorNameAr: 'اسم الطابق بالعربية',
+    floorNameFr: 'اسم الطابق بالفرنسية',
+    addFloor: 'إضافة طابق',
+    noFloors: 'لا توجد طوابق مسجلة لهذه العمارة.',
+    units: 'الوحدات العقارية',
+    unitNumber: 'رقم الوحدة',
+    unitType: 'نوع الوحدة',
+    unitStatus: 'حالة الوحدة',
+    addUnit: 'إضافة وحدة',
+    noUnits: 'لا توجد وحدات مسجلة لهذا الطابق.',
+    grossArea: 'المساحة الإجمالية (م²)',
+    netArea: 'المساحة الصافية (م²)',
+    roomsCount: 'عدد الغرف',
     editButton: 'تعديل البيانات',
     modalCreateTitle: 'إنشاء مشروع ترقية عقارية',
     modalEditTitle: 'تعديل بيانات المشروع العقاري',
@@ -493,6 +539,29 @@ const FR: TranslationBundle = {
     tableBudget: 'Budget estimatif',
     tableMembers: 'Membres autorisés',
     manageAccess: 'Accès projet',
+    structureButton: 'Bâtiments et unités',
+    structureTitle: 'Structure immobilière du projet',
+    structureEmpty: 'Aucun bâtiment n’a encore été ajouté à ce projet.',
+    createBuilding: 'Ajouter un bâtiment',
+    buildingCode: 'Code du bâtiment',
+    buildingNameAr: 'Nom du bâtiment en arabe',
+    buildingNameFr: 'Nom du bâtiment en français',
+    buildingStatus: 'Statut du bâtiment',
+    floors: 'Étages',
+    floorNumber: 'Numéro de l’étage',
+    floorNameAr: 'Nom de l’étage en arabe',
+    floorNameFr: 'Nom de l’étage en français',
+    addFloor: 'Ajouter un étage',
+    noFloors: 'Aucun étage enregistré pour ce bâtiment.',
+    units: 'Unités immobilières',
+    unitNumber: 'Numéro de l’unité',
+    unitType: 'Type d’unité',
+    unitStatus: 'Statut de l’unité',
+    addUnit: 'Ajouter une unité',
+    noUnits: 'Aucune unité enregistrée à cet étage.',
+    grossArea: 'Surface brute (m²)',
+    netArea: 'Surface nette (m²)',
+    roomsCount: 'Nombre de pièces',
     editButton: 'Modifier',
     modalCreateTitle: 'Créer un projet immobilier',
     modalEditTitle: 'Modifier les données du projet immobilier',

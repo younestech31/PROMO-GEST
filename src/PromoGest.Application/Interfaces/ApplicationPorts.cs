@@ -69,9 +69,10 @@ public interface IProjectStructureRepository
     Task<IReadOnlyList<PropertyUnit>> ListUnitsByProjectAsync(Guid projectId, CancellationToken ct = default);
     Task<Building?> GetBuildingAsync(Guid buildingId, CancellationToken ct = default);
     Task<BuildingFloor?> GetFloorAsync(Guid floorId, CancellationToken ct = default);
-    Task<bool> ExistsBuildingCodeAsync(Guid projectId, string normalizedCode, CancellationToken ct = default);
-    Task<bool> ExistsFloorNumberAsync(Guid buildingId, int floorNumber, CancellationToken ct = default);
-    Task<bool> ExistsUnitNumberAsync(Guid floorId, string normalizedUnitNumber, CancellationToken ct = default);
+    Task<PropertyUnit?> GetUnitAsync(Guid unitId, CancellationToken ct = default);
+    Task<bool> ExistsBuildingCodeAsync(Guid projectId, string normalizedCode, Guid? excludeBuildingId = null, CancellationToken ct = default);
+    Task<bool> ExistsFloorNumberAsync(Guid buildingId, int floorNumber, Guid? excludeFloorId = null, CancellationToken ct = default);
+    Task<bool> ExistsUnitNumberAsync(Guid floorId, string normalizedUnitNumber, Guid? excludeUnitId = null, CancellationToken ct = default);
     Task AddBuildingAsync(Building building, CancellationToken ct = default);
     Task AddFloorAsync(BuildingFloor floor, CancellationToken ct = default);
     Task AddPropertyUnitAsync(PropertyUnit unit, CancellationToken ct = default);

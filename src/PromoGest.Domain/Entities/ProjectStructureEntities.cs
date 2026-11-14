@@ -144,6 +144,29 @@ public sealed class BuildingFloor : BaseEntity
         };
     }
 
+    public void UpdateDetails(
+        int floorNumber,
+        string nameAr,
+        string nameFr,
+        DateTimeOffset nowUtc)
+    {
+        if (floorNumber is < -10 or > 200)
+            throw new DomainException("FLOOR_NUMBER_INVALID", "Floor number must be between -10 and 200.");
+
+        if (string.IsNullOrWhiteSpace(nameAr) && string.IsNullOrWhiteSpace(nameFr))
+            throw new DomainException("FLOOR_NAME_REQUIRED", "Floor name in Arabic or French is required.");
+
+        var effectiveAr = string.IsNullOrWhiteSpace(nameAr) ? nameFr.Trim() : nameAr.Trim();
+        var effectiveFr = string.IsNullOrWhiteSpace(nameFr) ? nameAr.Trim() : nameFr.Trim();
+        EnsureLength(effectiveAr, 100, "FLOOR_NAME_TOO_LONG");
+        EnsureLength(effectiveFr, 100, "FLOOR_NAME_TOO_LONG");
+
+        FloorNumber = floorNumber;
+        NameAr = effectiveAr;
+        NameFr = effectiveFr;
+        Touch(nowUtc);
+    }
+
     private static void EnsureLength(string value, int maximumLength, string errorCode)
     {
         if (value.Length > maximumLength)

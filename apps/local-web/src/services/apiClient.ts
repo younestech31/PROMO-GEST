@@ -1,5 +1,6 @@
 import type {
   ApiErrorResponse,
+  ProjectDocumentDto,
   AssignProjectMemberRequest,
   AuditLogDto,
   CreateEmployeeRequest,
@@ -126,7 +127,7 @@ async function requestJson<T>(url: string, init?: RequestInit): Promise<T> {
       ...init,
       credentials: 'include',
       headers: {
-        'Content-Type': 'application/json',
+        ...(typeof FormData !== 'undefined' && init?.body instanceof FormData ? {} : { 'Content-Type': 'application/json' }),
         ...previewHeaders,
         ...csrfHeaders,
         ...(init?.headers ?? {}),
@@ -187,6 +188,42 @@ async function requestJson<T>(url: string, init?: RequestInit): Promise<T> {
   }
 
   return (await response.json()) as T;
+}
+
+
+async function requestBlob(url: string): Promise<Blob> {
+  let response: Response;
+  try {
+    const previewHeaders: Record<string, string> = {};
+    if (previewSessionToken) {
+      previewHeaders.Authorization = `Bearer ${previewSessionToken}`;
+    }
+    response = await fetch(url, {
+      method: 'GET',
+      credentials: 'include',
+      headers: previewHeaders,
+      cache: 'no-store',
+    });
+  } catch (err) {
+    throw new ApiConnectionError(err instanceof Error ? err.message : 'Local server unreachable');
+  }
+
+  syncCsrfCacheFromResponse(response, false);
+  if (!response.ok) {
+    const contentType = response.headers.get('content-type') ?? '';
+    if (contentType.includes('application/json')) {
+      const payload = (await response.json()) as ApiErrorResponse;
+      throw new ApiError(
+        response.status,
+        payload.code ?? `HTTP_${response.status}`,
+        payload.message ?? `Request failed with status ${response.status}`,
+        payload.validationErrors
+      );
+    }
+    throw new ApiError(response.status, `HTTP_${response.status}`, `Document download failed with status ${response.status}.`);
+  }
+
+  return response.blob();
 }
 
 export const apiClient = {
@@ -257,6 +294,18 @@ export const apiClient = {
       method: 'PUT',
       body: JSON.stringify(payload),
     }),
+
+  listProjectDocuments: (projectId: string) =>
+    requestJson<ProjectDocumentDto[]>(`/api/projects/${encodeURIComponent(projectId)}/documents`, { method: 'GET' }),
+
+  uploadProjectDocument: (projectId: string, form: FormData) =>
+    requestJson<ProjectDocumentDto>(`/api/projects/${encodeURIComponent(projectId)}/documents`, {
+      method: 'POST',
+      body: form,
+    }),
+
+  downloadProjectDocument: (projectId: string, fileId: string) =>
+    requestBlob(`/api/projects/${encodeURIComponent(projectId)}/documents/${encodeURIComponent(fileId)}/download`),
 
   getProjectStructure: (projectId: string) =>
     requestJson<ProjectStructureDto>(`/api/projects/${encodeURIComponent(projectId)}/structure`, {

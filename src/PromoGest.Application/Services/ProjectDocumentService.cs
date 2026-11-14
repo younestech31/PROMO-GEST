@@ -240,6 +240,32 @@ public sealed class ProjectDocumentService
         if (!actor.IsActive)
             throw new ForbiddenDomainException("AUTH_ACCOUNT_INACTIVE", "Account is inactive.");
 
+        if (!actor.IsSystemAdministrator)
+        {
+            var accessMembership = await _projectRepository.GetMemberAsync(projectId, actorUserId, ct);
+            if (accessMembership is null)
+            {
+                await _auditWriter.WriteAsync(
+                    AuditLog.Record(
+                        _clock.UtcNow,
+                        actor.Id,
+                        actor.Username,
+                        "ACCESS_DENIED",
+                        AuditSeverity.Security,
+                        "Project",
+                        projectId.ToString(),
+                        $"Unauthorized project-document {(canWrite ? "upload" : "read")} attempt by '{actor.Username}'.",
+                        JsonSerializer.Serialize(new { projectId, operation = canWrite ? "write" : "read" }),
+                        metadata.IpAddress,
+                        metadata.UserAgent),
+                    ct);
+                await _documentRepository.SaveChangesAsync(ct);
+                throw new ForbiddenDomainException(
+                    canWrite ? "FORBIDDEN_PROJECT_DOCUMENT_WRITE" : "PROJECT_DOCUMENT_ACCESS_DENIED",
+                    "You do not have permission to access documents for this project.");
+            }
+        }
+
         var project = await _projectRepository.GetByIdWithMembersAsync(projectId, ct)
             ?? throw new NotFoundDomainException("PROJECT_NOT_FOUND", "Project not found.");
 

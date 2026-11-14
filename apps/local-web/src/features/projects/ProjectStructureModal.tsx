@@ -124,22 +124,34 @@ export function ProjectStructureModal({
 
   const handleCreateBuilding = async (event: FormEvent) => {
     event.preventDefault();
+    if (!canManage) return;
     setError(null);
     setSubmitting(true);
     try {
-      const result = await apiClient.createProjectBuilding(project.id, buildingForm);
+      const result = editingBuildingId
+        ? await apiClient.updateProjectBuilding(project.id, editingBuildingId, buildingForm)
+        : await apiClient.createProjectBuilding(project.id, buildingForm);
       setStructure(result);
-      const created = result.buildings.find(
-        (building) => building.code === buildingForm.code.trim().toUpperCase()
-      );
-      if (created) {
-        setSelectedBuildingId(created.id);
-        setSelectedFloorId(null);
+
+      if (!editingBuildingId) {
+        const created = result.buildings.find(
+          (building) => building.code === buildingForm.code.trim().toUpperCase()
+        );
+        if (created) {
+          setSelectedBuildingId(created.id);
+          setSelectedFloorId(null);
+        }
       }
+
       setBuildingForm({ code: '', nameAr: '', nameFr: '', status: 'Planned' });
+      setEditingBuildingId(null);
       setShowBuildingForm(false);
     } catch (err) {
-      showMutationError(err, 'فشل إضافة العمارة.', 'Échec de l’ajout du bâtiment.');
+      showMutationError(
+        err,
+        editingBuildingId ? 'فشل تعديل بيانات العمارة.' : 'فشل إضافة العمارة.',
+        editingBuildingId ? 'Échec de la modification du bâtiment.' : 'Échec de l’ajout du bâtiment.'
+      );
     } finally {
       setSubmitting(false);
     }
@@ -147,27 +159,39 @@ export function ProjectStructureModal({
 
   const handleCreateFloor = async (event: FormEvent) => {
     event.preventDefault();
-    if (!selectedBuilding) return;
+    if (!canManage || !selectedBuilding) return;
     setError(null);
     setSubmitting(true);
     try {
-      const result = await apiClient.createBuildingFloor(
-        project.id,
-        selectedBuilding.id,
-        floorForm
-      );
+      const result = editingFloorId
+        ? await apiClient.updateBuildingFloor(
+            project.id,
+            selectedBuilding.id,
+            editingFloorId,
+            floorForm
+          )
+        : await apiClient.createBuildingFloor(project.id, selectedBuilding.id, floorForm);
       setStructure(result);
-      const updatedBuilding = result.buildings.find(
-        (building) => building.id === selectedBuilding.id
-      );
-      const createdFloor = updatedBuilding?.floors.find(
-        (floor) => floor.floorNumber === floorForm.floorNumber
-      );
-      if (createdFloor) setSelectedFloorId(createdFloor.id);
+
+      if (!editingFloorId) {
+        const updatedBuilding = result.buildings.find(
+          (building) => building.id === selectedBuilding.id
+        );
+        const createdFloor = updatedBuilding?.floors.find(
+          (floor) => floor.floorNumber === floorForm.floorNumber
+        );
+        if (createdFloor) setSelectedFloorId(createdFloor.id);
+      }
+
       setFloorForm({ floorNumber: 0, nameAr: '', nameFr: '' });
+      setEditingFloorId(null);
       setShowFloorForm(false);
     } catch (err) {
-      showMutationError(err, 'فشل إضافة الطابق.', 'Échec de l’ajout de l’étage.');
+      showMutationError(
+        err,
+        editingFloorId ? 'فشل تعديل بيانات الطابق.' : 'فشل إضافة الطابق.',
+        editingFloorId ? 'Échec de la modification de l’étage.' : 'Échec de l’ajout de l’étage.'
+      );
     } finally {
       setSubmitting(false);
     }
@@ -175,27 +199,36 @@ export function ProjectStructureModal({
 
   const handleCreateUnit = async (event: FormEvent) => {
     event.preventDefault();
-    if (!selectedBuilding || !selectedFloor) return;
+    if (!canManage || !selectedBuilding || !selectedFloor) return;
     setError(null);
     setSubmitting(true);
+    const payload = {
+      unitNumber: unitForm.unitNumber,
+      unitType: unitForm.unitType,
+      status: unitForm.status,
+      grossAreaSquareMeters: unitForm.grossAreaSquareMeters === ''
+        ? null
+        : Number(unitForm.grossAreaSquareMeters),
+      netAreaSquareMeters: unitForm.netAreaSquareMeters === ''
+        ? null
+        : Number(unitForm.netAreaSquareMeters),
+      roomsCount: unitForm.roomsCount === '' ? null : Number(unitForm.roomsCount),
+    };
     try {
-      const result = await apiClient.createFloorUnit(
-        project.id,
-        selectedBuilding.id,
-        selectedFloor.id,
-        {
-          unitNumber: unitForm.unitNumber,
-          unitType: unitForm.unitType,
-          status: unitForm.status,
-          grossAreaSquareMeters: unitForm.grossAreaSquareMeters === ''
-            ? null
-            : Number(unitForm.grossAreaSquareMeters),
-          netAreaSquareMeters: unitForm.netAreaSquareMeters === ''
-            ? null
-            : Number(unitForm.netAreaSquareMeters),
-          roomsCount: unitForm.roomsCount === '' ? null : Number(unitForm.roomsCount),
-        }
-      );
+      const result = editingUnitId
+        ? await apiClient.updateFloorUnit(
+            project.id,
+            selectedBuilding.id,
+            selectedFloor.id,
+            editingUnitId,
+            payload
+          )
+        : await apiClient.createFloorUnit(
+            project.id,
+            selectedBuilding.id,
+            selectedFloor.id,
+            payload
+          );
       setStructure(result);
       setUnitForm({
         unitNumber: '',
@@ -205,12 +238,66 @@ export function ProjectStructureModal({
         netAreaSquareMeters: '',
         roomsCount: '',
       });
+      setEditingUnitId(null);
       setShowUnitForm(false);
     } catch (err) {
-      showMutationError(err, 'فشل إضافة الوحدة العقارية.', 'Échec de l’ajout de l’unité immobilière.');
+      showMutationError(
+        err,
+        editingUnitId ? 'فشل تعديل بيانات الوحدة العقارية.' : 'فشل إضافة الوحدة العقارية.',
+        editingUnitId ? 'Échec de la modification de l’unité immobilière.' : 'Échec de l’ajout de l’unité immobilière.'
+      );
     } finally {
       setSubmitting(false);
     }
+  };
+
+  const openEditBuilding = (building: BuildingStructureDto) => {
+    setEditingBuildingId(building.id);
+    setBuildingForm({
+      code: building.code,
+      nameAr: building.nameAr,
+      nameFr: building.nameFr,
+      status: building.status,
+    });
+    setShowBuildingForm(true);
+    setShowFloorForm(false);
+    setShowUnitForm(false);
+    setEditingFloorId(null);
+    setEditingUnitId(null);
+    setError(null);
+  };
+
+  const openEditFloor = (floor: BuildingFloorDto) => {
+    setEditingFloorId(floor.id);
+    setFloorForm({
+      floorNumber: floor.floorNumber,
+      nameAr: floor.nameAr,
+      nameFr: floor.nameFr,
+    });
+    setShowFloorForm(true);
+    setShowBuildingForm(false);
+    setShowUnitForm(false);
+    setEditingBuildingId(null);
+    setEditingUnitId(null);
+    setError(null);
+  };
+
+  const openEditUnit = (unit: PropertyUnitDto) => {
+    setEditingUnitId(unit.id);
+    setUnitForm({
+      unitNumber: unit.unitNumber,
+      unitType: unit.unitType,
+      status: unit.status,
+      grossAreaSquareMeters: unit.grossAreaSquareMeters?.toString() ?? '',
+      netAreaSquareMeters: unit.netAreaSquareMeters?.toString() ?? '',
+      roomsCount: unit.roomsCount?.toString() ?? '',
+    });
+    setShowUnitForm(true);
+    setShowBuildingForm(false);
+    setShowFloorForm(false);
+    setEditingBuildingId(null);
+    setEditingFloorId(null);
+    setError(null);
   };
 
   const statusLabel = (code: string) => {

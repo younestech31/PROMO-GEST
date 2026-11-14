@@ -60,6 +60,7 @@ export function ProjectDocumentsModal({
   const [downloadingId, setDownloadingId] = useState<string | null>(null);
 
   const loadDocuments = useCallback(async () => {
+    setDocuments([]);
     setLoading(true);
     setError(null);
     try {

@@ -96,7 +96,7 @@ public sealed class ProjectStructureService
 
         var buildingCode = request.Code?.Trim() ?? string.Empty;
         var normalizedCode = buildingCode.ToUpperInvariant();
-        if (await _structureRepository.ExistsBuildingCodeAsync(projectId, normalizedCode, ct))
+        if (await _structureRepository.ExistsBuildingCodeAsync(projectId, normalizedCode, excludeBuildingId: null, ct))
             throw new ConflictDomainException("BUILDING_CODE_EXISTS", "A building with this code already exists in the project.");
 
         var nowUtc = _clock.UtcNow;
@@ -139,7 +139,7 @@ public sealed class ProjectStructureService
         if (building is null || building.ProjectId != projectId)
             throw new NotFoundDomainException("BUILDING_NOT_FOUND", "Building not found in this project.");
 
-        if (await _structureRepository.ExistsFloorNumberAsync(buildingId, request.FloorNumber, ct))
+        if (await _structureRepository.ExistsFloorNumberAsync(buildingId, request.FloorNumber, excludeFloorId: null, ct))
             throw new ConflictDomainException("FLOOR_NUMBER_EXISTS", "This floor number already exists in the building.");
 
         var nowUtc = _clock.UtcNow;
@@ -199,7 +199,7 @@ public sealed class ProjectStructureService
 
         var unitNumber = request.UnitNumber?.Trim() ?? string.Empty;
         var normalizedUnitNumber = unitNumber.ToUpperInvariant();
-        if (await _structureRepository.ExistsUnitNumberAsync(floorId, normalizedUnitNumber, ct))
+        if (await _structureRepository.ExistsUnitNumberAsync(floorId, normalizedUnitNumber, excludeUnitId: null, ct))
             throw new ConflictDomainException("UNIT_NUMBER_EXISTS", "A property unit with this number already exists on the floor.");
 
         var nowUtc = _clock.UtcNow;
@@ -222,6 +222,165 @@ public sealed class ProjectStructureService
             "PropertyUnit",
             unit.Id.ToString(),
             $"Created property unit '{unit.UnitNumber}' ({unitType}) on floor {floor.FloorNumber}, building '{building.Code}', project '{actorAndProject.Project.Code}'.",
+            metadata,
+            ct);
+        await _structureRepository.SaveChangesAsync(ct);
+
+        return await GetProjectStructureAsync(actorUserId, projectId, metadata, ct);
+    }
+
+    public async Task<ProjectStructureDto> UpdateBuildingAsync(
+        Guid actorUserId,
+        Guid projectId,
+        Guid buildingId,
+        UpdateBuildingRequest request,
+        RequestMetadata metadata,
+        CancellationToken ct = default)
+    {
+        var actorAndProject = await RequireActorAndProjectAsync(
+            actorUserId, projectId, canManage: true, metadata, ct);
+
+        var building = await _structureRepository.GetBuildingAsync(buildingId, ct);
+        if (building is null || building.ProjectId != projectId)
+            throw new NotFoundDomainException("BUILDING_NOT_FOUND", "Building not found in this project.");
+
+        if (!Enum.TryParse<BuildingStatus>(request.Status, ignoreCase: true, out var status) ||
+            !Enum.IsDefined(status))
+        {
+            throw new DomainException("BUILDING_STATUS_INVALID", "A valid building status is required.");
+        }
+
+        var normalizedCode = request.Code?.Trim().ToUpperInvariant() ?? string.Empty;
+        if (await _structureRepository.ExistsBuildingCodeAsync(
+            projectId, normalizedCode, excludeBuildingId: buildingId, ct))
+        {
+            throw new ConflictDomainException(
+                "BUILDING_CODE_EXISTS",
+                "A building with this code already exists in the project.");
+        }
+
+        var nowUtc = _clock.UtcNow;
+        building.UpdateDetails(request.Code, request.NameAr, request.NameFr, status, nowUtc);
+        await WriteAuditAsync(
+            actorAndProject.Actor,
+            nowUtc,
+            "BUILDING_UPDATED",
+            "Building",
+            building.Id.ToString(),
+            $"Updated building '{building.Code}' in project '{actorAndProject.Project.Code}'.",
+            metadata,
+            ct);
+        await _structureRepository.SaveChangesAsync(ct);
+
+        return await GetProjectStructureAsync(actorUserId, projectId, metadata, ct);
+    }
+
+    public async Task<ProjectStructureDto> UpdateFloorAsync(
+        Guid actorUserId,
+        Guid projectId,
+        Guid buildingId,
+        Guid floorId,
+        UpdateBuildingFloorRequest request,
+        RequestMetadata metadata,
+        CancellationToken ct = default)
+    {
+        var actorAndProject = await RequireActorAndProjectAsync(
+            actorUserId, projectId, canManage: true, metadata, ct);
+
+        var building = await _structureRepository.GetBuildingAsync(buildingId, ct);
+        if (building is null || building.ProjectId != projectId)
+            throw new NotFoundDomainException("BUILDING_NOT_FOUND", "Building not found in this project.");
+
+        var floor = await _structureRepository.GetFloorAsync(floorId, ct);
+        if (floor is null || floor.BuildingId != buildingId)
+            throw new NotFoundDomainException("FLOOR_NOT_FOUND", "Floor not found in this building.");
+
+        if (await _structureRepository.ExistsFloorNumberAsync(
+            buildingId, request.FloorNumber, excludeFloorId: floorId, ct))
+        {
+            throw new ConflictDomainException(
+                "FLOOR_NUMBER_EXISTS",
+                "This floor number already exists in the building.");
+        }
+
+        var nowUtc = _clock.UtcNow;
+        floor.UpdateDetails(request.FloorNumber, request.NameAr, request.NameFr, nowUtc);
+        await WriteAuditAsync(
+            actorAndProject.Actor,
+            nowUtc,
+            "BUILDING_FLOOR_UPDATED",
+            "BuildingFloor",
+            floor.Id.ToString(),
+            $"Updated floor {floor.FloorNumber} in building '{building.Code}' of project '{actorAndProject.Project.Code}'.",
+            metadata,
+            ct);
+        await _structureRepository.SaveChangesAsync(ct);
+
+        return await GetProjectStructureAsync(actorUserId, projectId, metadata, ct);
+    }
+
+    public async Task<ProjectStructureDto> UpdatePropertyUnitAsync(
+        Guid actorUserId,
+        Guid projectId,
+        Guid buildingId,
+        Guid floorId,
+        Guid unitId,
+        UpdatePropertyUnitRequest request,
+        RequestMetadata metadata,
+        CancellationToken ct = default)
+    {
+        var actorAndProject = await RequireActorAndProjectAsync(
+            actorUserId, projectId, canManage: true, metadata, ct);
+
+        var building = await _structureRepository.GetBuildingAsync(buildingId, ct);
+        if (building is null || building.ProjectId != projectId)
+            throw new NotFoundDomainException("BUILDING_NOT_FOUND", "Building not found in this project.");
+
+        var floor = await _structureRepository.GetFloorAsync(floorId, ct);
+        if (floor is null || floor.BuildingId != buildingId)
+            throw new NotFoundDomainException("FLOOR_NOT_FOUND", "Floor not found in this building.");
+
+        var unit = await _structureRepository.GetUnitAsync(unitId, ct);
+        if (unit is null || unit.FloorId != floorId)
+            throw new NotFoundDomainException("UNIT_NOT_FOUND", "Property unit not found on this floor.");
+
+        if (!Enum.TryParse<PropertyUnitType>(request.UnitType, ignoreCase: true, out var unitType) ||
+            !Enum.IsDefined(unitType))
+        {
+            throw new DomainException("UNIT_TYPE_INVALID", "A valid property unit type is required.");
+        }
+
+        if (!Enum.TryParse<PropertyUnitStatus>(request.Status, ignoreCase: true, out var status) ||
+            !Enum.IsDefined(status))
+        {
+            throw new DomainException("UNIT_STATUS_INVALID", "A valid property unit status is required.");
+        }
+
+        var normalizedUnitNumber = request.UnitNumber?.Trim().ToUpperInvariant() ?? string.Empty;
+        if (await _structureRepository.ExistsUnitNumberAsync(
+            floorId, normalizedUnitNumber, excludeUnitId: unitId, ct))
+        {
+            throw new ConflictDomainException(
+                "UNIT_NUMBER_EXISTS",
+                "A property unit with this number already exists on the floor.");
+        }
+
+        var nowUtc = _clock.UtcNow;
+        unit.UpdateDetails(
+            request.UnitNumber,
+            unitType,
+            status,
+            request.GrossAreaSquareMeters,
+            request.NetAreaSquareMeters,
+            request.RoomsCount,
+            nowUtc);
+        await WriteAuditAsync(
+            actorAndProject.Actor,
+            nowUtc,
+            "PROPERTY_UNIT_UPDATED",
+            "PropertyUnit",
+            unit.Id.ToString(),
+            $"Updated property unit '{unit.UnitNumber}' in building '{building.Code}', project '{actorAndProject.Project.Code}'.",
             metadata,
             ct);
         await _structureRepository.SaveChangesAsync(ct);

@@ -279,7 +279,8 @@ public sealed class ProjectSalesReservationService
             membership is not null ||
             permissions.Contains("projects.manage", StringComparer.OrdinalIgnoreCase);
         var canRead = actor.IsSystemAdministrator ||
-            permissions.Contains("sales.reservations.read", StringComparer.OrdinalIgnoreCase);
+            (permissions.Contains("sales.reservations.read", StringComparer.OrdinalIgnoreCase) &&
+             permissions.Contains("customers.read", StringComparer.OrdinalIgnoreCase));
         var hasSalesManagement = actor.IsSystemAdministrator ||
             permissions.Contains("sales.reservations.manage", StringComparer.OrdinalIgnoreCase);
         var canManageSalesInProject = actor.IsSystemAdministrator ||

@@ -31,7 +31,7 @@ jobs:
         run: |
           dotnet ef migrations add CustomerModelSnapshotReconciliation \
             --project src/PromoGest.Infrastructure/PromoGest.Infrastructure.csproj \
-            --startup-project src/PromoGest.Api/PromoGest.Api.csproj \
+            --startup-project src/PromoGest.Infrastructure/PromoGest.Infrastructure.csproj \
             --context AppDbContext \
             --output-dir Persistence/Migrations
 
@@ -39,7 +39,7 @@ jobs:
         run: |
           dotnet ef migrations has-pending-model-changes \
             --project src/PromoGest.Infrastructure/PromoGest.Infrastructure.csproj \
-            --startup-project src/PromoGest.Api/PromoGest.Api.csproj \
+            --startup-project src/PromoGest.Infrastructure/PromoGest.Infrastructure.csproj \
             --context AppDbContext
 
       - name: Commit the generated migration and authoritative model snapshot

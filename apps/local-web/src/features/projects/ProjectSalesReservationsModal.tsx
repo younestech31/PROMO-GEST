@@ -1,4 +1,4 @@
-import { useEffect, useState, type FormEvent } from 'react';
+import { useCallback, useEffect, useState, type FormEvent } from 'react';
 import { CalendarClock, CheckCircle2, LoaderCircle, Plus, X } from 'lucide-react';
 import type {
   AppLanguage,
@@ -68,7 +68,7 @@ export function ProjectSalesReservationsModal({
   const [cancelTarget, setCancelTarget] = useState<ProjectSalesReservationDto | null>(null);
   const [cancelReason, setCancelReason] = useState('');
 
-  const loadData = async () => {
+  const loadData = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
@@ -100,12 +100,11 @@ export function ProjectSalesReservationsModal({
     } finally {
       setLoading(false);
     }
-  };
+  }, [project.id, canManage, language]);
 
   useEffect(() => {
     void loadData();
-    // The project and permission scope define this modal's data lifetime.
-  }, [project.id, canManage]);
+  }, [loadData]);
 
   const submitReservation = async (event: FormEvent) => {
     event.preventDefault();
@@ -207,7 +206,6 @@ export function ProjectSalesReservationsModal({
                   className={fieldClass}
                   type="datetime-local"
                   required
-                  min={defaultExpiryLocal().slice(0, 0)}
                   value={expiresAtLocal}
                   onChange={(event) => setExpiresAtLocal(event.target.value)}
                 />

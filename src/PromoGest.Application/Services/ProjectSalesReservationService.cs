@@ -275,21 +275,18 @@ public sealed class ProjectSalesReservationService
             ? Array.Empty<string>()
             : await _userRepository.GetEffectivePermissionsAsync(actorUserId, ct);
 
-        var hasProjectScope = actor.IsSystemAdministrator ||
-            membership is not null ||
-            permissions.Contains("projects.manage", StringComparer.OrdinalIgnoreCase);
+        var hasProjectMembership = membership is not null;
         var canRead = actor.IsSystemAdministrator ||
             (permissions.Contains("sales.reservations.read", StringComparer.OrdinalIgnoreCase) &&
              permissions.Contains("customers.read", StringComparer.OrdinalIgnoreCase));
         var hasSalesManagement = actor.IsSystemAdministrator ||
             permissions.Contains("sales.reservations.manage", StringComparer.OrdinalIgnoreCase);
-        var canManageSalesInProject = actor.IsSystemAdministrator ||
-            permissions.Contains("projects.manage", StringComparer.OrdinalIgnoreCase) ||
-            membership?.CanManageSales == true ||
-            membership?.RoleInProject == ProjectRole.ProjectManager;
+        var canManageSalesInProject = membership is not null &&
+            (membership.CanManageSales || membership.RoleInProject == ProjectRole.ProjectManager);
 
-        var allowed = hasProjectScope && canRead &&
-            (!canWrite || (hasSalesManagement && canManageSalesInProject));
+        var allowed = (actor.IsSystemAdministrator || hasProjectMembership) && canRead &&
+            (!canWrite || (hasSalesManagement &&
+                (actor.IsSystemAdministrator || canManageSalesInProject)));
         if (!allowed)
         {
             await WriteAuditAsync(

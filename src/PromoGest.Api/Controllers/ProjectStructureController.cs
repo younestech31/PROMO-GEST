@@ -63,6 +63,31 @@ public sealed class ProjectStructureController : ControllerBase
         return Ok(structure);
     }
 
+    [HttpPut("buildings/{buildingId:guid}")]
+    public async Task<ActionResult<ProjectStructureDto>> UpdateBuilding(
+        Guid projectId,
+        Guid buildingId,
+        [FromBody] UpdateBuildingRequest request,
+        CancellationToken ct)
+    {
+        var structure = await _structureService.UpdateBuildingAsync(
+            GetActorUserId(), projectId, buildingId, request, GetMetadata(), ct);
+        return Ok(structure);
+    }
+
+    [HttpPut("buildings/{buildingId:guid}/floors/{floorId:guid}")]
+    public async Task<ActionResult<ProjectStructureDto>> UpdateFloor(
+        Guid projectId,
+        Guid buildingId,
+        Guid floorId,
+        [FromBody] UpdateBuildingFloorRequest request,
+        CancellationToken ct)
+    {
+        var structure = await _structureService.UpdateFloorAsync(
+            GetActorUserId(), projectId, buildingId, floorId, request, GetMetadata(), ct);
+        return Ok(structure);
+    }
+
     [HttpPut("buildings/{buildingId:guid}/floors/{floorId:guid}/units/{unitId:guid}")]
     public async Task<ActionResult<ProjectStructureDto>> UpdatePropertyUnit(
         Guid projectId,

@@ -52,3 +52,22 @@ public sealed record CreatePropertyUnitRequest(
     decimal? GrossAreaSquareMeters,
     decimal? NetAreaSquareMeters,
     int? RoomsCount);
+
+public sealed record UpdateBuildingRequest(
+    string Code,
+    string NameAr,
+    string NameFr,
+    string Status);
+
+public sealed record UpdateBuildingFloorRequest(
+    int FloorNumber,
+    string NameAr,
+    string NameFr);
+
+public sealed record UpdatePropertyUnitRequest(
+    string UnitNumber,
+    string UnitType,
+    string Status,
+    decimal? GrossAreaSquareMeters,
+    decimal? NetAreaSquareMeters,
+    int? RoomsCount);

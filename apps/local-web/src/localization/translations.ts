@@ -929,6 +929,34 @@ const API_ERROR_MESSAGES: Record<string, { ar: string; fr: string }> = {
     ar: 'وثيقة الهوية المحددة لا تنتمي إلى هذا المشروع أو لم تعد موجودة.',
     fr: 'Le document d’identité sélectionné n’appartient pas à ce projet ou n’existe plus.',
   },
+  CUSTOMER_CONTACT_TOO_LONG: {
+    ar: 'اسم الشخص المسؤول عن الاتصال يجب ألا يتجاوز 150 حرفاً.',
+    fr: 'Le nom de la personne à contacter ne doit pas dépasser 150 caractères.',
+  },
+  CUSTOMER_ADDRESS_TOO_LONG: {
+    ar: 'عنوان الزبون يجب ألا يتجاوز 300 حرف.',
+    fr: 'L’adresse du client ne doit pas dépasser 300 caractères.',
+  },
+  CUSTOMER_LANGUAGE_INVALID: {
+    ar: 'اللغة المفضلة يجب أن تكون العربية أو الفرنسية.',
+    fr: 'La langue préférée doit être l’arabe ou le français.',
+  },
+  CUSTOMER_NOT_FOUND: {
+    ar: 'سجل الزبون غير موجود ضمن هذا المشروع.',
+    fr: 'Le dossier client est introuvable dans ce projet.',
+  },
+  CUSTOMER_INTERACTION_REFERENCE_INVALID: {
+    ar: 'مرجع الزبون أو الموظف غير صالح.',
+    fr: 'La référence du client ou de l’employé est invalide.',
+  },
+  CUSTOMER_INTERACTION_SUBJECT_TOO_LONG: {
+    ar: 'موضوع الاتصال يجب ألا يتجاوز 120 حرفاً.',
+    fr: 'L’objet de la communication ne doit pas dépasser 120 caractères.',
+  },
+  CUSTOMER_INTERACTION_SUMMARY_TOO_LONG: {
+    ar: 'ملخص الاتصال يجب ألا يتجاوز 1500 حرف.',
+    fr: 'Le résumé de la communication ne doit pas dépasser 1 500 caractères.',
+  },
   CUSTOMER_INTERACTION_TYPE_INVALID: {
     ar: 'نوع الاتصال غير صالح.',
     fr: 'Le type de communication est invalide.',

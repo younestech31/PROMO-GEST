@@ -175,13 +175,13 @@ public sealed class ProjectService
         CancellationToken ct = default)
     {
         var actor = await RequireActiveActorAsync(actorUserId, "UpdateProject", metadata, ct);
-        var project = await _projectRepository.GetByIdWithMembersAsync(projectId, ct)
-            ?? throw new NotFoundDomainException("PROJECT_NOT_FOUND", "Project not found.");
 
+        // Check the membership relation before loading the project itself. A non-member
+        // receives the same 403 for unknown and known project identifiers.
         if (!actor.IsSystemAdministrator)
         {
             var permissions = await _userRepository.GetEffectivePermissionsAsync(actorUserId, ct);
-            var membership = project.Members.FirstOrDefault(member => member.UserId == actorUserId);
+            var membership = await _projectRepository.GetMemberAsync(projectId, actorUserId, ct);
             var canManageProject = permissions.Contains("projects.manage", StringComparer.OrdinalIgnoreCase) &&
                 membership?.RoleInProject == ProjectRole.ProjectManager;
 
@@ -198,6 +198,9 @@ public sealed class ProjectService
                     "You must be an explicitly assigned Project Manager to update this project's master data.");
             }
         }
+
+        var project = await _projectRepository.GetByIdWithMembersAsync(projectId, ct)
+            ?? throw new NotFoundDomainException("PROJECT_NOT_FOUND", "Project not found.");
 
         if (!Enum.TryParse<ProjectStatus>(request.Status, ignoreCase: true, out var parsedStatus) ||
             !Enum.IsDefined(parsedStatus))

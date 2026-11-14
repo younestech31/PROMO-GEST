@@ -104,8 +104,11 @@ public sealed class ProjectService
         if (await _projectRepository.ExistsCodeAsync(normalizedCode, ct))
             throw new ConflictDomainException("PROJECT_CODE_EXISTS", "A project with this code already exists.");
 
-        if (!Enum.TryParse<ProjectStatus>(request.Status, ignoreCase: true, out var parsedStatus))
-            parsedStatus = ProjectStatus.Planning;
+        if (!Enum.TryParse<ProjectStatus>(request.Status, ignoreCase: true, out var parsedStatus) ||
+            !Enum.IsDefined(parsedStatus))
+        {
+            throw new DomainException("PROJECT_STATUS_INVALID", "A valid project status is required.");
+        }
 
         var nowUtc = _clock.UtcNow;
         var project = Project.Create(
@@ -126,7 +129,24 @@ public sealed class ProjectService
             actor.Id,
             nowUtc);
 
+        ProjectMember? creatorMembership = null;
+        if (!actor.IsSystemAdministrator)
+        {
+            creatorMembership = project.AssignMember(
+                actor.Id,
+                ProjectRole.ProjectManager,
+                canViewFinancials: true,
+                canManageSales: true,
+                canManageConstruction: true,
+                canManageDocuments: true,
+                assignedByUserId: actor.Id,
+                nowUtc);
+        }
+
         await _projectRepository.AddProjectAsync(project, ct);
+        if (creatorMembership is not null)
+            await _projectRepository.AddMemberAsync(creatorMembership, ct);
+
         await _auditWriter.WriteAsync(
             AuditLog.Record(
                 nowUtc,
@@ -155,23 +175,29 @@ public sealed class ProjectService
         CancellationToken ct = default)
     {
         var actor = await RequireActiveActorAsync(actorUserId, "UpdateProject", metadata, ct);
-        var permissions = await _userRepository.GetEffectivePermissionsAsync(actorUserId, ct);
-        if (!actor.IsSystemAdministrator &&
-            !permissions.Contains("projects.manage", StringComparer.OrdinalIgnoreCase))
-        {
-            await RecordAccessDeniedAsync(
-                actor,
-                projectId,
-                $"Unauthorized project update attempt by '{actor.Username}' on project ID '{projectId}'.",
-                metadata,
-                ct);
-            throw new ForbiddenDomainException(
-                "FORBIDDEN_PROJECT_UPDATE",
-                "You do not have permission to update project details.");
-        }
-
         var project = await _projectRepository.GetByIdWithMembersAsync(projectId, ct)
             ?? throw new NotFoundDomainException("PROJECT_NOT_FOUND", "Project not found.");
+
+        if (!actor.IsSystemAdministrator)
+        {
+            var permissions = await _userRepository.GetEffectivePermissionsAsync(actorUserId, ct);
+            var membership = project.Members.FirstOrDefault(member => member.UserId == actorUserId);
+            var canManageProject = permissions.Contains("projects.manage", StringComparer.OrdinalIgnoreCase) &&
+                membership?.RoleInProject == ProjectRole.ProjectManager;
+
+            if (!canManageProject)
+            {
+                await RecordAccessDeniedAsync(
+                    actor,
+                    projectId,
+                    $"Unauthorized project update attempt by '{actor.Username}' on project ID '{projectId}'.",
+                    metadata,
+                    ct);
+                throw new ForbiddenDomainException(
+                    "FORBIDDEN_PROJECT_UPDATE",
+                    "You must be an explicitly assigned Project Manager to update this project's master data.");
+            }
+        }
 
         if (!Enum.TryParse<ProjectStatus>(request.Status, ignoreCase: true, out var parsedStatus) ||
             !Enum.IsDefined(parsedStatus))
@@ -233,11 +259,24 @@ public sealed class ProjectService
         if (!targetUser.IsActive)
             throw new DomainException("USER_INACTIVE", "Cannot assign an inactive employee to a project.");
 
-        if (!Enum.TryParse<ProjectRole>(request.RoleInProject, ignoreCase: true, out var roleInProject))
+        if (!Enum.TryParse<ProjectRole>(request.RoleInProject, ignoreCase: true, out var roleInProject) ||
+            !Enum.IsDefined(roleInProject))
+        {
             throw new DomainException("PROJECT_ROLE_INVALID", "Invalid project role.");
+        }
+
+        var existingMembership = project.Members.FirstOrDefault(member => member.UserId == targetUser.Id);
+        if (existingMembership?.RoleInProject == ProjectRole.ProjectManager &&
+            roleInProject != ProjectRole.ProjectManager &&
+            project.Members.Count(member => member.RoleInProject == ProjectRole.ProjectManager) <= 1)
+        {
+            throw new ConflictDomainException(
+                "PROJECT_LAST_MANAGER_REQUIRED",
+                "Assign another Project Manager before changing the last Project Manager's role.");
+        }
 
         var nowUtc = _clock.UtcNow;
-        var isNewMembership = project.Members.All(member => member.UserId != targetUser.Id);
+        var isNewMembership = existingMembership is null;
         var membership = project.AssignMember(
             targetUser.Id,
             roleInProject,
@@ -285,6 +324,14 @@ public sealed class ProjectService
             ?? throw new NotFoundDomainException("PROJECT_NOT_FOUND", "Project not found.");
 
         var targetUser = await _userRepository.GetByIdWithRolesAsync(targetUserId, ct);
+        var targetMembership = project.Members.FirstOrDefault(member => member.UserId == targetUserId);
+        if (targetMembership?.RoleInProject == ProjectRole.ProjectManager &&
+            project.Members.Count(member => member.RoleInProject == ProjectRole.ProjectManager) <= 1)
+        {
+            throw new ConflictDomainException(
+                "PROJECT_LAST_MANAGER_REQUIRED",
+                "Assign another Project Manager before removing the last Project Manager.");
+        }
 
         var nowUtc = _clock.UtcNow;
         var removed = project.RemoveMember(targetUserId, nowUtc);
@@ -347,7 +394,7 @@ public sealed class ProjectService
 
         var permissions = await _userRepository.GetEffectivePermissionsAsync(actorUserId, ct);
         var membership = await _projectRepository.GetMemberAsync(projectId, actorUserId, ct);
-        if (!permissions.Contains("projects.access.manage", StringComparer.OrdinalIgnoreCase) &&
+        if (!permissions.Contains("projects.access.manage", StringComparer.OrdinalIgnoreCase) ||
             membership?.RoleInProject != ProjectRole.ProjectManager)
         {
             await RecordAccessDeniedAsync(

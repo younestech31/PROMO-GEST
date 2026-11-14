@@ -395,7 +395,8 @@ public sealed class PostgresEndToEndTests : IClassFixture<PostgreSql18Integratio
                 {
                     ["ConnectionStrings:DefaultConnection"] = connectionString,
                     ["Security:RequireHttpsCookies"] = "false",
-                    ["Storage:RootDirectory"] = Path.Combine(tempRoot, "storage")
+                    ["Storage:RootDirectory"] = Path.Combine(tempRoot, "storage"),
+                    ["Sales:ReservationExpiryWorkerEnabled"] = "false"
                 });
             });
             builder.ConfigureTestServices(services =>
@@ -1154,7 +1155,7 @@ public sealed class PostgresEndToEndTests : IClassFixture<PostgreSql18Integratio
                         DateTimeOffset.UtcNow.AddMinutes(-1)));
                 var expiryProcessor = expiryScope.ServiceProvider.GetRequiredService<ProjectSalesReservationExpiryProcessor>();
                 var processedCount = await expiryProcessor.ProcessDueAsync();
-                Assert.InRange(processedCount, 0, 1);
+                Assert.Equal(1, processedCount);
                 db.ChangeTracker.Clear();
                 var expiredReservation = await db.ProjectSalesReservations.SingleAsync(item => item.Id == expiringReservation.Id);
                 var expiredUnit = await db.PropertyUnits.SingleAsync(item => item.Id == reservationUnit.Id);

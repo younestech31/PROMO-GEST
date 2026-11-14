@@ -281,7 +281,7 @@ public sealed class ApplicationSecurityAndFoundationTests
         var setup = new SetupService(store, hasher, store, clock);
         var userSvc = new UserManagementService(store, store, hasher, store, clock);
         var projectSvc = new ProjectService(store, store, store, clock);
-        var structureSvc = new ProjectStructureService(store, store, store, clock);
+        var structureSvc = new ProjectStructureService(store, store, store, store, clock);
         var metadata = new RequestMetadata("127.0.0.1", "xUnit");
 
         var init = await setup.InitializeAsync(ValidInitRequest(), metadata);

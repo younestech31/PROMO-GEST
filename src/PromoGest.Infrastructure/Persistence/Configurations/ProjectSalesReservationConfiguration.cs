@@ -19,7 +19,7 @@ public sealed class ProjectSalesReservationConfiguration : IEntityTypeConfigurat
             table.HasCheckConstraint(
                 "ck_project_sales_reservations_closure",
                 "(status = 'Active' AND closed_at_utc IS NULL AND closed_by_user_id IS NULL AND close_reason IS NULL) OR " +
-                "(status = 'Cancelled' AND closed_at_utc IS NOT NULL AND closed_by_user_id IS NOT NULL AND length(btrim(close_reason)) > 0) OR " +
+                "(status = 'Cancelled' AND closed_at_utc IS NOT NULL AND closed_by_user_id IS NOT NULL AND close_reason IS NOT NULL AND length(btrim(close_reason)) > 0) OR " +
                 "(status = 'Expired' AND closed_at_utc IS NOT NULL AND closed_by_user_id IS NULL AND close_reason = 'EXPIRED')");
         });
 
@@ -53,6 +53,8 @@ public sealed class ProjectSalesReservationConfiguration : IEntityTypeConfigurat
             .HasDatabaseName("ix_project_sales_reservations_customer");
         builder.HasIndex(x => x.CreatedByUserId)
             .HasDatabaseName("ix_project_sales_reservations_created_by");
+        builder.HasIndex(x => x.ClosedByUserId)
+            .HasDatabaseName("ix_project_sales_reservations_closed_by");
 
         builder.HasOne<Project>()
             .WithMany()

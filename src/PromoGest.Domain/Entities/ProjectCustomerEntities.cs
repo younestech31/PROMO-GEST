@@ -140,7 +140,9 @@ public sealed class ProjectCustomer : BaseEntity
 
         var normalizedPhone = NormalizePhone(phone);
         var cleanedPhone = (phone ?? string.Empty).Trim();
-        if (cleanedPhone.Length > 40 || normalizedPhone.Length is < 7 or > 15)
+        if (cleanedPhone.Length > 40 ||
+            !Regex.IsMatch(cleanedPhone, @"^\+?[0-9().\s/-]+$") ||
+            normalizedPhone.Length is < 7 or > 15)
             throw new DomainException("CUSTOMER_PHONE_INVALID", "Enter a valid contact phone number containing 7 to 15 digits.");
 
         var cleanedContactPerson = string.IsNullOrWhiteSpace(contactPerson) ? null : NormalizeWhitespace(contactPerson);

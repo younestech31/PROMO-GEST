@@ -57,14 +57,27 @@ public sealed class Project : BaseEntity
             throw new DomainException("PROJECT_WILAYA_NAME_REQUIRED", "Wilaya name is required.");
         if (string.IsNullOrWhiteSpace(municipality))
             throw new DomainException("PROJECT_MUNICIPALITY_REQUIRED", "Municipality (Commune) is required.");
-        if (estimatedBudgetDzd < 0)
-            throw new DomainException("PROJECT_BUDGET_NEGATIVE", "Estimated budget in DZD cannot be negative.");
+        if (!Enum.IsDefined(status))
+            throw new DomainException("PROJECT_STATUS_INVALID", "A valid project status is required.");
+        if (estimatedBudgetDzd < 0 || estimatedBudgetDzd > 9_999_999_999_999_999.99m)
+            throw new DomainException("PROJECT_BUDGET_INVALID", "Estimated budget must fit the supported non-negative DZD range.");
         if (plannedBlocksCount < 0 || plannedUnitsCount < 0)
             throw new DomainException("PROJECT_COUNTS_NEGATIVE", "Planned blocks and units counts cannot be negative.");
+        if (createdByUserId == Guid.Empty)
+            throw new DomainException("PROJECT_CREATOR_REQUIRED", "Project creator is required.");
 
         var trimmedCode = code.Trim().ToUpperInvariant();
         var effectiveAr = string.IsNullOrWhiteSpace(nameAr) ? nameFr.Trim() : nameAr.Trim();
         var effectiveFr = string.IsNullOrWhiteSpace(nameFr) ? nameAr.Trim() : nameFr.Trim();
+        EnsureMaxLength(trimmedCode, 40, "PROJECT_CODE_TOO_LONG");
+        EnsureMaxLength(effectiveAr, 200, "PROJECT_NAME_TOO_LONG");
+        EnsureMaxLength(effectiveFr, 200, "PROJECT_NAME_TOO_LONG");
+        EnsureMaxLength(wilayaCode.Trim(), 4, "PROJECT_LOCATION_TOO_LONG");
+        EnsureMaxLength(wilayaName.Trim(), 100, "PROJECT_LOCATION_TOO_LONG");
+        EnsureMaxLength(municipality.Trim(), 120, "PROJECT_LOCATION_TOO_LONG");
+        EnsureMaxLength(address?.Trim(), 300, "PROJECT_ADDRESS_TOO_LONG");
+        EnsureMaxLength(landTitleReference?.Trim(), 120, "PROJECT_LAND_REFERENCE_TOO_LONG");
+        EnsureMaxLength(buildingPermitNumber?.Trim(), 120, "PROJECT_PERMIT_NUMBER_TOO_LONG");
 
         return new Project
         {
@@ -235,6 +248,11 @@ public sealed class ProjectMember : BaseEntity
         Guid assignedByUserId,
         DateTimeOffset nowUtc)
     {
+        if (projectId == Guid.Empty || userId == Guid.Empty || assignedByUserId == Guid.Empty)
+            throw new DomainException("PROJECT_MEMBER_ID_REQUIRED", "Project, employee and assigning user identifiers are required.");
+        if (!Enum.IsDefined(roleInProject))
+            throw new DomainException("PROJECT_ROLE_INVALID", "A valid project role is required.");
+
         return new ProjectMember
         {
             Id = Guid.NewGuid(),
@@ -261,6 +279,11 @@ public sealed class ProjectMember : BaseEntity
         Guid assignedByUserId,
         DateTimeOffset nowUtc)
     {
+        if (!Enum.IsDefined(roleInProject))
+            throw new DomainException("PROJECT_ROLE_INVALID", "A valid project role is required.");
+        if (assignedByUserId == Guid.Empty)
+            throw new DomainException("PROJECT_MEMBER_ASSIGNER_REQUIRED", "The assigning user is required.");
+
         RoleInProject = roleInProject;
         CanViewFinancials = canViewFinancials;
         CanManageSales = canManageSales;

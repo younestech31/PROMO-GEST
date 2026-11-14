@@ -70,3 +70,16 @@ public sealed record UpdatePropertyUnitRequest(
 public sealed record ChangePropertyUnitStatusRequest(
     string Status,
     Guid ExpectedConcurrencyStamp);
+
+public sealed record UpdateBuildingRequest(
+    string Code,
+    string NameAr,
+    string NameFr,
+    string Status,
+    Guid ExpectedConcurrencyStamp);
+
+public sealed record UpdateBuildingFloorRequest(
+    int FloorNumber,
+    string NameAr,
+    string NameFr,
+    Guid ExpectedConcurrencyStamp);

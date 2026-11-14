@@ -63,7 +63,7 @@ public sealed class ProjectDocumentsController : ControllerBase
 
         Response.Headers.CacheControl = "no-store, no-cache";
         Response.Headers.Pragma = "no-cache";
-        return PhysicalFile(download.FullPath, download.ContentType, download.FileName, enableRangeProcessing: false);
+        return File(download.Content, download.ContentType, download.FileName, enableRangeProcessing: false);
     }
 
     private Guid GetActorUserId()

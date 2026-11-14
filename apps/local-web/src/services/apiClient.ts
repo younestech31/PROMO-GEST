@@ -243,6 +243,12 @@ export const apiClient = {
       body: JSON.stringify(payload),
     }),
 
+  updateProject: (projectId: string, payload: UpdateProjectRequest) =>
+    requestJson<ProjectDto>(`/api/projects/${encodeURIComponent(projectId)}`, {
+      method: 'PUT',
+      body: JSON.stringify(payload),
+    }),
+
   assignProjectMember: (projectId: string, payload: AssignProjectMemberRequest) =>
     requestJson<ProjectDto>(`/api/projects/${encodeURIComponent(projectId)}/members`, {
       method: 'PUT',

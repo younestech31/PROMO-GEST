@@ -67,6 +67,17 @@ export const ALGERIAN_WILAYAS: readonly AlgerianWilaya[] = [
   { code: '56', nameAr: 'جانت', nameFr: 'Djanet' },
   { code: '57', nameAr: 'المغير', nameFr: 'El M\'Ghair' },
   { code: '58', nameAr: 'المنيعة', nameFr: 'El Meniaa' },
+  { code: '59', nameAr: 'أفلو', nameFr: 'Aflou' },
+  { code: '60', nameAr: 'بريكة', nameFr: 'Barika' },
+  { code: '61', nameAr: 'القنطرة', nameFr: 'El Kantara' },
+  { code: '62', nameAr: 'بئر العاتر', nameFr: 'Bir El Ater' },
+  { code: '63', nameAr: 'العريشة', nameFr: 'El Aricha' },
+  { code: '64', nameAr: 'قصر الشلالة', nameFr: 'Ksar Chellala' },
+  { code: '65', nameAr: 'عين وسارة', nameFr: 'Aïn Oussera' },
+  { code: '66', nameAr: 'مسعد', nameFr: 'Messaad' },
+  { code: '67', nameAr: 'قصر البخاري', nameFr: 'Ksar El Boukhari' },
+  { code: '68', nameAr: 'بوسعادة', nameFr: 'Bou Saâda' },
+  { code: '69', nameAr: 'الأبيض سيدي الشيخ', nameFr: 'El Abiodh Sidi Cheikh' },
 ];
 
 export function findWilaya(code: string): AlgerianWilaya | undefined {

@@ -29,6 +29,22 @@ export function canManageProjectAccess(user: AuthenticatedUser | null, project?:
   );
 }
 
+export function canManageProjectStructure(user: AuthenticatedUser | null, project: ProjectDto): boolean {
+  if (!user || !user.isActive) return false;
+  if (
+    user.isSystemAdministrator ||
+    hasPermission(user, 'projects.manage') ||
+    hasPermission(user, 'projects.structure.manage')
+  ) {
+    return true;
+  }
+  return project.members.some(
+    (member) =>
+      member.userId === user.id &&
+      (member.canManageConstruction || member.roleInProject === 'ProjectManager')
+  );
+}
+
 export function canViewAuditLogs(user: AuthenticatedUser | null): boolean {
   return hasPermission(user, 'audit.read');
 }

@@ -242,6 +242,10 @@ export interface CreatePropertyUnitRequest {
   roomsCount?: number | null;
 }
 
+export type UpdateBuildingRequest = CreateBuildingRequest;
+export type UpdateBuildingFloorRequest = CreateBuildingFloorRequest;
+export type UpdatePropertyUnitRequest = CreatePropertyUnitRequest;
+
 export interface AssignProjectMemberRequest {
   userId: string;
   roleInProject: string;

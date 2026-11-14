@@ -47,12 +47,13 @@ public sealed class EfProjectStructureRepository : IProjectStructureRepository
             .ThenBy(unit => unit.NormalizedUnitNumber)
             .ToListAsync(ct);
 
+    // Tracked reads are required for version-checked aggregate updates.
     public Task<Building?> GetBuildingAsync(Guid buildingId, CancellationToken ct = default)
-        => _dbContext.Buildings.AsNoTracking()
+        => _dbContext.Buildings
             .FirstOrDefaultAsync(building => building.Id == buildingId, ct);
 
     public Task<BuildingFloor?> GetFloorAsync(Guid floorId, CancellationToken ct = default)
-        => _dbContext.BuildingFloors.AsNoTracking()
+        => _dbContext.BuildingFloors
             .FirstOrDefaultAsync(floor => floor.Id == floorId, ct);
 
     public Task<bool> ExistsBuildingCodeAsync(

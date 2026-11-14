@@ -10,7 +10,7 @@ using PromoGest.Domain.Interfaces;
 namespace PromoGest.Application.Services;
 
 public sealed record ProjectDocumentDownload(
-    string FullPath,
+    Stream Content,
     string FileName,
     string ContentType);
 
@@ -159,41 +159,55 @@ public sealed class ProjectDocumentService
         if (!File.Exists(fullPath))
             throw new NotFoundDomainException("PROJECT_DOCUMENT_CONTENT_MISSING", "The stored document content is not available on the local server.");
 
-        var info = new FileInfo(fullPath);
-        if (info.Length != file.SizeBytes)
-        {
-            await RecordIntegrityFailureAsync(actor, project, file, metadata, "Document size does not match its stored metadata.", ct);
-            throw new ConflictDomainException("PROJECT_DOCUMENT_INTEGRITY_FAILED", "The document failed its integrity check and cannot be downloaded.");
-        }
+        var contentStream = new FileStream(
+            fullPath,
+            FileMode.Open,
+            FileAccess.Read,
+            FileShare.Read,
+            81920,
+            useAsync: true);
 
-        await using (var stream = new FileStream(fullPath, FileMode.Open, FileAccess.Read, FileShare.Read, 81920, useAsync: true))
+        try
         {
-            var actualHash = await SHA256.HashDataAsync(stream, ct);
+            if (contentStream.Length != file.SizeBytes)
+            {
+                await RecordIntegrityFailureAsync(actor, project, file, metadata, "Document size does not match its stored metadata.", ct);
+                throw new ConflictDomainException("PROJECT_DOCUMENT_INTEGRITY_FAILED", "The document failed its integrity check and cannot be downloaded.");
+            }
+
+            var actualHash = await SHA256.HashDataAsync(contentStream, ct);
             var expectedHash = Convert.FromHexString(file.Sha256Checksum);
             if (!CryptographicOperations.FixedTimeEquals(actualHash, expectedHash))
             {
                 await RecordIntegrityFailureAsync(actor, project, file, metadata, "Document SHA-256 checksum does not match its stored metadata.", ct);
                 throw new ConflictDomainException("PROJECT_DOCUMENT_INTEGRITY_FAILED", "The document failed its integrity check and cannot be downloaded.");
             }
+
+            // Return the same open handle that was verified, avoiding a path re-open race.
+            contentStream.Position = 0;
+            await _auditWriter.WriteAsync(
+                AuditLog.Record(
+                    _clock.UtcNow,
+                    actor.Id,
+                    actor.Username,
+                    "PROJECT_DOCUMENT_DOWNLOADED",
+                    AuditSeverity.Info,
+                    "StoredFile",
+                    file.Id.ToString(),
+                    $"Downloaded project document '{file.OriginalFileName}' from '{project.Code}'.",
+                    JsonSerializer.Serialize(new { projectId = project.Id, sizeBytes = file.SizeBytes }),
+                    metadata.IpAddress,
+                    metadata.UserAgent),
+                ct);
+            await _documentRepository.SaveChangesAsync(ct);
+
+            return new ProjectDocumentDownload(contentStream, file.OriginalFileName, file.ContentType);
         }
-
-        await _auditWriter.WriteAsync(
-            AuditLog.Record(
-                _clock.UtcNow,
-                actor.Id,
-                actor.Username,
-                "PROJECT_DOCUMENT_DOWNLOADED",
-                AuditSeverity.Info,
-                "StoredFile",
-                file.Id.ToString(),
-                $"Downloaded project document '{file.OriginalFileName}' from '{project.Code}'.",
-                JsonSerializer.Serialize(new { projectId = project.Id, sizeBytes = file.SizeBytes }),
-                metadata.IpAddress,
-                metadata.UserAgent),
-            ct);
-        await _documentRepository.SaveChangesAsync(ct);
-
-        return new ProjectDocumentDownload(fullPath, file.OriginalFileName, file.ContentType);
+        catch
+        {
+            await contentStream.DisposeAsync();
+            throw;
+        }
     }
 
     private async Task<(User Actor, Project Project)> RequireProjectAccessAsync(

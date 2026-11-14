@@ -172,8 +172,26 @@ public sealed class ProjectCustomerService
         var customerType = ParseEnum<CustomerType>(request.CustomerType, "CUSTOMER_TYPE_INVALID");
         var source = ParseEnum<CustomerSource>(request.Source, "CUSTOMER_SOURCE_INVALID");
         var status = ParseEnum<ProjectCustomerStatus>(request.Status, "CUSTOMER_STATUS_INVALID");
+        var requestedIdentityDocumentId = request.IdentityDocumentStoredFileId;
+        var canManageIdentityDocument = actor.IsSystemAdministrator ||
+            permissions.Contains("files.read", StringComparer.OrdinalIgnoreCase);
+        if (!canManageIdentityDocument)
+        {
+            // A customer manager without file-read permission may edit contact data,
+            // but cannot inspect, replace, or accidentally unlink the existing document.
+            if (requestedIdentityDocumentId.HasValue &&
+                requestedIdentityDocumentId != customer.IdentityDocumentStoredFileId)
+            {
+                throw new ForbiddenDomainException(
+                    "CUSTOMER_IDENTITY_DOCUMENT_ACCESS_DENIED",
+                    "You need project document read permission to change the linked identity document.");
+            }
+
+            requestedIdentityDocumentId = customer.IdentityDocumentStoredFileId;
+        }
+
         await ValidateIdentityDocumentAsync(
-            project.Id, request.IdentityDocumentStoredFileId, actor, permissions, ct);
+            project.Id, requestedIdentityDocumentId, actor, permissions, ct);
 
         var normalizedName = ProjectCustomer.Create(
             project.Id,
@@ -185,7 +203,7 @@ public sealed class ProjectCustomerService
             request.Address,
             request.PreferredLanguage,
             source,
-            request.IdentityDocumentStoredFileId,
+            requestedIdentityDocumentId,
             actor.Id,
             _clock.UtcNow);
 
@@ -211,7 +229,7 @@ public sealed class ProjectCustomerService
             request.PreferredLanguage,
             source,
             status,
-            request.IdentityDocumentStoredFileId,
+            requestedIdentityDocumentId,
             _clock.UtcNow);
 
         await RecordAuditAsync(

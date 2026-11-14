@@ -269,7 +269,7 @@ export function ProjectStructureModal({
               <div className="p-3 border-b border-slate-100 flex items-center justify-between gap-2">
                 <div className="flex items-center gap-2 font-semibold text-sm text-slate-800">
                   <Building2 className="w-4 h-4 text-teal-800" />
-                  {labels.createBuilding}
+                  {labels.buildings}
                   <span className="text-xs font-data text-slate-500">({structure?.buildings.length ?? 0})</span>
                 </div>
                 <button
@@ -327,7 +327,7 @@ export function ProjectStructureModal({
                   </FormField>
                   <div className="flex justify-end gap-2">
                     <button type="button" onClick={() => setShowBuildingForm(false)} className="text-xs px-3 py-2 border rounded border-slate-200">
-                      {labels.removeMember === 'سحب الصلاحية' ? 'إلغاء' : 'Annuler'}
+                      {t.users.cancel}
                     </button>
                     <button type="submit" disabled={submitting} className="text-xs px-3 py-2 rounded bg-teal-800 text-white disabled:opacity-60">
                       {labels.createBuilding}

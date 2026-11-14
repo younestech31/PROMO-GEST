@@ -114,6 +114,8 @@ public sealed class StoredFile : BaseEntity
     public string ContentType { get; private set; } = string.Empty;
     public long SizeBytes { get; private set; }
     public string Sha256Checksum { get; private set; } = string.Empty;
+    public string Category { get; private set; } = "Other";
+    public string? Description { get; private set; }
     public StoredFileScope Scope { get; private set; }
     public Guid? ProjectId { get; private set; }
     public Guid UploadedByUserId { get; private set; }
@@ -124,6 +126,8 @@ public sealed class StoredFile : BaseEntity
         string contentType,
         long sizeBytes,
         string sha256Checksum,
+        string category,
+        string? description,
         StoredFileScope scope,
         Guid? projectId,
         Guid uploadedByUserId,
@@ -137,15 +141,22 @@ public sealed class StoredFile : BaseEntity
             throw new DomainException("FILE_SIZE_INVALID", "Stored file size must be greater than zero.");
         if (string.IsNullOrWhiteSpace(sha256Checksum) || sha256Checksum.Length != 64)
             throw new DomainException("FILE_CHECKSUM_INVALID", "Valid SHA-256 checksum is required.");
+        if (string.IsNullOrWhiteSpace(category) || category.Trim().Length > 40)
+            throw new DomainException("FILE_CATEGORY_INVALID", "A valid document category is required.");
+        if (description?.Trim().Length > 500)
+            throw new DomainException("FILE_DESCRIPTION_TOO_LONG", "Document description must not exceed 500 characters.");
 
+        var safeName = originalFileName.Trim().Replace('\\', '/');
         return new StoredFile
         {
             Id = Guid.NewGuid(),
-            OriginalFileName = Path.GetFileName(originalFileName.Trim()),
+            OriginalFileName = Path.GetFileName(safeName),
             StoredRelativePath = storedRelativePath.Trim(),
             ContentType = string.IsNullOrWhiteSpace(contentType) ? "application/octet-stream" : contentType.Trim(),
             SizeBytes = sizeBytes,
             Sha256Checksum = sha256Checksum.ToLowerInvariant(),
+            Category = category.Trim(),
+            Description = string.IsNullOrWhiteSpace(description) ? null : description.Trim(),
             Scope = scope,
             ProjectId = projectId,
             UploadedByUserId = uploadedByUserId,

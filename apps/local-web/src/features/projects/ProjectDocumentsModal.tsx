@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState, type FormEvent } from 'react';
 import { Download, FileText, LoaderCircle, Upload, X } from 'lucide-react';
 import type { AppLanguage, ProjectDocumentDto, ProjectDto } from '../../types/erp';
 import { apiClient, ApiError } from '../../services/apiClient';
+import { translateApiError } from '../../localization/translations';
 
 interface ProjectDocumentsModalProps {
   project: ProjectDto;
@@ -66,7 +67,7 @@ export function ProjectDocumentsModal({
       setDocuments(result);
     } catch (err) {
       setError(err instanceof ApiError
-        ? err.message
+        ? translateApiError(err.code, err.message, language)
         : (isArabic ? 'تعذر تحميل وثائق المشروع.' : 'Impossible de charger les documents du projet.'));
     } finally {
       setLoading(false);
@@ -108,7 +109,7 @@ export function ProjectDocumentsModal({
       await loadDocuments();
     } catch (err) {
       setError(err instanceof ApiError
-        ? err.message
+        ? translateApiError(err.code, err.message, language)
         : (isArabic ? 'فشل رفع الوثيقة إلى الخادم المحلي.' : 'Échec du téléversement vers le serveur local.'));
     } finally {
       setSubmitting(false);
@@ -130,7 +131,7 @@ export function ProjectDocumentsModal({
       window.setTimeout(() => URL.revokeObjectURL(objectUrl), 1000);
     } catch (err) {
       setError(err instanceof ApiError
-        ? err.message
+        ? translateApiError(err.code, err.message, language)
         : (isArabic ? 'تعذر تنزيل الوثيقة.' : 'Impossible de télécharger le document.'));
     } finally {
       setDownloadingId(null);

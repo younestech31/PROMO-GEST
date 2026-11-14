@@ -6,7 +6,7 @@ export interface AlgerianWilaya {
   nameFr: string;
 }
 
-export const ALGERIAN_LEGAL_FORMS = ['SARL', 'SPA', 'EURL', 'SNC', 'SCS', 'EPIC'] as const;
+export const ALGERIAN_LEGAL_FORMS = ['SARL', 'SPA', 'EURL', 'SNC', 'SCS', 'SPAS', 'EPIC', 'OTHER'] as const;
 
 export const ALGERIAN_WILAYAS: readonly AlgerianWilaya[] = [
   { code: '01', nameAr: 'أدرار', nameFr: 'Adrar' },

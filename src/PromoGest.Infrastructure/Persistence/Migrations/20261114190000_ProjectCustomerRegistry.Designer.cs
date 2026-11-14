@@ -493,8 +493,6 @@ modelBuilder.Entity("PromoGest.Domain.Entities.Project", b =>
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
-                    b.Navigation("IdentityDocumentFile");
-                    b.Navigation("Interactions");
                 });
 
             modelBuilder.Entity("PromoGest.Domain.Entities.CustomerInteraction", b =>
@@ -513,6 +511,12 @@ modelBuilder.Entity("PromoGest.Domain.Entities.Project", b =>
 
                     b.Navigation("CreatedByUser");
                     b.Navigation("ProjectCustomer");
+                });
+
+            modelBuilder.Entity("PromoGest.Domain.Entities.ProjectCustomer", b =>
+                {
+                    b.Navigation("IdentityDocumentFile");
+                    b.Navigation("Interactions");
                 });
 
 modelBuilder.Entity("PromoGest.Domain.Entities.ProjectMember", b =>

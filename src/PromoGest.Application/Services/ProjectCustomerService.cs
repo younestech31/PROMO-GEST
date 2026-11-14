@@ -39,7 +39,7 @@ public sealed class ProjectCustomerService
         RequestMetadata metadata,
         CancellationToken ct = default)
     {
-        var (actor, project) = await RequireProjectAccessAsync(
+        var (actor, project, _) = await RequireProjectAccessAsync(
             actorUserId, projectId, canWrite: false, metadata, ct);
 
         var customers = await _customerRepository.ListByProjectAsync(project.Id, ct);

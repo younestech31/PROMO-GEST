@@ -132,7 +132,7 @@ public sealed partial class OrganizationSettings : BaseEntity
         if (string.IsNullOrWhiteSpace(legalForm) || !AllowedLegalForms.Contains(legalForm.Trim()))
             throw new DomainException("ORG_LEGAL_FORM_INVALID", "A valid Algerian legal form (SARL, SPA, EURL, SNC, SCS, SPAS, EPIC, OTHER) is required.");
         if (!IsValidAlgerianWilayaCode(wilayaCode))
-            throw new DomainException("ORG_WILAYA_INVALID", "Valid two-digit Algerian Wilaya code (01-58) is required.");
+            throw new DomainException("ORG_WILAYA_INVALID", "Valid two-digit Algerian Wilaya code (01-69) is required.");
         if (string.IsNullOrWhiteSpace(wilayaName))
             throw new DomainException("ORG_WILAYA_NAME_REQUIRED", "Wilaya name is required.");
         if (string.IsNullOrWhiteSpace(address))
@@ -150,7 +150,7 @@ public sealed partial class OrganizationSettings : BaseEntity
         if (string.IsNullOrWhiteSpace(wilayaCode))
             return false;
         var trimmed = wilayaCode.Trim();
-        return trimmed.Length == 2 && int.TryParse(trimmed, out var num) && num is >= 1 and <= 58;
+        return trimmed.Length == 2 && int.TryParse(trimmed, out var num) && num is >= 1 and <= 69;
     }
 
     private static string? NormalizeOptional(string? value)

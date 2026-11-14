@@ -144,6 +144,11 @@ public sealed class PostgreSql18IntegrationFixture : IAsyncLifetime
                 throw new InvalidOperationException(
                     "The AuditLogRuntimePermissions migration was not discovered and applied.");
             }
+            if (!applied.Contains("20261114090000_ProjectStructureFoundation"))
+            {
+                throw new InvalidOperationException(
+                    "The ProjectStructureFoundation migration was not discovered and applied.");
+            }
         }
 
         // Apply the same post-migration grants used by the Google AI Studio Cloud SQL path.

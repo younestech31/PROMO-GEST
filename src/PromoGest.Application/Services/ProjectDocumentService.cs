@@ -6,7 +6,6 @@ using PromoGest.Domain.Entities;
 using PromoGest.Domain.Enums;
 using PromoGest.Domain.Exceptions;
 using PromoGest.Domain.Interfaces;
-using PromoGest.Infrastructure.Storage;
 
 namespace PromoGest.Application.Services;
 
@@ -44,7 +43,7 @@ public sealed class ProjectDocumentService
     private readonly IProjectDocumentRepository _documentRepository;
     private readonly IProjectRepository _projectRepository;
     private readonly IUserRepository _userRepository;
-    private readonly LocalFileStorageService _fileStorage;
+    private readonly IProjectFileStorage _fileStorage;
     private readonly IAuditWriter _auditWriter;
     private readonly IClock _clock;
 
@@ -52,7 +51,7 @@ public sealed class ProjectDocumentService
         IProjectDocumentRepository documentRepository,
         IProjectRepository projectRepository,
         IUserRepository userRepository,
-        LocalFileStorageService fileStorage,
+        IProjectFileStorage fileStorage,
         IAuditWriter auditWriter,
         IClock clock)
     {

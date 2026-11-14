@@ -90,6 +90,72 @@ public sealed class Project : BaseEntity
         };
     }
 
+    public void UpdateDetails(
+        string nameAr,
+        string nameFr,
+        string wilayaCode,
+        string wilayaName,
+        string municipality,
+        string? address,
+        string? landTitleReference,
+        string? buildingPermitNumber,
+        DateOnly? buildingPermitDate,
+        ProjectStatus status,
+        decimal estimatedBudgetDzd,
+        int plannedBlocksCount,
+        int plannedUnitsCount,
+        DateTimeOffset nowUtc)
+    {
+        if (string.IsNullOrWhiteSpace(nameAr) && string.IsNullOrWhiteSpace(nameFr))
+            throw new DomainException("PROJECT_NAME_REQUIRED", "Project name in Arabic or French is required.");
+
+        var normalizedWilayaCode = wilayaCode?.Trim() ?? string.Empty;
+        if (!OrganizationSettings.IsValidAlgerianWilayaCode(normalizedWilayaCode))
+            throw new DomainException("PROJECT_WILAYA_INVALID", "Valid two-digit Algerian Wilaya code (01-58) is required.");
+        if (string.IsNullOrWhiteSpace(wilayaName))
+            throw new DomainException("PROJECT_WILAYA_NAME_REQUIRED", "Wilaya name is required.");
+        if (string.IsNullOrWhiteSpace(municipality))
+            throw new DomainException("PROJECT_MUNICIPALITY_REQUIRED", "Municipality (Commune) is required.");
+        if (!Enum.IsDefined(status))
+            throw new DomainException("PROJECT_STATUS_INVALID", "A valid project status is required.");
+        if (estimatedBudgetDzd < 0 || estimatedBudgetDzd > 9_999_999_999_999_999.99m)
+            throw new DomainException("PROJECT_BUDGET_INVALID", "Estimated budget must fit the supported non-negative DZD range.");
+        if (plannedBlocksCount < 0 || plannedUnitsCount < 0)
+            throw new DomainException("PROJECT_COUNTS_NEGATIVE", "Planned blocks and units counts cannot be negative.");
+
+        var effectiveAr = string.IsNullOrWhiteSpace(nameAr) ? nameFr.Trim() : nameAr.Trim();
+        var effectiveFr = string.IsNullOrWhiteSpace(nameFr) ? nameAr.Trim() : nameFr.Trim();
+        EnsureMaxLength(effectiveAr, 200, "PROJECT_NAME_TOO_LONG");
+        EnsureMaxLength(effectiveFr, 200, "PROJECT_NAME_TOO_LONG");
+        EnsureMaxLength(normalizedWilayaCode, 4, "PROJECT_LOCATION_TOO_LONG");
+        EnsureMaxLength(wilayaName.Trim(), 100, "PROJECT_LOCATION_TOO_LONG");
+        EnsureMaxLength(municipality.Trim(), 120, "PROJECT_LOCATION_TOO_LONG");
+        EnsureMaxLength(address?.Trim(), 300, "PROJECT_ADDRESS_TOO_LONG");
+        EnsureMaxLength(landTitleReference?.Trim(), 120, "PROJECT_LAND_REFERENCE_TOO_LONG");
+        EnsureMaxLength(buildingPermitNumber?.Trim(), 120, "PROJECT_PERMIT_NUMBER_TOO_LONG");
+
+        NameAr = effectiveAr;
+        NameFr = effectiveFr;
+        WilayaCode = normalizedWilayaCode;
+        WilayaName = wilayaName.Trim();
+        Municipality = municipality.Trim();
+        Address = string.IsNullOrWhiteSpace(address) ? null : address.Trim();
+        LandTitleReference = string.IsNullOrWhiteSpace(landTitleReference) ? null : landTitleReference.Trim();
+        BuildingPermitNumber = string.IsNullOrWhiteSpace(buildingPermitNumber) ? null : buildingPermitNumber.Trim();
+        BuildingPermitDate = buildingPermitDate;
+        Status = status;
+        EstimatedBudgetDzd = estimatedBudgetDzd;
+        PlannedBlocksCount = plannedBlocksCount;
+        PlannedUnitsCount = plannedUnitsCount;
+        Touch(nowUtc);
+    }
+
+    private static void EnsureMaxLength(string? value, int maximumLength, string errorCode)
+    {
+        if (value is not null && value.Length > maximumLength)
+            throw new DomainException(errorCode, $"Project field must not exceed {maximumLength} characters.");
+    }
+
     public ProjectMember AssignMember(
         Guid userId,
         ProjectRole roleInProject,

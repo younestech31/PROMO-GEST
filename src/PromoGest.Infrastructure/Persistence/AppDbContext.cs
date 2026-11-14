@@ -23,6 +23,7 @@ public sealed class AppDbContext : DbContext
     public DbSet<StoredFile> StoredFiles => Set<StoredFile>();
     public DbSet<ProjectCustomer> ProjectCustomers => Set<ProjectCustomer>();
     public DbSet<CustomerInteraction> CustomerInteractions => Set<CustomerInteraction>();
+    public DbSet<ProjectSalesReservation> ProjectSalesReservations => Set<ProjectSalesReservation>();
     public DbSet<UserSession> UserSessions => Set<UserSession>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)

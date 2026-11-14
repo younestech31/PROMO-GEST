@@ -30,6 +30,7 @@ public sealed class ApplicationSecurityAndFoundationTests
         IInstallationRepository,
         IUserRepository,
         IProjectRepository,
+        IProjectStructureRepository,
         IAuditWriter,
         IAuditQueryRepository
     {
@@ -41,6 +42,9 @@ public sealed class ApplicationSecurityAndFoundationTests
         public List<UserRole> UserRoles { get; } = new();
         public List<UserSession> Sessions { get; } = new();
         public List<Project> Projects { get; } = new();
+        public List<Building> Buildings { get; } = new();
+        public List<BuildingFloor> Floors { get; } = new();
+        public List<PropertyUnit> Units { get; } = new();
         public List<AuditLog> AuditLogs { get; } = new();
 
         public InMemoryStore()
@@ -123,6 +127,32 @@ public sealed class ApplicationSecurityAndFoundationTests
         public Task AddProjectAsync(Project project, CancellationToken ct = default) { Projects.Add(project); return Task.CompletedTask; }
         // The in-memory store retains the aggregate instance, so AssignMember has already updated its collection.
         public Task AddMemberAsync(ProjectMember member, CancellationToken ct = default) => Task.CompletedTask;
+        public Task<IReadOnlyList<Building>> ListBuildingsByProjectAsync(Guid projectId, CancellationToken ct = default)
+            => Task.FromResult<IReadOnlyList<Building>>(Buildings.Where(b => b.ProjectId == projectId).ToList());
+        public Task<IReadOnlyList<BuildingFloor>> ListFloorsByProjectAsync(Guid projectId, CancellationToken ct = default)
+        {
+            var buildingIds = Buildings.Where(b => b.ProjectId == projectId).Select(b => b.Id).ToHashSet();
+            return Task.FromResult<IReadOnlyList<BuildingFloor>>(Floors.Where(f => buildingIds.Contains(f.BuildingId)).ToList());
+        }
+        public Task<IReadOnlyList<PropertyUnit>> ListUnitsByProjectAsync(Guid projectId, CancellationToken ct = default)
+        {
+            var buildingIds = Buildings.Where(b => b.ProjectId == projectId).Select(b => b.Id).ToHashSet();
+            var floorIds = Floors.Where(f => buildingIds.Contains(f.BuildingId)).Select(f => f.Id).ToHashSet();
+            return Task.FromResult<IReadOnlyList<PropertyUnit>>(Units.Where(u => floorIds.Contains(u.FloorId)).ToList());
+        }
+        public Task<Building?> GetBuildingAsync(Guid buildingId, CancellationToken ct = default)
+            => Task.FromResult(Buildings.FirstOrDefault(b => b.Id == buildingId));
+        public Task<BuildingFloor?> GetFloorAsync(Guid floorId, CancellationToken ct = default)
+            => Task.FromResult(Floors.FirstOrDefault(f => f.Id == floorId));
+        public Task<bool> ExistsBuildingCodeAsync(Guid projectId, string normalizedCode, CancellationToken ct = default)
+            => Task.FromResult(Buildings.Any(b => b.ProjectId == projectId && b.NormalizedCode == normalizedCode));
+        public Task<bool> ExistsFloorNumberAsync(Guid buildingId, int floorNumber, CancellationToken ct = default)
+            => Task.FromResult(Floors.Any(f => f.BuildingId == buildingId && f.FloorNumber == floorNumber));
+        public Task<bool> ExistsUnitNumberAsync(Guid floorId, string normalizedUnitNumber, CancellationToken ct = default)
+            => Task.FromResult(Units.Any(u => u.FloorId == floorId && u.NormalizedUnitNumber == normalizedUnitNumber));
+        public Task AddBuildingAsync(Building building, CancellationToken ct = default) { Buildings.Add(building); return Task.CompletedTask; }
+        public Task AddFloorAsync(BuildingFloor floor, CancellationToken ct = default) { Floors.Add(floor); return Task.CompletedTask; }
+        public Task AddPropertyUnitAsync(PropertyUnit unit, CancellationToken ct = default) { Units.Add(unit); return Task.CompletedTask; }
         public Task WriteAsync(AuditLog entry, CancellationToken ct = default) { AuditLogs.Add(entry); return Task.CompletedTask; }
         public Task<IReadOnlyList<AuditLog>> ListRecentAsync(int limit, CancellationToken ct = default)
             => Task.FromResult<IReadOnlyList<AuditLog>>(AuditLogs.OrderByDescending(a => a.OccurredAtUtc).Take(limit).ToList());

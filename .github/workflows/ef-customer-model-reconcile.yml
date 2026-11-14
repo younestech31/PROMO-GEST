@@ -35,6 +35,9 @@ jobs:
             --context AppDbContext \
             --output-dir Persistence/Migrations
 
+      - name: Build generated migration and snapshot
+        run: dotnet build src/PromoGest.sln --configuration Release --no-restore
+
       - name: Verify no pending EF model changes remain
         run: |
           dotnet ef migrations has-pending-model-changes \

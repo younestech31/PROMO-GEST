@@ -146,11 +146,17 @@ public sealed class StoredFile : BaseEntity
         if (description is not null && description.Trim().Length > 500)
             throw new DomainException("FILE_DESCRIPTION_TOO_LONG", "Document description must not exceed 500 characters.");
 
-        var safeName = originalFileName.Trim().Replace('\\', '/');
+        var safeName = Path.GetFileName(originalFileName.Trim().Replace('\\', '/'));
+        safeName = new string(safeName.Where(character => !char.IsControl(character)).ToArray()).Trim();
+        if (string.IsNullOrWhiteSpace(safeName))
+            throw new DomainException("FILE_NAME_REQUIRED", "Original file name is required.");
+        if (safeName.Length > 255)
+            throw new DomainException("FILE_NAME_TOO_LONG", "Original file name must not exceed 255 characters.");
+
         return new StoredFile
         {
             Id = Guid.NewGuid(),
-            OriginalFileName = Path.GetFileName(safeName),
+            OriginalFileName = safeName,
             StoredRelativePath = storedRelativePath.Trim(),
             ContentType = string.IsNullOrWhiteSpace(contentType) ? "application/octet-stream" : contentType.Trim(),
             SizeBytes = sizeBytes,

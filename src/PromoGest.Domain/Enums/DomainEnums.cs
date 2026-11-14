@@ -46,6 +46,13 @@ public enum PropertyUnitStatus
     Withdrawn = 7
 }
 
+public enum SalesReservationStatus
+{
+    Active = 1,
+    Cancelled = 2,
+    Expired = 3
+}
+
 public enum AuditSeverity
 {
     Info = 1,

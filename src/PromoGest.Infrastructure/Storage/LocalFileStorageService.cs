@@ -62,8 +62,11 @@ public sealed class LocalFileStorageService : IProjectFileStorage
 
         var nowUtc = _clock.UtcNow;
         var safeFileName = Path.GetFileName((originalFileName ?? string.Empty).Trim().Replace('\\', '/'));
+        safeFileName = new string(safeFileName.Where(character => !char.IsControl(character)).ToArray()).Trim();
         if (string.IsNullOrWhiteSpace(safeFileName))
             throw new DomainException("FILE_NAME_REQUIRED", "Original file name is required.");
+        if (safeFileName.Length > 255)
+            throw new DomainException("FILE_NAME_TOO_LONG", "Original file name must not exceed 255 characters.");
 
         var folder = Path.Combine(
             scope.ToString().ToLowerInvariant(),

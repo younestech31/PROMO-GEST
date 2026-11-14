@@ -131,6 +131,7 @@ export interface TranslationBundle {
     manageAccess: string;
     structureButton: string;
     structureTitle: string;
+    buildings: string;
     structureEmpty: string;
     createBuilding: string;
     buildingCode: string;
@@ -336,6 +337,7 @@ const AR: TranslationBundle = {
     manageAccess: 'صلاحيات المشروع',
     structureButton: 'العمارات والوحدات',
     structureTitle: 'الهيكل العقاري للمشروع',
+    buildings: 'العمارات',
     structureEmpty: 'لم تتم إضافة أي عمارات لهذا المشروع بعد.',
     createBuilding: 'إضافة عمارة',
     buildingCode: 'رمز العمارة',
@@ -541,6 +543,7 @@ const FR: TranslationBundle = {
     manageAccess: 'Accès projet',
     structureButton: 'Bâtiments et unités',
     structureTitle: 'Structure immobilière du projet',
+    buildings: 'Bâtiments',
     structureEmpty: 'Aucun bâtiment n’a encore été ajouté à ce projet.',
     createBuilding: 'Ajouter un bâtiment',
     buildingCode: 'Code du bâtiment',

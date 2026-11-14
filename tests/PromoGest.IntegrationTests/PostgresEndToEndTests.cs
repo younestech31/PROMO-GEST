@@ -12,6 +12,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Logging;
 using Npgsql;
+using PromoGest.Application.Interfaces;
 using PromoGest.Contracts.Auth;
 using PromoGest.Contracts.Audit;
 using PromoGest.Contracts.Common;
@@ -816,6 +817,7 @@ public sealed class PostgresEndToEndTests : IClassFixture<PostgreSql18Integratio
             }
 
             // Project documents are stored locally, scoped to the project, checksummed, and audited.
+            var uploadedDocumentId = Guid.Empty;
             var permitBytes = new byte[] { 0x25, 0x50, 0x44, 0x46, 0x2D, 0x31, 0x2E, 0x34, 0x0A, 0x25, 0x50, 0x52, 0x4F, 0x4D, 0x4F };
             using (var documentUpload = new MultipartFormDataContent())
             {
@@ -828,7 +830,8 @@ public sealed class PostgresEndToEndTests : IClassFixture<PostgreSql18Integratio
                 Assert.Equal(HttpStatusCode.Created, uploadResponse.StatusCode);
                 var uploadedDocument = await uploadResponse.Content.ReadFromJsonAsync<ProjectDocumentDto>();
                 Assert.NotNull(uploadedDocument);
-                Assert.Equal("building-permit.pdf", uploadedDocument!.OriginalFileName);
+                uploadedDocumentId = uploadedDocument!.Id;
+                Assert.Equal("building-permit.pdf", uploadedDocument.OriginalFileName);
                 Assert.Equal("Permits", uploadedDocument.Category);
                 Assert.Equal("Permis de construire initial", uploadedDocument.Description);
                 Assert.Equal(permitBytes.LongLength, uploadedDocument.SizeBytes);
@@ -955,6 +958,9 @@ public sealed class PostgresEndToEndTests : IClassFixture<PostgreSql18Integratio
             var deniedDocumentList = await employeeClient.GetAsync(
                 $"/api/projects/{createdProject!.Id}/documents");
             Assert.Equal(HttpStatusCode.Forbidden, deniedDocumentList.StatusCode);
+            var deniedDocumentDownload = await employeeClient.GetAsync(
+                $"/api/projects/{createdProject.Id}/documents/{uploadedDocumentId}/download");
+            Assert.Equal(HttpStatusCode.Forbidden, deniedDocumentDownload.StatusCode);
             using (var deniedDocumentUpload = new MultipartFormDataContent())
             {
                 deniedDocumentUpload.Add(new ByteArrayContent(new byte[] { 0x25, 0x50, 0x44, 0x46 }), "file", "denied.pdf");
@@ -995,6 +1001,9 @@ public sealed class PostgresEndToEndTests : IClassFixture<PostgreSql18Integratio
                     memberDocumentUpload);
                 Assert.Equal(HttpStatusCode.Created, memberUploadResponse.StatusCode);
             }
+            var memberDocumentDownload = await employeeClient.GetAsync(
+                $"/api/projects/{createdProject.Id}/documents/{uploadedDocumentId}/download");
+            Assert.Equal(HttpStatusCode.OK, memberDocumentDownload.StatusCode);
 
             // Reassign the same employee to cover the existing-membership UPDATE path.
             var updateMembershipResp = await adminClient.PutAsJsonAsync($"/api/projects/{createdProject.Id}/members",
@@ -1027,6 +1036,9 @@ public sealed class PostgresEndToEndTests : IClassFixture<PostgreSql18Integratio
                     readOnlyDocumentUpload);
                 Assert.Equal(HttpStatusCode.Forbidden, readOnlyUploadResponse.StatusCode);
             }
+            var readOnlyDocumentDownload = await employeeClient.GetAsync(
+                $"/api/projects/{createdProject.Id}/documents/{uploadedDocumentId}/download");
+            Assert.Equal(HttpStatusCode.OK, readOnlyDocumentDownload.StatusCode);
 
             var allowedAttempt = await employeeClient.GetAsync($"/api/projects/{createdProject.Id}");
             Assert.Equal(HttpStatusCode.OK, allowedAttempt.StatusCode);
@@ -1044,6 +1056,29 @@ public sealed class PostgresEndToEndTests : IClassFixture<PostgreSql18Integratio
 
             var postDeactivateMe = await employeeClient.GetAsync("/api/auth/me");
             Assert.Equal(HttpStatusCode.Unauthorized, postDeactivateMe.StatusCode);
+
+            // A stored document modified after upload must fail SHA-256 verification and be audited.
+            using (var documentScope = factory.Services.CreateScope())
+            {
+                var db = documentScope.ServiceProvider.GetRequiredService<AppDbContext>();
+                var storedDocument = await db.StoredFiles.SingleAsync(file => file.Id == uploadedDocumentId);
+                var localStorage = documentScope.ServiceProvider.GetRequiredService<IProjectFileStorage>();
+                var storedPath = localStorage.ResolveSafeFullPath(storedDocument);
+                await File.WriteAllBytesAsync(storedPath, new byte[] { 0x54, 0x41, 0x4D, 0x50, 0x45, 0x52 });
+            }
+
+            var tamperedDocumentResponse = await adminClient.GetAsync(
+                $"/api/projects/{createdProject.Id}/documents/{uploadedDocumentId}/download");
+            Assert.Equal(HttpStatusCode.Conflict, tamperedDocumentResponse.StatusCode);
+
+            using (var integrityScope = factory.Services.CreateScope())
+            {
+                var db = integrityScope.ServiceProvider.GetRequiredService<AppDbContext>();
+                Assert.Contains(await db.AuditLogs.ToListAsync(), entry =>
+                    entry.EventType == "PROJECT_DOCUMENT_INTEGRITY_FAILED" &&
+                    entry.TargetEntityType == "StoredFile" &&
+                    entry.TargetEntityId == uploadedDocumentId.ToString());
+            }
         }
 
         // 9. Simulated Server Restart: new WebApplicationFactory against same DB retains initialized state

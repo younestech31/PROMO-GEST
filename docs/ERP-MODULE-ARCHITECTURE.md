@@ -50,7 +50,7 @@ The first delivery focus remains the real-estate development lifecycle. HR, adva
 
 ## 4. Navigation and user experience
 
-The primary application shell is organization- and role-oriented, not project-only.
+The primary application shell is organization- and role-oriented, not project-only. The detailed project selection, active-context, switching, directory, cross-project queue, and context-safety specification is maintained in [Project Navigation & Active Context UX](PROJECT-NAVIGATION-UX.md).
 
 The intended navigation groups are:
 

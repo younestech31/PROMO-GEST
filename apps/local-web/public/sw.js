@@ -2,8 +2,8 @@
  * Caches ONLY static application shell assets.
  * NEVER caches /api/* or /health/* responses to protect confidential ERP data.
  */
-const CACHE_NAME = 'promogest-shell-v2';
-const SHELL_URLS = ['/manifest.webmanifest'];
+const CACHE_NAME = 'promogest-shell-v3';
+const SHELL_URLS = ['/index.html', '/manifest.webmanifest'];
 
 self.addEventListener('install', (event) => {
   event.waitUntil(

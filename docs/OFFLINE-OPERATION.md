@@ -1,21 +1,41 @@
 # PROMO GEST — Offline & LAN-First Operation
 
-## 1. What "Local-First / Offline-Capable" Means in PROMO GEST
-PROMO GEST operates inside the organization's premises without requiring any public internet connection:
-- **Zero internet dependency**: All business operations (setup, login, employee management, project access control, future sales/contracts/payments) execute exclusively between employee workstations on the office LAN and the organization's local ASP.NET Core + PostgreSQL 18 server.
-- **Zero external runtime requests**: Fonts (`IBM Plex Sans Arabic`, `Plus Jakarta Sans`, `IBM Plex Mono`) are bundled as local `.woff2` assets via `@fontsource`. There are zero Google Fonts requests, zero CDN scripts, and zero cloud analytics/telemetry.
+## 1. What "Local-First" means
 
-## 2. Authoritative Source of Truth
-**PostgreSQL 18 on the organization's local server is the sole authoritative database.**
+PROMO GEST is designed to run on the organization's premises without requiring a public internet connection for normal business operations:
 
-- The browser **does not** use IndexedDB as an offline business database.
-- The browser **does not** queue financial, contractual, or user authorization mutations offline when the local server is down.
-- Why? In a multi-user real estate ERP, allowing disconnected workstations to accept unit reservations, payments, or permission changes locally would cause double-selling of apartments, split-brain accounting ledgers, and stale authorization decisions.
+- Employee workstations communicate over the office LAN with the organization's local ASP.NET Core server.
+- PostgreSQL 18 on that server is the sole authoritative business database.
+- Static JavaScript, CSS, fonts, and other application assets are bundled locally. No CDN, Google Fonts, cloud analytics, or external runtime service is required for the core ERP.
+- The optional Cloud SQL connector exists only for Google AI Studio development/testing and is not part of a customer's production deployment.
 
-## 3. Service Worker Boundary (`/sw.js`)
-The optional Service Worker caches **only static application shell assets** (`/` shell, compiled JS/CSS bundles, local fonts, manifest).
-- Every request to `/api/*` or `/health/*` is **explicitly bypassed** (`return;` without touching CacheStorage) so confidential customer, financial, and security records are never cached in the browser.
+## 2. Authoritative data and transaction safety
 
-## 4. Behavior When the Local Server Is Unavailable
-- The frontend polls `/health/ready` and monitors API fetch failures (`ApiConnectionError`).
-- If the local server or PostgreSQL stops or the LAN cable is unplugged, the UI switches the connection indicator to **Disconnected** and displays a prominent banner explaining that business transactions are paused until the local server is reachable again.
+The browser is not a second business database:
+
+- The browser does not use IndexedDB as the authoritative ERP store.
+- Financial, contractual, reservation, inventory, employee, and authorization mutations are not accepted offline and are not queued for automatic replay.
+- This avoids conflicting unit reservations, double-selling, duplicated payments, stale permissions, and split-brain accounting.
+- If the local API or PostgreSQL is unavailable, the UI reports the disconnected state and business transactions must wait until the local server is restored.
+
+## 3. Service Worker cache boundary
+
+The optional service worker caches only public static shell resources:
+
+- `/index.html` and `/manifest.webmanifest` are pre-cached during installation.
+- Hashed static bundles under `/assets/` are cached after a successful network fetch.
+- A navigation request can fall back to the cached `/index.html` when the local server is temporarily unreachable. The shell may render, but it cannot load current business data or perform transactions while the API is unavailable.
+- Requests to `/api/*`, `/health/*`, and all non-GET requests bypass Cache Storage. Private business and health responses are never cached.
+
+This is an **offline shell fallback**, not offline ERP operation. Static assets are refreshed through normal application updates; the cache version is advanced when the shell caching strategy changes.
+
+## 4. Behavior when the local server is unavailable
+
+The frontend monitors `/health/ready` and API request failures. When the local server, PostgreSQL, or LAN connection is unavailable:
+
+1. The connection indicator changes to Disconnected.
+2. The application shell can be displayed from the service-worker cache when it was installed and its shell resources were cached successfully.
+3. Business data and every state-changing operation remain unavailable until the local server is reachable again.
+4. No API or health response is replayed from a browser cache.
+
+A device with no previously installed service worker or no successful shell cache may show the browser's normal network error page instead.

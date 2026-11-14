@@ -1,5 +1,5 @@
 import { useEffect, useState, type FormEvent } from 'react';
-import { FileText, FolderPlus, KeyRound, Layers3, Pencil, ShieldAlert, Trash2, Users, UsersRound, X } from 'lucide-react';
+import { CalendarClock, FileText, FolderPlus, KeyRound, Layers3, Pencil, ShieldAlert, Trash2, Users, UsersRound, X } from 'lucide-react';
 import type {
   AppLanguage,
   AssignProjectMemberRequest,
@@ -11,13 +11,14 @@ import type {
 } from '../../types/erp';
 import { getTranslations, translateApiError } from '../../localization/translations';
 import { ALGERIAN_WILAYAS, findWilaya, formatDzd } from '../../utils/algerianFormat';
-import { canCreateProject, canManageProjectAccess, canManageProjects, canManageProjectStructure, canManageUsers, canReadProjectDocuments, canUploadProjectDocuments, canReadProjectCustomers, canManageProjectCustomers } from '../../utils/permissions';
+import { canCreateProject, canManageProjectAccess, canManageProjects, canManageProjectStructure, canManageUsers, canReadProjectDocuments, canUploadProjectDocuments, canReadProjectCustomers, canManageProjectCustomers, canReadProjectSalesReservations, canManageProjectSalesReservations } from '../../utils/permissions';
 import { validateCreateProject, type ValidationErrors } from '../../utils/validation';
 import { apiClient, ApiError } from '../../services/apiClient';
 import { FormField, inputBaseClass } from '../../components/FormField';
 import { ProjectStructureModal } from './ProjectStructureModal';
 import { ProjectDocumentsModal } from './ProjectDocumentsModal';
 import { ProjectCustomerRegistryModal } from './ProjectCustomerRegistryModal';
+import { ProjectSalesReservationsModal } from './ProjectSalesReservationsModal';
 
 interface ProjectsAccessViewProps {
   currentUser: AuthenticatedUser;
@@ -59,6 +60,7 @@ export function ProjectsAccessView({
   const [structureProject, setStructureProject] = useState<ProjectDto | null>(null);
   const [documentsProject, setDocumentsProject] = useState<ProjectDto | null>(null);
   const [customersProject, setCustomersProject] = useState<ProjectDto | null>(null);
+  const [reservationsProject, setReservationsProject] = useState<ProjectDto | null>(null);
 
   const [createForm, setCreateForm] = useState<CreateProjectRequest>({
     code: '',
@@ -397,6 +399,16 @@ export function ProjectsAccessView({
                           >
                             <UsersRound className="w-3.5 h-3.5" aria-hidden="true" />
                             <span>{language === 'ar' ? 'الزبائن والمهتمون' : 'Clients & prospects'}</span>
+                          </button>
+                        )}
+                        {canReadProjectSalesReservations(currentUser, p) && (
+                          <button
+                            type="button"
+                            onClick={() => setReservationsProject(p)}
+                            className="inline-flex items-center gap-1.5 rounded border border-slate-200 px-2.5 py-1 text-xs font-medium text-slate-700 hover:bg-slate-100 whitespace-nowrap"
+                          >
+                            <CalendarClock className="w-3.5 h-3.5" aria-hidden="true" />
+                            <span>{language === 'ar' ? 'الحجوزات' : 'Réservations'}</span>
                           </button>
                         )}
                         {canReadProjectDocuments(currentUser, p) && (
@@ -878,6 +890,14 @@ export function ProjectsAccessView({
           language={language}
           canManage={canManageProjectCustomers(currentUser, customersProject)}
           onClose={() => setCustomersProject(null)}
+        />
+      )}
+      {reservationsProject && (
+        <ProjectSalesReservationsModal
+          project={reservationsProject}
+          language={language}
+          canManage={canManageProjectSalesReservations(currentUser, reservationsProject)}
+          onClose={() => setReservationsProject(null)}
         />
       )}
     </div>

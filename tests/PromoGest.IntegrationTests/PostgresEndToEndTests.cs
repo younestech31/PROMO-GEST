@@ -650,7 +650,7 @@ public sealed class PostgresEndToEndTests : IClassFixture<PostgreSql18Integratio
 
             var duplicateFloorResponse = await adminClient.PostAsJsonAsync(
                 floorsUrl,
-                new CreateBuildingFloorRequest(1, "طابق مكرر", "Étage dupliqué"));
+                new CreateBuildingFloorRequest(0, "طابق مكرر", "Étage dupliqué"));
             Assert.Equal(HttpStatusCode.Conflict, duplicateFloorResponse.StatusCode);
 
             // Building edits preserve identifiers and reject stale versions.

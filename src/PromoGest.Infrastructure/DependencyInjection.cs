@@ -35,6 +35,7 @@ public static class DependencyInjection
         services.AddSingleton<IPasswordHasher, Pbkdf2PasswordHasher>();
         services.AddSingleton<ISessionTokenGenerator, CryptoSessionTokenGenerator>();
         services.AddSingleton<LocalFileStorageService>();
+        services.AddSingleton<IProjectFileStorage>(sp => sp.GetRequiredService<LocalFileStorageService>());
 
         services.AddScoped<IAuditWriter, EfAuditWriter>();
         services.AddScoped<IAuditQueryRepository, EfAuditWriter>();

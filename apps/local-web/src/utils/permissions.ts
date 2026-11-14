@@ -48,3 +48,22 @@ export function canManageProjectStructure(user: AuthenticatedUser | null, projec
 export function canViewAuditLogs(user: AuthenticatedUser | null): boolean {
   return hasPermission(user, 'audit.read');
 }
+
+export function canReadProjectDocuments(user: AuthenticatedUser | null, project: ProjectDto): boolean {
+  if (!user || !user.isActive) return false;
+  if (user.isSystemAdministrator) return true;
+  const isProjectScoped = project.members.some((member) => member.userId === user.id) ||
+    user.permissions.includes('projects.manage');
+  return isProjectScoped && user.permissions.includes('files.read');
+}
+
+export function canUploadProjectDocuments(user: AuthenticatedUser | null, project: ProjectDto): boolean {
+  if (!user || !user.isActive) return false;
+  if (user.isSystemAdministrator) return true;
+  const membership = project.members.find((member) => member.userId === user.id);
+  const isProjectScoped = Boolean(membership) || user.permissions.includes('projects.manage');
+  const hasDocumentManagement = membership?.canManageDocuments === true ||
+    user.permissions.includes('projects.manage');
+  return isProjectScoped && hasDocumentManagement &&
+    user.permissions.includes('files.read') && user.permissions.includes('files.write');
+}

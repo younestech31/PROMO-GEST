@@ -1,4 +1,6 @@
+using System.IO;
 using PromoGest.Domain.Entities;
+using PromoGest.Domain.Enums;
 
 namespace PromoGest.Application.Interfaces;
 
@@ -94,4 +96,31 @@ public interface IProjectStructureRepository
 public interface IAuditQueryRepository
 {
     Task<IReadOnlyList<AuditLog>> ListRecentAsync(int limit, CancellationToken ct = default);
+}
+
+public sealed record ProjectDocumentListItem(StoredFile File, string UploadedByFullName);
+
+public interface IProjectDocumentRepository
+{
+    Task<IReadOnlyList<ProjectDocumentListItem>> ListProjectDocumentsAsync(Guid projectId, CancellationToken ct = default);
+    Task<StoredFile?> GetProjectDocumentAsync(Guid projectId, Guid fileId, CancellationToken ct = default);
+    Task AddAsync(StoredFile file, CancellationToken ct = default);
+    Task SaveChangesAsync(CancellationToken ct = default);
+}
+
+public interface IProjectFileStorage
+{
+    Task<StoredFile> SaveAsync(
+        Stream content,
+        string originalFileName,
+        string contentType,
+        string category,
+        string? description,
+        StoredFileScope scope,
+        Guid? projectId,
+        Guid uploadedByUserId,
+        long maximumBytes,
+        CancellationToken ct = default);
+    string ResolveSafeFullPath(StoredFile storedFile);
+    void Delete(StoredFile storedFile);
 }

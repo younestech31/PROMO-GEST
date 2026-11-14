@@ -1,5 +1,5 @@
 import { useEffect, useState, type FormEvent } from 'react';
-import { FolderPlus, KeyRound, Layers3, Pencil, ShieldAlert, Trash2, Users, X } from 'lucide-react';
+import { FileText, FolderPlus, KeyRound, Layers3, Pencil, ShieldAlert, Trash2, Users, X } from 'lucide-react';
 import type {
   AppLanguage,
   AssignProjectMemberRequest,
@@ -11,11 +11,12 @@ import type {
 } from '../../types/erp';
 import { getTranslations, translateApiError } from '../../localization/translations';
 import { ALGERIAN_WILAYAS, findWilaya, formatDzd } from '../../utils/algerianFormat';
-import { canCreateProject, canManageProjectAccess, canManageProjects, canManageProjectStructure, canManageUsers } from '../../utils/permissions';
+import { canCreateProject, canManageProjectAccess, canManageProjects, canManageProjectStructure, canManageUsers, canReadProjectDocuments, canUploadProjectDocuments } from '../../utils/permissions';
 import { validateCreateProject, type ValidationErrors } from '../../utils/validation';
 import { apiClient, ApiError } from '../../services/apiClient';
 import { FormField, inputBaseClass } from '../../components/FormField';
 import { ProjectStructureModal } from './ProjectStructureModal';
+import { ProjectDocumentsModal } from './ProjectDocumentsModal';
 
 interface ProjectsAccessViewProps {
   currentUser: AuthenticatedUser;
@@ -55,6 +56,7 @@ export function ProjectsAccessView({
   const [editingProject, setEditingProject] = useState<ProjectDto | null>(null);
   const [accessProject, setAccessProject] = useState<ProjectDto | null>(null);
   const [structureProject, setStructureProject] = useState<ProjectDto | null>(null);
+  const [documentsProject, setDocumentsProject] = useState<ProjectDto | null>(null);
 
   const [createForm, setCreateForm] = useState<CreateProjectRequest>({
     code: '',
@@ -383,6 +385,16 @@ export function ProjectsAccessView({
                           >
                             <Layers3 className="w-3.5 h-3.5" aria-hidden="true" />
                             <span>{t.projects.structureButton}</span>
+                          </button>
+                        )}
+                        {canReadProjectDocuments(currentUser, p) && (
+                          <button
+                            type="button"
+                            onClick={() => setDocumentsProject(p)}
+                            className="inline-flex items-center gap-1.5 rounded border border-slate-200 px-2.5 py-1 text-xs font-medium text-slate-700 hover:bg-slate-100 whitespace-nowrap"
+                          >
+                            <FileText className="w-3.5 h-3.5" aria-hidden="true" />
+                            <span>{language === 'ar' ? 'وثائق المشروع' : 'Documents'}</span>
                           </button>
                         )}
                         {canManageProjects(currentUser) && (
@@ -839,6 +851,14 @@ export function ProjectsAccessView({
             </form>
           </div>
         </div>
+      )}
+      {documentsProject && (
+        <ProjectDocumentsModal
+          project={documentsProject}
+          language={language}
+          canUpload={canUploadProjectDocuments(currentUser, documentsProject)}
+          onClose={() => setDocumentsProject(null)}
+        />
       )}
     </div>
   );

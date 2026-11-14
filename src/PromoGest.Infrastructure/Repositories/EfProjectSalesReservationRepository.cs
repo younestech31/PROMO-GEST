@@ -1,6 +1,8 @@
 using Microsoft.EntityFrameworkCore;
 using PromoGest.Application.Interfaces;
 using PromoGest.Domain.Entities;
+using PromoGest.Domain.Exceptions;
+using Npgsql;
 using PromoGest.Infrastructure.Persistence;
 
 namespace PromoGest.Infrastructure.Repositories;
@@ -66,6 +68,25 @@ public sealed class EfProjectSalesReservationRepository : IProjectSalesReservati
     public async Task AddAsync(ProjectSalesReservation reservation, CancellationToken ct = default)
         => await _dbContext.ProjectSalesReservations.AddAsync(reservation, ct);
 
-    public Task SaveChangesAsync(CancellationToken ct = default)
-        => _dbContext.SaveChangesAsync(ct);
+    public async Task SaveChangesAsync(CancellationToken ct = default)
+    {
+        try
+        {
+            await _dbContext.SaveChangesAsync(ct);
+        }
+        catch (DbUpdateConcurrencyException)
+        {
+            throw new ConflictDomainException(
+                "RESERVATION_CONCURRENCY_CONFLICT",
+                "The reservation or property unit was changed by another operation. Reload and try again.");
+        }
+        catch (DbUpdateException exception) when (
+            exception.InnerException is PostgresException postgres &&
+            postgres.SqlState == PostgresErrorCodes.UniqueViolation)
+        {
+            throw new ConflictDomainException(
+                "RESERVATION_UNIT_UNAVAILABLE",
+                "Another active reservation already exists for this property unit.");
+        }
+    }
 }

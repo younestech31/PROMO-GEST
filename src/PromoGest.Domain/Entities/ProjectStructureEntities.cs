@@ -168,23 +168,6 @@ public sealed class PropertyUnit : BaseEntity
 
         ValidateMeasurements(grossAreaSquareMeters, netAreaSquareMeters, roomsCount);
 
-        const decimal maximumArea = 99_999_999.99m;
-        if (grossAreaSquareMeters is < 0 or > maximumArea ||
-            netAreaSquareMeters is < 0 or > maximumArea)
-        {
-            throw new DomainException("UNIT_AREA_INVALID", "Unit areas must be non-negative and fit the supported range.");
-        }
-
-        if (grossAreaSquareMeters.HasValue &&
-            netAreaSquareMeters.HasValue &&
-            netAreaSquareMeters.Value > grossAreaSquareMeters.Value)
-        {
-            throw new DomainException("UNIT_NET_AREA_EXCEEDS_GROSS", "Net area cannot exceed gross area.");
-        }
-
-        if (roomsCount is < 0 or > 20)
-            throw new DomainException("UNIT_ROOMS_COUNT_INVALID", "Room count must be between 0 and 20.");
-
         if (createdByUserId == Guid.Empty)
             throw new DomainException("UNIT_CREATOR_REQUIRED", "A property unit creator is required.");
 

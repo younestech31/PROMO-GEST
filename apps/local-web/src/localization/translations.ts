@@ -841,6 +841,10 @@ const API_ERROR_MESSAGES: Record<string, { ar: string; fr: string }> = {
     ar: 'نوع الملف غير مدعوم. الأنواع المسموحة: PDF والصور ومستندات Office وTXT وCSV.',
     fr: 'Type de fichier non pris en charge. Types autorisés : PDF, images, documents Office, TXT et CSV.',
   },
+  FILE_SIGNATURE_INVALID: {
+    ar: 'محتوى الملف لا يطابق نوعه أو امتداده المعلن. تم رفض الرفع.',
+    fr: 'Le contenu du fichier ne correspond pas à son type ou extension déclaré. Téléversement refusé.',
+  },
   FILE_SIZE_LIMIT_EXCEEDED: {
     ar: 'حجم الوثيقة يتجاوز الحد الأقصى المسموح به وهو 25 ميغابايت.',
     fr: 'La taille du document dépasse la limite autorisée de 25 Mo.',

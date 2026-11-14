@@ -275,6 +275,23 @@ export const apiClient = {
       { method: 'POST', body: JSON.stringify(payload) }
     ),
 
+  updateProjectBuilding: (projectId: string, buildingId: string, payload: UpdateBuildingRequest) =>
+    requestJson<ProjectStructureDto>(
+      `/api/projects/${encodeURIComponent(projectId)}/structure/buildings/${encodeURIComponent(buildingId)}`,
+      { method: 'PUT', body: JSON.stringify(payload) }
+    ),
+
+  updateBuildingFloor: (
+    projectId: string,
+    buildingId: string,
+    floorId: string,
+    payload: UpdateBuildingFloorRequest
+  ) =>
+    requestJson<ProjectStructureDto>(
+      `/api/projects/${encodeURIComponent(projectId)}/structure/buildings/${encodeURIComponent(buildingId)}/floors/${encodeURIComponent(floorId)}`,
+      { method: 'PUT', body: JSON.stringify(payload) }
+    ),
+
   createFloorUnit: (
     projectId: string,
     buildingId: string,

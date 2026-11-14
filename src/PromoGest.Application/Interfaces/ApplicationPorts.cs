@@ -124,3 +124,19 @@ public interface IProjectFileStorage
     string ResolveSafeFullPath(StoredFile storedFile);
     void Delete(StoredFile storedFile);
 }
+
+ 
+public interface IProjectCustomerRepository
+{
+    Task<IReadOnlyList<ProjectCustomer>> ListByProjectAsync(Guid projectId, CancellationToken ct = default);
+    Task<ProjectCustomer?> GetByProjectAsync(Guid projectId, Guid customerId, CancellationToken ct = default);
+    Task<bool> ExistsDuplicateAsync(
+        Guid projectId,
+        string normalizedDisplayName,
+        string normalizedPhone,
+        Guid? excludeCustomerId = null,
+        CancellationToken ct = default);
+    Task AddCustomerAsync(ProjectCustomer customer, CancellationToken ct = default);
+    Task AddInteractionAsync(CustomerInteraction interaction, CancellationToken ct = default);
+    Task SaveChangesAsync(CancellationToken ct = default);
+}

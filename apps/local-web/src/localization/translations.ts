@@ -134,6 +134,7 @@ export interface TranslationBundle {
     buildings: string;
     structureEmpty: string;
     createBuilding: string;
+    editBuilding: string;
     buildingCode: string;
     buildingNameAr: string;
     buildingNameFr: string;
@@ -143,16 +144,20 @@ export interface TranslationBundle {
     floorNameAr: string;
     floorNameFr: string;
     addFloor: string;
+    editFloor: string;
     noFloors: string;
     units: string;
     unitNumber: string;
     unitType: string;
     unitStatus: string;
     addUnit: string;
+    editUnit: string;
     noUnits: string;
     grossArea: string;
     netArea: string;
     roomsCount: string;
+    saveStructure: string;
+    salesStateRequiresSalesWorkflow: string;
     editButton: string;
     modalCreateTitle: string;
     modalEditTitle: string;
@@ -340,6 +345,7 @@ const AR: TranslationBundle = {
     buildings: 'العمارات',
     structureEmpty: 'لم تتم إضافة أي عمارات لهذا المشروع بعد.',
     createBuilding: 'إضافة عمارة',
+    editBuilding: 'تعديل العمارة',
     buildingCode: 'رمز العمارة',
     buildingNameAr: 'اسم العمارة بالعربية',
     buildingNameFr: 'اسم العمارة بالفرنسية',
@@ -349,16 +355,20 @@ const AR: TranslationBundle = {
     floorNameAr: 'اسم الطابق بالعربية',
     floorNameFr: 'اسم الطابق بالفرنسية',
     addFloor: 'إضافة طابق',
+    editFloor: 'تعديل الطابق',
     noFloors: 'لا توجد طوابق مسجلة لهذه العمارة.',
     units: 'الوحدات العقارية',
     unitNumber: 'رقم الوحدة',
     unitType: 'نوع الوحدة',
     unitStatus: 'حالة الوحدة',
     addUnit: 'إضافة وحدة',
+    editUnit: 'تعديل الوحدة',
     noUnits: 'لا توجد وحدات مسجلة لهذا الطابق.',
     grossArea: 'المساحة الإجمالية (م²)',
     netArea: 'المساحة الصافية (م²)',
     roomsCount: 'عدد الغرف',
+    saveStructure: 'حفظ التعديلات',
+    salesStateRequiresSalesWorkflow: 'حالات الحجز والبيع والتسليم لا تُعدّل من إدارة الهيكل؛ يجب تسجيلها عبر مسار البيع والتسليم المعتمد.',
     editButton: 'تعديل البيانات',
     modalCreateTitle: 'إنشاء مشروع ترقية عقارية',
     modalEditTitle: 'تعديل بيانات المشروع العقاري',
@@ -546,6 +556,7 @@ const FR: TranslationBundle = {
     buildings: 'Bâtiments',
     structureEmpty: 'Aucun bâtiment n’a encore été ajouté à ce projet.',
     createBuilding: 'Ajouter un bâtiment',
+    editBuilding: 'Modifier le bâtiment',
     buildingCode: 'Code du bâtiment',
     buildingNameAr: 'Nom du bâtiment en arabe',
     buildingNameFr: 'Nom du bâtiment en français',
@@ -555,16 +566,20 @@ const FR: TranslationBundle = {
     floorNameAr: 'Nom de l’étage en arabe',
     floorNameFr: 'Nom de l’étage en français',
     addFloor: 'Ajouter un étage',
+    editFloor: 'Modifier l’étage',
     noFloors: 'Aucun étage enregistré pour ce bâtiment.',
     units: 'Unités immobilières',
     unitNumber: 'Numéro de l’unité',
     unitType: 'Type d’unité',
     unitStatus: 'Statut de l’unité',
     addUnit: 'Ajouter une unité',
+    editUnit: 'Modifier l’unité',
     noUnits: 'Aucune unité enregistrée à cet étage.',
     grossArea: 'Surface brute (m²)',
     netArea: 'Surface nette (m²)',
     roomsCount: 'Nombre de pièces',
+    saveStructure: 'Enregistrer les modifications',
+    salesStateRequiresSalesWorkflow: 'Les états réservée, vendue et livrée doivent être gérés par les processus de vente et de remise, pas par la structure.',
     editButton: 'Modifier',
     modalCreateTitle: 'Créer un projet immobilier',
     modalEditTitle: 'Modifier les données du projet immobilier',
@@ -771,6 +786,10 @@ const API_ERROR_MESSAGES: Record<string, { ar: string; fr: string }> = {
   UNIT_TYPE_INVALID: {
     ar: 'نوع الوحدة العقارية غير صالح.',
     fr: 'Le type d’unité immobilière est invalide.',
+  },
+  UNIT_STATUS_REQUIRES_SALES_WORKFLOW: {
+    ar: 'لا يمكن تسجيل الحجز أو البيع أو التسليم من شاشة الهيكل العقاري. استعمل مسار البيع والتسليم المعتمد.',
+    fr: 'La réservation, la vente et la remise ne peuvent pas être enregistrées depuis la structure immobilière. Utilisez le processus de vente et de remise.',
   },
   UNIT_STATUS_INVALID: {
     ar: 'حالة الوحدة العقارية غير صالحة.',

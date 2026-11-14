@@ -16,6 +16,9 @@ namespace PromoGest.Infrastructure.Persistence.Migrations
                 nullable: false,
                 defaultValue: "Other");
 
+            // Use the default only to backfill existing rows; new inserts must provide a category explicitly.
+            migrationBuilder.Sql("ALTER TABLE stored_files ALTER COLUMN category DROP DEFAULT;");
+
             migrationBuilder.AddColumn<string>(
                 name: "description",
                 table: "stored_files",

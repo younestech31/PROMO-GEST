@@ -92,7 +92,7 @@ public sealed class ProjectDocumentService
         if (!AllowedCategories.Contains(normalizedCategory))
             throw new DomainException("FILE_CATEGORY_INVALID", "Select a valid document category.");
 
-        if (description?.Trim().Length > 500)
+        if (description is not null && description.Trim().Length > 500)
             throw new DomainException("FILE_DESCRIPTION_TOO_LONG", "Document description must not exceed 500 characters.");
 
         var extension = Path.GetExtension((originalFileName ?? string.Empty).Trim().Replace('\\', '/'));

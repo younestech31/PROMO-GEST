@@ -12,6 +12,8 @@ public sealed record BuildingStructureDto(
     string NameFr,
     string Status,
     DateTimeOffset CreatedAtUtc,
+    DateTimeOffset UpdatedAtUtc,
+    Guid ConcurrencyStamp,
     IReadOnlyList<BuildingFloorDto> Floors);
 
 public sealed record BuildingFloorDto(

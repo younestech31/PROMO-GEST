@@ -1268,6 +1268,18 @@ public sealed class PostgresEndToEndTests : IClassFixture<PostgreSql18Integratio
             Assert.NotNull(directorProjectsBeforeAssignment);
             Assert.DoesNotContain(directorProjectsBeforeAssignment!, item => item.Id == createdProject.Id);
 
+            // Unknown and existing-but-unassigned project IDs must be indistinguishable to a non-member.
+            var unknownProjectId = Guid.NewGuid();
+            Assert.Equal(HttpStatusCode.Forbidden, (await directorClient.GetAsync($"/api/projects/{unknownProjectId}")).StatusCode);
+            Assert.Equal(HttpStatusCode.Forbidden, (await directorClient.GetAsync($"/api/projects/{unknownProjectId}/structure")).StatusCode);
+            Assert.Equal(HttpStatusCode.Forbidden, (await directorClient.GetAsync($"/api/projects/{unknownProjectId}/customers")).StatusCode);
+            Assert.Equal(HttpStatusCode.Forbidden, (await directorClient.GetAsync($"/api/projects/{unknownProjectId}/documents")).StatusCode);
+            Assert.Equal(HttpStatusCode.Forbidden, (await directorClient.GetAsync($"/api/projects/{unknownProjectId}/reservations")).StatusCode);
+            var unknownProjectUpdate = await directorClient.PutAsJsonAsync(
+                $"/api/projects/{unknownProjectId}",
+                directorUpdate);
+            Assert.Equal(HttpStatusCode.Forbidden, unknownProjectUpdate.StatusCode);
+
             // A non-administrator who creates a project is explicitly assigned as its initial Project Manager.
             var directorCreateProjectResponse = await directorClient.PostAsJsonAsync(
                 "/api/projects",

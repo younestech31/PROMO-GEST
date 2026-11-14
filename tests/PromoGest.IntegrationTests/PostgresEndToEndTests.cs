@@ -943,6 +943,34 @@ public sealed class PostgresEndToEndTests : IClassFixture<PostgreSql18Integratio
             var duplicateCustomerError = await duplicateCustomerResponse.Content.ReadFromJsonAsync<ApiErrorResponse>();
             Assert.Equal("CUSTOMER_DUPLICATE", duplicateCustomerError!.Code);
 
+            var otherProjectResponse = await adminClient.PostAsJsonAsync(
+                "/api/projects",
+                new CreateProjectRequest(
+                    "PRJ-16-010",
+                    "إقامة ثانية",
+                    "Résidence Deux",
+                    "31",
+                    "Oran",
+                    "Bir El Djir",
+                    null,
+                    null,
+                    null,
+                    null,
+                    "Planning",
+                    100_000_000m,
+                    2,
+                    20));
+            Assert.Equal(HttpStatusCode.Created, otherProjectResponse.StatusCode);
+            var otherProject = await otherProjectResponse.Content.ReadFromJsonAsync<ProjectDto>();
+            Assert.NotNull(otherProject);
+
+            var foreignProjectCustomerResponse = await adminClient.PostAsJsonAsync(
+                $"/api/projects/{otherProject!.Id}/customers",
+                customerRequest with { IdentityDocumentStoredFileId = uploadedDocumentId });
+            Assert.Equal(HttpStatusCode.NotFound, foreignProjectCustomerResponse.StatusCode);
+            var foreignProjectDocumentError = await foreignProjectCustomerResponse.Content.ReadFromJsonAsync<ApiErrorResponse>();
+            Assert.Equal("CUSTOMER_IDENTITY_DOCUMENT_NOT_FOUND", foreignProjectDocumentError!.Code);
+
             var addInteractionResponse = await adminClient.PostAsJsonAsync(
                 $"/api/projects/{createdProject.Id}/customers/{createdCustomer.Id}/interactions",
                 new AddCustomerInteractionRequest(

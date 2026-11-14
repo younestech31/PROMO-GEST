@@ -268,7 +268,7 @@ public sealed class ProjectStructureService
 
         var previousCode = building.Code;
         var nowUtc = _clock.UtcNow;
-        building.UpdateDetails(request.Code, request.NameAr, request.NameFr, status, nowUtc);
+        building.UpdateDetails(normalizedCode, request.NameAr, request.NameFr, status, nowUtc);
 
         await WriteAuditAsync(
             actorAndProject.Actor,

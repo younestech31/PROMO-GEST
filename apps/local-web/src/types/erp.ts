@@ -178,6 +178,82 @@ export interface ProjectDocumentDto {
   createdAtUtc: string;
 }
 
+export interface ProjectCustomerListItemDto {
+  id: string;
+  customerType: string;
+  displayName: string;
+  contactPerson: string | null;
+  phone: string;
+  email: string | null;
+  status: string;
+  source: string;
+  updatedAtUtc: string;
+  interactionCount: number;
+  hasIdentityDocument: boolean;
+  concurrencyStamp: string;
+}
+
+export interface CustomerIdentityDocumentDto {
+  id: string;
+  originalFileName: string;
+  category: string;
+  sizeBytes: number;
+}
+
+export interface CustomerInteractionDto {
+  id: string;
+  type: string;
+  subject: string;
+  summary: string;
+  occurredAtUtc: string;
+  nextFollowUpAtUtc: string | null;
+  createdByFullName: string;
+}
+
+export interface ProjectCustomerDto {
+  id: string;
+  projectId: string;
+  customerType: string;
+  displayName: string;
+  contactPerson: string | null;
+  phone: string;
+  email: string | null;
+  address: string | null;
+  preferredLanguage: AppLanguage;
+  source: string;
+  status: string;
+  identityDocument: CustomerIdentityDocumentDto | null;
+  interactions: CustomerInteractionDto[];
+  createdAtUtc: string;
+  updatedAtUtc: string;
+  concurrencyStamp: string;
+}
+
+export interface CreateProjectCustomerRequest {
+  customerType: string;
+  displayName: string;
+  contactPerson?: string | null;
+  phone: string;
+  email?: string | null;
+  address?: string | null;
+  preferredLanguage: AppLanguage;
+  source: string;
+  identityDocumentStoredFileId?: string | null;
+}
+
+export interface UpdateProjectCustomerRequest extends CreateProjectCustomerRequest {
+  status: string;
+  concurrencyStamp: string;
+}
+
+export interface AddCustomerInteractionRequest {
+  type: string;
+  subject: string;
+  summary: string;
+  occurredAtUtc?: string | null;
+  nextFollowUpAtUtc?: string | null;
+}
+
 export interface CreateProjectRequest {
   code: string;
   nameAr: string;

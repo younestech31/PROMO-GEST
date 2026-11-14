@@ -55,11 +55,24 @@ Production acceptance remains separate: test the full upload/download and restor
 
 ## Milestone 4 — Customer and prospect registry
 
-**Next development milestone.**
+**Status: core implementation and CI verification delivered; local-installation acceptance remains separate.**
 
-Create a deduplicated local register for individuals and legal entities with contact details, communication history, identity/document references, privacy boundaries, and project interest. Define field validation and access by commercial/legal role before introducing sales or payment mutations.
+Delivered capabilities:
+- Project-scoped register for individuals and legal entities with Arabic/French preferred language, primary contact, contact person, source, and lifecycle status.
+- Per-project duplicate prevention using normalized display name and phone, enforced by a unique PostgreSQL index.
+- Customer details, optimistic-concurrency updates, and append-only communication/follow-up history for calls, emails, meetings, visits, and notes.
+- Optional reference to a document already stored under the same project. Identity-document numbers are not copied into separate text fields.
+- `customers.read` / `customers.manage` permissions combined with project membership. Customer mutations additionally require project sales capability or Project Manager role; legal read access remains read-only.
+- Audit entries identify record IDs and operations without copying names, telephone numbers, email addresses, or interaction content.
+- Arabic/French customer registry UI within each project. Records remain in local PostgreSQL.
+
+CI coverage includes the additive PostgreSQL migration, customer creation/list/detail/update, duplicate prevention, linked-document project scope, communication history, optimistic concurrency, audit privacy, project membership, read-only role enforcement, revocation, frontend checks/build, and Windows publishing.
+
+Production acceptance remains separate: test this workflow with fictional customer data on a real local installation, verify access with actual employee roles, and review local backup/retention and privacy notices before using real customer records.
 
 ## Milestone 5 — Commercialization, reservations, contracts, and collections
+
+**Next development milestone.**
 
 Introduce unit availability workflows, customer-unit links, reservation lifecycle, contract records, payment schedules, receipts, and collection tracking. Define legal states, cancellation/refund handling, numbering, approvals, and audit requirements before implementing transitions. A unit must never be marked Reserved/Sold/Delivered by a shortcut outside the validated sales workflow.
 

@@ -35,6 +35,8 @@ All primary keys use UUIDs. Foreign keys, unique indexes, check constraints, and
 | `audit_logs` | Append-only security, authentication, administration, project, and structure event history |
 | `system_settings` | Local installation settings |
 | `stored_files` | Local document metadata including category, optional description, scope, project/uploader references, byte length, and SHA-256 checksum; file contents remain on local disk |
+| `project_customers` | Project-scoped individual and legal-entity customer/prospect records, normalized contact keys, lifecycle status, and optional reference to a local project document |
+| `customer_interactions` | Customer communication and follow-up history with author and occurrence/follow-up timestamps |
 
 ### Key integrity rules
 
@@ -50,6 +52,12 @@ All primary keys use UUIDs. Foreign keys, unique indexes, check constraints, and
 - Project documents are scoped to a project and retrieved by both project ID and file ID; an API caller cannot use a document identifier from another project to bypass the membership check.
 - The current document categories are `Legal`, `LandAndTitle`, `Permits`, `Plans`, `Engineering`, `Commercial`, `Financial`, `Correspondence`, and `Other`. The database check constraint keeps the category vocabulary consistent.
 - The `stored_files.category` migration backfills existing metadata rows as `Other`, then removes the temporary column default so all new records must provide a valid category. No existing file bytes or metadata rows are deleted.
+- Customer records are partitioned by project. Within one project, the same normalized display name and normalized phone cannot be registered twice; PostgreSQL enforces the composite uniqueness rule.
+- Customer and customer-interaction creator foreign keys are indexed for efficient audit attribution and user-related maintenance queries; these indexes are added by `20261114195931_CustomerModelSnapshotReconciliation`.
+- Customer and interaction enum values, phone normalization, and follow-up date ordering are enforced by database constraints as well as domain validation.
+- Customer identity-document references must resolve to a document in the same project through the application service; users without `files.read` cannot inspect linked document metadata or change the link.
+- Customer data and communication summaries are excluded from audit metadata; audit records identify the project and record IDs without copying names, phone numbers, email addresses, or interaction text.
+- `customers.read` and `customers.manage` are combined with project scope. Non-administrative write access additionally requires project sales capability or Project Manager role; read-only legal access does not grant customer mutations.
 
 **Planned counts and actual counts are different measures.** `projects.planned_blocks_count` and `projects.planned_units_count` are planning targets. Actual building/unit totals are read from `buildings` and `property_units` through their floor/building relationship; they must never overwrite the planned targets.
 
@@ -70,6 +78,9 @@ The EF Core migration history currently includes:
 3. `20261113000003_SystemAdministratorInvariant`
 4. `20261113000004_AuditLogRuntimePermissions`
 5. `20261114090000_ProjectStructureFoundation`
+6. `20261114180000_ProjectDocumentMetadata`
+7. `20261114190000_ProjectCustomerRegistry`
+8. `20261114195931_CustomerModelSnapshotReconciliation`
 
 The model snapshot is maintained alongside the migrations and must remain synchronized with `AppDbContext`.
 

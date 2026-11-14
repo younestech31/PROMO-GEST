@@ -267,6 +267,27 @@ public sealed class ProjectSalesReservationService
         if (!actor.IsActive)
             throw new ForbiddenDomainException("AUTH_ACCOUNT_INACTIVE", "Account is inactive.");
 
+        if (!actor.IsSystemAdministrator)
+        {
+            var accessMembership = await _projectRepository.GetMemberAsync(projectId, actorUserId, ct);
+            if (accessMembership is null)
+            {
+                await WriteAuditAsync(
+                    actor,
+                    "ACCESS_DENIED",
+                    "Project",
+                    projectId.ToString(),
+                    "Unauthorized project reservation access attempt.",
+                    new { projectId, operation = canWrite ? "write" : "read" },
+                    metadata,
+                    ct,
+                    saveChanges: true);
+                throw new ForbiddenDomainException(
+                    canWrite ? "FORBIDDEN_PROJECT_RESERVATION_WRITE" : "PROJECT_RESERVATION_ACCESS_DENIED",
+                    "You do not have permission to access reservations for this project.");
+            }
+        }
+
         var project = await _projectRepository.GetByIdWithMembersAsync(projectId, ct)
             ?? throw new NotFoundDomainException("PROJECT_NOT_FOUND", "Project not found.");
 

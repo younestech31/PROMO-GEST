@@ -20,6 +20,7 @@ using PromoGest.Contracts.Projects;
 using PromoGest.Contracts.Setup;
 using PromoGest.Contracts.Users;
 using PromoGest.Domain.Entities;
+using PromoGest.Domain.Enums;
 using PromoGest.Infrastructure;
 using PromoGest.Infrastructure.Persistence;
 using Testcontainers.PostgreSql;

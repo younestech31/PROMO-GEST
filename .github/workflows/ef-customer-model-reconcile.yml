@@ -35,6 +35,27 @@ jobs:
             --context AppDbContext \
             --output-dir Persistence/Migrations
 
+      - name: Preserve the shared migration snapshot helper
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+
+          path = Path("src/PromoGest.Infrastructure/Persistence/Migrations/AppDbContextModelSnapshot.cs")
+          source = path.read_text(encoding="utf-8")
+          class_anchor = "    partial class AppDbContextModelSnapshot : ModelSnapshot\n    {"
+          helper = """
+                  internal static void BuildModelCore(ModelBuilder modelBuilder)
+                  {
+                      new AppDbContextModelSnapshot().BuildModel(modelBuilder);
+                  }
+          """
+          if source.count(class_anchor) != 1:
+              raise SystemExit("Unable to locate the model snapshot class exactly once.")
+          if "internal static void BuildModelCore" not in source:
+              source = source.replace(class_anchor, class_anchor + helper, 1)
+              path.write_text(source, encoding="utf-8")
+          PY
+
       - name: Build generated migration and snapshot
         run: dotnet build src/PromoGest.sln --configuration Release --no-restore
 

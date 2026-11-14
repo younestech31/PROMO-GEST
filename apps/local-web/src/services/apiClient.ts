@@ -1,6 +1,12 @@
 import type {
   ApiErrorResponse,
   ProjectDocumentDto,
+  ProjectCustomerDto,
+  ProjectCustomerListItemDto,
+  CreateProjectCustomerRequest,
+  UpdateProjectCustomerRequest,
+  AddCustomerInteractionRequest,
+  CustomerInteractionDto,
   AssignProjectMemberRequest,
   AuditLogDto,
   CreateEmployeeRequest,
@@ -306,6 +312,36 @@ export const apiClient = {
 
   downloadProjectDocument: (projectId: string, fileId: string) =>
     requestBlob(`/api/projects/${encodeURIComponent(projectId)}/documents/${encodeURIComponent(fileId)}/download`),
+
+  listProjectCustomers: (projectId: string) =>
+    requestJson<ProjectCustomerListItemDto[]>(`/api/projects/${encodeURIComponent(projectId)}/customers`, {
+      method: 'GET',
+      cache: 'no-store',
+    }),
+
+  getProjectCustomer: (projectId: string, customerId: string) =>
+    requestJson<ProjectCustomerDto>(
+      `/api/projects/${encodeURIComponent(projectId)}/customers/${encodeURIComponent(customerId)}`,
+      { method: 'GET', cache: 'no-store' }
+    ),
+
+  createProjectCustomer: (projectId: string, payload: CreateProjectCustomerRequest) =>
+    requestJson<ProjectCustomerDto>(`/api/projects/${encodeURIComponent(projectId)}/customers`, {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    }),
+
+  updateProjectCustomer: (projectId: string, customerId: string, payload: UpdateProjectCustomerRequest) =>
+    requestJson<ProjectCustomerDto>(
+      `/api/projects/${encodeURIComponent(projectId)}/customers/${encodeURIComponent(customerId)}`,
+      { method: 'PUT', body: JSON.stringify(payload) }
+    ),
+
+  addCustomerInteraction: (projectId: string, customerId: string, payload: AddCustomerInteractionRequest) =>
+    requestJson<CustomerInteractionDto>(
+      `/api/projects/${encodeURIComponent(projectId)}/customers/${encodeURIComponent(customerId)}/interactions`,
+      { method: 'POST', body: JSON.stringify(payload) }
+    ),
 
   getProjectStructure: (projectId: string) =>
     requestJson<ProjectStructureDto>(`/api/projects/${encodeURIComponent(projectId)}/structure`, {

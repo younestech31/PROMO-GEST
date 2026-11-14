@@ -1,0 +1,58 @@
+name: Temporary EF customer model reconciliation
+
+on:
+  push:
+    branches: [feat/project-customer-registry]
+
+permissions:
+  contents: write
+
+jobs:
+  reconcile:
+    if: ${{ !contains(github.event.head_commit.message, 'Generated EF customer model reconciliation') }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ github.ref_name }}
+          fetch-depth: 0
+
+      - uses: actions/setup-dotnet@v6
+        with:
+          dotnet-version: "10.0.x"
+
+      - name: Install EF Core command-line tools
+        run: dotnet tool install --global dotnet-ef --version 10.0.0
+
+      - name: Restore solution
+        run: dotnet restore src/PromoGest.sln
+
+      - name: Scaffold snapshot reconciliation using the actual EF runtime model
+        run: |
+          dotnet ef migrations add CustomerModelSnapshotReconciliation \
+            --project src/PromoGest.Infrastructure/PromoGest.Infrastructure.csproj \
+            --startup-project src/PromoGest.Api/PromoGest.Api.csproj \
+            --context AppDbContext \
+            --output-dir Persistence/Migrations
+
+      - name: Verify no pending EF model changes remain
+        run: |
+          dotnet ef migrations has-pending-model-changes \
+            --project src/PromoGest.Infrastructure/PromoGest.Infrastructure.csproj \
+            --startup-project src/PromoGest.Api/PromoGest.Api.csproj \
+            --context AppDbContext
+
+      - name: Commit the generated migration and authoritative model snapshot
+        env:
+          BRANCH_NAME: ${{ github.ref_name }}
+        run: |
+          set -euo pipefail
+          if [[ -z "$(git status --porcelain)" ]]; then
+            echo "EF reported pending changes but produced no files; failing for investigation."
+            exit 1
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add src/PromoGest.Infrastructure/Persistence/Migrations
+          git commit -m "Generated EF customer model reconciliation"
+          git push origin "HEAD:${BRANCH_NAME}"

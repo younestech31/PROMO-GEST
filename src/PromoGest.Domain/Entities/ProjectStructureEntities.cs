@@ -63,6 +63,38 @@ public sealed class Building : BaseEntity
         };
     }
 
+    public void UpdateDetails(
+        string code,
+        string nameAr,
+        string nameFr,
+        BuildingStatus status,
+        DateTimeOffset nowUtc)
+    {
+        if (string.IsNullOrWhiteSpace(code))
+            throw new DomainException("BUILDING_CODE_REQUIRED", "Building code is required.");
+
+        var normalizedCode = code.Trim().ToUpperInvariant();
+        EnsureLength(normalizedCode, 40, "BUILDING_CODE_TOO_LONG");
+
+        if (string.IsNullOrWhiteSpace(nameAr) && string.IsNullOrWhiteSpace(nameFr))
+            throw new DomainException("BUILDING_NAME_REQUIRED", "Building name in Arabic or French is required.");
+
+        var effectiveAr = string.IsNullOrWhiteSpace(nameAr) ? nameFr.Trim() : nameAr.Trim();
+        var effectiveFr = string.IsNullOrWhiteSpace(nameFr) ? nameAr.Trim() : nameFr.Trim();
+        EnsureLength(effectiveAr, 200, "BUILDING_NAME_TOO_LONG");
+        EnsureLength(effectiveFr, 200, "BUILDING_NAME_TOO_LONG");
+
+        if (!Enum.IsDefined(status))
+            throw new DomainException("BUILDING_STATUS_INVALID", "A valid building status is required.");
+
+        Code = normalizedCode;
+        NormalizedCode = normalizedCode;
+        NameAr = effectiveAr;
+        NameFr = effectiveFr;
+        Status = status;
+        Touch(nowUtc);
+    }
+
     private static void EnsureLength(string value, int maximumLength, string errorCode)
     {
         if (value.Length > maximumLength)

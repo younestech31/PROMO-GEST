@@ -106,6 +106,11 @@ public sealed class DomainInvariantTests
         Assert.Throws<DomainException>(() => OrganizationSettings.Initialize(
             "SARL Test", null, "SARL", "123", null, null, null, null,
             "16", "Alger", "Address", null, null, "ar", FixedNow));
+
+        var wilaya69Organization = OrganizationSettings.Initialize(
+            "SARL Test Wilaya 69", null, "SARL", null, null, null, null, null,
+            "69", "الأبيض سيدي الشيخ", "Address", null, null, "ar", FixedNow);
+        Assert.Equal("69", wilaya69Organization.WilayaCode);
     }
 
     [Fact]
@@ -119,6 +124,19 @@ public sealed class DomainInvariantTests
         Assert.Throws<DomainException>(() => Project.Create(
             "PRJ-02", "مشروع", "Résidence", "00", "Invalid", "Hydra",
             null, null, null, null, ProjectStatus.Planning, 100m, 2, 24, creatorId, FixedNow));
+
+        Assert.Throws<DomainException>(() => Project.Create(
+            "PRJ-03", "مشروع", "Résidence", "70", "Invalid", "Hydra",
+            null, null, null, null, ProjectStatus.Planning, 100m, 2, 24, creatorId, FixedNow));
+        Assert.Throws<DomainException>(() => Project.Create(
+            "PRJ-04", "مشروع", "Résidence", "69", "الأبيض سيدي الشيخ", "الأبيض سيدي الشيخ",
+            null, null, null, null, (ProjectStatus)999, 100m, 2, 24, creatorId, FixedNow));
+        Assert.Throws<DomainException>(() => Project.Create(
+            new string('P', 41), "مشروع", "Résidence", "69", "الأبيض سيدي الشيخ", "الأبيض سيدي الشيخ",
+            null, null, null, null, ProjectStatus.Planning, 100m, 2, 24, creatorId, FixedNow));
+        Assert.Throws<DomainException>(() => Project.Create(
+            "PRJ-05", "مشروع", "Résidence", "69", "الأبيض سيدي الشيخ", "الأبيض سيدي الشيخ",
+            null, null, null, null, ProjectStatus.Planning, 9_999_999_999_999_999.99m + 0.01m, 2, 24, creatorId, FixedNow));
 
         var project = Project.Create(
             "PRJ-01",
@@ -145,6 +163,27 @@ public sealed class DomainInvariantTests
         Assert.Single(project.Members);
         Assert.Equal(ProjectRole.ProjectManager, project.Members.Single().RoleInProject);
         Assert.True(project.Members.Single().CanViewFinancials);
+
+        Assert.Throws<DomainException>(() => ProjectMember.Create(
+            Guid.Empty,
+            memberUserId,
+            ProjectRole.ProjectManager,
+            true,
+            true,
+            true,
+            true,
+            creatorId,
+            FixedNow));
+        Assert.Throws<DomainException>(() => ProjectMember.Create(
+            project.Id,
+            Guid.NewGuid(),
+            (ProjectRole)999,
+            true,
+            true,
+            true,
+            true,
+            creatorId,
+            FixedNow));
     }
 
     [Fact]

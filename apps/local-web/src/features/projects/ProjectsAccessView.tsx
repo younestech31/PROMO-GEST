@@ -642,6 +642,7 @@ export function ProjectsAccessView({
         <ProjectStructureModal
           project={structureProject}
           language={language}
+          canManage={canManageProjectStructure(currentUser, structureProject)}
           onClose={() => setStructureProject(null)}
         />
       )}

@@ -94,7 +94,14 @@ public sealed class ProjectDocumentService
         if (description is not null && description.Trim().Length > 500)
             throw new DomainException("FILE_DESCRIPTION_TOO_LONG", "Document description must not exceed 500 characters.");
 
-        var extension = Path.GetExtension((originalFileName ?? string.Empty).Trim().Replace('\\', '/'));
+        var safeOriginalFileName = Path.GetFileName((originalFileName ?? string.Empty).Trim().Replace('\\', '/'));
+        safeOriginalFileName = new string(safeOriginalFileName.Where(character => !char.IsControl(character)).ToArray()).Trim();
+        if (string.IsNullOrWhiteSpace(safeOriginalFileName))
+            throw new DomainException("FILE_NAME_REQUIRED", "Original file name is required.");
+        if (safeOriginalFileName.Length > 255)
+            throw new DomainException("FILE_NAME_TOO_LONG", "Original file name must not exceed 255 characters.");
+
+        var extension = Path.GetExtension(safeOriginalFileName);
         if (!AllowedTypes.TryGetValue(extension, out var detectedContentType))
             throw new DomainException("FILE_TYPE_NOT_ALLOWED", "This file type is not supported. Upload PDF, images, Office documents, TXT, or CSV.");
 
@@ -105,7 +112,7 @@ public sealed class ProjectDocumentService
 
         var storedFile = await _fileStorage.SaveAsync(
             content,
-            originalFileName,
+            safeOriginalFileName,
             detectedContentType,
             normalizedCategory,
             description,

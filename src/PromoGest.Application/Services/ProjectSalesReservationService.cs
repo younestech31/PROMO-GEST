@@ -1,6 +1,4 @@
 using System.Text.Json;
-using Microsoft.EntityFrameworkCore;
-using Npgsql;
 using PromoGest.Application.Interfaces;
 using PromoGest.Contracts.Common;
 using PromoGest.Contracts.Projects;
@@ -136,24 +134,7 @@ public sealed class ProjectSalesReservationService
             ct,
             saveChanges: false);
 
-        try
-        {
-            await _reservationRepository.SaveChangesAsync(ct);
-        }
-        catch (DbUpdateConcurrencyException)
-        {
-            throw new ConflictDomainException(
-                "RESERVATION_CONCURRENCY_CONFLICT",
-                "The property unit changed while the reservation was being created. Reload the project structure and try again.");
-        }
-        catch (DbUpdateException exception) when (
-            exception.InnerException is PostgresException postgres &&
-            postgres.SqlState == PostgresErrorCodes.UniqueViolation)
-        {
-            throw new ConflictDomainException(
-                "RESERVATION_UNIT_UNAVAILABLE",
-                "Another active reservation already exists for this unit.");
-        }
+        await _reservationRepository.SaveChangesAsync(ct);
 
         return Map(reservation, unit.UnitNumber, customer.DisplayName);
     }
@@ -221,16 +202,7 @@ public sealed class ProjectSalesReservationService
             ct,
             saveChanges: false);
 
-        try
-        {
-            await _reservationRepository.SaveChangesAsync(ct);
-        }
-        catch (DbUpdateConcurrencyException)
-        {
-            throw new ConflictDomainException(
-                "RESERVATION_CONCURRENCY_CONFLICT",
-                "The reservation or property unit changed while cancellation was being saved. Reload and try again.");
-        }
+        await _reservationRepository.SaveChangesAsync(ct);
 
         return Map(reservation, unit.UnitNumber, customer.DisplayName);
     }

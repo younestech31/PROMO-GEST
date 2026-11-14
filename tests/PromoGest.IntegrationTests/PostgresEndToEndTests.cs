@@ -144,6 +144,11 @@ public sealed class PostgreSql18IntegrationFixture : IAsyncLifetime
                 throw new InvalidOperationException(
                     "The AuditLogRuntimePermissions migration was not discovered and applied.");
             }
+            if (!applied.Contains("20261114090000_ProjectStructureFoundation"))
+            {
+                throw new InvalidOperationException(
+                    "The ProjectStructureFoundation migration was not discovered and applied.");
+            }
         }
 
         // Apply the same post-migration grants used by the Google AI Studio Cloud SQL path.
@@ -612,7 +617,87 @@ public sealed class PostgresEndToEndTests : IClassFixture<PostgreSql18Integratio
                     entry.TargetEntityId == createdProject.Id.ToString());
             }
 
-            // The seeded Project Director role must also be able to update projects via its projects.manage permission.
+            // Real project hierarchy: project -> buildings -> floors -> typed property units.
+            var structureUrl = $"/api/projects/{createdProject.Id}/structure";
+            var emptyStructure = await adminClient.GetFromJsonAsync<ProjectStructureDto>(structureUrl);
+            Assert.NotNull(emptyStructure);
+            Assert.Empty(emptyStructure!.Buildings);
+
+            var buildingResponse = await adminClient.PostAsJsonAsync(
+                $"{structureUrl}/buildings",
+                new CreateBuildingRequest("A", "العمارة أ", "Bâtiment A", "Planned"));
+            Assert.Equal(HttpStatusCode.OK, buildingResponse.StatusCode);
+            var buildingStructure = await buildingResponse.Content.ReadFromJsonAsync<ProjectStructureDto>();
+            Assert.NotNull(buildingStructure);
+            var createdBuilding = Assert.Single(buildingStructure!.Buildings);
+            Assert.Equal("A", createdBuilding.Code);
+
+            // Normalized building codes are unique within the same project.
+            var duplicateBuildingResponse = await adminClient.PostAsJsonAsync(
+                $"{structureUrl}/buildings",
+                new CreateBuildingRequest(" a ", "عمارة مكررة", "Bâtiment dupliqué", "Planned"));
+            Assert.Equal(HttpStatusCode.Conflict, duplicateBuildingResponse.StatusCode);
+
+            var floorsUrl = $"{structureUrl}/buildings/{createdBuilding.Id}/floors";
+            var floorResponse = await adminClient.PostAsJsonAsync(
+                floorsUrl,
+                new CreateBuildingFloorRequest(0, "الطابق الأرضي", "Rez-de-chaussée"));
+            Assert.Equal(HttpStatusCode.OK, floorResponse.StatusCode);
+            var floorStructure = await floorResponse.Content.ReadFromJsonAsync<ProjectStructureDto>();
+            Assert.NotNull(floorStructure);
+            var createdFloor = Assert.Single(Assert.Single(floorStructure!.Buildings).Floors);
+            Assert.Equal(0, createdFloor.FloorNumber);
+
+            var duplicateFloorResponse = await adminClient.PostAsJsonAsync(
+                floorsUrl,
+                new CreateBuildingFloorRequest(0, "طابق مكرر", "Étage dupliqué"));
+            Assert.Equal(HttpStatusCode.Conflict, duplicateFloorResponse.StatusCode);
+
+            var unitsUrl = $"{floorsUrl}/{createdFloor.Id}/units";
+            var unitResponse = await adminClient.PostAsJsonAsync(
+                unitsUrl,
+                new CreatePropertyUnitRequest(
+                    "A-001",
+                    "Apartment",
+                    "AvailableForSale",
+                    112.50m,
+                    96.25m,
+                    4));
+            Assert.Equal(HttpStatusCode.OK, unitResponse.StatusCode);
+            var unitStructure = await unitResponse.Content.ReadFromJsonAsync<ProjectStructureDto>();
+            Assert.NotNull(unitStructure);
+            var createdUnit = Assert.Single(
+                Assert.Single(Assert.Single(unitStructure!.Buildings).Floors).Units);
+            Assert.Equal("A-001", createdUnit.UnitNumber);
+            Assert.Equal(112.50m, createdUnit.GrossAreaSquareMeters);
+            Assert.Equal(96.25m, createdUnit.NetAreaSquareMeters);
+            Assert.Equal(4, createdUnit.RoomsCount);
+
+            var duplicateUnitResponse = await adminClient.PostAsJsonAsync(
+                unitsUrl,
+                new CreatePropertyUnitRequest("a-001", "Apartment", "Planned", 100m, 90m, 3));
+            Assert.Equal(HttpStatusCode.Conflict, duplicateUnitResponse.StatusCode);
+
+            var invalidAreaResponse = await adminClient.PostAsJsonAsync(
+                unitsUrl,
+                new CreatePropertyUnitRequest("A-002", "Apartment", "Planned", 90m, 91m, 3));
+            Assert.Equal(HttpStatusCode.BadRequest, invalidAreaResponse.StatusCode);
+
+            using (var scope = factory.Services.CreateScope())
+            {
+                var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+                Assert.Equal(1, await db.Buildings.CountAsync(building => building.ProjectId == createdProject.Id));
+                Assert.Equal(1, await db.BuildingFloors.CountAsync(floor => floor.BuildingId == createdBuilding.Id));
+                Assert.Equal(1, await db.PropertyUnits.CountAsync(unit => unit.FloorId == createdFloor.Id));
+                Assert.Contains(await db.AuditLogs.ToListAsync(), entry =>
+                    entry.EventType == "BUILDING_CREATED" && entry.TargetEntityId == createdBuilding.Id.ToString());
+                Assert.Contains(await db.AuditLogs.ToListAsync(), entry =>
+                    entry.EventType == "BUILDING_FLOOR_CREATED" && entry.TargetEntityId == createdFloor.Id.ToString());
+                Assert.Contains(await db.AuditLogs.ToListAsync(), entry =>
+                    entry.EventType == "PROPERTY_UNIT_CREATED" && entry.TargetEntityId == createdUnit.Id.ToString());
+            }
+
+            // The seeded Project Director role must also be able to manage project structure via its explicit permission.
             var directorCreateResp = await adminClient.PostAsJsonAsync("/api/users", new CreateEmployeeRequest(
                 "youssef.director",
                 "Youssef Director",
@@ -644,6 +729,11 @@ public sealed class PostgresEndToEndTests : IClassFixture<PostgreSql18Integratio
             Assert.NotNull(directorUpdatedProject);
             Assert.Equal(directorUpdate.NameAr, directorUpdatedProject!.NameAr);
 
+            var directorBuildingResponse = await directorClient.PostAsJsonAsync(
+                $"{structureUrl}/buildings",
+                new CreateBuildingRequest("B", "العمارة ب", "Bâtiment B", "Planned"));
+            Assert.Equal(HttpStatusCode.OK, directorBuildingResponse.StatusCode);
+
             // 8. Authenticate as employee -> test CSRF check, IDOR rejection, role escalation rejection, membership grant & revoke, deactivation session invalidation
             using var employeeClient = factory.CreateClient(new WebApplicationFactoryClientOptions { HandleCookies = true });
             await AttachCsrfTokenAsync(employeeClient);
@@ -657,6 +747,14 @@ public sealed class PostgresEndToEndTests : IClassFixture<PostgreSql18Integratio
                 $"/api/projects/{createdProject.Id}",
                 projectUpdate with { NameAr = "تعديل غير مصرح به" });
             Assert.Equal(HttpStatusCode.Forbidden, deniedProjectUpdate.StatusCode);
+
+            var deniedStructureRead = await employeeClient.GetAsync(structureUrl);
+            Assert.Equal(HttpStatusCode.Forbidden, deniedStructureRead.StatusCode);
+
+            var deniedStructureCreate = await employeeClient.PostAsJsonAsync(
+                $"{structureUrl}/buildings",
+                new CreateBuildingRequest("X", "غير مصرح", "Non autorisé", "Planned"));
+            Assert.Equal(HttpStatusCode.Forbidden, deniedStructureCreate.StatusCode);
 
             // IDOR blocked + audited
             var forbiddenAttempt = await employeeClient.GetAsync($"/api/projects/{createdProject!.Id}");

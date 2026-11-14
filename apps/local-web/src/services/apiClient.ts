@@ -4,6 +4,10 @@ import type {
   AuditLogDto,
   CreateEmployeeRequest,
   CreateProjectRequest,
+  CreateBuildingRequest,
+  CreateBuildingFloorRequest,
+  CreatePropertyUnitRequest,
+  ProjectStructureDto,
   HealthStatusResponse,
   InitializeInstallationRequest,
   InitializeInstallationResponse,
@@ -249,6 +253,34 @@ export const apiClient = {
       method: 'PUT',
       body: JSON.stringify(payload),
     }),
+
+  getProjectStructure: (projectId: string) =>
+    requestJson<ProjectStructureDto>(`/api/projects/${encodeURIComponent(projectId)}/structure`, {
+      method: 'GET',
+    }),
+
+  createProjectBuilding: (projectId: string, payload: CreateBuildingRequest) =>
+    requestJson<ProjectStructureDto>(`/api/projects/${encodeURIComponent(projectId)}/structure/buildings`, {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    }),
+
+  createBuildingFloor: (projectId: string, buildingId: string, payload: CreateBuildingFloorRequest) =>
+    requestJson<ProjectStructureDto>(
+      `/api/projects/${encodeURIComponent(projectId)}/structure/buildings/${encodeURIComponent(buildingId)}/floors`,
+      { method: 'POST', body: JSON.stringify(payload) }
+    ),
+
+  createFloorUnit: (
+    projectId: string,
+    buildingId: string,
+    floorId: string,
+    payload: CreatePropertyUnitRequest
+  ) =>
+    requestJson<ProjectStructureDto>(
+      `/api/projects/${encodeURIComponent(projectId)}/structure/buildings/${encodeURIComponent(buildingId)}/floors/${encodeURIComponent(floorId)}/units`,
+      { method: 'POST', body: JSON.stringify(payload) }
+    ),
 
   assignProjectMember: (projectId: string, payload: AssignProjectMemberRequest) =>
     requestJson<ProjectDto>(`/api/projects/${encodeURIComponent(projectId)}/members`, {

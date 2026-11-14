@@ -30,6 +30,7 @@ public sealed class ApplicationSecurityAndFoundationTests
         IInstallationRepository,
         IUserRepository,
         IProjectRepository,
+        IProjectStructureRepository,
         IAuditWriter,
         IAuditQueryRepository
     {
@@ -41,6 +42,9 @@ public sealed class ApplicationSecurityAndFoundationTests
         public List<UserRole> UserRoles { get; } = new();
         public List<UserSession> Sessions { get; } = new();
         public List<Project> Projects { get; } = new();
+        public List<Building> Buildings { get; } = new();
+        public List<BuildingFloor> Floors { get; } = new();
+        public List<PropertyUnit> Units { get; } = new();
         public List<AuditLog> AuditLogs { get; } = new();
 
         public InMemoryStore()
@@ -48,7 +52,8 @@ public sealed class ApplicationSecurityAndFoundationTests
             var t = new DateTimeOffset(2026, 1, 1, 0, 0, 0, TimeSpan.Zero);
             var adminRole = Role.Create(Guid.NewGuid(), Role.SystemAdminCode, "مدير النظام", "Administrateur Système", "Admin", "Admin", true, t);
             var commRole = Role.Create(Guid.NewGuid(), Role.CommercialManagerCode, "مسؤول المبيعات", "Responsable Commercial", "Sales", "Sales", false, t);
-            Roles.AddRange(new[] { adminRole, commRole });
+            var siteEngineerRole = Role.Create(Guid.NewGuid(), Role.SiteEngineerCode, "مهندس الموقع", "Ingénieur de chantier", "Site", "Site", false, t);
+            Roles.AddRange(new[] { adminRole, commRole, siteEngineerRole });
 
             var pRead = Permission.Create(Guid.NewGuid(), "projects.read", "Projects", "قراءة", "Lire", t);
             var pUsers = Permission.Create(Guid.NewGuid(), "users.manage", "Admin", "مستخدمين", "Utilisateurs", t);
@@ -123,6 +128,32 @@ public sealed class ApplicationSecurityAndFoundationTests
         public Task AddProjectAsync(Project project, CancellationToken ct = default) { Projects.Add(project); return Task.CompletedTask; }
         // The in-memory store retains the aggregate instance, so AssignMember has already updated its collection.
         public Task AddMemberAsync(ProjectMember member, CancellationToken ct = default) => Task.CompletedTask;
+        public Task<IReadOnlyList<Building>> ListBuildingsByProjectAsync(Guid projectId, CancellationToken ct = default)
+            => Task.FromResult<IReadOnlyList<Building>>(Buildings.Where(b => b.ProjectId == projectId).ToList());
+        public Task<IReadOnlyList<BuildingFloor>> ListFloorsByProjectAsync(Guid projectId, CancellationToken ct = default)
+        {
+            var buildingIds = Buildings.Where(b => b.ProjectId == projectId).Select(b => b.Id).ToHashSet();
+            return Task.FromResult<IReadOnlyList<BuildingFloor>>(Floors.Where(f => buildingIds.Contains(f.BuildingId)).ToList());
+        }
+        public Task<IReadOnlyList<PropertyUnit>> ListUnitsByProjectAsync(Guid projectId, CancellationToken ct = default)
+        {
+            var buildingIds = Buildings.Where(b => b.ProjectId == projectId).Select(b => b.Id).ToHashSet();
+            var floorIds = Floors.Where(f => buildingIds.Contains(f.BuildingId)).Select(f => f.Id).ToHashSet();
+            return Task.FromResult<IReadOnlyList<PropertyUnit>>(Units.Where(u => floorIds.Contains(u.FloorId)).ToList());
+        }
+        public Task<Building?> GetBuildingAsync(Guid buildingId, CancellationToken ct = default)
+            => Task.FromResult(Buildings.FirstOrDefault(b => b.Id == buildingId));
+        public Task<BuildingFloor?> GetFloorAsync(Guid floorId, CancellationToken ct = default)
+            => Task.FromResult(Floors.FirstOrDefault(f => f.Id == floorId));
+        public Task<bool> ExistsBuildingCodeAsync(Guid projectId, string normalizedCode, CancellationToken ct = default)
+            => Task.FromResult(Buildings.Any(b => b.ProjectId == projectId && b.NormalizedCode == normalizedCode));
+        public Task<bool> ExistsFloorNumberAsync(Guid buildingId, int floorNumber, CancellationToken ct = default)
+            => Task.FromResult(Floors.Any(f => f.BuildingId == buildingId && f.FloorNumber == floorNumber));
+        public Task<bool> ExistsUnitNumberAsync(Guid floorId, string normalizedUnitNumber, CancellationToken ct = default)
+            => Task.FromResult(Units.Any(u => u.FloorId == floorId && u.NormalizedUnitNumber == normalizedUnitNumber));
+        public Task AddBuildingAsync(Building building, CancellationToken ct = default) { Buildings.Add(building); return Task.CompletedTask; }
+        public Task AddFloorAsync(BuildingFloor floor, CancellationToken ct = default) { Floors.Add(floor); return Task.CompletedTask; }
+        public Task AddPropertyUnitAsync(PropertyUnit unit, CancellationToken ct = default) { Units.Add(unit); return Task.CompletedTask; }
         public Task WriteAsync(AuditLog entry, CancellationToken ct = default) { AuditLogs.Add(entry); return Task.CompletedTask; }
         public Task<IReadOnlyList<AuditLog>> ListRecentAsync(int limit, CancellationToken ct = default)
             => Task.FromResult<IReadOnlyList<AuditLog>>(AuditLogs.OrderByDescending(a => a.OccurredAtUtc).Take(limit).ToList());
@@ -239,6 +270,168 @@ public sealed class ApplicationSecurityAndFoundationTests
         Assert.Single(visibleAfter);
         var accessed = await projectSvc.GetProjectByIdAsync(employee.Id, project.Id, meta);
         Assert.Equal(project.Code, accessed.Code);
+    }
+
+    [Fact]
+    public async Task ProjectStructure_EnforcesProjectScopeUniquenessPermissionsAndAudit()
+    {
+        var store = new InMemoryStore();
+        var clock = new FakeClock();
+        var hasher = new Pbkdf2PasswordHasher();
+        var setup = new SetupService(store, hasher, store, clock);
+        var userSvc = new UserManagementService(store, store, hasher, store, clock);
+        var projectSvc = new ProjectService(store, store, store, clock);
+        var structureSvc = new ProjectStructureService(store, store, store, store, clock);
+        var metadata = new RequestMetadata("127.0.0.1", "xUnit");
+
+        var init = await setup.InitializeAsync(ValidInitRequest(), metadata);
+        var project = await projectSvc.CreateProjectAsync(
+            init.SystemAdminUserId,
+            new CreateProjectRequest(
+                "PRJ-16-STRUCT",
+                "إقامة النخيل",
+                "Résidence Les Palmiers",
+                "16",
+                "Alger",
+                "Hydra",
+                null,
+                null,
+                null,
+                null,
+                "Planning",
+                300_000_000m,
+                2,
+                40),
+            metadata);
+
+        var employee = await userSvc.CreateEmployeeAsync(
+            init.SystemAdminUserId,
+            new CreateEmployeeRequest(
+                "nadir.site",
+                "Nadir Site",
+                "nadir.site@elbahdja.dz",
+                null,
+                "StrongPass123",
+                "ar",
+                new[] { Role.SiteEngineerCode }),
+            metadata);
+
+        var readDenied = await Assert.ThrowsAsync<ForbiddenDomainException>(() =>
+            structureSvc.GetProjectStructureAsync(employee.Id, project.Id, metadata));
+        Assert.Equal("PROJECT_ACCESS_DENIED", readDenied.Code);
+
+        var initial = await structureSvc.CreateBuildingAsync(
+            init.SystemAdminUserId,
+            project.Id,
+            new CreateBuildingRequest("A", "العمارة أ", "Bâtiment A", "Planned"),
+            metadata);
+        var building = Assert.Single(initial.Buildings);
+        Assert.Equal("A", building.Code);
+
+        var floorResponse = await structureSvc.CreateFloorAsync(
+            init.SystemAdminUserId,
+            project.Id,
+            building.Id,
+            new CreateBuildingFloorRequest(0, "الطابق الأرضي", "Rez-de-chaussée"),
+            metadata);
+        var floor = Assert.Single(Assert.Single(floorResponse.Buildings).Floors);
+        Assert.Equal(0, floor.FloorNumber);
+
+        var unitResponse = await structureSvc.CreatePropertyUnitAsync(
+            init.SystemAdminUserId,
+            project.Id,
+            building.Id,
+            floor.Id,
+            new CreatePropertyUnitRequest(
+                "A-001",
+                "Apartment",
+                "AvailableForSale",
+                112.50m,
+                96.25m,
+                4),
+            metadata);
+        var unit = Assert.Single(Assert.Single(Assert.Single(unitResponse.Buildings).Floors).Units);
+        Assert.Equal("A-001", unit.UnitNumber);
+        Assert.Equal(112.50m, unit.GrossAreaSquareMeters);
+        Assert.Equal(96.25m, unit.NetAreaSquareMeters);
+        Assert.Equal(4, unit.RoomsCount);
+
+        var duplicateBuilding = await Assert.ThrowsAsync<ConflictDomainException>(() =>
+            structureSvc.CreateBuildingAsync(
+                init.SystemAdminUserId,
+                project.Id,
+                new CreateBuildingRequest(" a ", "العمارة", "Bâtiment", "Planned"),
+                metadata));
+        Assert.Equal("BUILDING_CODE_EXISTS", duplicateBuilding.Code);
+
+        var duplicateFloor = await Assert.ThrowsAsync<ConflictDomainException>(() =>
+            structureSvc.CreateFloorAsync(
+                init.SystemAdminUserId,
+                project.Id,
+                building.Id,
+                new CreateBuildingFloorRequest(0, "الطابق", "Étage"),
+                metadata));
+        Assert.Equal("FLOOR_NUMBER_EXISTS", duplicateFloor.Code);
+
+        var duplicateUnit = await Assert.ThrowsAsync<ConflictDomainException>(() =>
+            structureSvc.CreatePropertyUnitAsync(
+                init.SystemAdminUserId,
+                project.Id,
+                building.Id,
+                floor.Id,
+                new CreatePropertyUnitRequest(
+                    "a-001",
+                    "Apartment",
+                    "Planned",
+                    100m,
+                    90m,
+                    3),
+                metadata));
+        Assert.Equal("UNIT_NUMBER_EXISTS", duplicateUnit.Code);
+
+        var invalidArea = await Assert.ThrowsAsync<DomainException>(() =>
+            structureSvc.CreatePropertyUnitAsync(
+                init.SystemAdminUserId,
+                project.Id,
+                building.Id,
+                floor.Id,
+                new CreatePropertyUnitRequest(
+                    "A-002",
+                    "Apartment",
+                    "Planned",
+                    90m,
+                    91m,
+                    3),
+                metadata));
+        Assert.Equal("UNIT_NET_AREA_EXCEEDS_GROSS", invalidArea.Code);
+
+        await projectSvc.AssignMemberAsync(
+            init.SystemAdminUserId,
+            project.Id,
+            new AssignProjectMemberRequest(
+                employee.Id,
+                nameof(ProjectRole.SiteSupervisor),
+                false,
+                false,
+                true,
+                false),
+            metadata);
+
+        var employeeStructure = await structureSvc.GetProjectStructureAsync(employee.Id, project.Id, metadata);
+        Assert.Single(employeeStructure.Buildings);
+
+        var employeeFloor = await structureSvc.CreateFloorAsync(
+            employee.Id,
+            project.Id,
+            building.Id,
+            new CreateBuildingFloorRequest(-1, "الطابق تحت الأرضي", "Sous-sol"),
+            metadata);
+        Assert.Equal(2, Assert.Single(employeeFloor.Buildings).Floors.Count);
+
+        Assert.Contains(store.AuditLogs, entry => entry.EventType == "BUILDING_CREATED");
+        Assert.Contains(store.AuditLogs, entry => entry.EventType == "BUILDING_FLOOR_CREATED");
+        Assert.Contains(store.AuditLogs, entry => entry.EventType == "PROPERTY_UNIT_CREATED");
+        Assert.Contains(store.AuditLogs, entry => entry.EventType == "ACCESS_DENIED" && entry.ActorUserId == employee.Id);
     }
 
     [Fact]

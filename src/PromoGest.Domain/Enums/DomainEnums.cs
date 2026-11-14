@@ -27,6 +27,25 @@ public enum PropertyUnitType
     Storage = 5
 }
 
+public enum BuildingStatus
+{
+    Planned = 1,
+    UnderConstruction = 2,
+    Completed = 3,
+    Suspended = 4
+}
+
+public enum PropertyUnitStatus
+{
+    Planned = 1,
+    UnderConstruction = 2,
+    AvailableForSale = 3,
+    Reserved = 4,
+    Sold = 5,
+    Delivered = 6,
+    Withdrawn = 7
+}
+
 public enum AuditSeverity
 {
     Info = 1,

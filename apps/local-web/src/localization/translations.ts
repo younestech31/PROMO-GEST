@@ -129,6 +129,30 @@ export interface TranslationBundle {
     tableBudget: string;
     tableMembers: string;
     manageAccess: string;
+    structureButton: string;
+    structureTitle: string;
+    buildings: string;
+    structureEmpty: string;
+    createBuilding: string;
+    buildingCode: string;
+    buildingNameAr: string;
+    buildingNameFr: string;
+    buildingStatus: string;
+    floors: string;
+    floorNumber: string;
+    floorNameAr: string;
+    floorNameFr: string;
+    addFloor: string;
+    noFloors: string;
+    units: string;
+    unitNumber: string;
+    unitType: string;
+    unitStatus: string;
+    addUnit: string;
+    noUnits: string;
+    grossArea: string;
+    netArea: string;
+    roomsCount: string;
     editButton: string;
     modalCreateTitle: string;
     modalEditTitle: string;
@@ -311,6 +335,30 @@ const AR: TranslationBundle = {
     tableBudget: 'الميزانية التقديرية',
     tableMembers: 'الأعضاء المصرح لهم',
     manageAccess: 'صلاحيات المشروع',
+    structureButton: 'العمارات والوحدات',
+    structureTitle: 'الهيكل العقاري للمشروع',
+    buildings: 'العمارات',
+    structureEmpty: 'لم تتم إضافة أي عمارات لهذا المشروع بعد.',
+    createBuilding: 'إضافة عمارة',
+    buildingCode: 'رمز العمارة',
+    buildingNameAr: 'اسم العمارة بالعربية',
+    buildingNameFr: 'اسم العمارة بالفرنسية',
+    buildingStatus: 'حالة العمارة',
+    floors: 'الطوابق',
+    floorNumber: 'رقم الطابق',
+    floorNameAr: 'اسم الطابق بالعربية',
+    floorNameFr: 'اسم الطابق بالفرنسية',
+    addFloor: 'إضافة طابق',
+    noFloors: 'لا توجد طوابق مسجلة لهذه العمارة.',
+    units: 'الوحدات العقارية',
+    unitNumber: 'رقم الوحدة',
+    unitType: 'نوع الوحدة',
+    unitStatus: 'حالة الوحدة',
+    addUnit: 'إضافة وحدة',
+    noUnits: 'لا توجد وحدات مسجلة لهذا الطابق.',
+    grossArea: 'المساحة الإجمالية (م²)',
+    netArea: 'المساحة الصافية (م²)',
+    roomsCount: 'عدد الغرف',
     editButton: 'تعديل البيانات',
     modalCreateTitle: 'إنشاء مشروع ترقية عقارية',
     modalEditTitle: 'تعديل بيانات المشروع العقاري',
@@ -493,6 +541,30 @@ const FR: TranslationBundle = {
     tableBudget: 'Budget estimatif',
     tableMembers: 'Membres autorisés',
     manageAccess: 'Accès projet',
+    structureButton: 'Bâtiments et unités',
+    structureTitle: 'Structure immobilière du projet',
+    buildings: 'Bâtiments',
+    structureEmpty: 'Aucun bâtiment n’a encore été ajouté à ce projet.',
+    createBuilding: 'Ajouter un bâtiment',
+    buildingCode: 'Code du bâtiment',
+    buildingNameAr: 'Nom du bâtiment en arabe',
+    buildingNameFr: 'Nom du bâtiment en français',
+    buildingStatus: 'Statut du bâtiment',
+    floors: 'Étages',
+    floorNumber: 'Numéro de l’étage',
+    floorNameAr: 'Nom de l’étage en arabe',
+    floorNameFr: 'Nom de l’étage en français',
+    addFloor: 'Ajouter un étage',
+    noFloors: 'Aucun étage enregistré pour ce bâtiment.',
+    units: 'Unités immobilières',
+    unitNumber: 'Numéro de l’unité',
+    unitType: 'Type d’unité',
+    unitStatus: 'Statut de l’unité',
+    addUnit: 'Ajouter une unité',
+    noUnits: 'Aucune unité enregistrée à cet étage.',
+    grossArea: 'Surface brute (m²)',
+    netArea: 'Surface nette (m²)',
+    roomsCount: 'Nombre de pièces',
     editButton: 'Modifier',
     modalCreateTitle: 'Créer un projet immobilier',
     modalEditTitle: 'Modifier les données du projet immobilier',
@@ -639,6 +711,82 @@ const API_ERROR_MESSAGES: Record<string, { ar: string; fr: string }> = {
   PROJECT_PERMIT_NUMBER_TOO_LONG: {
     ar: 'رقم رخصة البناء يتجاوز الحد الأقصى المسموح به.',
     fr: 'Le numéro du permis de construire dépasse la longueur maximale autorisée.',
+  },
+  FORBIDDEN_PROJECT_STRUCTURE_MANAGE: {
+    ar: 'ليست لديك صلاحية إدارة عمارات وطوابق ووحدات هذا المشروع.',
+    fr: 'Vous n’avez pas l’autorisation de gérer les bâtiments, étages et unités de ce projet.',
+  },
+  BUILDING_CODE_EXISTS: {
+    ar: 'رمز العمارة مستخدم مسبقاً داخل هذا المشروع.',
+    fr: 'Ce code de bâtiment existe déjà dans ce projet.',
+  },
+  BUILDING_CODE_REQUIRED: {
+    ar: 'رمز العمارة مطلوب.',
+    fr: 'Le code du bâtiment est obligatoire.',
+  },
+  BUILDING_NAME_REQUIRED: {
+    ar: 'يجب إدخال اسم العمارة بالعربية أو الفرنسية.',
+    fr: 'Le nom du bâtiment en arabe ou en français est obligatoire.',
+  },
+  BUILDING_STATUS_INVALID: {
+    ar: 'حالة العمارة غير صالحة.',
+    fr: 'Le statut du bâtiment est invalide.',
+  },
+  BUILDING_CODE_TOO_LONG: {
+    ar: 'رمز العمارة يتجاوز الحد الأقصى المسموح.',
+    fr: 'Le code du bâtiment dépasse la longueur maximale autorisée.',
+  },
+  BUILDING_NAME_TOO_LONG: {
+    ar: 'اسم العمارة يتجاوز الحد الأقصى المسموح.',
+    fr: 'Le nom du bâtiment dépasse la longueur maximale autorisée.',
+  },
+  FLOOR_NUMBER_EXISTS: {
+    ar: 'رقم هذا الطابق مسجل مسبقاً في العمارة.',
+    fr: 'Ce numéro d’étage existe déjà dans le bâtiment.',
+  },
+  FLOOR_NUMBER_INVALID: {
+    ar: 'رقم الطابق خارج النطاق المسموح.',
+    fr: 'Le numéro d’étage est hors de la plage autorisée.',
+  },
+  FLOOR_NAME_REQUIRED: {
+    ar: 'يجب إدخال اسم الطابق بالعربية أو الفرنسية.',
+    fr: 'Le nom de l’étage en arabe ou en français est obligatoire.',
+  },
+  FLOOR_NAME_TOO_LONG: {
+    ar: 'اسم الطابق يتجاوز الحد الأقصى المسموح.',
+    fr: 'Le nom de l’étage dépasse la longueur maximale autorisée.',
+  },
+  UNIT_NUMBER_EXISTS: {
+    ar: 'رقم الوحدة مسجل مسبقاً في هذا الطابق.',
+    fr: 'Ce numéro d’unité existe déjà à cet étage.',
+  },
+  UNIT_NUMBER_REQUIRED: {
+    ar: 'رقم الوحدة العقارية مطلوب.',
+    fr: 'Le numéro de l’unité immobilière est obligatoire.',
+  },
+  UNIT_NUMBER_TOO_LONG: {
+    ar: 'رقم الوحدة يتجاوز الحد الأقصى المسموح.',
+    fr: 'Le numéro de l’unité dépasse la longueur maximale autorisée.',
+  },
+  UNIT_TYPE_INVALID: {
+    ar: 'نوع الوحدة العقارية غير صالح.',
+    fr: 'Le type d’unité immobilière est invalide.',
+  },
+  UNIT_STATUS_INVALID: {
+    ar: 'حالة الوحدة العقارية غير صالحة.',
+    fr: 'Le statut de l’unité immobilière est invalide.',
+  },
+  UNIT_AREA_INVALID: {
+    ar: 'المساحات يجب أن تكون غير سالبة وضمن النطاق المسموح.',
+    fr: 'Les surfaces doivent être positives ou nulles et respecter la plage autorisée.',
+  },
+  UNIT_NET_AREA_EXCEEDS_GROSS: {
+    ar: 'المساحة الصافية لا يمكن أن تتجاوز المساحة الإجمالية.',
+    fr: 'La surface nette ne peut pas dépasser la surface brute.',
+  },
+  UNIT_ROOMS_COUNT_INVALID: {
+    ar: 'عدد الغرف يجب أن يكون بين صفر و20.',
+    fr: 'Le nombre de pièces doit être compris entre 0 et 20.',
   },
   CANNOT_MODIFY_SYSTEM_ADMIN: {
     ar: 'لا يمكن تعديل حساب مدير النظام الوحيد أو إعادة تعيين كلمة مروره من هذه الواجهة.',

@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.EntityFrameworkCore;
 using PromoGest.Api.Middleware;
+using PromoGest.Api.HostedServices;
 using PromoGest.Api.Security;
 using PromoGest.Application.Services;
 using PromoGest.Contracts.Common;
@@ -65,6 +66,7 @@ if (migrationMode)
 var requireHttpsCookies = builder.Configuration.GetValue<bool>("Security:RequireHttpsCookies", true);
 
 builder.Services.AddPromoGestInfrastructure(builder.Configuration);
+builder.Services.AddHostedService<ProjectSalesReservationExpiryWorker>();
 
 // Database migration is a database-maintenance operation and must not depend on
 // the runtime application's Data Protection key ring or platform encryption secrets.

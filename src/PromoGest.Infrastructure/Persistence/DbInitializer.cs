@@ -21,7 +21,8 @@ public static class DbInitializer
             Permission.Create(Guid.Parse("10000000-0000-0000-0000-000000000008"), "projects.access.manage", "Projects", "إدارة صلاحيات الوصول للمشاريع", "Gérer les accès aux projets", seedTime),
             Permission.Create(Guid.Parse("10000000-0000-0000-0000-000000000009"), "audit.read", "Security", "الاطلاع على سجل التدقيق الأمني", "Consulter le journal d'audit de sécurité", seedTime),
             Permission.Create(Guid.Parse("10000000-0000-0000-0000-000000000010"), "files.read", "Documents", "تحميل الوثائق المحلية", "Télécharger les documents locaux", seedTime),
-            Permission.Create(Guid.Parse("10000000-0000-0000-0000-000000000011"), "files.write", "Documents", "رفع الوثائق المحلية", "Téléverser des documents locaux", seedTime)
+            Permission.Create(Guid.Parse("10000000-0000-0000-0000-000000000011"), "files.write", "Documents", "رفع الوثائق المحلية", "Téléverser des documents locaux", seedTime),
+            Permission.Create(Guid.Parse("10000000-0000-0000-0000-000000000012"), "projects.structure.manage", "Project Structure", "إدارة العمارات والطوابق والوحدات", "Gérer les bâtiments, étages et unités", seedTime)
         };
 
         var existingPermCodes = await dbContext.Permissions.Select(p => p.Code).ToListAsync(ct);
@@ -75,7 +76,7 @@ public static class DbInitializer
         }
 
         Link(Role.SystemAdminCode, permMap.Keys.ToArray());
-        Link(Role.ProjectDirectorCode, "org.read", "projects.read", "projects.create", "projects.manage", "projects.access.manage", "files.read", "files.write");
+        Link(Role.ProjectDirectorCode, "org.read", "projects.read", "projects.create", "projects.manage", "projects.access.manage", "projects.structure.manage", "files.read", "files.write");
         Link(Role.CommercialManagerCode, "org.read", "projects.read", "files.read", "files.write");
         Link(Role.FinanceOfficerCode, "org.read", "projects.read", "files.read", "files.write");
         Link(Role.SiteEngineerCode, "org.read", "projects.read", "files.read", "files.write");

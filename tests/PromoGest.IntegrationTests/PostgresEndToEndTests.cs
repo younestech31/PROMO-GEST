@@ -150,6 +150,11 @@ public sealed class PostgreSql18IntegrationFixture : IAsyncLifetime
                 throw new InvalidOperationException(
                     "The ProjectStructureFoundation migration was not discovered and applied.");
             }
+            if (!applied.Contains("20261114180000_ProjectDocumentMetadata"))
+            {
+                throw new InvalidOperationException(
+                    "The ProjectDocumentMetadata migration was not discovered and applied.");
+            }
         }
 
         // Apply the same post-migration grants used by the Google AI Studio Cloud SQL path.
@@ -840,6 +845,7 @@ public sealed class PostgresEndToEndTests : IClassFixture<PostgreSql18Integratio
                 var documentListResponse = await adminClient.GetAsync(
                     $"/api/projects/{createdProject.Id}/documents");
                 Assert.Equal(HttpStatusCode.OK, documentListResponse.StatusCode);
+                Assert.Equal("no-store, no-cache", documentListResponse.Headers.CacheControl?.ToString());
                 var documentList = await documentListResponse.Content.ReadFromJsonAsync<List<ProjectDocumentDto>>();
                 Assert.NotNull(documentList);
                 Assert.Contains(documentList!, item => item.Id == uploadedDocument.Id);
@@ -874,6 +880,23 @@ public sealed class PostgresEndToEndTests : IClassFixture<PostgreSql18Integratio
                 Assert.Equal(HttpStatusCode.BadRequest, invalidUploadResponse.StatusCode);
                 var invalidUploadError = await invalidUploadResponse.Content.ReadFromJsonAsync<ApiErrorResponse>();
                 Assert.Equal("FILE_TYPE_NOT_ALLOWED", invalidUploadError!.Code);
+            }
+
+            // A permitted filename extension must not allow another payload to masquerade as a PDF.
+            using (var invalidSignatureUpload = new MultipartFormDataContent())
+            {
+                invalidSignatureUpload.Add(new ByteArrayContent(new byte[] { 0x4D, 0x5A, 0x90, 0x00 }), "file", "forged-permit.pdf");
+                invalidSignatureUpload.Add(new StringContent("Other"), "category");
+                var invalidSignatureResponse = await adminClient.PostAsync(
+                    $"/api/projects/{createdProject.Id}/documents",
+                    invalidSignatureUpload);
+                Assert.Equal(HttpStatusCode.BadRequest, invalidSignatureResponse.StatusCode);
+                var invalidSignatureError = await invalidSignatureResponse.Content.ReadFromJsonAsync<ApiErrorResponse>();
+                Assert.Equal("FILE_SIGNATURE_INVALID", invalidSignatureError!.Code);
+                using var countScope = factory.Services.CreateScope();
+                var db = countScope.ServiceProvider.GetRequiredService<AppDbContext>();
+                Assert.Equal(1, await db.StoredFiles.CountAsync(file =>
+                    file.ProjectId == createdProject.Id && file.Scope == StoredFileScope.Project));
             }
 
             // The seeded Project Director role must also be able to manage project structure via its explicit permission.
@@ -1049,6 +1072,12 @@ public sealed class PostgresEndToEndTests : IClassFixture<PostgreSql18Integratio
 
             var revokedAttempt = await employeeClient.GetAsync($"/api/projects/{createdProject.Id}");
             Assert.Equal(HttpStatusCode.Forbidden, revokedAttempt.StatusCode);
+            var revokedDocumentList = await employeeClient.GetAsync(
+                $"/api/projects/{createdProject.Id}/documents");
+            Assert.Equal(HttpStatusCode.Forbidden, revokedDocumentList.StatusCode);
+            var revokedDocumentDownload = await employeeClient.GetAsync(
+                $"/api/projects/{createdProject.Id}/documents/{uploadedDocumentId}/download");
+            Assert.Equal(HttpStatusCode.Forbidden, revokedDocumentDownload.StatusCode);
 
             // Deactivate employee -> existing session cookie becomes invalid immediately (401)
             var deactivateResp = await adminClient.PatchAsJsonAsync($"/api/users/{createdEmployee.Id}/status", new SetUserStatusRequest(false));

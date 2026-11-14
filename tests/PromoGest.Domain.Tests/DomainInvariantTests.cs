@@ -148,6 +148,113 @@ public sealed class DomainInvariantTests
     }
 
     [Fact]
+    public void PropertyUnit_EnforcesForwardLifecycleAndWithdrawnTerminalState()
+    {
+        var unit = PropertyUnit.Create(
+            Guid.NewGuid(),
+            " a-001 ",
+            PropertyUnitType.Apartment,
+            PropertyUnitStatus.Planned,
+            120m,
+            100m,
+            4,
+            Guid.NewGuid(),
+            FixedNow);
+
+        Assert.Equal("A-001", unit.UnitNumber);
+        unit.ChangeStatus(PropertyUnitStatus.UnderConstruction, FixedNow.AddDays(1));
+        Assert.Equal(PropertyUnitStatus.UnderConstruction, unit.Status);
+
+        unit.ChangeStatus(PropertyUnitStatus.AvailableForSale, FixedNow.AddDays(2));
+        Assert.Equal(PropertyUnitStatus.AvailableForSale, unit.Status);
+
+        unit.ChangeStatus(PropertyUnitStatus.Withdrawn, FixedNow.AddDays(3));
+        Assert.Equal(PropertyUnitStatus.Withdrawn, unit.Status);
+
+        var invalidReactivation = Assert.Throws<DomainException>(() =>
+            unit.ChangeStatus(PropertyUnitStatus.Planned, FixedNow.AddDays(4)));
+        Assert.Equal("UNIT_STATUS_TRANSITION_INVALID", invalidReactivation.Code);
+    }
+
+    [Fact]
+    public void PropertyUnit_RequiresSalesWorkflowForReservedSoldAndDeliveredStates()
+    {
+        foreach (var protectedStatus in new[]
+        {
+            PropertyUnitStatus.Reserved,
+            PropertyUnitStatus.Sold,
+            PropertyUnitStatus.Delivered
+        })
+        {
+            var creation = Assert.Throws<DomainException>(() => PropertyUnit.Create(
+                Guid.NewGuid(),
+                "A-001",
+                PropertyUnitType.Apartment,
+                protectedStatus,
+                120m,
+                100m,
+                4,
+                Guid.NewGuid(),
+                FixedNow));
+            Assert.Equal("UNIT_STATUS_REQUIRES_SALES_WORKFLOW", creation.Code);
+        }
+
+        var unit = PropertyUnit.Create(
+            Guid.NewGuid(),
+            "A-002",
+            PropertyUnitType.Apartment,
+            PropertyUnitStatus.Planned,
+            120m,
+            100m,
+            4,
+            Guid.NewGuid(),
+            FixedNow);
+
+        var transition = Assert.Throws<DomainException>(() =>
+            unit.ChangeStatus(PropertyUnitStatus.Sold, FixedNow.AddDays(1)));
+        Assert.Equal("UNIT_STATUS_REQUIRES_SALES_WORKFLOW", transition.Code);
+        Assert.Equal(PropertyUnitStatus.Planned, unit.Status);
+    }
+
+    [Fact]
+    public void PropertyUnit_UpdateDetailsNormalizesNumberAndRejectsInvalidMeasurements()
+    {
+        var unit = PropertyUnit.Create(
+            Guid.NewGuid(),
+            "A-001",
+            PropertyUnitType.Apartment,
+            PropertyUnitStatus.Planned,
+            120m,
+            100m,
+            4,
+            Guid.NewGuid(),
+            FixedNow);
+        var previousConcurrencyStamp = unit.ConcurrencyStamp;
+
+        unit.UpdateDetails(
+            " a-002 ",
+            PropertyUnitType.Shop,
+            80m,
+            72.5m,
+            null,
+            FixedNow.AddMinutes(5));
+
+        Assert.Equal("A-002", unit.UnitNumber);
+        Assert.Equal("A-002", unit.NormalizedUnitNumber);
+        Assert.Equal(PropertyUnitType.Shop, unit.UnitType);
+        Assert.Equal(80m, unit.GrossAreaSquareMeters);
+        Assert.Equal(72.5m, unit.NetAreaSquareMeters);
+        Assert.Null(unit.RoomsCount);
+        Assert.NotEqual(previousConcurrencyStamp, unit.ConcurrencyStamp);
+        Assert.Equal(FixedNow.AddMinutes(5), unit.UpdatedAtUtc);
+
+        var invalidUpdate = Assert.Throws<DomainException>(() =>
+            unit.UpdateDetails("A-003", PropertyUnitType.Shop, 70m, 75m, 2, FixedNow.AddMinutes(6)));
+        Assert.Equal("UNIT_NET_AREA_EXCEEDS_GROSS", invalidUpdate.Code);
+        Assert.Equal("A-002", unit.UnitNumber);
+    }
+
+    [Fact]
     public void AuditLog_SanitizesControlCharsAndClampsOversizedFields()
     {
         var longUserAgent = new string('A', 450);

@@ -50,12 +50,15 @@ public interface IUserRepository
     Task SaveChangesAsync(CancellationToken ct = default);
 }
 
+public readonly record struct ProjectStructureCounts(int BuildingsCount, int UnitsCount);
+
 public interface IProjectRepository
 {
     Task<Project?> GetByIdWithMembersAsync(Guid projectId, CancellationToken ct = default);
     Task<bool> ExistsCodeAsync(string normalizedCode, CancellationToken ct = default);
     Task<IReadOnlyList<Project>> ListAllWithMembersAsync(CancellationToken ct = default);
     Task<IReadOnlyList<Project>> ListForUserWithMembersAsync(Guid userId, CancellationToken ct = default);
+    Task<IReadOnlyDictionary<Guid, ProjectStructureCounts>> GetStructureCountsByProjectIdsAsync(IReadOnlyCollection<Guid> projectIds, CancellationToken ct = default);
     Task<ProjectMember?> GetMemberAsync(Guid projectId, Guid userId, CancellationToken ct = default);
     Task AddProjectAsync(Project project, CancellationToken ct = default);
     Task AddMemberAsync(ProjectMember member, CancellationToken ct = default);

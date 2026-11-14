@@ -846,7 +846,7 @@ public sealed class PostgresEndToEndTests : IClassFixture<PostgreSql18Integratio
                 Assert.Equal(HttpStatusCode.OK, documentDownloadResponse.StatusCode);
                 Assert.Equal("no-store, no-cache", documentDownloadResponse.Headers.CacheControl?.ToString());
                 Assert.Equal(permitBytes, await documentDownloadResponse.Content.ReadAsByteArrayAsync());
-                Assert.Contains("attachment", documentDownloadResponse.Content.Headers.ContentDisposition?.Disposition ?? string.Empty);
+                Assert.Equal("attachment", documentDownloadResponse.Content.Headers.ContentDisposition?.DispositionType);
             }
 
             using (var scope = factory.Services.CreateScope())

@@ -94,7 +94,9 @@ export function canReadProjectSalesReservations(user: AuthenticatedUser | null, 
   if (user.isSystemAdministrator) return true;
   const isProjectScoped = project.members.some((member) => member.userId === user.id) ||
     user.permissions.includes('projects.manage');
-  return isProjectScoped && user.permissions.includes('sales.reservations.read');
+  return isProjectScoped &&
+    user.permissions.includes('sales.reservations.read') &&
+    user.permissions.includes('customers.read');
 }
 
 export function canManageProjectSalesReservations(user: AuthenticatedUser | null, project: ProjectDto): boolean {
@@ -108,5 +110,6 @@ export function canManageProjectSalesReservations(user: AuthenticatedUser | null
   return isProjectScoped &&
     canManageInProject &&
     user.permissions.includes('sales.reservations.read') &&
-    user.permissions.includes('sales.reservations.manage');
+    user.permissions.includes('sales.reservations.manage') &&
+    user.permissions.includes('customers.read');
 }

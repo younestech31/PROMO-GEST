@@ -832,6 +832,43 @@ const API_ERROR_MESSAGES: Record<string, { ar: string; fr: string }> = {
     ar: 'لا يمكن تعديل حساب مدير النظام الوحيد أو إعادة تعيين كلمة مروره من هذه الواجهة.',
     fr: 'Le compte unique Administrateur Système ne peut pas être modifié ici.',
   },
+
+  FILE_TYPE_NOT_ALLOWED: {
+    ar: 'نوع الملف غير مدعوم. الأنواع المسموحة: PDF والصور ومستندات Office وTXT وCSV.',
+    fr: 'Type de fichier non pris en charge. Types autorisés : PDF, images, documents Office, TXT et CSV.',
+  },
+  FILE_SIZE_LIMIT_EXCEEDED: {
+    ar: 'حجم الوثيقة يتجاوز الحد الأقصى المسموح به وهو 25 ميغابايت.',
+    fr: 'La taille du document dépasse la limite autorisée de 25 Mo.',
+  },
+  FILE_SIZE_INVALID: {
+    ar: 'الملف فارغ أو حجمه غير صالح.',
+    fr: 'Le fichier est vide ou sa taille est invalide.',
+  },
+  FILE_CATEGORY_INVALID: {
+    ar: 'تصنيف الوثيقة غير صالح.',
+    fr: 'La catégorie du document est invalide.',
+  },
+  FILE_DESCRIPTION_TOO_LONG: {
+    ar: 'وصف الوثيقة يجب ألا يتجاوز 500 حرف.',
+    fr: 'La description du document ne doit pas dépasser 500 caractères.',
+  },
+  PROJECT_DOCUMENT_ACCESS_DENIED: {
+    ar: 'لا تملك صلاحية الاطلاع على وثائق هذا المشروع.',
+    fr: 'Vous n’êtes pas autorisé à consulter les documents de ce projet.',
+  },
+  FORBIDDEN_PROJECT_DOCUMENT_WRITE: {
+    ar: 'لا تملك صلاحية رفع وثائق إلى هذا المشروع.',
+    fr: 'Vous n’êtes pas autorisé à téléverser des documents dans ce projet.',
+  },
+  PROJECT_DOCUMENT_INTEGRITY_FAILED: {
+    ar: 'فشل التحقق من سلامة الوثيقة، ولذلك تم منع تنزيلها.',
+    fr: 'Le contrôle d’intégrité du document a échoué ; son téléchargement est bloqué.',
+  },
+  PROJECT_DOCUMENT_CONTENT_MISSING: {
+    ar: 'محتوى الوثيقة غير موجود على الخادم المحلي.',
+    fr: 'Le contenu du document est introuvable sur le serveur local.',
+  },
   ENDPOINT_NOT_FOUND: {
     ar: 'نقطة النهاية المطلوبة غير موجودة.',
     fr: 'Le point de terminaison demandé est introuvable.',

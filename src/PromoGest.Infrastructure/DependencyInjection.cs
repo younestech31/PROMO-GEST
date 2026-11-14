@@ -41,11 +41,13 @@ public static class DependencyInjection
         services.AddScoped<IInstallationRepository, EfInstallationRepository>();
         services.AddScoped<IUserRepository, EfUserRepository>();
         services.AddScoped<IProjectRepository, EfProjectRepository>();
+        services.AddScoped<IProjectStructureRepository, EfProjectStructureRepository>();
 
         services.AddScoped<SetupService>();
         services.AddScoped<AuthService>();
         services.AddScoped<UserManagementService>();
         services.AddScoped<ProjectService>();
+        services.AddScoped<ProjectStructureService>();
         services.AddScoped<AuditQueryService>();
         services.AddScoped<AdminRecoveryService>();
 

@@ -105,3 +105,20 @@ public interface IProjectDocumentRepository
     Task AddAsync(StoredFile file, CancellationToken ct = default);
     Task SaveChangesAsync(CancellationToken ct = default);
 }
+
+public interface IProjectFileStorage
+{
+    Task<StoredFile> SaveAsync(
+        Stream content,
+        string originalFileName,
+        string contentType,
+        string category,
+        string? description,
+        StoredFileScope scope,
+        Guid? projectId,
+        Guid uploadedByUserId,
+        long maximumBytes,
+        CancellationToken ct = default);
+    string ResolveSafeFullPath(StoredFile storedFile);
+    void Delete(StoredFile storedFile);
+}

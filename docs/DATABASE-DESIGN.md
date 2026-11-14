@@ -53,6 +53,7 @@ All primary keys use UUIDs. Foreign keys, unique indexes, check constraints, and
 - The current document categories are `Legal`, `LandAndTitle`, `Permits`, `Plans`, `Engineering`, `Commercial`, `Financial`, `Correspondence`, and `Other`. The database check constraint keeps the category vocabulary consistent.
 - The `stored_files.category` migration backfills existing metadata rows as `Other`, then removes the temporary column default so all new records must provide a valid category. No existing file bytes or metadata rows are deleted.
 - Customer records are partitioned by project. Within one project, the same normalized display name and normalized phone cannot be registered twice; PostgreSQL enforces the composite uniqueness rule.
+- Customer and customer-interaction creator foreign keys are indexed for efficient audit attribution and user-related maintenance queries; these indexes are added by `20261114195931_CustomerModelSnapshotReconciliation`.
 - Customer and interaction enum values, phone normalization, and follow-up date ordering are enforced by database constraints as well as domain validation.
 - Customer identity-document references must resolve to a document in the same project through the application service; users without `files.read` cannot inspect linked document metadata or change the link.
 - Customer data and communication summaries are excluded from audit metadata; audit records identify the project and record IDs without copying names, phone numbers, email addresses, or interaction text.
@@ -79,6 +80,7 @@ The EF Core migration history currently includes:
 5. `20261114090000_ProjectStructureFoundation`
 6. `20261114180000_ProjectDocumentMetadata`
 7. `20261114190000_ProjectCustomerRegistry`
+8. `20261114195931_CustomerModelSnapshotReconciliation`
 
 The model snapshot is maintained alongside the migrations and must remain synchronized with `AppDbContext`.
 

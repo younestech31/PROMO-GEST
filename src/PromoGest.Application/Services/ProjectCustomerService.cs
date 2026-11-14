@@ -39,8 +39,10 @@ public sealed class ProjectCustomerService
         RequestMetadata metadata,
         CancellationToken ct = default)
     {
-        var (actor, project, _) = await RequireProjectAccessAsync(
+        var (actor, project, permissions) = await RequireProjectAccessAsync(
             actorUserId, projectId, canWrite: false, metadata, ct);
+        var canReadDocuments = actor.IsSystemAdministrator ||
+            permissions.Contains("files.read", StringComparer.OrdinalIgnoreCase);
 
         var customers = await _customerRepository.ListByProjectAsync(project.Id, ct);
         await RecordAuditAsync(
@@ -53,7 +55,7 @@ public sealed class ProjectCustomerService
             metadata,
             ct);
 
-        return customers.Select(MapListItem).ToList();
+        return customers.Select(customer => MapListItem(customer, canReadDocuments)).ToList();
     }
 
     public async Task<ProjectCustomerDto> GetAsync(
@@ -63,8 +65,10 @@ public sealed class ProjectCustomerService
         RequestMetadata metadata,
         CancellationToken ct = default)
     {
-        var (actor, project) = await RequireProjectAccessAsync(
+        var (actor, project, permissions) = await RequireProjectAccessAsync(
             actorUserId, projectId, canWrite: false, metadata, ct);
+        var canReadDocuments = actor.IsSystemAdministrator ||
+            permissions.Contains("files.read", StringComparer.OrdinalIgnoreCase);
 
         var customer = await _customerRepository.GetByProjectAsync(project.Id, customerId, ct)
             ?? throw new NotFoundDomainException("CUSTOMER_NOT_FOUND", "Customer record was not found in this project.");
@@ -79,7 +83,7 @@ public sealed class ProjectCustomerService
             metadata,
             ct);
 
-        return MapDetails(customer);
+        return MapDetails(customer, canReadDocuments);
     }
 
     public async Task<ProjectCustomerDto> CreateAsync(
@@ -95,7 +99,7 @@ public sealed class ProjectCustomerService
         var customerType = ParseEnum<CustomerType>(request.CustomerType, "CUSTOMER_TYPE_INVALID");
         var source = ParseEnum<CustomerSource>(request.Source, "CUSTOMER_SOURCE_INVALID");
         await ValidateIdentityDocumentAsync(
-            project.Id, request.IdentityDocumentStoredFileId, actor, permissions, metadata, ct);
+            project.Id, request.IdentityDocumentStoredFileId, actor, permissions, ct);
 
         var customer = ProjectCustomer.Create(
             project.Id,
@@ -141,7 +145,9 @@ public sealed class ProjectCustomerService
         await _customerRepository.SaveChangesAsync(ct);
         var saved = await _customerRepository.GetByProjectAsync(project.Id, customer.Id, ct)
             ?? throw new InvalidOperationException("The newly created customer could not be reloaded.");
-        return MapDetails(saved);
+        var canReadDocuments = actor.IsSystemAdministrator ||
+            permissions.Contains("files.read", StringComparer.OrdinalIgnoreCase);
+        return MapDetails(saved, canReadDocuments);
     }
 
     public async Task<ProjectCustomerDto> UpdateAsync(
@@ -167,7 +173,7 @@ public sealed class ProjectCustomerService
         var source = ParseEnum<CustomerSource>(request.Source, "CUSTOMER_SOURCE_INVALID");
         var status = ParseEnum<ProjectCustomerStatus>(request.Status, "CUSTOMER_STATUS_INVALID");
         await ValidateIdentityDocumentAsync(
-            project.Id, request.IdentityDocumentStoredFileId, actor, permissions, metadata, ct);
+            project.Id, request.IdentityDocumentStoredFileId, actor, permissions, ct);
 
         var normalizedName = ProjectCustomer.Create(
             project.Id,
@@ -228,7 +234,9 @@ public sealed class ProjectCustomerService
         await _customerRepository.SaveChangesAsync(ct);
         var saved = await _customerRepository.GetByProjectAsync(project.Id, customer.Id, ct)
             ?? throw new InvalidOperationException("The updated customer could not be reloaded.");
-        return MapDetails(saved);
+        var canReadDocuments = actor.IsSystemAdministrator ||
+            permissions.Contains("files.read", StringComparer.OrdinalIgnoreCase);
+        return MapDetails(saved, canReadDocuments);
     }
 
     public async Task<CustomerInteractionDto> AddInteractionAsync(
@@ -357,7 +365,6 @@ public sealed class ProjectCustomerService
         Guid? documentId,
         User actor,
         IReadOnlyList<string> permissions,
-        RequestMetadata metadata,
         CancellationToken ct)
     {
         if (!documentId.HasValue)
@@ -414,7 +421,7 @@ public sealed class ProjectCustomerService
         return parsed;
     }
 
-    private static ProjectCustomerListItemDto MapListItem(ProjectCustomer customer)
+    private static ProjectCustomerListItemDto MapListItem(ProjectCustomer customer, bool canReadDocuments)
         => new(
             customer.Id,
             customer.CustomerType.ToString(),
@@ -426,10 +433,10 @@ public sealed class ProjectCustomerService
             customer.Source.ToString(),
             customer.UpdatedAtUtc,
             customer.Interactions.Count,
-            customer.IdentityDocumentStoredFileId.HasValue,
+            canReadDocuments && customer.IdentityDocumentStoredFileId.HasValue,
             customer.ConcurrencyStamp);
 
-    private static ProjectCustomerDto MapDetails(ProjectCustomer customer)
+    private static ProjectCustomerDto MapDetails(ProjectCustomer customer, bool canReadDocuments)
         => new(
             customer.Id,
             customer.ProjectId,
@@ -442,7 +449,7 @@ public sealed class ProjectCustomerService
             customer.PreferredLanguage,
             customer.Source.ToString(),
             customer.Status.ToString(),
-            customer.IdentityDocumentFile is null
+            !canReadDocuments || customer.IdentityDocumentFile is null
                 ? null
                 : new CustomerIdentityDocumentDto(
                     customer.IdentityDocumentFile.Id,

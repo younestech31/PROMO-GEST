@@ -62,6 +62,22 @@ public interface IProjectRepository
     Task SaveChangesAsync(CancellationToken ct = default);
 }
 
+public interface IProjectStructureRepository
+{
+    Task<IReadOnlyList<Building>> ListBuildingsByProjectAsync(Guid projectId, CancellationToken ct = default);
+    Task<IReadOnlyList<BuildingFloor>> ListFloorsByProjectAsync(Guid projectId, CancellationToken ct = default);
+    Task<IReadOnlyList<PropertyUnit>> ListUnitsByProjectAsync(Guid projectId, CancellationToken ct = default);
+    Task<Building?> GetBuildingAsync(Guid buildingId, CancellationToken ct = default);
+    Task<BuildingFloor?> GetFloorAsync(Guid floorId, CancellationToken ct = default);
+    Task<bool> ExistsBuildingCodeAsync(Guid projectId, string normalizedCode, CancellationToken ct = default);
+    Task<bool> ExistsFloorNumberAsync(Guid buildingId, int floorNumber, CancellationToken ct = default);
+    Task<bool> ExistsUnitNumberAsync(Guid floorId, string normalizedUnitNumber, CancellationToken ct = default);
+    Task AddBuildingAsync(Building building, CancellationToken ct = default);
+    Task AddFloorAsync(BuildingFloor floor, CancellationToken ct = default);
+    Task AddPropertyUnitAsync(PropertyUnit unit, CancellationToken ct = default);
+    Task SaveChangesAsync(CancellationToken ct = default);
+}
+
 public interface IAuditQueryRepository
 {
     Task<IReadOnlyList<AuditLog>> ListRecentAsync(int limit, CancellationToken ct = default);

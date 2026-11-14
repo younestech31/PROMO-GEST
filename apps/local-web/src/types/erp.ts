@@ -203,6 +203,8 @@ export interface BuildingFloorDto {
   nameAr: string;
   nameFr: string;
   createdAtUtc: string;
+  updatedAtUtc: string;
+  concurrencyStamp: string;
   units: PropertyUnitDto[];
 }
 
@@ -214,6 +216,8 @@ export interface BuildingStructureDto {
   nameFr: string;
   status: string;
   createdAtUtc: string;
+  updatedAtUtc: string;
+  concurrencyStamp: string;
   floors: BuildingFloorDto[];
 }
 

@@ -19,7 +19,7 @@ Read these documents before making architectural or data-model changes:
 4. [Security model](docs/SECURITY.md)
 5. [Database design and trust boundaries](docs/DATABASE-DESIGN.md)
 6. [Product milestones and delivery gates](docs/ROADMAP.md)
-7. [Current repository foundation audit](docs/FOUNDATION-AUDIT-2026-11.md) *(being established in the foundation review branch)*
+7. [Current repository foundation audit](docs/FOUNDATION-AUDIT-2026-11.md)
 
 ## Technology stack
 

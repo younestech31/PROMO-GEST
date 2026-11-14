@@ -7,6 +7,8 @@ import type {
   CreateBuildingRequest,
   CreateBuildingFloorRequest,
   CreatePropertyUnitRequest,
+  UpdatePropertyUnitRequest,
+  ChangePropertyUnitStatusRequest,
   ProjectStructureDto,
   HealthStatusResponse,
   InitializeInstallationRequest,
@@ -280,6 +282,30 @@ export const apiClient = {
     requestJson<ProjectStructureDto>(
       `/api/projects/${encodeURIComponent(projectId)}/structure/buildings/${encodeURIComponent(buildingId)}/floors/${encodeURIComponent(floorId)}/units`,
       { method: 'POST', body: JSON.stringify(payload) }
+    ),
+
+  updatePropertyUnit: (
+    projectId: string,
+    buildingId: string,
+    floorId: string,
+    unitId: string,
+    payload: UpdatePropertyUnitRequest
+  ) =>
+    requestJson<ProjectStructureDto>(
+      `/api/projects/${encodeURIComponent(projectId)}/structure/buildings/${encodeURIComponent(buildingId)}/floors/${encodeURIComponent(floorId)}/units/${encodeURIComponent(unitId)}`,
+      { method: 'PUT', body: JSON.stringify(payload) }
+    ),
+
+  changePropertyUnitStatus: (
+    projectId: string,
+    buildingId: string,
+    floorId: string,
+    unitId: string,
+    payload: ChangePropertyUnitStatusRequest
+  ) =>
+    requestJson<ProjectStructureDto>(
+      `/api/projects/${encodeURIComponent(projectId)}/structure/buildings/${encodeURIComponent(buildingId)}/floors/${encodeURIComponent(floorId)}/units/${encodeURIComponent(unitId)}/status`,
+      { method: 'PUT', body: JSON.stringify(payload) }
     ),
 
   assignProjectMember: (projectId: string, payload: AssignProjectMemberRequest) =>

@@ -1,4 +1,5 @@
 using System.Security.Cryptography;
+using PromoGest.Application.Interfaces;
 using PromoGest.Domain.Entities;
 using PromoGest.Domain.Enums;
 using PromoGest.Domain.Exceptions;

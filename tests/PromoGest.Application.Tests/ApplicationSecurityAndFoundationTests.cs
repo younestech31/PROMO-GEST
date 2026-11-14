@@ -379,6 +379,61 @@ public sealed class ApplicationSecurityAndFoundationTests
         Assert.Equal(96.25m, unit.NetAreaSquareMeters);
         Assert.Equal(4, unit.RoomsCount);
 
+        var updatedBuildingResponse = await structureSvc.UpdateBuildingAsync(
+            init.SystemAdminUserId,
+            project.Id,
+            building.Id,
+            new UpdateBuildingRequest("A-NEW", "العمارة أ المحدثة", "Bâtiment A Mis à Jour", "UnderConstruction"),
+            metadata);
+        var updatedBuilding = Assert.Single(updatedBuildingResponse.Buildings);
+        Assert.Equal("A-NEW", updatedBuilding.Code);
+        Assert.Equal("UnderConstruction", updatedBuilding.Status);
+
+        var updatedFloorResponse = await structureSvc.UpdateFloorAsync(
+            init.SystemAdminUserId,
+            project.Id,
+            building.Id,
+            floor.Id,
+            new UpdateBuildingFloorRequest(1, "الطابق الأول", "Premier étage"),
+            metadata);
+        var updatedFloor = Assert.Single(updatedBuildingResponse.Buildings).Floors.Single();
+        Assert.Equal(1, updatedFloor.FloorNumber);
+        Assert.Equal("الطابق الأول", updatedFloor.NameAr);
+
+        var updatedUnitResponse = await structureSvc.UpdatePropertyUnitAsync(
+            init.SystemAdminUserId,
+            project.Id,
+            building.Id,
+            floor.Id,
+            unit.Id,
+            new UpdatePropertyUnitRequest("A-101", "Apartment", "UnderConstruction", 120m, 100m, 4),
+            metadata);
+        var updatedUnit = Assert.Single(Assert.Single(Assert.Single(updatedUnitResponse.Buildings).Floors).Units);
+        Assert.Equal("A-101", updatedUnit.UnitNumber);
+        Assert.Equal(120m, updatedUnit.GrossAreaSquareMeters);
+        Assert.Equal("UnderConstruction", updatedUnit.Status);
+
+        var invalidSalesState = await Assert.ThrowsAsync<DomainException>(() =>
+            structureSvc.CreatePropertyUnitAsync(
+                init.SystemAdminUserId,
+                project.Id,
+                building.Id,
+                floor.Id,
+                new CreatePropertyUnitRequest("A-102", "Apartment", "Sold", 100m, 90m, 3),
+                metadata));
+        Assert.Equal("UNIT_STATUS_REQUIRES_SALES_WORKFLOW", invalidSalesState.Code);
+
+        var invalidSalesTransition = await Assert.ThrowsAsync<DomainException>(() =>
+            structureSvc.UpdatePropertyUnitAsync(
+                init.SystemAdminUserId,
+                project.Id,
+                building.Id,
+                floor.Id,
+                unit.Id,
+                new UpdatePropertyUnitRequest("A-101", "Apartment", "Sold", 120m, 100m, 4),
+                metadata));
+        Assert.Equal("UNIT_STATUS_REQUIRES_SALES_WORKFLOW", invalidSalesTransition.Code);
+
         var duplicateBuilding = await Assert.ThrowsAsync<ConflictDomainException>(() =>
             structureSvc.CreateBuildingAsync(
                 init.SystemAdminUserId,

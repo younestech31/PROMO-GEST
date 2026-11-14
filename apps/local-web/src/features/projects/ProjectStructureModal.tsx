@@ -6,6 +6,7 @@ import type {
   BuildingFloorDto,
   ProjectDto,
   ProjectStructureDto,
+  PropertyUnitDto,
 } from '../../types/erp';
 import { getTranslations, translateApiError } from '../../localization/translations';
 import { apiClient, ApiError } from '../../services/apiClient';

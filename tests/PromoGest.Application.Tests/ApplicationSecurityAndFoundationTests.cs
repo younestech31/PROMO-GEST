@@ -242,6 +242,102 @@ public sealed class ApplicationSecurityAndFoundationTests
     }
 
     [Fact]
+    public async Task ProjectUpdates_RequireManagementPermission_PreserveCode_AndWriteAudit()
+    {
+        var store = new InMemoryStore();
+        var clock = new FakeClock();
+        var hasher = new Pbkdf2PasswordHasher();
+        var setup = new SetupService(store, hasher, store, clock);
+        var userSvc = new UserManagementService(store, store, hasher, store, clock);
+        var projectSvc = new ProjectService(store, store, store, clock);
+        var metadata = new RequestMetadata("127.0.0.1", "xUnit");
+
+        var init = await setup.InitializeAsync(ValidInitRequest(), metadata);
+        var employee = await userSvc.CreateEmployeeAsync(
+            init.SystemAdminUserId,
+            new CreateEmployeeRequest(
+                "sami.sales",
+                "Sami Benali",
+                "sami@elbahdja.dz",
+                null,
+                "StrongPass123",
+                "fr",
+                new[] { Role.CommercialManagerCode }),
+            metadata);
+
+        var created = await projectSvc.CreateProjectAsync(
+            init.SystemAdminUserId,
+            new CreateProjectRequest(
+                "PRJ-16-01",
+                "إقامة الياسمين",
+                "Résidence Yasmine",
+                "16",
+                "Alger",
+                "Cheraga",
+                null,
+                null,
+                null,
+                null,
+                "Planning",
+                150_000_000m,
+                2,
+                32),
+            metadata);
+
+        clock.UtcNow = clock.UtcNow.AddMinutes(5);
+        var updateRequest = new UpdateProjectRequest(
+            "إقامة الياسمين الجديدة",
+            "Résidence Yasmine Nouvelle",
+            "31",
+            "Oran",
+            "Bir El Djir",
+            "Nouvelle adresse",
+            "TF-ORAN-2026-001",
+            "PC-ORAN-2026-010",
+            new DateOnly(2026, 11, 13),
+            "UnderConstruction",
+            175_000_000m,
+            3,
+            36);
+
+        var updated = await projectSvc.UpdateProjectAsync(
+            init.SystemAdminUserId,
+            created.Id,
+            updateRequest,
+            metadata);
+
+        Assert.Equal(created.Code, updated.Code);
+        Assert.Equal(updateRequest.NameAr, updated.NameAr);
+        Assert.Equal(updateRequest.NameFr, updated.NameFr);
+        Assert.Equal(updateRequest.WilayaCode, updated.WilayaCode);
+        Assert.Equal(updateRequest.Municipality, updated.Municipality);
+        Assert.Equal(updateRequest.Status, updated.Status);
+        Assert.Equal(updateRequest.EstimatedBudgetDzd, updated.EstimatedBudgetDzd);
+        Assert.Equal(created.CreatedAtUtc, updated.CreatedAtUtc);
+        Assert.True(updated.CreatedAtUtc < clock.UtcNow);
+        Assert.Contains(store.AuditLogs, entry =>
+            entry.EventType == "PROJECT_UPDATED" &&
+            entry.TargetEntityId == created.Id.ToString());
+
+        var denied = await Assert.ThrowsAsync<ForbiddenDomainException>(() =>
+            projectSvc.UpdateProjectAsync(employee.Id, created.Id, updateRequest, metadata));
+        Assert.Equal("FORBIDDEN_PROJECT_UPDATE", denied.Code);
+        Assert.Contains(store.AuditLogs, entry =>
+            entry.EventType == "ACCESS_DENIED" &&
+            entry.ActorUserId == employee.Id &&
+            entry.TargetEntityId == created.Id.ToString());
+
+        var invalidBudget = updateRequest with { EstimatedBudgetDzd = -1m };
+        await Assert.ThrowsAsync<DomainException>(() =>
+            projectSvc.UpdateProjectAsync(init.SystemAdminUserId, created.Id, invalidBudget, metadata));
+
+        var invalidStatus = updateRequest with { Status = "999" };
+        var statusError = await Assert.ThrowsAsync<DomainException>(() =>
+            projectSvc.UpdateProjectAsync(init.SystemAdminUserId, created.Id, invalidStatus, metadata));
+        Assert.Equal("PROJECT_STATUS_INVALID", statusError.Code);
+    }
+
+    [Fact]
     public async Task Authentication_ReturnsGenericErrorAcrossUnknownWrongInactiveAndLockedAccounts()
     {
         var store = new InMemoryStore();

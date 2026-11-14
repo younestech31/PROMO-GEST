@@ -14,6 +14,10 @@ export function canCreateProject(user: AuthenticatedUser | null): boolean {
   return hasPermission(user, 'projects.create');
 }
 
+export function canManageProjects(user: AuthenticatedUser | null): boolean {
+  return hasPermission(user, 'projects.manage');
+}
+
 export function canManageProjectAccess(user: AuthenticatedUser | null, project?: ProjectDto): boolean {
   if (!user || !user.isActive) return false;
   if (user.isSystemAdministrator || hasPermission(user, 'projects.access.manage')) {

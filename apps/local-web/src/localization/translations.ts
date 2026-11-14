@@ -129,7 +129,9 @@ export interface TranslationBundle {
     tableBudget: string;
     tableMembers: string;
     manageAccess: string;
+    editButton: string;
     modalCreateTitle: string;
+    modalEditTitle: string;
     modalAccessTitle: string;
     fieldCode: string;
     fieldNameAr: string;
@@ -309,7 +311,9 @@ const AR: TranslationBundle = {
     tableBudget: 'الميزانية التقديرية',
     tableMembers: 'الأعضاء المصرح لهم',
     manageAccess: 'صلاحيات المشروع',
+    editButton: 'تعديل البيانات',
     modalCreateTitle: 'إنشاء مشروع ترقية عقارية',
+    modalEditTitle: 'تعديل بيانات المشروع العقاري',
     modalAccessTitle: 'إدارة صلاحيات الوصول للمشروع',
     fieldCode: 'رمز المشروع *',
     fieldNameAr: 'اسم المشروع بالعربية *',
@@ -489,7 +493,9 @@ const FR: TranslationBundle = {
     tableBudget: 'Budget estimatif',
     tableMembers: 'Membres autorisés',
     manageAccess: 'Accès projet',
+    editButton: 'Modifier',
     modalCreateTitle: 'Créer un projet immobilier',
+    modalEditTitle: 'Modifier les données du projet immobilier',
     modalAccessTitle: 'Gestion des accès au projet',
     fieldCode: 'Code projet *',
     fieldNameAr: 'Nom du projet (AR) *',
@@ -593,6 +599,46 @@ const API_ERROR_MESSAGES: Record<string, { ar: string; fr: string }> = {
   HTTP_403_NON_JSON: {
     ar: 'أعاد مضيف المعاينة أو الوسيط استجابة 403 غير متوافقة مع واجهة API. قد يكون الطلب قد حُظر قبل وصوله إلى خدمة PROMO GEST. أعد تحميل المعاينة؛ وإذا استمر الخطأ فافحص طلب initialize في تبويب Network.',
     fr: 'L’hôte d’aperçu ou son proxy a renvoyé une réponse 403 non JSON. La requête a peut-être été bloquée avant le traitement par l’API PROMO GEST. Rechargez l’aperçu et, si le problème persiste, inspectez la requête initialize dans Network.',
+  },
+  CONCURRENCY_CONFLICT: {
+    ar: 'تم تعديل هذا السجل بواسطة عملية أخرى. حدّث البيانات ثم أعد المحاولة.',
+    fr: 'Cet enregistrement a été modifié par une autre opération. Rechargez les données puis réessayez.',
+  },
+  FORBIDDEN_PROJECT_UPDATE: {
+    ar: 'لا تملك صلاحية تعديل البيانات الأساسية لهذا المشروع.',
+    fr: 'Vous ne disposez pas du droit de modifier les données principales de ce projet.',
+  },
+  PROJECT_STATUS_INVALID: {
+    ar: 'حالة المشروع غير صالحة.',
+    fr: 'Le statut du projet est invalide.',
+  },
+  PROJECT_BUDGET_INVALID: {
+    ar: 'الميزانية يجب أن تكون قيمة موجبة ضمن النطاق المسموح.',
+    fr: 'Le budget doit être une valeur positive dans la plage autorisée.',
+  },
+  PROJECT_COUNTS_NEGATIVE: {
+    ar: 'عدد العمارات والوحدات لا يمكن أن يكون سالباً.',
+    fr: 'Les nombres de bâtiments et d’unités ne peuvent pas être négatifs.',
+  },
+  PROJECT_NAME_TOO_LONG: {
+    ar: 'اسم المشروع يتجاوز الحد الأقصى المسموح به.',
+    fr: 'Le nom du projet dépasse la longueur maximale autorisée.',
+  },
+  PROJECT_LOCATION_TOO_LONG: {
+    ar: 'بيانات الموقع تتجاوز الحد الأقصى المسموح به.',
+    fr: 'Les données de localisation dépassent la longueur maximale autorisée.',
+  },
+  PROJECT_ADDRESS_TOO_LONG: {
+    ar: 'عنوان المشروع يتجاوز الحد الأقصى المسموح به.',
+    fr: 'L’adresse du projet dépasse la longueur maximale autorisée.',
+  },
+  PROJECT_LAND_REFERENCE_TOO_LONG: {
+    ar: 'المرجع العقاري يتجاوز الحد الأقصى المسموح به.',
+    fr: 'La référence foncière dépasse la longueur maximale autorisée.',
+  },
+  PROJECT_PERMIT_NUMBER_TOO_LONG: {
+    ar: 'رقم رخصة البناء يتجاوز الحد الأقصى المسموح به.',
+    fr: 'Le numéro du permis de construire dépasse la longueur maximale autorisée.',
   },
   CANNOT_MODIFY_SYSTEM_ADMIN: {
     ar: 'لا يمكن تعديل حساب مدير النظام الوحيد أو إعادة تعيين كلمة مروره من هذه الواجهة.',

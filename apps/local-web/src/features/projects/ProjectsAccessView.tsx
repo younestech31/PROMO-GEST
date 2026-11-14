@@ -1,16 +1,17 @@
 import { useEffect, useState, type FormEvent } from 'react';
-import { FolderPlus, KeyRound, ShieldAlert, Trash2, Users, X } from 'lucide-react';
+import { FolderPlus, KeyRound, Pencil, ShieldAlert, Trash2, Users, X } from 'lucide-react';
 import type {
   AppLanguage,
   AssignProjectMemberRequest,
   AuthenticatedUser,
   CreateProjectRequest,
   ProjectDto,
+  UpdateProjectRequest,
   UserDto,
 } from '../../types/erp';
 import { getTranslations, translateApiError } from '../../localization/translations';
 import { ALGERIAN_WILAYAS, findWilaya, formatDzd } from '../../utils/algerianFormat';
-import { canCreateProject, canManageProjectAccess, canManageUsers } from '../../utils/permissions';
+import { canCreateProject, canManageProjectAccess, canManageProjects, canManageUsers } from '../../utils/permissions';
 import { validateCreateProject, type ValidationErrors } from '../../utils/validation';
 import { apiClient, ApiError } from '../../services/apiClient';
 import { FormField, inputBaseClass } from '../../components/FormField';
@@ -50,6 +51,7 @@ export function ProjectsAccessView({
   const [error, setError] = useState<string | null>(null);
 
   const [createOpen, setCreateOpen] = useState(false);
+  const [editingProject, setEditingProject] = useState<ProjectDto | null>(null);
   const [accessProject, setAccessProject] = useState<ProjectDto | null>(null);
 
   const [createForm, setCreateForm] = useState<CreateProjectRequest>({
@@ -117,7 +119,7 @@ export function ProjectsAccessView({
     }));
   };
 
-  const handleCreateProject = async (e: FormEvent) => {
+  const handleProjectSubmit = async (e: FormEvent) => {
     e.preventDefault();
     setModalError(null);
     const validation = validateCreateProject(createForm, language);
@@ -126,14 +128,38 @@ export function ProjectsAccessView({
 
     setSubmitting(true);
     try {
-      const created = await apiClient.createProject({
-        ...createForm,
-        buildingPermitDate: createForm.buildingPermitDate || null,
-      });
-      const next = [created, ...projects];
-      setProjects(next);
-      onProjectsChanged?.(next);
+      if (editingProject) {
+        const payload: UpdateProjectRequest = {
+          nameAr: createForm.nameAr,
+          nameFr: createForm.nameFr,
+          wilayaCode: createForm.wilayaCode,
+          wilayaName: createForm.wilayaName,
+          municipality: createForm.municipality,
+          address: createForm.address,
+          landTitleReference: createForm.landTitleReference,
+          buildingPermitNumber: createForm.buildingPermitNumber,
+          buildingPermitDate: createForm.buildingPermitDate || null,
+          status: createForm.status,
+          estimatedBudgetDzd: createForm.estimatedBudgetDzd,
+          plannedBlocksCount: createForm.plannedBlocksCount,
+          plannedUnitsCount: createForm.plannedUnitsCount,
+        };
+        const updated = await apiClient.updateProject(editingProject.id, payload);
+        const next = projects.map((project) => project.id === updated.id ? updated : project);
+        setProjects(next);
+        onProjectsChanged?.(next);
+      } else {
+        const created = await apiClient.createProject({
+          ...createForm,
+          buildingPermitDate: createForm.buildingPermitDate || null,
+        });
+        const next = [created, ...projects];
+        setProjects(next);
+        onProjectsChanged?.(next);
+      }
+
       setCreateOpen(false);
+      setEditingProject(null);
       setCreateForm({
         code: '',
         nameAr: '',
@@ -154,11 +180,38 @@ export function ProjectsAccessView({
       if (err instanceof ApiError) {
         setModalError(translateApiError(err.code, err.message, language));
       } else {
-        setModalError(language === 'ar' ? 'فشل إنشاء المشروع.' : 'Échec de création du projet.');
+        setModalError(
+          editingProject
+            ? (language === 'ar' ? 'فشل تحديث بيانات المشروع.' : 'Échec de la mise à jour du projet.')
+            : (language === 'ar' ? 'فشل إنشاء المشروع.' : 'Échec de création du projet.')
+        );
       }
     } finally {
       setSubmitting(false);
     }
+  };
+
+  const openEditProject = (project: ProjectDto) => {
+    setEditingProject(project);
+    setCreateForm({
+      code: project.code,
+      nameAr: project.nameAr,
+      nameFr: project.nameFr,
+      wilayaCode: project.wilayaCode,
+      wilayaName: project.wilayaName,
+      municipality: project.municipality,
+      address: project.address ?? '',
+      landTitleReference: project.landTitleReference ?? '',
+      buildingPermitNumber: project.buildingPermitNumber ?? '',
+      buildingPermitDate: project.buildingPermitDate ?? '',
+      status: project.status,
+      estimatedBudgetDzd: project.estimatedBudgetDzd,
+      plannedBlocksCount: project.plannedBlocksCount,
+      plannedUnitsCount: project.plannedUnitsCount,
+    });
+    setFormErrors({});
+    setModalError(null);
+    setCreateOpen(true);
   };
 
   const handleAssignMember = async (e: FormEvent) => {
@@ -220,8 +273,25 @@ export function ProjectsAccessView({
           <button
             type="button"
             onClick={() => {
+              setEditingProject(null);
               setFormErrors({});
               setModalError(null);
+              setCreateForm({
+                code: '',
+                nameAr: '',
+                nameFr: '',
+                wilayaCode: '16',
+                wilayaName: 'الجزائر / Alger',
+                municipality: '',
+                address: '',
+                landTitleReference: '',
+                buildingPermitNumber: '',
+                buildingPermitDate: '',
+                status: 'Planning',
+                estimatedBudgetDzd: 0,
+                plannedBlocksCount: 1,
+                plannedUnitsCount: 0,
+              });
               setCreateOpen(true);
             }}
             className="inline-flex items-center gap-2 rounded-md bg-teal-800 px-4 py-2 text-sm font-semibold text-white hover:bg-teal-900 transition-colors whitespace-nowrap shrink-0 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-teal-800"
@@ -295,7 +365,18 @@ export function ProjectsAccessView({
                       {p.members.length}
                     </td>
                     <td className="py-3 px-4 text-end">
-                      {canManageProjectAccess(currentUser, p) && (
+                      <div className="inline-flex items-center justify-end gap-2">
+                        {canManageProjects(currentUser) && (
+                          <button
+                            type="button"
+                            onClick={() => openEditProject(p)}
+                            className="inline-flex items-center gap-1.5 rounded border border-slate-200 px-2.5 py-1 text-xs font-medium text-slate-700 hover:bg-slate-100 whitespace-nowrap"
+                          >
+                            <Pencil className="w-3.5 h-3.5" aria-hidden="true" />
+                            <span>{t.projects.editButton}</span>
+                          </button>
+                        )}
+                        {canManageProjectAccess(currentUser, p) && (
                         <button
                           type="button"
                           onClick={() => {
@@ -311,6 +392,7 @@ export function ProjectsAccessView({
                           <span>{t.projects.manageAccess}</span>
                         </button>
                       )}
+                      </div>
                     </td>
                   </tr>
                 ))}
@@ -331,12 +413,12 @@ export function ProjectsAccessView({
           <div className="bg-white border border-slate-200 rounded-lg w-full max-w-2xl p-6 max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between pb-4 border-b border-slate-100">
               <h2 id="create-project-title" className="text-base font-bold text-slate-900">
-                {t.projects.modalCreateTitle}
+                {editingProject ? t.projects.modalEditTitle : t.projects.modalCreateTitle}
               </h2>
               <button
                 type="button"
                 aria-label={t.users.cancel}
-                onClick={() => setCreateOpen(false)}
+                onClick={() => { setCreateOpen(false); setEditingProject(null); }}
                 className="p-1.5 rounded text-slate-500 hover:bg-slate-100"
               >
                 <X className="w-4 h-4" />
@@ -349,7 +431,7 @@ export function ProjectsAccessView({
               </div>
             )}
 
-            <form onSubmit={handleCreateProject} noValidate className="mt-4 space-y-4">
+            <form onSubmit={handleProjectSubmit} noValidate className="mt-4 space-y-4">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <FormField id="prj-code" label={t.projects.fieldCode} error={formErrors.code}>
                   <input
@@ -358,6 +440,7 @@ export function ProjectsAccessView({
                     dir="ltr"
                     placeholder="PRJ-16-001"
                     value={createForm.code}
+                    disabled={Boolean(editingProject)}
                     onChange={(e) => setCreateForm((p) => ({ ...p, code: e.target.value }))}
                     className={`${inputBaseClass} font-data`}
                   />
@@ -475,6 +558,16 @@ export function ProjectsAccessView({
                   />
                 </FormField>
 
+                <FormField id="prj-address" label={t.projects.fieldAddress}>
+                  <input
+                    id="prj-address"
+                    type="text"
+                    value={createForm.address ?? ''}
+                    onChange={(e) => setCreateForm((p) => ({ ...p, address: e.target.value }))}
+                    className={inputBaseClass}
+                  />
+                </FormField>
+
                 <FormField id="prj-land" label={t.projects.fieldLandTitle}>
                   <input
                     id="prj-land"
@@ -487,12 +580,34 @@ export function ProjectsAccessView({
                     className={`${inputBaseClass} font-data`}
                   />
                 </FormField>
+
+                <FormField id="prj-permit-no" label={t.projects.fieldPermitNo}>
+                  <input
+                    id="prj-permit-no"
+                    type="text"
+                    dir="ltr"
+                    value={createForm.buildingPermitNumber ?? ''}
+                    onChange={(e) => setCreateForm((p) => ({ ...p, buildingPermitNumber: e.target.value }))}
+                    className={`${inputBaseClass} font-data`}
+                  />
+                </FormField>
+
+                <FormField id="prj-permit-date" label={t.projects.fieldPermitDate}>
+                  <input
+                    id="prj-permit-date"
+                    type="date"
+                    dir="ltr"
+                    value={createForm.buildingPermitDate ?? ''}
+                    onChange={(e) => setCreateForm((p) => ({ ...p, buildingPermitDate: e.target.value }))}
+                    className={`${inputBaseClass} font-data`}
+                  />
+                </FormField>
               </div>
 
               <div className="pt-4 border-t border-slate-100 flex justify-end gap-3">
                 <button
                   type="button"
-                  onClick={() => setCreateOpen(false)}
+                  onClick={() => { setCreateOpen(false); setEditingProject(null); }}
                   className="px-4 py-2 text-xs font-semibold rounded-md border border-slate-200 text-slate-700 hover:bg-slate-100"
                 >
                   {t.users.cancel}

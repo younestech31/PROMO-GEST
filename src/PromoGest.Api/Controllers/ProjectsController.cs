@@ -40,6 +40,13 @@ public sealed class ProjectsController : ControllerBase
         return Created($"/api/projects/{created.Id}", created);
     }
 
+    [HttpPut("{projectId:guid}")]
+    public async Task<ActionResult<ProjectDto>> Update(Guid projectId, [FromBody] UpdateProjectRequest request, CancellationToken ct)
+    {
+        var updated = await _projectService.UpdateProjectAsync(GetActorUserId(), projectId, request, GetMetadata(), ct);
+        return Ok(updated);
+    }
+
     [HttpPut("{projectId:guid}/members")]
     public async Task<ActionResult<ProjectDto>> AssignMember(Guid projectId, [FromBody] AssignProjectMemberRequest request, CancellationToken ct)
     {

@@ -139,7 +139,9 @@ public sealed class StoredFile : BaseEntity
             throw new DomainException("FILE_PATH_REQUIRED", "Stored relative path is required.");
         if (sizeBytes <= 0)
             throw new DomainException("FILE_SIZE_INVALID", "Stored file size must be greater than zero.");
-        if (string.IsNullOrWhiteSpace(sha256Checksum) || sha256Checksum.Length != 64)
+        if (string.IsNullOrWhiteSpace(sha256Checksum) ||
+            sha256Checksum.Length != 64 ||
+            !sha256Checksum.All(Uri.IsHexDigit))
             throw new DomainException("FILE_CHECKSUM_INVALID", "Valid SHA-256 checksum is required.");
         if (string.IsNullOrWhiteSpace(category) || category.Trim().Length > 40)
             throw new DomainException("FILE_CATEGORY_INVALID", "A valid document category is required.");

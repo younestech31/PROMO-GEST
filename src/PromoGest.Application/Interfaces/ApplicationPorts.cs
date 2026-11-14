@@ -1,4 +1,6 @@
+using System.IO;
 using PromoGest.Domain.Entities;
+using PromoGest.Domain.Enums;
 
 namespace PromoGest.Application.Interfaces;
 

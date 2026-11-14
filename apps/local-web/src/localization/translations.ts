@@ -153,6 +153,10 @@ export interface TranslationBundle {
     grossArea: string;
     netArea: string;
     roomsCount: string;
+    editUnit: string;
+    saveUnit: string;
+    changeUnitStatus: string;
+    salesWorkflowNotice: string;
     editButton: string;
     modalCreateTitle: string;
     modalEditTitle: string;
@@ -359,6 +363,10 @@ const AR: TranslationBundle = {
     grossArea: 'المساحة الإجمالية (م²)',
     netArea: 'المساحة الصافية (م²)',
     roomsCount: 'عدد الغرف',
+    editUnit: 'تعديل الوحدة',
+    saveUnit: 'حفظ التعديلات',
+    changeUnitStatus: 'تحديث الحالة',
+    salesWorkflowNotice: 'الحجز والبيع والتسليم تُدار عبر مسار البيع والعقود، ولا تُسجّل مباشرة من شاشة الهيكل العقاري.',
     editButton: 'تعديل البيانات',
     modalCreateTitle: 'إنشاء مشروع ترقية عقارية',
     modalEditTitle: 'تعديل بيانات المشروع العقاري',
@@ -565,6 +573,10 @@ const FR: TranslationBundle = {
     grossArea: 'Surface brute (m²)',
     netArea: 'Surface nette (m²)',
     roomsCount: 'Nombre de pièces',
+    editUnit: 'Modifier l’unité',
+    saveUnit: 'Enregistrer les modifications',
+    changeUnitStatus: 'Mettre à jour le statut',
+    salesWorkflowNotice: 'La réservation, la vente et la livraison seront gérées par le circuit commercial et contractuel, et non depuis la structure immobilière.',
     editButton: 'Modifier',
     modalCreateTitle: 'Créer un projet immobilier',
     modalEditTitle: 'Modifier les données du projet immobilier',
@@ -787,6 +799,22 @@ const API_ERROR_MESSAGES: Record<string, { ar: string; fr: string }> = {
   UNIT_ROOMS_COUNT_INVALID: {
     ar: 'عدد الغرف يجب أن يكون بين صفر و20.',
     fr: 'Le nombre de pièces doit être compris entre 0 et 20.',
+  },
+  UNIT_STATUS_REQUIRES_SALES_WORKFLOW: {
+    ar: 'لا يمكن تسجيل الحجز أو البيع أو التسليم مباشرة. يجب تنفيذ ذلك عبر مسار البيع والعقود.',
+    fr: 'La réservation, la vente ou la livraison ne peut pas être enregistrée directement. Utilisez le circuit commercial et contractuel.',
+  },
+  UNIT_STATUS_LOCKED_BY_SALES_WORKFLOW: {
+    ar: 'حالة هذه الوحدة مرتبطة بمسار البيع أو العقد ولا يمكن تغييرها من شاشة الهيكل العقاري.',
+    fr: 'Le statut de cette unité est lié au processus commercial ou contractuel et ne peut pas être modifié depuis la structure immobilière.',
+  },
+  UNIT_DETAILS_LOCKED_BY_SALES_WORKFLOW: {
+    ar: 'لا يمكن تعديل البيانات الفنية لوحدة محجوزة أو مباعة أو مسلمة من هذه الشاشة.',
+    fr: 'Les données techniques d’une unité réservée, vendue ou livrée ne peuvent pas être modifiées depuis cet écran.',
+  },
+  UNIT_STATUS_TRANSITION_INVALID: {
+    ar: 'الانتقال المطلوب بين حالتي الوحدة غير مسموح.',
+    fr: 'La transition demandée entre les deux statuts de l’unité n’est pas autorisée.',
   },
   CANNOT_MODIFY_SYSTEM_ADMIN: {
     ar: 'لا يمكن تعديل حساب مدير النظام الوحيد أو إعادة تعيين كلمة مروره من هذه الواجهة.',

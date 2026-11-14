@@ -95,6 +95,80 @@ namespace PromoGest.Infrastructure.Persistence.Migrations
                     b.ToTable("permissions", (string)null);
                 });
 
+            modelBuilder.Entity("PromoGest.Domain.Entities.Building", b =>
+                {
+                    b.Property<Guid>("Id").ValueGeneratedOnAdd().HasColumnType("uuid").HasColumnName("id");
+                    b.Property<string>("Code").IsRequired().HasMaxLength(40).HasColumnType("character varying(40)").HasColumnName("code");
+                    b.Property<Guid>("ConcurrencyStamp").IsConcurrencyToken().HasColumnType("uuid").HasColumnName("concurrency_stamp");
+                    b.Property<DateTimeOffset>("CreatedAtUtc").HasColumnType("timestamp with time zone").HasColumnName("created_at_utc");
+                    b.Property<Guid>("CreatedByUserId").HasColumnType("uuid").HasColumnName("created_by_user_id");
+                    b.Property<string>("NameAr").IsRequired().HasMaxLength(200).HasColumnType("character varying(200)").HasColumnName("name_ar");
+                    b.Property<string>("NameFr").IsRequired().HasMaxLength(200).HasColumnType("character varying(200)").HasColumnName("name_fr");
+                    b.Property<string>("NormalizedCode").IsRequired().HasMaxLength(40).HasColumnType("character varying(40)").HasColumnName("normalized_code");
+                    b.Property<Guid>("ProjectId").HasColumnType("uuid").HasColumnName("project_id");
+                    b.Property<string>("Status").IsRequired().HasMaxLength(24).HasColumnType("character varying(24)").HasColumnName("status");
+                    b.Property<DateTimeOffset>("UpdatedAtUtc").HasColumnType("timestamp with time zone").HasColumnName("updated_at_utc");
+
+                    b.HasKey("Id");
+                    b.HasIndex("CreatedByUserId").HasDatabaseName("ix_buildings_created_by_user_id");
+                    b.HasIndex("ProjectId", "NormalizedCode").IsUnique().HasDatabaseName("ux_buildings_project_code");
+                    b.ToTable("buildings", null, t =>
+                        {
+                            t.HasCheckConstraint("ck_buildings_code_not_empty", "length(btrim(code)) > 0");
+                            t.HasCheckConstraint("ck_buildings_status", "status IN ('Planned', 'UnderConstruction', 'Completed', 'Suspended')");
+                        });
+                });
+
+            modelBuilder.Entity("PromoGest.Domain.Entities.BuildingFloor", b =>
+                {
+                    b.Property<Guid>("Id").ValueGeneratedOnAdd().HasColumnType("uuid").HasColumnName("id");
+                    b.Property<Guid>("BuildingId").HasColumnType("uuid").HasColumnName("building_id");
+                    b.Property<Guid>("ConcurrencyStamp").IsConcurrencyToken().HasColumnType("uuid").HasColumnName("concurrency_stamp");
+                    b.Property<DateTimeOffset>("CreatedAtUtc").HasColumnType("timestamp with time zone").HasColumnName("created_at_utc");
+                    b.Property<int>("FloorNumber").HasColumnType("integer").HasColumnName("floor_number");
+                    b.Property<string>("NameAr").IsRequired().HasMaxLength(100).HasColumnType("character varying(100)").HasColumnName("name_ar");
+                    b.Property<string>("NameFr").IsRequired().HasMaxLength(100).HasColumnType("character varying(100)").HasColumnName("name_fr");
+                    b.Property<DateTimeOffset>("UpdatedAtUtc").HasColumnType("timestamp with time zone").HasColumnName("updated_at_utc");
+
+                    b.HasKey("Id");
+                    b.HasIndex("BuildingId", "FloorNumber").IsUnique().HasDatabaseName("ux_building_floors_building_number");
+                    b.ToTable("building_floors", null, t =>
+                        {
+                            t.HasCheckConstraint("ck_building_floors_number_range", "floor_number BETWEEN -10 AND 200");
+                        });
+                });
+
+            modelBuilder.Entity("PromoGest.Domain.Entities.PropertyUnit", b =>
+                {
+                    b.Property<Guid>("Id").ValueGeneratedOnAdd().HasColumnType("uuid").HasColumnName("id");
+                    b.Property<Guid>("ConcurrencyStamp").IsConcurrencyToken().HasColumnType("uuid").HasColumnName("concurrency_stamp");
+                    b.Property<DateTimeOffset>("CreatedAtUtc").HasColumnType("timestamp with time zone").HasColumnName("created_at_utc");
+                    b.Property<Guid>("CreatedByUserId").HasColumnType("uuid").HasColumnName("created_by_user_id");
+                    b.Property<Guid>("FloorId").HasColumnType("uuid").HasColumnName("floor_id");
+                    b.Property<decimal?>("GrossAreaSquareMeters").HasPrecision(10, 2).HasColumnType("numeric(10,2)").HasColumnName("gross_area_square_meters");
+                    b.Property<decimal?>("NetAreaSquareMeters").HasPrecision(10, 2).HasColumnType("numeric(10,2)").HasColumnName("net_area_square_meters");
+                    b.Property<string>("NormalizedUnitNumber").IsRequired().HasMaxLength(40).HasColumnType("character varying(40)").HasColumnName("normalized_unit_number");
+                    b.Property<int?>("RoomsCount").HasColumnType("integer").HasColumnName("rooms_count");
+                    b.Property<string>("Status").IsRequired().HasMaxLength(32).HasColumnType("character varying(32)").HasColumnName("status");
+                    b.Property<string>("UnitNumber").IsRequired().HasMaxLength(40).HasColumnType("character varying(40)").HasColumnName("unit_number");
+                    b.Property<string>("UnitType").IsRequired().HasMaxLength(24).HasColumnType("character varying(24)").HasColumnName("unit_type");
+                    b.Property<DateTimeOffset>("UpdatedAtUtc").HasColumnType("timestamp with time zone").HasColumnName("updated_at_utc");
+
+                    b.HasKey("Id");
+                    b.HasIndex("CreatedByUserId").HasDatabaseName("ix_property_units_created_by_user_id");
+                    b.HasIndex("FloorId", "NormalizedUnitNumber").IsUnique().HasDatabaseName("ux_property_units_floor_number");
+                    b.HasIndex("Status").HasDatabaseName("ix_property_units_status");
+                    b.ToTable("property_units", null, t =>
+                        {
+                            t.HasCheckConstraint("ck_property_units_gross_area_non_negative", "gross_area_square_meters IS NULL OR gross_area_square_meters >= 0");
+                            t.HasCheckConstraint("ck_property_units_net_area_non_negative", "net_area_square_meters IS NULL OR net_area_square_meters >= 0");
+                            t.HasCheckConstraint("ck_property_units_net_not_over_gross", "net_area_square_meters IS NULL OR gross_area_square_meters IS NULL OR net_area_square_meters <= gross_area_square_meters");
+                            t.HasCheckConstraint("ck_property_units_rooms_range", "rooms_count IS NULL OR rooms_count BETWEEN 0 AND 20");
+                            t.HasCheckConstraint("ck_property_units_status", "status IN ('Planned', 'UnderConstruction', 'AvailableForSale', 'Reserved', 'Sold', 'Delivered', 'Withdrawn')");
+                            t.HasCheckConstraint("ck_property_units_type", "unit_type IN ('Apartment', 'Shop', 'ParkingSpace', 'Office', 'Storage')");
+                        });
+                });
+
             modelBuilder.Entity("PromoGest.Domain.Entities.Project", b =>
                 {
                     b.Property<Guid>("Id").ValueGeneratedOnAdd().HasColumnType("uuid").HasColumnName("id");
@@ -285,6 +359,45 @@ namespace PromoGest.Infrastructure.Persistence.Migrations
                     b.HasIndex("TokenHash").IsUnique().HasDatabaseName("ux_user_sessions_token_hash");
                     b.HasIndex("UserId").HasDatabaseName("ix_user_sessions_user_id");
                     b.ToTable("user_sessions", (string)null);
+                });
+
+            modelBuilder.Entity("PromoGest.Domain.Entities.Building", b =>
+                {
+                    b.HasOne("PromoGest.Domain.Entities.Project", null)
+                        .WithMany()
+                        .HasForeignKey("ProjectId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("PromoGest.Domain.Entities.User", null)
+                        .WithMany()
+                        .HasForeignKey("CreatedByUserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("PromoGest.Domain.Entities.BuildingFloor", b =>
+                {
+                    b.HasOne("PromoGest.Domain.Entities.Building", null)
+                        .WithMany()
+                        .HasForeignKey("BuildingId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("PromoGest.Domain.Entities.PropertyUnit", b =>
+                {
+                    b.HasOne("PromoGest.Domain.Entities.BuildingFloor", null)
+                        .WithMany()
+                        .HasForeignKey("FloorId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("PromoGest.Domain.Entities.User", null)
+                        .WithMany()
+                        .HasForeignKey("CreatedByUserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
                 });
 
             modelBuilder.Entity("PromoGest.Domain.Entities.Project", b =>

@@ -683,6 +683,53 @@ public sealed class PostgresEndToEndTests : IClassFixture<PostgreSql18Integratio
                 new CreatePropertyUnitRequest("A-002", "Apartment", "Planned", 90m, 91m, 3));
             Assert.Equal(HttpStatusCode.BadRequest, invalidAreaResponse.StatusCode);
 
+            // Unit technical details are editable with optimistic concurrency protection.
+            var updateUnitUrl = $"{unitsUrl}/{createdUnit.Id}";
+            var updateUnitResponse = await adminClient.PutAsJsonAsync(
+                updateUnitUrl,
+                new UpdatePropertyUnitRequest(
+                    "A-001",
+                    "Apartment",
+                    113m,
+                    97m,
+                    4,
+                    createdUnit.ConcurrencyStamp));
+            Assert.Equal(HttpStatusCode.OK, updateUnitResponse.StatusCode);
+            var updatedUnitStructure = await updateUnitResponse.Content.ReadFromJsonAsync<ProjectStructureDto>();
+            Assert.NotNull(updatedUnitStructure);
+            var updatedUnit = Assert.Single(
+                Assert.Single(Assert.Single(updatedUnitStructure!.Buildings).Floors).Units);
+            Assert.Equal(113m, updatedUnit.GrossAreaSquareMeters);
+            Assert.Equal(97m, updatedUnit.NetAreaSquareMeters);
+            Assert.NotEqual(createdUnit.ConcurrencyStamp, updatedUnit.ConcurrencyStamp);
+
+            var staleUnitUpdateResponse = await adminClient.PutAsJsonAsync(
+                updateUnitUrl,
+                new UpdatePropertyUnitRequest(
+                    "A-001",
+                    "Apartment",
+                    114m,
+                    97m,
+                    4,
+                    createdUnit.ConcurrencyStamp));
+            Assert.Equal(HttpStatusCode.Conflict, staleUnitUpdateResponse.StatusCode);
+
+            // Only construction-stage transitions are available here; sale states are reserved for a future workflow.
+            var changeStatusResponse = await adminClient.PutAsJsonAsync(
+                $"{updateUnitUrl}/status",
+                new ChangePropertyUnitStatusRequest("Withdrawn", updatedUnit.ConcurrencyStamp));
+            Assert.Equal(HttpStatusCode.OK, changeStatusResponse.StatusCode);
+            var changedStatusStructure = await changeStatusResponse.Content.ReadFromJsonAsync<ProjectStructureDto>();
+            Assert.NotNull(changedStatusStructure);
+            var changedStatusUnit = Assert.Single(
+                Assert.Single(Assert.Single(changedStatusStructure!.Buildings).Floors).Units);
+            Assert.Equal("Withdrawn", changedStatusUnit.Status);
+
+            var directSoldStatusResponse = await adminClient.PutAsJsonAsync(
+                $"{updateUnitUrl}/status",
+                new ChangePropertyUnitStatusRequest("Sold", changedStatusUnit.ConcurrencyStamp));
+            Assert.Equal(HttpStatusCode.BadRequest, directSoldStatusResponse.StatusCode);
+
             using (var scope = factory.Services.CreateScope())
             {
                 var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
@@ -695,6 +742,10 @@ public sealed class PostgresEndToEndTests : IClassFixture<PostgreSql18Integratio
                     entry.EventType == "BUILDING_FLOOR_CREATED" && entry.TargetEntityId == createdFloor.Id.ToString());
                 Assert.Contains(await db.AuditLogs.ToListAsync(), entry =>
                     entry.EventType == "PROPERTY_UNIT_CREATED" && entry.TargetEntityId == createdUnit.Id.ToString());
+                Assert.Contains(await db.AuditLogs.ToListAsync(), entry =>
+                    entry.EventType == "PROPERTY_UNIT_UPDATED" && entry.TargetEntityId == createdUnit.Id.ToString());
+                Assert.Contains(await db.AuditLogs.ToListAsync(), entry =>
+                    entry.EventType == "PROPERTY_UNIT_STATUS_CHANGED" && entry.TargetEntityId == createdUnit.Id.ToString());
             }
 
             // The seeded Project Director role must also be able to manage project structure via its explicit permission.

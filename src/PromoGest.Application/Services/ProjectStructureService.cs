@@ -489,10 +489,31 @@ public sealed class ProjectStructureService
         if (!actor.IsActive)
             throw new ForbiddenDomainException("AUTH_ACCOUNT_INACTIVE", "Account is inactive.");
 
+        ProjectMember? membership = null;
+        if (!actor.IsSystemAdministrator)
+        {
+            membership = await _projectRepository.GetMemberAsync(projectId, actorUserId, ct);
+            if (membership is null)
+            {
+                await WriteAuditAsync(
+                    actor,
+                    _clock.UtcNow,
+                    "ACCESS_DENIED",
+                    "Project",
+                    projectId.ToString(),
+                    $"Unauthorized project-structure {(canManage ? "management" : "read")} attempt by '{actor.Username}'.",
+                    metadata,
+                    ct);
+                await _structureRepository.SaveChangesAsync(ct);
+                throw new ForbiddenDomainException(
+                    canManage ? "FORBIDDEN_PROJECT_STRUCTURE_MANAGE" : "PROJECT_ACCESS_DENIED",
+                    "You do not have access to this project.");
+            }
+        }
+
         var project = await _projectRepository.GetByIdWithMembersAsync(projectId, ct)
             ?? throw new NotFoundDomainException("PROJECT_NOT_FOUND", "Project not found.");
 
-        var membership = project.Members.FirstOrDefault(member => member.UserId == actorUserId);
         var permissions = actor.IsSystemAdministrator
             ? Array.Empty<string>()
             : await _userRepository.GetEffectivePermissionsAsync(actorUserId, ct);

@@ -807,6 +807,140 @@ namespace PromoGest.Infrastructure.Persistence.Migrations
                     b.ToTable("project_members", (string)null);
                 });
 
+            modelBuilder.Entity("PromoGest.Domain.Entities.ProjectSalesReservation", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<string>("CloseReason")
+                        .HasMaxLength(300)
+                        .HasColumnType("character varying(300)")
+                        .HasColumnName("close_reason");
+
+                    b.Property<DateTimeOffset?>("ClosedAtUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("closed_at_utc");
+
+                    b.Property<Guid?>("ClosedByUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("closed_by_user_id");
+
+                    b.Property<Guid>("ConcurrencyStamp")
+                        .IsConcurrencyToken()
+                        .HasColumnType("uuid")
+                        .HasColumnName("concurrency_stamp");
+
+                    b.Property<DateTimeOffset>("CreatedAtUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at_utc");
+
+                    b.Property<Guid>("CreatedByUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("created_by_user_id");
+
+                    b.Property<DateTimeOffset>("ExpiresAtUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("expires_at_utc");
+
+                    b.Property<Guid>("ProjectCustomerId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("project_customer_id");
+
+                    b.Property<Guid>("ProjectId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("project_id");
+
+                    b.Property<Guid>("PropertyUnitId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("property_unit_id");
+
+                    b.Property<string>("ReservationNumber")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)")
+                        .HasColumnName("reservation_number");
+
+                    b.Property<DateTimeOffset>("ReservedAtUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("reserved_at_utc");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)")
+                        .HasColumnName("status");
+
+                    b.Property<DateTimeOffset>("UpdatedAtUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at_utc");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ClosedByUserId")
+                        .HasDatabaseName("ix_project_sales_reservations_closed_by");
+
+                    b.HasIndex("CreatedByUserId")
+                        .HasDatabaseName("ix_project_sales_reservations_created_by");
+
+                    b.HasIndex("ProjectCustomerId")
+                        .HasDatabaseName("ix_project_sales_reservations_customer");
+
+                    b.HasIndex("ProjectId", "ReservationNumber")
+                        .IsUnique()
+                        .HasDatabaseName("ux_project_sales_reservations_project_number");
+
+                    b.HasIndex("ProjectId", "Status", "ExpiresAtUtc")
+                        .HasDatabaseName("ix_project_sales_reservations_project_status_expiry");
+
+                    b.HasIndex("PropertyUnitId")
+                        .IsUnique()
+                        .HasFilter("status = 'Active'")
+                        .HasDatabaseName("ux_project_sales_reservations_active_unit");
+
+                    b.ToTable("project_sales_reservations", null, t =>
+                        {
+                            t.HasCheckConstraint("ck_project_sales_reservations_closure", "(status = 'Active' AND closed_at_utc IS NULL AND closed_by_user_id IS NULL AND close_reason IS NULL) OR (status = 'Cancelled' AND closed_at_utc IS NOT NULL AND closed_by_user_id IS NOT NULL AND close_reason IS NOT NULL AND length(btrim(close_reason)) > 0) OR (status = 'Expired' AND closed_at_utc IS NOT NULL AND closed_by_user_id IS NULL AND close_reason = 'EXPIRED')");
+
+                            t.HasCheckConstraint("ck_project_sales_reservations_expiry", "expires_at_utc > reserved_at_utc");
+
+                            t.HasCheckConstraint("ck_project_sales_reservations_status", "status IN ('Active', 'Cancelled', 'Expired')");
+                        });
+                });
+
+            modelBuilder.Entity("PromoGest.Domain.Entities.ProjectSalesReservation", b =>
+                {
+                    b.HasOne("PromoGest.Domain.Entities.User", null)
+                        .WithMany()
+                        .HasForeignKey("ClosedByUserId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("PromoGest.Domain.Entities.User", null)
+                        .WithMany()
+                        .HasForeignKey("CreatedByUserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("PromoGest.Domain.Entities.ProjectCustomer", null)
+                        .WithMany()
+                        .HasForeignKey("ProjectCustomerId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("PromoGest.Domain.Entities.Project", null)
+                        .WithMany()
+                        .HasForeignKey("ProjectId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("PromoGest.Domain.Entities.PropertyUnit", null)
+                        .WithMany()
+                        .HasForeignKey("PropertyUnitId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
             modelBuilder.Entity("PromoGest.Domain.Entities.PropertyUnit", b =>
                 {
                     b.Property<Guid>("Id")

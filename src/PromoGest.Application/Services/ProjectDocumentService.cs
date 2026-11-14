@@ -163,16 +163,27 @@ public sealed class ProjectDocumentService
             ?? throw new NotFoundDomainException("PROJECT_DOCUMENT_NOT_FOUND", "Project document was not found.");
 
         var fullPath = _fileStorage.ResolveSafeFullPath(file);
-        if (!File.Exists(fullPath))
-            throw new NotFoundDomainException("PROJECT_DOCUMENT_CONTENT_MISSING", "The stored document content is not available on the local server.");
-
-        var contentStream = new FileStream(
-            fullPath,
-            FileMode.Open,
-            FileAccess.Read,
-            FileShare.Read,
-            81920,
-            useAsync: true);
+        FileStream contentStream;
+        try
+        {
+            contentStream = new FileStream(
+                fullPath,
+                FileMode.Open,
+                FileAccess.Read,
+                FileShare.Read,
+                81920,
+                useAsync: true);
+        }
+        catch (Exception exception) when (exception is FileNotFoundException or DirectoryNotFoundException)
+        {
+            await RecordIntegrityFailureAsync(
+                actor, project, file, metadata,
+                "The stored document content is missing from the local storage root.",
+                ct);
+            throw new NotFoundDomainException(
+                "PROJECT_DOCUMENT_CONTENT_MISSING",
+                "The stored document content is not available on the local server.");
+        }
 
         try
         {

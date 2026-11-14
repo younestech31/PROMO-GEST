@@ -100,7 +100,7 @@ export function ProjectStructureModal({
 
   useEffect(() => {
     void loadStructure();
-  }, [project.id]);
+  }, [project.id, language]);
 
   const selectedBuilding = structure?.buildings.find(
     (building) => building.id === selectedBuildingId

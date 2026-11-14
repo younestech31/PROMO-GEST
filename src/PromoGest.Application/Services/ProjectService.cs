@@ -142,6 +142,75 @@ public sealed class ProjectService
         return MapProject(reloaded);
     }
 
+    public async Task<ProjectDto> UpdateProjectAsync(
+        Guid actorUserId,
+        Guid projectId,
+        UpdateProjectRequest request,
+        RequestMetadata metadata,
+        CancellationToken ct = default)
+    {
+        var actor = await RequireActiveActorAsync(actorUserId, "UpdateProject", metadata, ct);
+        var permissions = await _userRepository.GetEffectivePermissionsAsync(actorUserId, ct);
+        if (!actor.IsSystemAdministrator &&
+            !permissions.Contains("projects.manage", StringComparer.OrdinalIgnoreCase))
+        {
+            await RecordAccessDeniedAsync(
+                actor,
+                projectId,
+                $"Unauthorized project update attempt by '{actor.Username}' on project ID '{projectId}'.",
+                metadata,
+                ct);
+            throw new ForbiddenDomainException(
+                "FORBIDDEN_PROJECT_UPDATE",
+                "You do not have permission to update project details.");
+        }
+
+        var project = await _projectRepository.GetByIdWithMembersAsync(projectId, ct)
+            ?? throw new NotFoundDomainException("PROJECT_NOT_FOUND", "Project not found.");
+
+        if (!Enum.TryParse<ProjectStatus>(request.Status, ignoreCase: true, out var parsedStatus) ||
+            !Enum.IsDefined(parsedStatus))
+        {
+            throw new DomainException("PROJECT_STATUS_INVALID", "A valid project status is required.");
+        }
+
+        var nowUtc = _clock.UtcNow;
+        project.UpdateDetails(
+            request.NameAr,
+            request.NameFr,
+            request.WilayaCode,
+            request.WilayaName,
+            request.Municipality,
+            request.Address,
+            request.LandTitleReference,
+            request.BuildingPermitNumber,
+            request.BuildingPermitDate,
+            parsedStatus,
+            request.EstimatedBudgetDzd,
+            request.PlannedBlocksCount,
+            request.PlannedUnitsCount,
+            nowUtc);
+
+        await _auditWriter.WriteAsync(
+            AuditLog.Record(
+                nowUtc,
+                actor.Id,
+                actor.Username,
+                "PROJECT_UPDATED",
+                AuditSeverity.Info,
+                "Project",
+                project.Id.ToString(),
+                $"Updated master data for real estate project '{project.Code}'.",
+                null,
+                metadata.IpAddress,
+                metadata.UserAgent),
+            ct);
+        await _projectRepository.SaveChangesAsync(ct);
+
+        var reloaded = await _projectRepository.GetByIdWithMembersAsync(project.Id, ct) ?? project;
+        return MapProject(reloaded);
+    }
+
     public async Task<ProjectDto> AssignMemberAsync(
         Guid actorUserId,
         Guid projectId,

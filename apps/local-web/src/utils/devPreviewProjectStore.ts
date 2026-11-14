@@ -114,7 +114,7 @@ export function updateProjectInStore(
   );
 
   const wilayaCode = (request.wilayaCode ?? '').trim();
-  if (!/^(0[1-9]|[1-4]\d|5[0-8])$/.test(wilayaCode)) {
+  if (!/^(0[1-9]|[1-5]\d|6[0-9])$/.test(wilayaCode)) {
     throw new DevPreviewStoreError(400, 'PROJECT_WILAYA_INVALID', 'Valid two-digit Algerian Wilaya code (01-69) is required.');
   }
   const wilayaName = (request.wilayaName ?? '').trim();

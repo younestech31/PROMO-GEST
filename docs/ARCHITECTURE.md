@@ -42,3 +42,19 @@ The codebase uses Clean/Layered Architecture inside `/src/PromoGest.sln`:
 
 ## 5. Separation of Future Public Website from Local ERP Runtime
 If the organization later builds a public marketing or buyer portal website, it **must remain a completely separate deployment** (separate domain, separate hosting, separate read-only or curated public data store). The local PROMO GEST ERP server must **never** be exposed directly to the public internet, nor share its PostgreSQL database with public web traffic.
+
+
+## 6. Enterprise module boundaries and navigation
+
+The target product is a modular ERP, not a project-only application. Its accepted module catalogue, data ownership, target navigation, cross-module workflows, and rollout sequence are defined in [ERP Module Architecture](ERP-MODULE-ARCHITECTURE.md).
+
+Implementation direction:
+- Keep the current local deployment as a **modular monolith**: one local API/UI deployment and one organization-owned PostgreSQL database, with explicit business-module boundaries and application contracts.
+- Give each business fact one owning module. Other modules reference stable IDs or approved read models instead of creating duplicate master records or directly mutating another module's tables.
+- Treat the project workspace as a contextual view. Organization-wide modules such as CRM, Sales, Finance, Procurement, HR, Documents, and Reporting must be first-class navigation destinations and may display project-filtered views when authorized.
+- Preserve project membership and server-enforced project scope. Module visibility in the frontend is not an authorization mechanism.
+- Apply a hybrid role-and-resource-scope policy: role permissions are combined with organization, module, project, record, and trusted assignment attributes. Deny by default and evaluate authorization for every API operation.
+- Keep customer and supplier identities organization-wide in the target model, with explicit project relationships. Any evolution from the current project-scoped customer registry must preserve IDs, history, audit evidence, and rollback capability.
+- Integrate workflows through application-level use cases and explicit contracts. Use a durable outbox before depending on asynchronous cross-module side effects; do not add a message broker or microservices without a demonstrated need.
+
+The module catalogue is a target-state design. It does not mean that modules described as planned are already implemented or available in the current user interface.

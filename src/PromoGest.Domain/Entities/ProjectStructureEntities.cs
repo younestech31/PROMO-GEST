@@ -278,6 +278,32 @@ public sealed class PropertyUnit : BaseEntity
         Touch(nowUtc);
     }
 
+    public void ReserveForSalesWorkflow(DateTimeOffset nowUtc)
+    {
+        if (Status != PropertyUnitStatus.AvailableForSale)
+        {
+            throw new DomainException(
+                "UNIT_NOT_AVAILABLE_FOR_RESERVATION",
+                "Only a unit marked AvailableForSale can be reserved.");
+        }
+
+        Status = PropertyUnitStatus.Reserved;
+        Touch(nowUtc);
+    }
+
+    public void ReleaseSalesReservation(DateTimeOffset nowUtc)
+    {
+        if (Status != PropertyUnitStatus.Reserved)
+        {
+            throw new DomainException(
+                "UNIT_NOT_RESERVED",
+                "Only a currently reserved unit can be released by the reservation workflow.");
+        }
+
+        Status = PropertyUnitStatus.AvailableForSale;
+        Touch(nowUtc);
+    }
+
     public void ChangeStatus(PropertyUnitStatus newStatus, DateTimeOffset nowUtc)
     {
         if (!Enum.IsDefined(newStatus))

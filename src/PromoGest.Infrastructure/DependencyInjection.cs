@@ -45,6 +45,7 @@ public static class DependencyInjection
         services.AddScoped<IProjectStructureRepository, EfProjectStructureRepository>();
         services.AddScoped<IProjectDocumentRepository, EfProjectDocumentRepository>();
         services.AddScoped<IProjectCustomerRepository, EfProjectCustomerRepository>();
+        services.AddScoped<IProjectSalesReservationRepository, EfProjectSalesReservationRepository>();
 
         services.AddScoped<SetupService>();
         services.AddScoped<AuthService>();
@@ -53,6 +54,8 @@ public static class DependencyInjection
         services.AddScoped<ProjectStructureService>();
         services.AddScoped<ProjectDocumentService>();
         services.AddScoped<ProjectCustomerService>();
+        services.AddScoped<ProjectSalesReservationService>();
+        services.AddScoped<ProjectSalesReservationExpiryProcessor>();
         services.AddScoped<AuditQueryService>();
         services.AddScoped<AdminRecoveryService>();
 

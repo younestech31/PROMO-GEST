@@ -977,6 +977,74 @@ const API_ERROR_MESSAGES: Record<string, { ar: string; fr: string }> = {
     ar: 'موعد المتابعة لا يمكن أن يسبق تاريخ الاتصال.',
     fr: 'La date de suivi ne peut pas précéder la communication.',
   },
+  RESERVATION_REFERENCE_INVALID: {
+    ar: 'مرجع المشروع أو الوحدة أو الزبون أو الموظف غير صالح.',
+    fr: 'La référence du projet, de l’unité, du client ou de l’employé est invalide.',
+  },
+  RESERVATION_NUMBER_INVALID: {
+    ar: 'مرجع الحجز الداخلي غير صالح.',
+    fr: 'La référence interne de réservation est invalide.',
+  },
+  RESERVATION_EXPIRY_INVALID: {
+    ar: 'يجب أن يكون تاريخ انتهاء الحجز في المستقبل.',
+    fr: 'La date d’expiration doit être dans le futur.',
+  },
+  RESERVATION_UNIT_NOT_FOUND: {
+    ar: 'الوحدة المحددة لا تنتمي إلى هذا المشروع أو لم تعد موجودة.',
+    fr: 'L’unité sélectionnée n’appartient pas à ce projet ou n’existe plus.',
+  },
+  RESERVATION_CUSTOMER_NOT_FOUND: {
+    ar: 'الزبون المحدد غير مسجل ضمن هذا المشروع.',
+    fr: 'Le client sélectionné n’est pas enregistré dans ce projet.',
+  },
+  RESERVATION_CUSTOMER_ARCHIVED: {
+    ar: 'لا يمكن إنشاء حجز لزبون مؤرشف.',
+    fr: 'Un client archivé ne peut pas faire l’objet d’une nouvelle réservation.',
+  },
+  RESERVATION_UNIT_UNAVAILABLE: {
+    ar: 'الوحدة غير متاحة للحجز أو تم حجزها من طرف عملية أخرى.',
+    fr: 'L’unité n’est pas disponible ou vient d’être réservée par une autre opération.',
+  },
+  RESERVATION_NOT_FOUND: {
+    ar: 'الحجز غير موجود ضمن هذا المشروع.',
+    fr: 'La réservation est introuvable dans ce projet.',
+  },
+  RESERVATION_NOT_ACTIVE: {
+    ar: 'لا يمكن إغلاق هذا الحجز لأنه لم يعد نشطاً.',
+    fr: 'Cette réservation ne peut plus être clôturée car elle n’est plus active.',
+  },
+  RESERVATION_EXPIRY_REACHED: {
+    ar: 'انتهت مدة الحجز؛ سيغلقه النظام آلياً وتُحدّث حالة الوحدة.',
+    fr: 'La réservation a expiré ; le système la clôturera automatiquement et actualisera l’état de l’unité.',
+  },
+  RESERVATION_NOT_DUE: {
+    ar: 'لم يحن موعد انتهاء هذا الحجز بعد.',
+    fr: 'Cette réservation n’a pas encore atteint sa date d’expiration.',
+  },
+  RESERVATION_CLOSE_REASON_REQUIRED: {
+    ar: 'سبب إلغاء الحجز مطلوب.',
+    fr: 'Le motif d’annulation est obligatoire.',
+  },
+  RESERVATION_CLOSE_REASON_TOO_LONG: {
+    ar: 'سبب الإلغاء يجب ألا يتجاوز 300 حرف.',
+    fr: 'Le motif d’annulation ne doit pas dépasser 300 caractères.',
+  },
+  RESERVATION_CONCURRENCY_CONFLICT: {
+    ar: 'تغير الحجز أو الوحدة في الوقت نفسه. أعد تحميل البيانات وحاول مجدداً.',
+    fr: 'La réservation ou l’unité a été modifiée simultanément. Actualisez puis réessayez.',
+  },
+  RESERVATION_UNIT_STATE_MISMATCH: {
+    ar: 'حالة الوحدة لا تطابق حالة الحجز؛ لم يتم تغيير الوحدة تلقائياً.',
+    fr: 'L’état de l’unité ne correspond pas à la réservation ; aucune modification automatique n’a été effectuée.',
+  },
+  PROJECT_RESERVATION_ACCESS_DENIED: {
+    ar: 'لا تملك صلاحية الاطلاع على حجوزات هذا المشروع.',
+    fr: 'Vous n’êtes pas autorisé à consulter les réservations de ce projet.',
+  },
+  FORBIDDEN_PROJECT_RESERVATION_WRITE: {
+    ar: 'لا تملك صلاحية إدارة حجوزات هذا المشروع.',
+    fr: 'Vous n’êtes pas autorisé à gérer les réservations de ce projet.',
+  },
   ENDPOINT_NOT_FOUND: {
     ar: 'نقطة النهاية المطلوبة غير موجودة.',
     fr: 'Le point de terminaison demandé est introuvable.',

@@ -13,6 +13,7 @@ using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Logging;
 using Npgsql;
 using PromoGest.Application.Interfaces;
+using PromoGest.Application.Services;
 using PromoGest.Contracts.Auth;
 using PromoGest.Contracts.Audit;
 using PromoGest.Contracts.Common;
@@ -160,6 +161,11 @@ public sealed class PostgreSql18IntegrationFixture : IAsyncLifetime
             {
                 throw new InvalidOperationException(
                     "The ProjectCustomerRegistry migration was not discovered and applied.");
+            }
+            if (!applied.Contains("20261114220000_ProjectSalesReservations"))
+            {
+                throw new InvalidOperationException(
+                    "The ProjectSalesReservations migration was not discovered and applied.");
             }
         }
 
@@ -389,7 +395,8 @@ public sealed class PostgresEndToEndTests : IClassFixture<PostgreSql18Integratio
                 {
                     ["ConnectionStrings:DefaultConnection"] = connectionString,
                     ["Security:RequireHttpsCookies"] = "false",
-                    ["Storage:RootDirectory"] = Path.Combine(tempRoot, "storage")
+                    ["Storage:RootDirectory"] = Path.Combine(tempRoot, "storage"),
+                    ["Sales:ReservationExpiryWorkerEnabled"] = "false"
                 });
             });
             builder.ConfigureTestServices(services =>
@@ -1021,6 +1028,184 @@ public sealed class PostgresEndToEndTests : IClassFixture<PostgreSql18Integratio
                 updateCustomerRequest);
             Assert.Equal(HttpStatusCode.Conflict, staleUpdateResponse.StatusCode);
 
+            // Reservations must use the sales workflow, not the structure status endpoint.
+            var reservationUnitResponse = await adminClient.PostAsJsonAsync(
+                unitsUrl,
+                new CreatePropertyUnitRequest("A-002", "Apartment", "AvailableForSale", 98m, 86m, 3));
+            Assert.Equal(HttpStatusCode.OK, reservationUnitResponse.StatusCode);
+            var reservationUnitStructure = await reservationUnitResponse.Content.ReadFromJsonAsync<ProjectStructureDto>();
+            Assert.NotNull(reservationUnitStructure);
+            var reservationUnit = reservationUnitStructure!.Buildings
+                .SelectMany(building => building.Floors)
+                .SelectMany(floor => floor.Units)
+                .Single(unit => unit.UnitNumber == "A-002");
+            Assert.Equal("AvailableForSale", reservationUnit.Status);
+
+            var directReservedStatusResponse = await adminClient.PutAsJsonAsync(
+                $"{unitsUrl}/{reservationUnit.Id}/status",
+                new ChangePropertyUnitStatusRequest("Reserved", reservationUnit.ConcurrencyStamp));
+            Assert.Equal(HttpStatusCode.BadRequest, directReservedStatusResponse.StatusCode);
+
+            var createReservationRequest = new CreateProjectSalesReservationRequest(
+                reservationUnit.Id,
+                createdCustomer.Id,
+                DateTimeOffset.UtcNow.AddDays(7));
+            var createReservationResponse = await adminClient.PostAsJsonAsync(
+                $"/api/projects/{createdProject.Id}/reservations",
+                createReservationRequest);
+            Assert.Equal(HttpStatusCode.Created, createReservationResponse.StatusCode);
+            var createdReservation = await createReservationResponse.Content.ReadFromJsonAsync<ProjectSalesReservationDto>();
+            Assert.NotNull(createdReservation);
+            Assert.Equal("Active", createdReservation!.Status);
+            Assert.Equal(reservationUnit.Id, createdReservation.PropertyUnitId);
+            Assert.Equal(createdCustomer.Id, createdReservation.ProjectCustomerId);
+            Assert.StartsWith("RSV-", createdReservation.ReservationNumber, StringComparison.Ordinal);
+            Assert.Matches(@"^RSV-[0-9]{8}-[A-F0-9]{8}$", createdReservation.ReservationNumber);
+
+            var reservationDetailsResponse = await adminClient.GetAsync(
+                $"/api/projects/{createdProject.Id}/reservations/{createdReservation.Id}");
+            Assert.Equal(HttpStatusCode.OK, reservationDetailsResponse.StatusCode);
+            var reservationDetails = await reservationDetailsResponse.Content.ReadFromJsonAsync<ProjectSalesReservationDto>();
+            Assert.NotNull(reservationDetails);
+            Assert.Equal(createdReservation.Id, reservationDetails!.Id);
+
+            var reservationListResponse = await adminClient.GetAsync(
+                $"/api/projects/{createdProject.Id}/reservations");
+            Assert.Equal(HttpStatusCode.OK, reservationListResponse.StatusCode);
+            Assert.Equal("no-store, no-cache", reservationListResponse.Headers.CacheControl?.ToString());
+            var reservationList = await reservationListResponse.Content.ReadFromJsonAsync<List<ProjectSalesReservationDto>>();
+            Assert.NotNull(reservationList);
+            Assert.Contains(reservationList!, item => item.Id == createdReservation.Id);
+
+            var reservedStructureResponse = await adminClient.GetAsync(structureUrl);
+            var reservedStructure = await reservedStructureResponse.Content.ReadFromJsonAsync<ProjectStructureDto>();
+            Assert.NotNull(reservedStructure);
+            var reservedUnit = reservedStructure!.Buildings.SelectMany(building => building.Floors)
+                .SelectMany(floor => floor.Units).Single(unit => unit.Id == reservationUnit.Id);
+            Assert.Equal("Reserved", reservedUnit.Status);
+
+            var duplicateActiveReservation = await adminClient.PostAsJsonAsync(
+                $"/api/projects/{createdProject.Id}/reservations",
+                createReservationRequest with { ExpiresAtUtc = DateTimeOffset.UtcNow.AddDays(9) });
+            Assert.Equal(HttpStatusCode.Conflict, duplicateActiveReservation.StatusCode);
+
+            var cancelReservationResponse = await adminClient.PostAsJsonAsync(
+                $"/api/projects/{createdProject.Id}/reservations/{createdReservation.Id}/cancel",
+                new CancelProjectSalesReservationRequest(
+                    "Customer requested release",
+                    createdReservation.ConcurrencyStamp));
+            Assert.Equal(HttpStatusCode.OK, cancelReservationResponse.StatusCode);
+            var cancelledReservation = await cancelReservationResponse.Content.ReadFromJsonAsync<ProjectSalesReservationDto>();
+            Assert.NotNull(cancelledReservation);
+            Assert.Equal("Cancelled", cancelledReservation!.Status);
+            Assert.Equal("Customer requested release", cancelledReservation.CloseReason);
+
+            var releasedStructureResponse = await adminClient.GetAsync(structureUrl);
+            var releasedStructure = await releasedStructureResponse.Content.ReadFromJsonAsync<ProjectStructureDto>();
+            Assert.NotNull(releasedStructure);
+            var releasedUnit = releasedStructure!.Buildings.SelectMany(building => building.Floors)
+                .SelectMany(floor => floor.Units).Single(unit => unit.Id == reservationUnit.Id);
+            Assert.Equal("AvailableForSale", releasedUnit.Status);
+
+            // Two requests racing for one free unit must produce one active reservation only.
+            var raceUnitResponse = await adminClient.PostAsJsonAsync(
+                unitsUrl,
+                new CreatePropertyUnitRequest("A-003", "Apartment", "AvailableForSale", 90m, 82m, 3));
+            Assert.Equal(HttpStatusCode.OK, raceUnitResponse.StatusCode);
+            var raceUnitStructure = await raceUnitResponse.Content.ReadFromJsonAsync<ProjectStructureDto>();
+            Assert.NotNull(raceUnitStructure);
+            var raceUnit = raceUnitStructure!.Buildings.SelectMany(building => building.Floors)
+                .SelectMany(floor => floor.Units).Single(unit => unit.UnitNumber == "A-003");
+            var raceRequest = new CreateProjectSalesReservationRequest(
+                raceUnit.Id,
+                createdCustomer.Id,
+                DateTimeOffset.UtcNow.AddDays(3));
+            var raceResponses = await Task.WhenAll(
+                adminClient.PostAsJsonAsync($"/api/projects/{createdProject.Id}/reservations", raceRequest),
+                adminClient.PostAsJsonAsync($"/api/projects/{createdProject.Id}/reservations", raceRequest));
+            Assert.Equal(1, raceResponses.Count(response => response.StatusCode == HttpStatusCode.Created));
+            Assert.Equal(1, raceResponses.Count(response => response.StatusCode == HttpStatusCode.Conflict));
+            var winningResponse = raceResponses.Single(response => response.StatusCode == HttpStatusCode.Created);
+            var winningReservation = await winningResponse.Content.ReadFromJsonAsync<ProjectSalesReservationDto>();
+            Assert.NotNull(winningReservation);
+            var raceReservationCount = await adminClient.GetFromJsonAsync<List<ProjectSalesReservationDto>>(
+                $"/api/projects/{createdProject.Id}/reservations");
+            Assert.NotNull(raceReservationCount);
+            Assert.Equal(1, raceReservationCount!.Count(item => item.PropertyUnitId == raceUnit.Id && item.Status == "Active"));
+
+            var cancelRaceWinner = await adminClient.PostAsJsonAsync(
+                $"/api/projects/{createdProject.Id}/reservations/{winningReservation!.Id}/cancel",
+                new CancelProjectSalesReservationRequest("Concurrent reservation test cleanup", winningReservation.ConcurrencyStamp));
+            Assert.Equal(HttpStatusCode.OK, cancelRaceWinner.StatusCode);
+
+            // The expiry processor releases a unit only when the linked reservation is due and the unit is still Reserved.
+            var expiringReservationResponse = await adminClient.PostAsJsonAsync(
+                $"/api/projects/{createdProject.Id}/reservations",
+                createReservationRequest with { ExpiresAtUtc = DateTimeOffset.UtcNow.AddDays(7) });
+            Assert.Equal(HttpStatusCode.Created, expiringReservationResponse.StatusCode);
+            var expiringReservation = await expiringReservationResponse.Content.ReadFromJsonAsync<ProjectSalesReservationDto>();
+            Assert.NotNull(expiringReservation);
+            using (var expiryScope = factory.Services.CreateScope())
+            {
+                var db = expiryScope.ServiceProvider.GetRequiredService<AppDbContext>();
+                var expiryTimestamp = DateTimeOffset.UtcNow.AddMinutes(-1);
+                await db.ProjectSalesReservations
+                    .Where(item => item.Id == expiringReservation!.Id)
+                    .ExecuteUpdateAsync(setters => setters
+                        .SetProperty(item => item.ReservedAtUtc, expiryTimestamp.AddDays(-7))
+                        .SetProperty(item => item.ExpiresAtUtc, expiryTimestamp));
+                var expiryProcessor = expiryScope.ServiceProvider.GetRequiredService<ProjectSalesReservationExpiryProcessor>();
+                var processedCount = await expiryProcessor.ProcessDueAsync();
+                Assert.Equal(1, processedCount);
+                db.ChangeTracker.Clear();
+                var expiredReservation = await db.ProjectSalesReservations.SingleAsync(item => item.Id == expiringReservation.Id);
+                var expiredUnit = await db.PropertyUnits.SingleAsync(item => item.Id == reservationUnit.Id);
+                Assert.Equal(SalesReservationStatus.Expired, expiredReservation.Status);
+                Assert.Equal(PropertyUnitStatus.AvailableForSale, expiredUnit.Status);
+            }
+
+            // A reservation which is already past its expiry cannot be manually cancelled in the worker's grace window.
+            var elapsedRequest = new CreateProjectSalesReservationRequest(
+                raceUnit.Id,
+                createdCustomer.Id,
+                DateTimeOffset.UtcNow.AddDays(7));
+            var elapsedCreate = await adminClient.PostAsJsonAsync(
+                $"/api/projects/{createdProject.Id}/reservations",
+                elapsedRequest);
+            Assert.Equal(HttpStatusCode.Created, elapsedCreate.StatusCode);
+            var elapsedReservation = await elapsedCreate.Content.ReadFromJsonAsync<ProjectSalesReservationDto>();
+            Assert.NotNull(elapsedReservation);
+            using (var elapsedScope = factory.Services.CreateScope())
+            {
+                var db = elapsedScope.ServiceProvider.GetRequiredService<AppDbContext>();
+                var elapsedExpiryTimestamp = DateTimeOffset.UtcNow.AddMinutes(-1);
+                await db.ProjectSalesReservations
+                    .Where(item => item.Id == elapsedReservation!.Id)
+                    .ExecuteUpdateAsync(setters => setters
+                        .SetProperty(item => item.ReservedAtUtc, elapsedExpiryTimestamp.AddDays(-7))
+                        .SetProperty(item => item.ExpiresAtUtc, elapsedExpiryTimestamp));
+            }
+            var cancelExpiredResponse = await adminClient.PostAsJsonAsync(
+                $"/api/projects/{createdProject.Id}/reservations/{elapsedReservation!.Id}/cancel",
+                new CancelProjectSalesReservationRequest("Late cancellation", elapsedReservation.ConcurrencyStamp));
+            Assert.Equal(HttpStatusCode.Conflict, cancelExpiredResponse.StatusCode);
+
+            using (var reservationAuditScope = factory.Services.CreateScope())
+            {
+                var db = reservationAuditScope.ServiceProvider.GetRequiredService<AppDbContext>();
+                var reservationAudit = await db.AuditLogs.SingleAsync(entry =>
+                    entry.EventType == "PROJECT_RESERVATION_CREATED" &&
+                    entry.TargetEntityId == createdReservation.Id.ToString());
+                Assert.DoesNotContain(createdCustomer.DisplayName, reservationAudit.Summary, StringComparison.Ordinal);
+                Assert.DoesNotContain(createdCustomer.DisplayName, reservationAudit.MetadataJson ?? string.Empty, StringComparison.Ordinal);
+                Assert.Contains(await db.AuditLogs.ToListAsync(), entry =>
+                    entry.EventType == "PROJECT_RESERVATION_CANCELLED" &&
+                    entry.TargetEntityId == createdReservation.Id.ToString());
+                Assert.Contains(await db.AuditLogs.ToListAsync(), entry =>
+                    entry.EventType == "PROJECT_RESERVATION_EXPIRED" &&
+                    entry.TargetEntityId == expiringReservation!.Id.ToString());
+            }
+
             using (var customerAuditScope = factory.Services.CreateScope())
             {
                 var db = customerAuditScope.ServiceProvider.GetRequiredService<AppDbContext>();
@@ -1120,6 +1305,9 @@ public sealed class PostgresEndToEndTests : IClassFixture<PostgreSql18Integratio
             var deniedCustomerList = await employeeClient.GetAsync(
                 $"/api/projects/{createdProject!.Id}/customers");
             Assert.Equal(HttpStatusCode.Forbidden, deniedCustomerList.StatusCode);
+            var deniedReservationList = await employeeClient.GetAsync(
+                $"/api/projects/{createdProject.Id}/reservations");
+            Assert.Equal(HttpStatusCode.Forbidden, deniedReservationList.StatusCode);
             var deniedCustomerDetails = await employeeClient.GetAsync(
                 $"/api/projects/{createdProject.Id}/customers/{createdCustomer!.Id}");
             Assert.Equal(HttpStatusCode.Forbidden, deniedCustomerDetails.StatusCode);
@@ -1185,6 +1373,20 @@ public sealed class PostgresEndToEndTests : IClassFixture<PostgreSql18Integratio
             var memberCreatedCustomer = await memberCustomerCreate.Content.ReadFromJsonAsync<ProjectCustomerDto>();
             Assert.NotNull(memberCreatedCustomer);
 
+            var memberReservationResponse = await employeeClient.PostAsJsonAsync(
+                $"/api/projects/{createdProject.Id}/reservations",
+                new CreateProjectSalesReservationRequest(
+                    reservationUnit.Id,
+                    memberCreatedCustomer!.Id,
+                    DateTimeOffset.UtcNow.AddDays(2)));
+            Assert.Equal(HttpStatusCode.Created, memberReservationResponse.StatusCode);
+            var memberReservation = await memberReservationResponse.Content.ReadFromJsonAsync<ProjectSalesReservationDto>();
+            Assert.NotNull(memberReservation);
+            var memberReservationCancel = await employeeClient.PostAsJsonAsync(
+                $"/api/projects/{createdProject.Id}/reservations/{memberReservation!.Id}/cancel",
+                new CancelProjectSalesReservationRequest("Sales team test cancellation", memberReservation.ConcurrencyStamp));
+            Assert.Equal(HttpStatusCode.OK, memberReservationCancel.StatusCode);
+
             // Explicit project membership allows document reads, and the CanManageDocuments flag allows uploads.
             var memberDocumentList = await employeeClient.GetAsync(
                 $"/api/projects/{createdProject.Id}/documents");
@@ -1224,6 +1426,16 @@ public sealed class PostgresEndToEndTests : IClassFixture<PostgreSql18Integratio
             var readOnlyCustomerList = await employeeClient.GetAsync(
                 $"/api/projects/{createdProject.Id}/customers");
             Assert.Equal(HttpStatusCode.OK, readOnlyCustomerList.StatusCode);
+            var readOnlyReservationList = await employeeClient.GetAsync(
+                $"/api/projects/{createdProject.Id}/reservations");
+            Assert.Equal(HttpStatusCode.OK, readOnlyReservationList.StatusCode);
+            var readOnlyReservationCreate = await employeeClient.PostAsJsonAsync(
+                $"/api/projects/{createdProject.Id}/reservations",
+                new CreateProjectSalesReservationRequest(
+                    reservationUnit.Id,
+                    createdCustomer.Id,
+                    DateTimeOffset.UtcNow.AddDays(2)));
+            Assert.Equal(HttpStatusCode.Forbidden, readOnlyReservationCreate.StatusCode);
             var readOnlyCustomerDetails = await employeeClient.GetAsync(
                 $"/api/projects/{createdProject.Id}/customers/{createdCustomer.Id}");
             Assert.Equal(HttpStatusCode.OK, readOnlyCustomerDetails.StatusCode);
@@ -1281,6 +1493,9 @@ public sealed class PostgresEndToEndTests : IClassFixture<PostgreSql18Integratio
             var revokedCustomerList = await employeeClient.GetAsync(
                 $"/api/projects/{createdProject.Id}/customers");
             Assert.Equal(HttpStatusCode.Forbidden, revokedCustomerList.StatusCode);
+            var revokedReservationList = await employeeClient.GetAsync(
+                $"/api/projects/{createdProject.Id}/reservations");
+            Assert.Equal(HttpStatusCode.Forbidden, revokedReservationList.StatusCode);
             var revokedCustomerDetails = await employeeClient.GetAsync(
                 $"/api/projects/{createdProject.Id}/customers/{createdCustomer.Id}");
             Assert.Equal(HttpStatusCode.Forbidden, revokedCustomerDetails.StatusCode);

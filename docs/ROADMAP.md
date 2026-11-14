@@ -72,9 +72,18 @@ Production acceptance remains separate: test this workflow with fictional custom
 
 ## Milestone 5 — Commercialization, reservations, contracts, and collections
 
-**Next development milestone.**
+**M5a reservation lifecycle: implementation on isolated branch; CI and local acceptance pending.**
 
-Introduce unit availability workflows, customer-unit links, reservation lifecycle, contract records, payment schedules, receipts, and collection tracking. Define legal states, cancellation/refund handling, numbering, approvals, and audit requirements before implementing transitions. A unit must never be marked Reserved/Sold/Delivered by a shortcut outside the validated sales workflow.
+Implemented scope under verification:
+- Project-scoped reservation records link an available property unit to a non-archived customer registered in the same project.
+- Reservation creation persists the reservation, `Reserved` unit state, and audit event together; PostgreSQL's partial unique index prevents two active reservations for the same unit.
+- Cancellation requires a reason and returns the unit to `AvailableForSale` atomically.
+- A background worker expires overdue reservations and releases only units still in the expected `Reserved` state. State mismatches are recorded as warnings and do not overwrite the unit.
+- Explicit `sales.reservations.read` / `sales.reservations.manage` permissions are combined with project scope and the `CanManageSales` capability (or Project Manager role).
+- Reservation audit metadata stores identifiers only, not customer names or contact information.
+- Arabic/French project reservation workspace supports listing, creation, and reasoned cancellation.
+
+Contracts, contract numbering and legal clauses, payment schedules, receipts, collections, refunds, approvals, and transitions to `Sold` or `Delivered` remain outside M5a. They require a separately reviewed business/legal/SCF workflow before implementation. The internal reservation reference is not a legally validated contract or receipt.
 
 ## Milestone 6 — Finance and Algerian SCF accounting
 

@@ -2,6 +2,9 @@ import type {
   ApiErrorResponse,
   ProjectDocumentDto,
   ProjectCustomerDto,
+  ProjectSalesReservationDto,
+  CreateProjectSalesReservationRequest,
+  CancelProjectSalesReservationRequest,
   ProjectCustomerListItemDto,
   CreateProjectCustomerRequest,
   UpdateProjectCustomerRequest,
@@ -340,6 +343,28 @@ export const apiClient = {
   addCustomerInteraction: (projectId: string, customerId: string, payload: AddCustomerInteractionRequest) =>
     requestJson<CustomerInteractionDto>(
       `/api/projects/${encodeURIComponent(projectId)}/customers/${encodeURIComponent(customerId)}/interactions`,
+      { method: 'POST', body: JSON.stringify(payload) }
+    ),
+
+  listProjectSalesReservations: (projectId: string) =>
+    requestJson<ProjectSalesReservationDto[]>(`/api/projects/${encodeURIComponent(projectId)}/reservations`, {
+      method: 'GET',
+      cache: 'no-store',
+    }),
+
+  createProjectSalesReservation: (projectId: string, payload: CreateProjectSalesReservationRequest) =>
+    requestJson<ProjectSalesReservationDto>(`/api/projects/${encodeURIComponent(projectId)}/reservations`, {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    }),
+
+  cancelProjectSalesReservation: (
+    projectId: string,
+    reservationId: string,
+    payload: CancelProjectSalesReservationRequest
+  ) =>
+    requestJson<ProjectSalesReservationDto>(
+      `/api/projects/${encodeURIComponent(projectId)}/reservations/${encodeURIComponent(reservationId)}/cancel`,
       { method: 'POST', body: JSON.stringify(payload) }
     ),
 

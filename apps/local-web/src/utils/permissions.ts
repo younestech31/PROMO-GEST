@@ -87,3 +87,29 @@ export function canManageProjectCustomers(user: AuthenticatedUser | null, projec
     user.permissions.includes('projects.manage');
   return isProjectScoped && canManageInProject && user.permissions.includes('customers.manage');
 }
+
+
+export function canReadProjectSalesReservations(user: AuthenticatedUser | null, project: ProjectDto): boolean {
+  if (!user || !user.isActive) return false;
+  if (user.isSystemAdministrator) return true;
+  const isProjectScoped = project.members.some((member) => member.userId === user.id) ||
+    user.permissions.includes('projects.manage');
+  return isProjectScoped &&
+    user.permissions.includes('sales.reservations.read') &&
+    user.permissions.includes('customers.read');
+}
+
+export function canManageProjectSalesReservations(user: AuthenticatedUser | null, project: ProjectDto): boolean {
+  if (!user || !user.isActive) return false;
+  if (user.isSystemAdministrator) return true;
+  const membership = project.members.find((member) => member.userId === user.id);
+  const isProjectScoped = Boolean(membership) || user.permissions.includes('projects.manage');
+  const canManageInProject = membership?.canManageSales === true ||
+    membership?.roleInProject === 'ProjectManager' ||
+    user.permissions.includes('projects.manage');
+  return isProjectScoped &&
+    canManageInProject &&
+    user.permissions.includes('sales.reservations.read') &&
+    user.permissions.includes('sales.reservations.manage') &&
+    user.permissions.includes('customers.read');
+}

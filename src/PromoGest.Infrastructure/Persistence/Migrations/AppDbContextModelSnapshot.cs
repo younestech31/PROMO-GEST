@@ -169,7 +169,7 @@ namespace PromoGest.Infrastructure.Persistence.Migrations
                         });
                 });
 
-            modelBuilder.Entity("PromoGest.Domain.Entities.ProjectCustomer", b =>
+                        modelBuilder.Entity("PromoGest.Domain.Entities.ProjectCustomer", b =>
                 {
                     b.Property<Guid>("Id").ValueGeneratedOnAdd().HasColumnType("uuid").HasColumnName("id");
                     b.Property<string>("Address").HasMaxLength(300).HasColumnType("character varying(300)").HasColumnName("address");
@@ -199,7 +199,39 @@ namespace PromoGest.Infrastructure.Persistence.Migrations
                         {
                             t.HasCheckConstraint("ck_project_customers_language", "preferred_language IN ('ar', 'fr')");
                             t.HasCheckConstraint("ck_project_customers_name_non_empty", "length(btrim(display_name)) > 0");
-                            t.HasCheckConstraint("ck_project_customers_phone_normalized", "normalized_phone ~ '^[0-9]{7,15}.ValueGeneratedOnAdd().HasColumnType("uuid").HasColumnName("id");
+                            t.HasCheckConstraint("ck_project_customers_phone_normalized", "normalized_phone ~ '^[0-9]{7,15}$'");
+                            t.HasCheckConstraint("ck_project_customers_source", "source IN ('WalkIn', 'Phone', 'Referral', 'Website', 'SocialMedia', 'Other')");
+                            t.HasCheckConstraint("ck_project_customers_status", "status IN ('Prospect', 'Qualified', 'Customer', 'Archived')");
+                            t.HasCheckConstraint("ck_project_customers_type", "customer_type IN ('Individual', 'LegalEntity')");
+                        });
+                });
+
+            modelBuilder.Entity("PromoGest.Domain.Entities.CustomerInteraction", b =>
+                {
+                    b.Property<Guid>("Id").ValueGeneratedOnAdd().HasColumnType("uuid").HasColumnName("id");
+                    b.Property<Guid>("ConcurrencyStamp").IsConcurrencyToken().HasColumnType("uuid").HasColumnName("concurrency_stamp");
+                    b.Property<DateTimeOffset>("CreatedAtUtc").HasColumnType("timestamp with time zone").HasColumnName("created_at_utc");
+                    b.Property<Guid>("CreatedByUserId").HasColumnType("uuid").HasColumnName("created_by_user_id");
+                    b.Property<DateTimeOffset?>("NextFollowUpAtUtc").HasColumnType("timestamp with time zone").HasColumnName("next_follow_up_at_utc");
+                    b.Property<DateTimeOffset>("OccurredAtUtc").HasColumnType("timestamp with time zone").HasColumnName("occurred_at_utc");
+                    b.Property<Guid>("ProjectCustomerId").HasColumnType("uuid").HasColumnName("project_customer_id");
+                    b.Property<string>("Subject").IsRequired().HasMaxLength(120).HasColumnType("character varying(120)").HasColumnName("subject");
+                    b.Property<string>("Summary").IsRequired().HasMaxLength(1500).HasColumnType("character varying(1500)").HasColumnName("summary");
+                    b.Property<string>("Type").IsRequired().HasMaxLength(24).HasColumnType("character varying(24)").HasColumnName("interaction_type");
+                    b.Property<DateTimeOffset>("UpdatedAtUtc").HasColumnType("timestamp with time zone").HasColumnName("updated_at_utc");
+
+                    b.HasKey("Id");
+                    b.HasIndex("ProjectCustomerId", "OccurredAtUtc").HasDatabaseName("ix_customer_interactions_customer_occurred");
+                    b.ToTable("customer_interactions", null, t =>
+                        {
+                            t.HasCheckConstraint("ck_customer_interactions_follow_up", "next_follow_up_at_utc IS NULL OR next_follow_up_at_utc >= occurred_at_utc");
+                            t.HasCheckConstraint("ck_customer_interactions_type", "interaction_type IN ('Call', 'Email', 'Meeting', 'Visit', 'Note')");
+                        });
+                });
+
+modelBuilder.Entity("PromoGest.Domain.Entities.Project", b =>
+                {
+                    b.Property<Guid>("Id").ValueGeneratedOnAdd().HasColumnType("uuid").HasColumnName("id");
                     b.Property<string>("Address").HasMaxLength(300).HasColumnType("character varying(300)").HasColumnName("address");
                     b.Property<DateOnly?>("BuildingPermitDate").HasColumnType("date").HasColumnName("building_permit_date");
                     b.Property<string>("BuildingPermitNumber").HasMaxLength(120).HasColumnType("character varying(120)").HasColumnName("building_permit_number");
@@ -431,7 +463,16 @@ namespace PromoGest.Infrastructure.Persistence.Migrations
                         .IsRequired();
                 });
 
-            modelBuilder.Entity("PromoGest.Domain.Entities.ProjectCustomer", b =>
+            modelBuilder.Entity("PromoGest.Domain.Entities.Project", b =>
+                {
+                    b.HasOne("PromoGest.Domain.Entities.User", null)
+                        .WithMany()
+                        .HasForeignKey("CreatedByUserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+                        modelBuilder.Entity("PromoGest.Domain.Entities.ProjectCustomer", b =>
                 {
                     b.HasOne("PromoGest.Domain.Entities.StoredFile", "IdentityDocumentFile")
                         .WithMany()
@@ -472,393 +513,7 @@ namespace PromoGest.Infrastructure.Persistence.Migrations
                     b.Navigation("ProjectCustomer");
                 });
 
-            modelBuilder.Entity("PromoGest.Domain.Entities.Project", b =>
-                {
-                    b.HasOne("PromoGest.Domain.Entities.User", null)
-                        .WithMany()
-                        .HasForeignKey("CreatedByUserId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-                });
-
-            modelBuilder.Entity("PromoGest.Domain.Entities.ProjectMember", b =>
-                {
-                    b.HasOne("PromoGest.Domain.Entities.Project", "Project")
-                        .WithMany("Members")
-                        .HasForeignKey("ProjectId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("PromoGest.Domain.Entities.User", "User")
-                        .WithMany("ProjectMemberships")
-                        .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Project");
-                    b.Navigation("User");
-                });
-
-            modelBuilder.Entity("PromoGest.Domain.Entities.RolePermission", b =>
-                {
-                    b.HasOne("PromoGest.Domain.Entities.Permission", "Permission")
-                        .WithMany("RolePermissions")
-                        .HasForeignKey("PermissionId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("PromoGest.Domain.Entities.Role", "Role")
-                        .WithMany("RolePermissions")
-                        .HasForeignKey("RoleId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Permission");
-                    b.Navigation("Role");
-                });
-
-            modelBuilder.Entity("PromoGest.Domain.Entities.StoredFile", b =>
-                {
-                    b.HasOne("PromoGest.Domain.Entities.Project", null)
-                        .WithMany()
-                        .HasForeignKey("ProjectId")
-                        .OnDelete(DeleteBehavior.Restrict);
-
-                    b.HasOne("PromoGest.Domain.Entities.User", null)
-                        .WithMany()
-                        .HasForeignKey("UploadedByUserId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-                });
-
-            modelBuilder.Entity("PromoGest.Domain.Entities.UserRole", b =>
-                {
-                    b.HasOne("PromoGest.Domain.Entities.Role", "Role")
-                        .WithMany("UserRoles")
-                        .HasForeignKey("RoleId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.HasOne("PromoGest.Domain.Entities.User", "User")
-                        .WithMany("UserRoles")
-                        .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Role");
-                    b.Navigation("User");
-                });
-
-            modelBuilder.Entity("PromoGest.Domain.Entities.UserSession", b =>
-                {
-                    b.HasOne("PromoGest.Domain.Entities.User", "User")
-                        .WithMany()
-                        .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("User");
-                });
-
-            modelBuilder.Entity("PromoGest.Domain.Entities.Permission", b =>
-                {
-                    b.Navigation("RolePermissions");
-                });
-
-            modelBuilder.Entity("PromoGest.Domain.Entities.Project", b =>
-                {
-                    b.Navigation("Members");
-                });
-
-            modelBuilder.Entity("PromoGest.Domain.Entities.Role", b =>
-                {
-                    b.Navigation("RolePermissions");
-                    b.Navigation("UserRoles");
-                });
-
-            modelBuilder.Entity("PromoGest.Domain.Entities.User", b =>
-                {
-                    b.Navigation("ProjectMemberships");
-                    b.Navigation("UserRoles");
-                });
-#pragma warning restore 612, 618
-        }
-    }
-}
-");
-                            t.HasCheckConstraint("ck_project_customers_source", "source IN ('WalkIn', 'Phone', 'Referral', 'Website', 'SocialMedia', 'Other')");
-                            t.HasCheckConstraint("ck_project_customers_status", "status IN ('Prospect', 'Qualified', 'Customer', 'Archived')");
-                            t.HasCheckConstraint("ck_project_customers_type", "customer_type IN ('Individual', 'LegalEntity')");
-                        });
-                });
-
-            modelBuilder.Entity("PromoGest.Domain.Entities.CustomerInteraction", b =>
-                {
-                    b.Property<Guid>("Id").ValueGeneratedOnAdd().HasColumnType("uuid").HasColumnName("id");
-                    b.Property<Guid>("ConcurrencyStamp").IsConcurrencyToken().HasColumnType("uuid").HasColumnName("concurrency_stamp");
-                    b.Property<DateTimeOffset>("CreatedAtUtc").HasColumnType("timestamp with time zone").HasColumnName("created_at_utc");
-                    b.Property<Guid>("CreatedByUserId").HasColumnType("uuid").HasColumnName("created_by_user_id");
-                    b.Property<DateTimeOffset?>("NextFollowUpAtUtc").HasColumnType("timestamp with time zone").HasColumnName("next_follow_up_at_utc");
-                    b.Property<DateTimeOffset>("OccurredAtUtc").HasColumnType("timestamp with time zone").HasColumnName("occurred_at_utc");
-                    b.Property<Guid>("ProjectCustomerId").HasColumnType("uuid").HasColumnName("project_customer_id");
-                    b.Property<string>("Subject").IsRequired().HasMaxLength(120).HasColumnType("character varying(120)").HasColumnName("subject");
-                    b.Property<string>("Summary").IsRequired().HasMaxLength(1500).HasColumnType("character varying(1500)").HasColumnName("summary");
-                    b.Property<string>("Type").IsRequired().HasMaxLength(24).HasColumnType("character varying(24)").HasColumnName("interaction_type");
-                    b.Property<DateTimeOffset>("UpdatedAtUtc").HasColumnType("timestamp with time zone").HasColumnName("updated_at_utc");
-
-                    b.HasKey("Id");
-                    b.HasIndex("ProjectCustomerId", "OccurredAtUtc").HasDatabaseName("ix_customer_interactions_customer_occurred");
-                    b.ToTable("customer_interactions", null, t =>
-                        {
-                            t.HasCheckConstraint("ck_customer_interactions_follow_up", "next_follow_up_at_utc IS NULL OR next_follow_up_at_utc >= occurred_at_utc");
-                            t.HasCheckConstraint("ck_customer_interactions_type", "interaction_type IN ('Call', 'Email', 'Meeting', 'Visit', 'Note')");
-                        });
-                });
-
-            modelBuilder.Entity("PromoGest.Domain.Entities.Project", b =>
-                {
-                    b.Property<Guid>("Id").ValueGeneratedOnAdd().HasColumnType("uuid").HasColumnName("id");
-                    b.Property<string>("Address").HasMaxLength(300).HasColumnType("character varying(300)").HasColumnName("address");
-                    b.Property<DateOnly?>("BuildingPermitDate").HasColumnType("date").HasColumnName("building_permit_date");
-                    b.Property<string>("BuildingPermitNumber").HasMaxLength(120).HasColumnType("character varying(120)").HasColumnName("building_permit_number");
-                    b.Property<string>("Code").IsRequired().HasMaxLength(40).HasColumnType("character varying(40)").HasColumnName("code");
-                    b.Property<Guid>("ConcurrencyStamp").IsConcurrencyToken().HasColumnType("uuid").HasColumnName("concurrency_stamp");
-                    b.Property<DateTimeOffset>("CreatedAtUtc").HasColumnType("timestamp with time zone").HasColumnName("created_at_utc");
-                    b.Property<Guid>("CreatedByUserId").HasColumnType("uuid").HasColumnName("created_by_user_id");
-                    b.Property<decimal>("EstimatedBudgetDzd").HasPrecision(18, 2).HasColumnType("numeric(18,2)").HasColumnName("estimated_budget_dzd");
-                    b.Property<string>("LandTitleReference").HasMaxLength(120).HasColumnType("character varying(120)").HasColumnName("land_title_reference");
-                    b.Property<string>("Municipality").IsRequired().HasMaxLength(120).HasColumnType("character varying(120)").HasColumnName("municipality");
-                    b.Property<string>("NameAr").IsRequired().HasMaxLength(200).HasColumnType("character varying(200)").HasColumnName("name_ar");
-                    b.Property<string>("NameFr").IsRequired().HasMaxLength(200).HasColumnType("character varying(200)").HasColumnName("name_fr");
-                    b.Property<string>("NormalizedCode").IsRequired().HasMaxLength(40).HasColumnType("character varying(40)").HasColumnName("normalized_code");
-                    b.Property<int>("PlannedBlocksCount").HasColumnType("integer").HasColumnName("planned_blocks_count");
-                    b.Property<int>("PlannedUnitsCount").HasColumnType("integer").HasColumnName("planned_units_count");
-                    b.Property<string>("Status").IsRequired().HasMaxLength(32).HasColumnType("character varying(32)").HasColumnName("status");
-                    b.Property<DateTimeOffset>("UpdatedAtUtc").HasColumnType("timestamp with time zone").HasColumnName("updated_at_utc");
-                    b.Property<string>("WilayaCode").IsRequired().HasMaxLength(4).HasColumnType("character varying(4)").HasColumnName("wilaya_code");
-                    b.Property<string>("WilayaName").IsRequired().HasMaxLength(100).HasColumnType("character varying(100)").HasColumnName("wilaya_name");
-
-                    b.HasKey("Id");
-                    b.HasIndex("CreatedByUserId").HasDatabaseName("ix_projects_created_by_user_id");
-                    b.HasIndex("NormalizedCode").IsUnique().HasDatabaseName("ux_projects_normalized_code");
-                    b.HasIndex("WilayaCode").HasDatabaseName("ix_projects_wilaya_code");
-                    b.ToTable("projects", null, t =>
-                        {
-                            t.HasCheckConstraint("ck_projects_blocks_non_negative", "planned_blocks_count >= 0");
-                            t.HasCheckConstraint("ck_projects_budget_non_negative", "estimated_budget_dzd >= 0");
-                            t.HasCheckConstraint("ck_projects_units_non_negative", "planned_units_count >= 0");
-                        });
-                });
-
-            modelBuilder.Entity("PromoGest.Domain.Entities.ProjectMember", b =>
-                {
-                    b.Property<Guid>("Id").ValueGeneratedOnAdd().HasColumnType("uuid").HasColumnName("id");
-                    b.Property<DateTimeOffset>("AssignedAtUtc").HasColumnType("timestamp with time zone").HasColumnName("assigned_at_utc");
-                    b.Property<Guid>("AssignedByUserId").HasColumnType("uuid").HasColumnName("assigned_by_user_id");
-                    b.Property<bool>("CanManageConstruction").HasColumnType("boolean").HasColumnName("can_manage_construction");
-                    b.Property<bool>("CanManageDocuments").HasColumnType("boolean").HasColumnName("can_manage_documents");
-                    b.Property<bool>("CanManageSales").HasColumnType("boolean").HasColumnName("can_manage_sales");
-                    b.Property<bool>("CanViewFinancials").HasColumnType("boolean").HasColumnName("can_view_financials");
-                    b.Property<Guid>("ConcurrencyStamp").IsConcurrencyToken().HasColumnType("uuid").HasColumnName("concurrency_stamp");
-                    b.Property<DateTimeOffset>("CreatedAtUtc").HasColumnType("timestamp with time zone").HasColumnName("created_at_utc");
-                    b.Property<Guid>("ProjectId").HasColumnType("uuid").HasColumnName("project_id");
-                    b.Property<string>("RoleInProject").IsRequired().HasMaxLength(40).HasColumnType("character varying(40)").HasColumnName("role_in_project");
-                    b.Property<DateTimeOffset>("UpdatedAtUtc").HasColumnType("timestamp with time zone").HasColumnName("updated_at_utc");
-                    b.Property<Guid>("UserId").HasColumnType("uuid").HasColumnName("user_id");
-
-                    b.HasKey("Id");
-                    b.HasIndex("UserId").HasDatabaseName("ix_project_members_user_id");
-                    b.HasIndex("ProjectId", "UserId").IsUnique().HasDatabaseName("ux_project_members_project_user");
-                    b.ToTable("project_members", (string)null);
-                });
-
-            modelBuilder.Entity("PromoGest.Domain.Entities.Role", b =>
-                {
-                    b.Property<Guid>("Id").ValueGeneratedOnAdd().HasColumnType("uuid").HasColumnName("id");
-                    b.Property<string>("Code").IsRequired().HasMaxLength(64).HasColumnType("character varying(64)").HasColumnName("code");
-                    b.Property<Guid>("ConcurrencyStamp").IsConcurrencyToken().HasColumnType("uuid").HasColumnName("concurrency_stamp");
-                    b.Property<DateTimeOffset>("CreatedAtUtc").HasColumnType("timestamp with time zone").HasColumnName("created_at_utc");
-                    b.Property<string>("DescriptionAr").IsRequired().HasMaxLength(300).HasColumnType("character varying(300)").HasColumnName("description_ar");
-                    b.Property<string>("DescriptionFr").IsRequired().HasMaxLength(300).HasColumnType("character varying(300)").HasColumnName("description_fr");
-                    b.Property<bool>("IsSystemRole").HasColumnType("boolean").HasColumnName("is_system_role");
-                    b.Property<string>("NameAr").IsRequired().HasMaxLength(120).HasColumnType("character varying(120)").HasColumnName("name_ar");
-                    b.Property<string>("NameFr").IsRequired().HasMaxLength(120).HasColumnType("character varying(120)").HasColumnName("name_fr");
-                    b.Property<DateTimeOffset>("UpdatedAtUtc").HasColumnType("timestamp with time zone").HasColumnName("updated_at_utc");
-
-                    b.HasKey("Id");
-                    b.HasIndex("Code").IsUnique().HasDatabaseName("ux_roles_code");
-                    b.ToTable("roles", (string)null);
-                });
-
-            modelBuilder.Entity("PromoGest.Domain.Entities.RolePermission", b =>
-                {
-                    b.Property<Guid>("RoleId").HasColumnType("uuid").HasColumnName("role_id");
-                    b.Property<Guid>("PermissionId").HasColumnType("uuid").HasColumnName("permission_id");
-
-                    b.HasKey("RoleId", "PermissionId");
-                    b.HasIndex("PermissionId");
-                    b.ToTable("role_permissions", (string)null);
-                });
-
-            modelBuilder.Entity("PromoGest.Domain.Entities.StoredFile", b =>
-                {
-                    b.Property<Guid>("Id").ValueGeneratedOnAdd().HasColumnType("uuid").HasColumnName("id");
-                    b.Property<Guid>("ConcurrencyStamp").IsConcurrencyToken().HasColumnType("uuid").HasColumnName("concurrency_stamp");
-                    b.Property<string>("ContentType").IsRequired().HasMaxLength(120).HasColumnType("character varying(120)").HasColumnName("content_type");
-                    b.Property<string>("Category").IsRequired().HasMaxLength(40).HasColumnType("character varying(40)").HasColumnName("category");
-                    b.Property<string>("Description").HasMaxLength(500).HasColumnType("character varying(500)").HasColumnName("description");
-                    b.Property<DateTimeOffset>("CreatedAtUtc").HasColumnType("timestamp with time zone").HasColumnName("created_at_utc");
-                    b.Property<string>("OriginalFileName").IsRequired().HasMaxLength(255).HasColumnType("character varying(255)").HasColumnName("original_file_name");
-                    b.Property<Guid?>("ProjectId").HasColumnType("uuid").HasColumnName("project_id");
-                    b.Property<string>("Scope").IsRequired().HasMaxLength(32).HasColumnType("character varying(32)").HasColumnName("scope");
-                    b.Property<string>("Sha256Checksum").IsRequired().HasMaxLength(64).HasColumnType("character varying(64)").HasColumnName("sha256_checksum");
-                    b.Property<long>("SizeBytes").HasColumnType("bigint").HasColumnName("size_bytes");
-                    b.Property<string>("StoredRelativePath").IsRequired().HasMaxLength(500).HasColumnType("character varying(500)").HasColumnName("stored_relative_path");
-                    b.Property<DateTimeOffset>("UpdatedAtUtc").HasColumnType("timestamp with time zone").HasColumnName("updated_at_utc");
-                    b.Property<Guid>("UploadedByUserId").HasColumnType("uuid").HasColumnName("uploaded_by_user_id");
-
-                    b.HasKey("Id");
-                    b.HasIndex("ProjectId").HasDatabaseName("ix_stored_files_project_id");
-                    b.HasIndex("StoredRelativePath").IsUnique().HasDatabaseName("ux_stored_files_relative_path");
-                    b.HasIndex("UploadedByUserId").HasDatabaseName("ix_stored_files_uploaded_by_user_id");
-                    b.ToTable("stored_files", null, t =>
-                        {
-                            t.HasCheckConstraint("ck_stored_files_size_positive", "size_bytes > 0");
-                            t.HasCheckConstraint("ck_stored_files_category", "category IN ('Legal', 'LandAndTitle', 'Permits', 'Plans', 'Engineering', 'Commercial', 'Financial', 'Correspondence', 'Other')");
-                        });
-                });
-
-            modelBuilder.Entity("PromoGest.Domain.Entities.SystemSetting", b =>
-                {
-                    b.Property<Guid>("Id").ValueGeneratedOnAdd().HasColumnType("uuid").HasColumnName("id");
-                    b.Property<string>("Category").IsRequired().HasMaxLength(64).HasColumnType("character varying(64)").HasColumnName("category");
-                    b.Property<Guid>("ConcurrencyStamp").IsConcurrencyToken().HasColumnType("uuid").HasColumnName("concurrency_stamp");
-                    b.Property<DateTimeOffset>("CreatedAtUtc").HasColumnType("timestamp with time zone").HasColumnName("created_at_utc");
-                    b.Property<string>("Description").HasMaxLength(300).HasColumnType("character varying(300)").HasColumnName("description");
-                    b.Property<bool>("IsEncrypted").HasColumnType("boolean").HasColumnName("is_encrypted");
-                    b.Property<string>("Key").IsRequired().HasMaxLength(120).HasColumnType("character varying(120)").HasColumnName("key");
-                    b.Property<DateTimeOffset>("UpdatedAtUtc").HasColumnType("timestamp with time zone").HasColumnName("updated_at_utc");
-                    b.Property<string>("Value").IsRequired().HasMaxLength(2000).HasColumnType("character varying(2000)").HasColumnName("value");
-
-                    b.HasKey("Id");
-                    b.HasIndex("Key").IsUnique().HasDatabaseName("ux_system_settings_key");
-                    b.ToTable("system_settings", (string)null);
-                });
-
-            modelBuilder.Entity("PromoGest.Domain.Entities.User", b =>
-                {
-                    b.Property<Guid>("Id").ValueGeneratedOnAdd().HasColumnType("uuid").HasColumnName("id");
-                    b.Property<Guid>("ConcurrencyStamp").IsConcurrencyToken().HasColumnType("uuid").HasColumnName("concurrency_stamp");
-                    b.Property<DateTimeOffset>("CreatedAtUtc").HasColumnType("timestamp with time zone").HasColumnName("created_at_utc");
-                    b.Property<string>("Email").IsRequired().HasMaxLength(160).HasColumnType("character varying(160)").HasColumnName("email");
-                    b.Property<int>("FailedLoginAttempts").HasColumnType("integer").HasColumnName("failed_login_attempts");
-                    b.Property<string>("FullName").IsRequired().HasMaxLength(150).HasColumnType("character varying(150)").HasColumnName("full_name");
-                    b.Property<bool>("IsActive").HasColumnType("boolean").HasColumnName("is_active");
-                    b.Property<bool>("IsSystemAdministrator").HasColumnType("boolean").HasColumnName("is_system_administrator");
-                    b.Property<DateTimeOffset?>("LastLoginAtUtc").HasColumnType("timestamp with time zone").HasColumnName("last_login_at_utc");
-                    b.Property<DateTimeOffset?>("LockoutEndUtc").HasColumnType("timestamp with time zone").HasColumnName("lockout_end_utc");
-                    b.Property<string>("NormalizedEmail").IsRequired().HasMaxLength(160).HasColumnType("character varying(160)").HasColumnName("normalized_email");
-                    b.Property<string>("NormalizedUsername").IsRequired().HasMaxLength(64).HasColumnType("character varying(64)").HasColumnName("normalized_username");
-                    b.Property<string>("PasswordHash").IsRequired().HasMaxLength(512).HasColumnType("character varying(512)").HasColumnName("password_hash");
-                    b.Property<string>("Phone").HasMaxLength(40).HasColumnType("character varying(40)").HasColumnName("phone");
-                    b.Property<string>("PreferredLanguage").IsRequired().HasMaxLength(4).HasColumnType("character varying(4)").HasColumnName("preferred_language");
-                    b.Property<Guid>("SecurityStamp").HasColumnType("uuid").HasColumnName("security_stamp");
-                    b.Property<DateTimeOffset>("UpdatedAtUtc").HasColumnType("timestamp with time zone").HasColumnName("updated_at_utc");
-                    b.Property<string>("Username").IsRequired().HasMaxLength(64).HasColumnType("character varying(64)").HasColumnName("username");
-
-                    b.HasKey("Id");
-                    b.HasIndex("IsSystemAdministrator").IsUnique().HasDatabaseName("ux_users_single_system_admin").HasFilter("is_system_administrator = true");
-                    b.HasIndex("NormalizedEmail").IsUnique().HasDatabaseName("ux_users_normalized_email");
-                    b.HasIndex("NormalizedUsername").IsUnique().HasDatabaseName("ux_users_normalized_username");
-                    b.ToTable("users", null, t =>
-                        {
-                            t.HasCheckConstraint("ck_users_failed_attempts_non_negative", "failed_login_attempts >= 0");
-                            t.HasCheckConstraint("ck_users_preferred_language", "preferred_language IN ('ar', 'fr')");
-                            t.HasCheckConstraint("ck_users_username_length", "char_length(username) >= 3");
-                        });
-                });
-
-            modelBuilder.Entity("PromoGest.Domain.Entities.UserRole", b =>
-                {
-                    b.Property<Guid>("UserId").HasColumnType("uuid").HasColumnName("user_id");
-                    b.Property<Guid>("RoleId").HasColumnType("uuid").HasColumnName("role_id");
-                    b.Property<DateTimeOffset>("AssignedAtUtc").HasColumnType("timestamp with time zone").HasColumnName("assigned_at_utc");
-                    b.Property<Guid?>("AssignedByUserId").HasColumnType("uuid").HasColumnName("assigned_by_user_id");
-
-                    b.HasKey("UserId", "RoleId");
-                    b.HasIndex("RoleId");
-                    b.ToTable("user_roles", (string)null);
-                });
-
-            modelBuilder.Entity("PromoGest.Domain.Entities.UserSession", b =>
-                {
-                    b.Property<Guid>("Id").ValueGeneratedOnAdd().HasColumnType("uuid").HasColumnName("id");
-                    b.Property<DateTimeOffset>("CreatedAtUtc").HasColumnType("timestamp with time zone").HasColumnName("created_at_utc");
-                    b.Property<DateTimeOffset>("ExpiresAtUtc").HasColumnType("timestamp with time zone").HasColumnName("expires_at_utc");
-                    b.Property<string>("IpAddress").HasMaxLength(64).HasColumnType("character varying(64)").HasColumnName("ip_address");
-                    b.Property<bool>("IsRevoked").HasColumnType("boolean").HasColumnName("is_revoked");
-                    b.Property<DateTimeOffset>("LastSeenAtUtc").HasColumnType("timestamp with time zone").HasColumnName("last_seen_at_utc");
-                    b.Property<DateTimeOffset?>("RevokedAtUtc").HasColumnType("timestamp with time zone").HasColumnName("revoked_at_utc");
-                    b.Property<Guid>("SecurityStamp").HasColumnType("uuid").HasColumnName("security_stamp");
-                    b.Property<string>("TokenHash").IsRequired().HasMaxLength(64).HasColumnType("character varying(64)").HasColumnName("token_hash");
-                    b.Property<string>("UserAgent").HasMaxLength(300).HasColumnType("character varying(300)").HasColumnName("user_agent");
-                    b.Property<Guid>("UserId").HasColumnType("uuid").HasColumnName("user_id");
-
-                    b.HasKey("Id");
-                    b.HasIndex("TokenHash").IsUnique().HasDatabaseName("ux_user_sessions_token_hash");
-                    b.HasIndex("UserId").HasDatabaseName("ix_user_sessions_user_id");
-                    b.ToTable("user_sessions", (string)null);
-                });
-
-            modelBuilder.Entity("PromoGest.Domain.Entities.Building", b =>
-                {
-                    b.HasOne("PromoGest.Domain.Entities.Project", null)
-                        .WithMany()
-                        .HasForeignKey("ProjectId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.HasOne("PromoGest.Domain.Entities.User", null)
-                        .WithMany()
-                        .HasForeignKey("CreatedByUserId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-                });
-
-            modelBuilder.Entity("PromoGest.Domain.Entities.BuildingFloor", b =>
-                {
-                    b.HasOne("PromoGest.Domain.Entities.Building", null)
-                        .WithMany()
-                        .HasForeignKey("BuildingId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-                });
-
-            modelBuilder.Entity("PromoGest.Domain.Entities.PropertyUnit", b =>
-                {
-                    b.HasOne("PromoGest.Domain.Entities.BuildingFloor", null)
-                        .WithMany()
-                        .HasForeignKey("FloorId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("PromoGest.Domain.Entities.User", null)
-                        .WithMany()
-                        .HasForeignKey("CreatedByUserId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-                });
-
-            modelBuilder.Entity("PromoGest.Domain.Entities.Project", b =>
-                {
-                    b.HasOne("PromoGest.Domain.Entities.User", null)
-                        .WithMany()
-                        .HasForeignKey("CreatedByUserId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-                });
-
-            modelBuilder.Entity("PromoGest.Domain.Entities.ProjectMember", b =>
+modelBuilder.Entity("PromoGest.Domain.Entities.ProjectMember", b =>
                 {
                     b.HasOne("PromoGest.Domain.Entities.Project", "Project")
                         .WithMany("Members")

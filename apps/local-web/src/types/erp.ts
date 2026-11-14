@@ -248,6 +248,14 @@ export interface CreatePropertyUnitRequest {
   roomsCount?: number | null;
 }
 
+export interface UpdateBuildingRequest extends CreateBuildingRequest {
+  expectedConcurrencyStamp: string;
+}
+
+export interface UpdateBuildingFloorRequest extends CreateBuildingFloorRequest {
+  expectedConcurrencyStamp: string;
+}
+
 export interface UpdatePropertyUnitRequest {
   unitNumber: string;
   unitType: string;

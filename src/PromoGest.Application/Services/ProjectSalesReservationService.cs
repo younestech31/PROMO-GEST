@@ -58,6 +58,47 @@ public sealed class ProjectSalesReservationService
         return reservations.Select(item => Map(item.Reservation, item.UnitNumber, item.CustomerName)).ToList();
     }
 
+    public async Task<ProjectSalesReservationDto> GetAsync(
+        Guid actorUserId,
+        Guid projectId,
+        Guid reservationId,
+        RequestMetadata metadata,
+        CancellationToken ct = default)
+    {
+        var (actor, project) = await RequireProjectAccessAsync(
+            actorUserId, projectId, canWrite: false, metadata, ct);
+
+        var reservation = await _reservationRepository.GetByProjectAsync(project.Id, reservationId, ct)
+            ?? throw new NotFoundDomainException(
+                "RESERVATION_NOT_FOUND",
+                "The reservation was not found in this project.");
+
+        var unit = await _reservationRepository.GetPropertyUnitForProjectAsync(
+            project.Id, reservation.PropertyUnitId, ct)
+            ?? throw new NotFoundDomainException(
+                "RESERVATION_UNIT_NOT_FOUND",
+                "The property unit linked to this reservation was not found.");
+
+        var customer = await _customerRepository.GetByProjectAsync(
+            project.Id, reservation.ProjectCustomerId, ct)
+            ?? throw new NotFoundDomainException(
+                "RESERVATION_CUSTOMER_NOT_FOUND",
+                "The customer linked to this reservation was not found.");
+
+        await WriteAuditAsync(
+            actor,
+            "PROJECT_RESERVATION_VIEWED",
+            "ProjectSalesReservation",
+            reservation.Id.ToString(),
+            "Viewed a project unit reservation.",
+            new { projectId, reservationId },
+            metadata,
+            ct,
+            saveChanges: true);
+
+        return Map(reservation, unit.UnitNumber, customer.DisplayName);
+    }
+
     public async Task<ProjectSalesReservationDto> CreateAsync(
         Guid actorUserId,
         Guid projectId,
@@ -161,6 +202,13 @@ public sealed class ProjectSalesReservationService
             throw new ConflictDomainException(
                 "CONCURRENCY_CONFLICT",
                 "The reservation changed after it was loaded. Reload it before cancelling.");
+        }
+
+        if (reservation.ExpiresAtUtc <= _clock.UtcNow)
+        {
+            throw new ConflictDomainException(
+                "RESERVATION_EXPIRY_REACHED",
+                "This reservation has reached its expiry time and will be closed by the expiry processor.");
         }
 
         var unit = await _reservationRepository.GetPropertyUnitForProjectAsync(

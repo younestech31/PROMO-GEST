@@ -344,7 +344,7 @@ public sealed class ApplicationSecurityAndFoundationTests
                 Guid.NewGuid(),
                 new UpdateBuildingRequest("X", "غير مصرح", "Non autorisé", "Planned", Guid.NewGuid()),
                 metadata));
-        Assert.Equal("PROJECT_NOT_FOUND", editDenied.Code);
+        Assert.Equal("FORBIDDEN_PROJECT_STRUCTURE_MANAGE", editDenied.Code);
 
         var initial = await structureSvc.CreateBuildingAsync(
             init.SystemAdminUserId,

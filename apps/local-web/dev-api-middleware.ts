@@ -937,7 +937,18 @@ export function createPromoGestDevApiPlugin(): Plugin {
             actualBuildingsCount: 0,
             actualUnitsCount: 0,
             createdAtUtc: new Date().toISOString(),
-            members: [],
+            members: currentUser.isSystemAdministrator ? [] : [{
+              id: crypto.randomUUID(),
+              userId: currentUser.id,
+              username: currentUser.username,
+              fullName: currentUser.fullName,
+              roleInProject: 'ProjectManager',
+              canViewFinancials: true,
+              canManageSales: true,
+              canManageConstruction: true,
+              canManageDocuments: true,
+              assignedAtUtc: new Date().toISOString(),
+            }],
           };
           projects.unshift(created);
           addAudit('PROJECT_CREATED', 'Info', `Created project '${created.code}' (${created.nameFr}).`, currentUser, 'Project', created.id);
@@ -958,8 +969,15 @@ export function createPromoGestDevApiPlugin(): Plugin {
 
         if (method === 'PUT' && projectDetailMatch) {
           const projectId = decodeURIComponent(projectDetailMatch[1]);
+          const project = projects.find((p) => p.id === projectId);
+          if (!project) {
+            return sendJson(res, 404, { code: 'PROJECT_NOT_FOUND', message: 'Project not found.' });
+          }
           const permissions = getPermissions(currentUser);
-          if (!currentUser.isSystemAdministrator && !permissions.includes('projects.manage')) {
+          const membership = project.members.find((member) => member.userId === currentUser.id);
+          const canManageProject = currentUser.isSystemAdministrator ||
+            (permissions.includes('projects.manage') && membership?.roleInProject === 'ProjectManager');
+          if (!canManageProject) {
             addAudit(
               'ACCESS_DENIED',
               'Security',
@@ -970,12 +988,8 @@ export function createPromoGestDevApiPlugin(): Plugin {
             );
             return sendJson(res, 403, {
               code: 'FORBIDDEN_PROJECT_UPDATE',
-              message: 'You do not have permission to update project details.',
+              message: 'You must be an explicitly assigned Project Manager to update this project's master data.',
             });
-          }
-          const project = projects.find((p) => p.id === projectId);
-          if (!project) {
-            return sendJson(res, 404, { code: 'PROJECT_NOT_FOUND', message: 'Project not found.' });
           }
           try {
             const body = await readJsonBody<UpdateProjectRequest>(req);
@@ -1262,12 +1276,15 @@ export function createPromoGestDevApiPlugin(): Plugin {
 
         const projectMembersMatch = pathname.match(/^\/api\/projects\/([^/]+)\/members$/);
         if (method === 'PUT' && projectMembersMatch) {
-          if (!currentUser.isSystemAdministrator && !getPermissions(currentUser).includes('projects.access.manage')) {
-            addAudit('ACCESS_DENIED', 'Security', `User '${currentUser.username}' attempted unauthorized project membership assignment.`, currentUser, 'Project', projectMembersMatch[1]);
-            return sendJson(res, 403, { code: 'FORBIDDEN_PROJECT_ACCESS_ADMIN', message: 'Forbidden.' });
-          }
           const project = projects.find((p) => p.id === decodeURIComponent(projectMembersMatch[1]));
           if (!project) return sendJson(res, 404, { code: 'PROJECT_NOT_FOUND', message: 'Project not found.' });
+          const actorMembership = project.members.find((member) => member.userId === currentUser.id);
+          if (!currentUser.isSystemAdministrator &&
+              (!getPermissions(currentUser).includes('projects.access.manage') ||
+               actorMembership?.roleInProject !== 'ProjectManager')) {
+            addAudit('ACCESS_DENIED', 'Security', `User '${currentUser.username}' attempted unauthorized project membership assignment.`, currentUser, 'Project', projectMembersMatch[1]);
+            return sendJson(res, 403, { code: 'FORBIDDEN_PROJECT_ACCESS_ADMIN', message: 'Only an assigned Project Manager may manage this project team.' });
+          }
           const body = await readJsonBody<{
             userId: string;
             roleInProject: string;
@@ -1278,7 +1295,18 @@ export function createPromoGestDevApiPlugin(): Plugin {
           }>(req);
           const target = users.find((u) => u.id === body.userId);
           if (!target) return sendJson(res, 404, { code: 'USER_NOT_FOUND', message: 'Employee not found.' });
+          if (!target.isActive) return sendJson(res, 400, { code: 'USER_INACTIVE', message: 'Cannot assign an inactive employee.' });
+          const validProjectRoles = ['ProjectManager', 'CommercialAgent', 'FinanceController', 'SiteSupervisor', 'ReadOnlyObserver'];
+          if (!validProjectRoles.includes(body.roleInProject)) {
+            return sendJson(res, 400, { code: 'PROJECT_ROLE_INVALID', message: 'Invalid project role.' });
+          }
           const existingIdx = project.members.findIndex((m) => m.userId === target.id);
+          if (existingIdx >= 0 &&
+              project.members[existingIdx].roleInProject === 'ProjectManager' &&
+              body.roleInProject !== 'ProjectManager' &&
+              project.members.filter((m) => m.roleInProject === 'ProjectManager').length <= 1) {
+            return sendJson(res, 409, { code: 'PROJECT_LAST_MANAGER_REQUIRED', message: 'Assign another Project Manager before changing the last Project Manager role.' });
+          }
           const memberRecord = {
             id: existingIdx >= 0 ? project.members[existingIdx].id : crypto.randomUUID(),
             userId: target.id,
@@ -1299,13 +1327,21 @@ export function createPromoGestDevApiPlugin(): Plugin {
 
         const removeMemberMatch = pathname.match(/^\/api\/projects\/([^/]+)\/members\/([^/]+)$/);
         if (method === 'DELETE' && removeMemberMatch) {
-          if (!currentUser.isSystemAdministrator && !getPermissions(currentUser).includes('projects.access.manage')) {
-            addAudit('ACCESS_DENIED', 'Security', `User '${currentUser.username}' attempted unauthorized project membership revocation.`, currentUser, 'Project', removeMemberMatch[1]);
-            return sendJson(res, 403, { code: 'FORBIDDEN_PROJECT_ACCESS_ADMIN', message: 'Forbidden.' });
-          }
           const project = projects.find((p) => p.id === decodeURIComponent(removeMemberMatch[1]));
           if (!project) return sendJson(res, 404, { code: 'PROJECT_NOT_FOUND', message: 'Project not found.' });
+          const actorMembership = project.members.find((member) => member.userId === currentUser.id);
+          if (!currentUser.isSystemAdministrator &&
+              (!getPermissions(currentUser).includes('projects.access.manage') ||
+               actorMembership?.roleInProject !== 'ProjectManager')) {
+            addAudit('ACCESS_DENIED', 'Security', `User '${currentUser.username}' attempted unauthorized project membership revocation.`, currentUser, 'Project', removeMemberMatch[1]);
+            return sendJson(res, 403, { code: 'FORBIDDEN_PROJECT_ACCESS_ADMIN', message: 'Only an assigned Project Manager may manage this project team.' });
+          }
           const targetUserId = decodeURIComponent(removeMemberMatch[2]);
+          const targetMembership = project.members.find((m) => m.userId === targetUserId);
+          if (targetMembership?.roleInProject === 'ProjectManager' &&
+              project.members.filter((m) => m.roleInProject === 'ProjectManager').length <= 1) {
+            return sendJson(res, 409, { code: 'PROJECT_LAST_MANAGER_REQUIRED', message: 'Assign another Project Manager before removing the last Project Manager.' });
+          }
           project.members = project.members.filter((m) => m.userId !== targetUserId);
           addAudit('PROJECT_MEMBER_REVOKED', 'Security', `Revoked access on '${project.code}' for user '${targetUserId}'.`, currentUser, 'Project', project.id);
           return sendJson(res, 200, withComputedStructureCounts(project, projectStructures));

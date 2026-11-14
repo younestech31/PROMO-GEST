@@ -344,18 +344,17 @@ public sealed class ProjectCustomerService
             ? Array.Empty<string>()
             : await _userRepository.GetEffectivePermissionsAsync(actorUserId, ct);
 
-        var hasGlobalProjectScope = permissions.Contains("projects.manage", StringComparer.OrdinalIgnoreCase);
-        var hasProjectScope = actor.IsSystemAdministrator || membership is not null || hasGlobalProjectScope;
+        var hasProjectMembership = membership is not null;
         var hasReadPermission = actor.IsSystemAdministrator ||
             permissions.Contains("customers.read", StringComparer.OrdinalIgnoreCase);
         var hasManagePermission = actor.IsSystemAdministrator ||
             permissions.Contains("customers.manage", StringComparer.OrdinalIgnoreCase);
-        var isProjectSalesManager = membership?.CanManageSales == true ||
-            membership?.RoleInProject == ProjectRole.ProjectManager;
+        var isProjectSalesManager = membership is not null &&
+            (membership.CanManageSales || membership.RoleInProject == ProjectRole.ProjectManager);
 
-        var allowed = hasProjectScope && hasReadPermission &&
+        var allowed = (actor.IsSystemAdministrator || hasProjectMembership) && hasReadPermission &&
             (!canWrite || (hasManagePermission &&
-                (actor.IsSystemAdministrator || hasGlobalProjectScope || isProjectSalesManager)));
+                (actor.IsSystemAdministrator || isProjectSalesManager)));
 
         if (!allowed)
         {

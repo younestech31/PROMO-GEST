@@ -47,6 +47,21 @@ public sealed record CreateProjectRequest(
     int PlannedBlocksCount,
     int PlannedUnitsCount);
 
+public sealed record UpdateProjectRequest(
+    string NameAr,
+    string NameFr,
+    string WilayaCode,
+    string WilayaName,
+    string Municipality,
+    string? Address,
+    string? LandTitleReference,
+    string? BuildingPermitNumber,
+    DateOnly? BuildingPermitDate,
+    string Status,
+    decimal EstimatedBudgetDzd,
+    int PlannedBlocksCount,
+    int PlannedUnitsCount);
+
 public sealed record AssignProjectMemberRequest(
     Guid UserId,
     string RoleInProject,

@@ -813,6 +813,60 @@ public sealed class PostgresEndToEndTests : IClassFixture<PostgreSql18Integratio
                     entry.EventType == "PROPERTY_UNIT_UPDATED" && entry.TargetEntityId == createdUnit.Id.ToString());
                 Assert.Contains(await db.AuditLogs.ToListAsync(), entry =>
                     entry.EventType == "PROPERTY_UNIT_STATUS_CHANGED" && entry.TargetEntityId == createdUnit.Id.ToString());
+                Assert.Contains(await db.AuditLogs.ToListAsync(), entry =>
+                    entry.EventType == "PROJECT_DOCUMENT_UPLOADED" &&
+                    entry.TargetEntityType == "StoredFile");
+                Assert.Contains(await db.AuditLogs.ToListAsync(), entry =>
+                    entry.EventType == "PROJECT_DOCUMENT_DOWNLOADED" &&
+                    entry.TargetEntityType == "StoredFile");
+
+            }
+
+            // Project documents are stored locally, scoped to the project, checksummed, and audited.
+            var permitBytes = new byte[] { 0x25, 0x50, 0x44, 0x46, 0x2D, 0x31, 0x2E, 0x34, 0x0A, 0x25, 0x50, 0x52, 0x4F, 0x4D, 0x4F };
+            using (var documentUpload = new MultipartFormDataContent())
+            {
+                documentUpload.Add(new ByteArrayContent(permitBytes), "file", "building-permit.pdf");
+                documentUpload.Add(new StringContent("Permits"), "category");
+                documentUpload.Add(new StringContent("Permis de construire initial"), "description");
+                var uploadResponse = await adminClient.PostAsync(
+                    $"/api/projects/{createdProject.Id}/documents",
+                    documentUpload);
+                Assert.Equal(HttpStatusCode.Created, uploadResponse.StatusCode);
+                var uploadedDocument = await uploadResponse.Content.ReadFromJsonAsync<ProjectDocumentDto>();
+                Assert.NotNull(uploadedDocument);
+                Assert.Equal("building-permit.pdf", uploadedDocument!.OriginalFileName);
+                Assert.Equal("Permits", uploadedDocument.Category);
+                Assert.Equal("Permis de construire initial", uploadedDocument.Description);
+                Assert.Equal(permitBytes.LongLength, uploadedDocument.SizeBytes);
+                Assert.Equal(Convert.ToHexStringLower(SHA256.HashData(permitBytes)), uploadedDocument.Sha256Checksum);
+
+                var documentListResponse = await adminClient.GetAsync(
+                    $"/api/projects/{createdProject.Id}/documents");
+                Assert.Equal(HttpStatusCode.OK, documentListResponse.StatusCode);
+                var documentList = await documentListResponse.Content.ReadFromJsonAsync<List<ProjectDocumentDto>>();
+                Assert.NotNull(documentList);
+                Assert.Contains(documentList!, item => item.Id == uploadedDocument.Id);
+
+                var documentDownloadResponse = await adminClient.GetAsync(
+                    $"/api/projects/{createdProject.Id}/documents/{uploadedDocument.Id}/download");
+                Assert.Equal(HttpStatusCode.OK, documentDownloadResponse.StatusCode);
+                Assert.Equal("no-store, no-cache", documentDownloadResponse.Headers.CacheControl?.ToString());
+                Assert.Equal(permitBytes, await documentDownloadResponse.Content.ReadAsByteArrayAsync());
+                Assert.Contains("attachment", documentDownloadResponse.Content.Headers.ContentDisposition?.Disposition ?? string.Empty);
+            }
+
+            // Reject unsupported extensions before writing any bytes to the local storage root.
+            using (var invalidDocumentUpload = new MultipartFormDataContent())
+            {
+                invalidDocumentUpload.Add(new ByteArrayContent(new byte[] { 1, 2, 3 }), "file", "payload.exe");
+                invalidDocumentUpload.Add(new StringContent("Other"), "category");
+                var invalidUploadResponse = await adminClient.PostAsync(
+                    $"/api/projects/{createdProject.Id}/documents",
+                    invalidDocumentUpload);
+                Assert.Equal(HttpStatusCode.BadRequest, invalidUploadResponse.StatusCode);
+                var invalidUploadError = await invalidUploadResponse.Content.ReadFromJsonAsync<ApiErrorResponse>();
+                Assert.Equal("FILE_TYPE_NOT_ALLOWED", invalidUploadError!.Code);
             }
 
             // The seeded Project Director role must also be able to manage project structure via its explicit permission.
@@ -893,6 +947,20 @@ public sealed class PostgresEndToEndTests : IClassFixture<PostgreSql18Integratio
                     updatedFloor.ConcurrencyStamp));
             Assert.Equal(HttpStatusCode.Forbidden, deniedFloorUpdate.StatusCode);
 
+            // A valid employee session without explicit membership cannot enumerate or upload project documents.
+            var deniedDocumentList = await employeeClient.GetAsync(
+                $"/api/projects/{createdProject!.Id}/documents");
+            Assert.Equal(HttpStatusCode.Forbidden, deniedDocumentList.StatusCode);
+            using (var deniedDocumentUpload = new MultipartFormDataContent())
+            {
+                deniedDocumentUpload.Add(new ByteArrayContent(new byte[] { 0x25, 0x50, 0x44, 0x46 }), "file", "denied.pdf");
+                deniedDocumentUpload.Add(new StringContent("Other"), "category");
+                var deniedUploadResponse = await employeeClient.PostAsync(
+                    $"/api/projects/{createdProject.Id}/documents",
+                    deniedDocumentUpload);
+                Assert.Equal(HttpStatusCode.Forbidden, deniedUploadResponse.StatusCode);
+            }
+
             // IDOR blocked + audited
             var forbiddenAttempt = await employeeClient.GetAsync($"/api/projects/{createdProject!.Id}");
             Assert.Equal(HttpStatusCode.Forbidden, forbiddenAttempt.StatusCode);
@@ -910,6 +978,20 @@ public sealed class PostgresEndToEndTests : IClassFixture<PostgreSql18Integratio
                 $"Project member assignment failed with {(int)assignResp.StatusCode} {assignResp.StatusCode}: {assignBody}" +
                 $"{Environment.NewLine}Captured ASP.NET Core server logs:{Environment.NewLine}{string.Join(Environment.NewLine, _serverLogs.Snapshot())}");
 
+            // Explicit project membership allows document reads, and the CanManageDocuments flag allows uploads.
+            var memberDocumentList = await employeeClient.GetAsync(
+                $"/api/projects/{createdProject.Id}/documents");
+            Assert.Equal(HttpStatusCode.OK, memberDocumentList.StatusCode);
+            using (var memberDocumentUpload = new MultipartFormDataContent())
+            {
+                memberDocumentUpload.Add(new ByteArrayContent(new byte[] { 0x25, 0x50, 0x44, 0x46, 0x2D, 0x41 }), "file", "team-note.pdf");
+                memberDocumentUpload.Add(new StringContent("Correspondence"), "category");
+                var memberUploadResponse = await employeeClient.PostAsync(
+                    $"/api/projects/{createdProject.Id}/documents",
+                    memberDocumentUpload);
+                Assert.Equal(HttpStatusCode.Created, memberUploadResponse.StatusCode);
+            }
+
             // Reassign the same employee to cover the existing-membership UPDATE path.
             var updateMembershipResp = await adminClient.PutAsJsonAsync($"/api/projects/{createdProject.Id}/members",
                 new AssignProjectMemberRequest(createdEmployee.Id, "CommercialAgent", true, false, false, false));
@@ -926,6 +1008,20 @@ public sealed class PostgresEndToEndTests : IClassFixture<PostgreSql18Integratio
                 Assert.False(updatedMembership.CanManageDocuments);
                 Assert.Equal(1, await db.ProjectMembers.CountAsync(
                     member => member.ProjectId == createdProject.Id && member.UserId == createdEmployee.Id));
+            }
+
+            // Removing the per-project document-management flag preserves read access but blocks further uploads.
+            var readOnlyDocumentList = await employeeClient.GetAsync(
+                $"/api/projects/{createdProject.Id}/documents");
+            Assert.Equal(HttpStatusCode.OK, readOnlyDocumentList.StatusCode);
+            using (var readOnlyDocumentUpload = new MultipartFormDataContent())
+            {
+                readOnlyDocumentUpload.Add(new ByteArrayContent(new byte[] { 0x25, 0x50, 0x44, 0x46, 0x2D, 0x42 }), "file", "read-only.pdf");
+                readOnlyDocumentUpload.Add(new StringContent("Other"), "category");
+                var readOnlyUploadResponse = await employeeClient.PostAsync(
+                    $"/api/projects/{createdProject.Id}/documents",
+                    readOnlyDocumentUpload);
+                Assert.Equal(HttpStatusCode.Forbidden, readOnlyUploadResponse.StatusCode);
             }
 
             var allowedAttempt = await employeeClient.GetAsync($"/api/projects/{createdProject.Id}");

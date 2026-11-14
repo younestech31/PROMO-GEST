@@ -182,6 +182,66 @@ export interface CreateProjectRequest {
 
 export type UpdateProjectRequest = Omit<CreateProjectRequest, 'code'>;
 
+export interface PropertyUnitDto {
+  id: string;
+  floorId: string;
+  unitNumber: string;
+  unitType: string;
+  status: string;
+  grossAreaSquareMeters: number | null;
+  netAreaSquareMeters: number | null;
+  roomsCount: number | null;
+  createdAtUtc: string;
+}
+
+export interface BuildingFloorDto {
+  id: string;
+  buildingId: string;
+  floorNumber: number;
+  nameAr: string;
+  nameFr: string;
+  createdAtUtc: string;
+  units: PropertyUnitDto[];
+}
+
+export interface BuildingStructureDto {
+  id: string;
+  projectId: string;
+  code: string;
+  nameAr: string;
+  nameFr: string;
+  status: string;
+  createdAtUtc: string;
+  floors: BuildingFloorDto[];
+}
+
+export interface ProjectStructureDto {
+  projectId: string;
+  buildings: BuildingStructureDto[];
+}
+
+export interface CreateBuildingRequest {
+  code: string;
+  nameAr: string;
+  nameFr: string;
+  status: string;
+}
+
+export interface CreateBuildingFloorRequest {
+  floorNumber: number;
+  nameAr: string;
+  nameFr: string;
+}
+
+export interface CreatePropertyUnitRequest {
+  unitNumber: string;
+  unitType: string;
+  status: string;
+  grossAreaSquareMeters?: number | null;
+  netAreaSquareMeters?: number | null;
+  roomsCount?: number | null;
+}
+
 export interface AssignProjectMemberRequest {
   userId: string;
   roleInProject: string;

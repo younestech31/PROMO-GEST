@@ -94,14 +94,15 @@ public sealed class ProjectStructureService
             throw new DomainException("BUILDING_STATUS_INVALID", "A valid building status is required.");
         }
 
-        var normalizedCode = (request.Code ?? string.Empty).Trim().ToUpperInvariant();
+        var buildingCode = request.Code?.Trim() ?? string.Empty;
+        var normalizedCode = buildingCode.ToUpperInvariant();
         if (await _structureRepository.ExistsBuildingCodeAsync(projectId, normalizedCode, ct))
             throw new ConflictDomainException("BUILDING_CODE_EXISTS", "A building with this code already exists in the project.");
 
         var nowUtc = _clock.UtcNow;
         var building = Building.Create(
             projectId,
-            request.Code,
+            buildingCode,
             request.NameAr,
             request.NameFr,
             status,
@@ -196,14 +197,15 @@ public sealed class ProjectStructureService
             throw new DomainException("UNIT_STATUS_INVALID", "A valid property unit status is required.");
         }
 
-        var normalizedUnitNumber = (request.UnitNumber ?? string.Empty).Trim().ToUpperInvariant();
+        var unitNumber = request.UnitNumber?.Trim() ?? string.Empty;
+        var normalizedUnitNumber = unitNumber.ToUpperInvariant();
         if (await _structureRepository.ExistsUnitNumberAsync(floorId, normalizedUnitNumber, ct))
             throw new ConflictDomainException("UNIT_NUMBER_EXISTS", "A property unit with this number already exists on the floor.");
 
         var nowUtc = _clock.UtcNow;
         var unit = PropertyUnit.Create(
             floorId,
-            request.UnitNumber,
+            unitNumber,
             unitType,
             status,
             request.GrossAreaSquareMeters,

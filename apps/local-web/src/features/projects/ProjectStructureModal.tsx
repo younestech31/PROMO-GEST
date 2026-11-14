@@ -114,6 +114,14 @@ export function ProjectStructureModal({
   const selectedFloor = selectedBuilding?.floors.find(
     (floor) => floor.id === selectedFloorId
   ) ?? null;
+  const selectedUnit = selectedFloor?.units.find((unit) => unit.id === editingUnitId) ?? null;
+  const salesManagedUnitStatuses = ['Reserved', 'Sold', 'Delivered'];
+  const unitStatusOptions = UNIT_STATUSES.filter(
+    (status) => !salesManagedUnitStatuses.includes(status.code) || status.code === selectedUnit?.status
+  );
+  const selectedUnitHasSalesManagedStatus = Boolean(
+    selectedUnit && salesManagedUnitStatuses.includes(selectedUnit.status)
+  );
 
   const showMutationError = (err: unknown, fallbackAr: string, fallbackFr: string) => {
     setError(

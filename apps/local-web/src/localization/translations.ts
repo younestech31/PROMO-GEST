@@ -129,7 +129,9 @@ export interface TranslationBundle {
     tableBudget: string;
     tableMembers: string;
     manageAccess: string;
+    editButton: string;
     modalCreateTitle: string;
+    modalEditTitle: string;
     modalAccessTitle: string;
     fieldCode: string;
     fieldNameAr: string;
@@ -309,7 +311,9 @@ const AR: TranslationBundle = {
     tableBudget: 'الميزانية التقديرية',
     tableMembers: 'الأعضاء المصرح لهم',
     manageAccess: 'صلاحيات المشروع',
+    editButton: 'تعديل البيانات',
     modalCreateTitle: 'إنشاء مشروع ترقية عقارية',
+    modalEditTitle: 'تعديل بيانات المشروع العقاري',
     modalAccessTitle: 'إدارة صلاحيات الوصول للمشروع',
     fieldCode: 'رمز المشروع *',
     fieldNameAr: 'اسم المشروع بالعربية *',
@@ -489,7 +493,9 @@ const FR: TranslationBundle = {
     tableBudget: 'Budget estimatif',
     tableMembers: 'Membres autorisés',
     manageAccess: 'Accès projet',
+    editButton: 'Modifier',
     modalCreateTitle: 'Créer un projet immobilier',
+    modalEditTitle: 'Modifier les données du projet immobilier',
     modalAccessTitle: 'Gestion des accès au projet',
     fieldCode: 'Code projet *',
     fieldNameAr: 'Nom du projet (AR) *',

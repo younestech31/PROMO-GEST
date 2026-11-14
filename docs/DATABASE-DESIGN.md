@@ -34,7 +34,7 @@ All primary keys use UUIDs. Foreign keys, unique indexes, check constraints, and
 | `property_units` | Apartments, shops, parking spaces, offices, and storage units belonging to a floor; unique normalized unit number within that floor |
 | `audit_logs` | Append-only security, authentication, administration, project, and structure event history |
 | `system_settings` | Local installation settings |
-| `stored_files` | Local document metadata, scope, project/uploader references, byte length, and SHA-256 checksum; file contents remain on local disk |
+| `stored_files` | Local document metadata including category, optional description, scope, project/uploader references, byte length, and SHA-256 checksum; file contents remain on local disk |
 
 ### Key integrity rules
 
@@ -47,6 +47,9 @@ All primary keys use UUIDs. Foreign keys, unique indexes, check constraints, and
 - Project, building, floor, and unit records use concurrency stamps for version-aware updates.
 - `audit_logs` is append-only. PostgreSQL rejects UPDATE/DELETE/TRUNCATE attempts, and the runtime role is restricted to SELECT/INSERT on that table.
 - Stored document binaries are not PostgreSQL blobs. They are saved beneath the configured local storage root and referenced by checksum-verified metadata.
+- Project documents are scoped to a project and retrieved by both project ID and file ID; an API caller cannot use a document identifier from another project to bypass the membership check.
+- The current document categories are `Legal`, `LandAndTitle`, `Permits`, `Plans`, `Engineering`, `Commercial`, `Financial`, `Correspondence`, and `Other`. The database check constraint keeps the category vocabulary consistent.
+- The `stored_files.category` migration backfills existing metadata rows as `Other`, then removes the temporary column default so all new records must provide a valid category. No existing file bytes or metadata rows are deleted.
 
 **Planned counts and actual counts are different measures.** `projects.planned_blocks_count` and `projects.planned_units_count` are planning targets. Actual building/unit totals are read from `buildings` and `property_units` through their floor/building relationship; they must never overwrite the planned targets.
 

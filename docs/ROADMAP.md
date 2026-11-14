@@ -37,22 +37,25 @@ Acceptance work still includes exercising the current preview/runtime against th
 
 ## Milestone 3 — Project document registry
 
-**Next development milestone.**
+**Status: core implementation and CI verification delivered; real local-installation acceptance remains separate.**
 
-Build on the existing `stored_files` metadata, `LocalFileStorageService`, local storage root, `files.read` / `files.write` permissions, and project membership's document capability.
+Delivered capabilities:
+- Project-scoped list, upload, and download endpoints backed by the existing `stored_files` metadata table and local filesystem storage.
+- Category and optional description metadata, with the additive migration `20261114180000_ProjectDocumentMetadata`.
+- A 25 MiB per-file limit enforced by request and streaming storage checks; empty files and unsupported extensions are rejected.
+- Server-selected content types, generated storage names, filename normalization, path containment checks, and cleanup of partial files on storage or metadata failures.
+- SHA-256 calculated at write time and verified with stored byte length before download; tampered or missing content is rejected and audited.
+- Server-side active-account, project membership, `files.read`, `files.write`, and per-project `CanManageDocuments` checks.
+- Upload, download, denied access, and integrity failures are recorded in the append-only audit log.
+- A bilingual Arabic/French document registry in the project workspace. Document bytes remain on the local server; no cloud bucket or hosted file service is used.
 
-Target scope:
-- Upload and list project documents with category, description, original filename, uploader, timestamp, byte length, and SHA-256 checksum.
-- Download through authenticated, project-scoped endpoints only.
-- Enforce file size limits, safe filenames, content-type handling, storage path containment, and project membership/document permissions on every request.
-- Record upload/download activity in the append-only audit log.
-- Keep document bytes on the local server; never send them to a cloud storage provider.
-- Add PostgreSQL integration tests for authorization, IDOR attempts, checksum integrity, interrupted writes, and cleanup on metadata failures.
-- Deliver a bilingual document registry UI within the project workspace.
+CI coverage includes document upload/list/download, metadata and SHA-256 checks, unsupported-extension rejection, project membership and read-only upload enforcement, PostgreSQL migration/least-privilege tests, the database-plus-local-files backup/restore drill, frontend checks/build, and Windows publishing/script validation.
 
-Exit gate: an unauthorized project member cannot enumerate, upload, or download another project's documents; a full backup/restore drill verifies the document bytes against database metadata.
+Production acceptance remains separate: test the full upload/download and restore cycle on a real local Windows/Linux installation, verify local storage ACLs and backup retention, and complete a cross-project IDOR/tampering drill using non-production test files. Do not apply the migration to an existing Cloud SQL or production database as part of preview troubleshooting.
 
 ## Milestone 4 — Customer and prospect registry
+
+**Next development milestone.**
 
 Create a deduplicated local register for individuals and legal entities with contact details, communication history, identity/document references, privacy boundaries, and project interest. Define field validation and access by commercial/legal role before introducing sales or payment mutations.
 

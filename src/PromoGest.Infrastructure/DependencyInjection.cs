@@ -35,6 +35,7 @@ public static class DependencyInjection
         services.AddSingleton<IPasswordHasher, Pbkdf2PasswordHasher>();
         services.AddSingleton<ISessionTokenGenerator, CryptoSessionTokenGenerator>();
         services.AddSingleton<LocalFileStorageService>();
+        services.AddSingleton<IProjectFileStorage>(sp => sp.GetRequiredService<LocalFileStorageService>());
 
         services.AddScoped<IAuditWriter, EfAuditWriter>();
         services.AddScoped<IAuditQueryRepository, EfAuditWriter>();
@@ -42,12 +43,14 @@ public static class DependencyInjection
         services.AddScoped<IUserRepository, EfUserRepository>();
         services.AddScoped<IProjectRepository, EfProjectRepository>();
         services.AddScoped<IProjectStructureRepository, EfProjectStructureRepository>();
+        services.AddScoped<IProjectDocumentRepository, EfProjectDocumentRepository>();
 
         services.AddScoped<SetupService>();
         services.AddScoped<AuthService>();
         services.AddScoped<UserManagementService>();
         services.AddScoped<ProjectService>();
         services.AddScoped<ProjectStructureService>();
+        services.AddScoped<ProjectDocumentService>();
         services.AddScoped<AuditQueryService>();
         services.AddScoped<AdminRecoveryService>();
 

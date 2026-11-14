@@ -196,12 +196,12 @@ jobs:
           )
           INSERT INTO stored_files (
               id, original_file_name, stored_relative_path, content_type, size_bytes,
-              sha256_checksum, scope, project_id, uploaded_by_user_id,
+              sha256_checksum, category, description, scope, project_id, uploaded_by_user_id,
               created_at_utc, updated_at_utc, concurrency_stamp
           )
           SELECT gen_random_uuid(), 'restore-probe.bin', 'organization/2026/11/restore-probe.bin',
                  'application/octet-stream', :'probe_size'::bigint, :'probe_hash',
-                 'Organization', NULL, probe_user.id, now(), now(), gen_random_uuid()
+                 'Other', NULL, 'Organization', NULL, probe_user.id, now(), now(), gen_random_uuid()
           FROM probe_user;
           SQL
 

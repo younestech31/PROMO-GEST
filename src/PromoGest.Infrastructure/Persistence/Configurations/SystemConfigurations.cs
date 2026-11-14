@@ -55,6 +55,9 @@ public sealed class StoredFileConfiguration : IEntityTypeConfiguration<StoredFil
         builder.ToTable("stored_files", table =>
         {
             table.HasCheckConstraint("ck_stored_files_size_positive", "size_bytes > 0");
+            table.HasCheckConstraint(
+                "ck_stored_files_category",
+                "category IN ('Legal', 'LandAndTitle', 'Permits', 'Plans', 'Engineering', 'Commercial', 'Financial', 'Correspondence', 'Other')");
         });
 
         builder.HasKey(x => x.Id);
@@ -62,6 +65,8 @@ public sealed class StoredFileConfiguration : IEntityTypeConfiguration<StoredFil
         builder.Property(x => x.OriginalFileName).HasColumnName("original_file_name").HasMaxLength(255).IsRequired();
         builder.Property(x => x.StoredRelativePath).HasColumnName("stored_relative_path").HasMaxLength(500).IsRequired();
         builder.Property(x => x.ContentType).HasColumnName("content_type").HasMaxLength(120).IsRequired();
+        builder.Property(x => x.Category).HasColumnName("category").HasMaxLength(40).IsRequired();
+        builder.Property(x => x.Description).HasColumnName("description").HasMaxLength(500);
         builder.Property(x => x.SizeBytes).HasColumnName("size_bytes").IsRequired();
         builder.Property(x => x.Sha256Checksum).HasColumnName("sha256_checksum").HasMaxLength(64).IsRequired();
         builder.Property(x => x.Scope).HasColumnName("scope").HasConversion<string>().HasMaxLength(32).IsRequired();

@@ -165,6 +165,19 @@ export interface ProjectDto {
   members: ProjectMemberDto[];
 }
 
+export interface ProjectDocumentDto {
+  id: string;
+  originalFileName: string;
+  category: string;
+  description: string | null;
+  contentType: string;
+  sizeBytes: number;
+  sha256Checksum: string;
+  uploadedByUserId: string;
+  uploadedByFullName: string;
+  createdAtUtc: string;
+}
+
 export interface CreateProjectRequest {
   code: string;
   nameAr: string;

@@ -259,6 +259,8 @@ namespace PromoGest.Infrastructure.Persistence.Migrations
                     b.Property<Guid>("Id").ValueGeneratedOnAdd().HasColumnType("uuid").HasColumnName("id");
                     b.Property<Guid>("ConcurrencyStamp").IsConcurrencyToken().HasColumnType("uuid").HasColumnName("concurrency_stamp");
                     b.Property<string>("ContentType").IsRequired().HasMaxLength(120).HasColumnType("character varying(120)").HasColumnName("content_type");
+                    b.Property<string>("Category").IsRequired().HasMaxLength(40).HasColumnType("character varying(40)").HasColumnName("category");
+                    b.Property<string>("Description").HasMaxLength(500).HasColumnType("character varying(500)").HasColumnName("description");
                     b.Property<DateTimeOffset>("CreatedAtUtc").HasColumnType("timestamp with time zone").HasColumnName("created_at_utc");
                     b.Property<string>("OriginalFileName").IsRequired().HasMaxLength(255).HasColumnType("character varying(255)").HasColumnName("original_file_name");
                     b.Property<Guid?>("ProjectId").HasColumnType("uuid").HasColumnName("project_id");
@@ -276,6 +278,7 @@ namespace PromoGest.Infrastructure.Persistence.Migrations
                     b.ToTable("stored_files", null, t =>
                         {
                             t.HasCheckConstraint("ck_stored_files_size_positive", "size_bytes > 0");
+                            t.HasCheckConstraint("ck_stored_files_category", "category IN ('Legal', 'LandAndTitle', 'Permits', 'Plans', 'Engineering', 'Commercial', 'Financial', 'Correspondence', 'Other')");
                         });
                 });
 

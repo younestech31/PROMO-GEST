@@ -833,6 +833,10 @@ const API_ERROR_MESSAGES: Record<string, { ar: string; fr: string }> = {
     fr: 'Le compte unique Administrateur Système ne peut pas être modifié ici.',
   },
 
+  FILE_NAME_TOO_LONG: {
+    ar: 'اسم الملف يتجاوز الحد الأقصى المسموح به وهو 255 حرفاً.',
+    fr: 'Le nom du fichier dépasse la limite autorisée de 255 caractères.',
+  },
   FILE_TYPE_NOT_ALLOWED: {
     ar: 'نوع الملف غير مدعوم. الأنواع المسموحة: PDF والصور ومستندات Office وTXT وCSV.',
     fr: 'Type de fichier non pris en charge. Types autorisés : PDF, images, documents Office, TXT et CSV.',

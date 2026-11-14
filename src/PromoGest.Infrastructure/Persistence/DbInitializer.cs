@@ -22,7 +22,9 @@ public static class DbInitializer
             Permission.Create(Guid.Parse("10000000-0000-0000-0000-000000000009"), "audit.read", "Security", "الاطلاع على سجل التدقيق الأمني", "Consulter le journal d'audit de sécurité", seedTime),
             Permission.Create(Guid.Parse("10000000-0000-0000-0000-000000000010"), "files.read", "Documents", "تحميل الوثائق المحلية", "Télécharger les documents locaux", seedTime),
             Permission.Create(Guid.Parse("10000000-0000-0000-0000-000000000011"), "files.write", "Documents", "رفع الوثائق المحلية", "Téléverser des documents locaux", seedTime),
-            Permission.Create(Guid.Parse("10000000-0000-0000-0000-000000000012"), "projects.structure.manage", "Project Structure", "إدارة العمارات والطوابق والوحدات", "Gérer les bâtiments, étages et unités", seedTime)
+            Permission.Create(Guid.Parse("10000000-0000-0000-0000-000000000012"), "projects.structure.manage", "Project Structure", "إدارة العمارات والطوابق والوحدات", "Gérer les bâtiments, étages et unités", seedTime),
+            Permission.Create(Guid.Parse("10000000-0000-0000-0000-000000000013"), "customers.read", "Customers", "الاطلاع على سجل الزبائن والمهتمين", "Consulter les clients et prospects", seedTime),
+            Permission.Create(Guid.Parse("10000000-0000-0000-0000-000000000014"), "customers.manage", "Customers", "إدارة بيانات الزبائن والمهتمين", "Gérer les clients et prospects", seedTime)
         };
 
         var existingPermCodes = await dbContext.Permissions.Select(p => p.Code).ToListAsync(ct);
@@ -76,11 +78,11 @@ public static class DbInitializer
         }
 
         Link(Role.SystemAdminCode, permMap.Keys.ToArray());
-        Link(Role.ProjectDirectorCode, "org.read", "projects.read", "projects.create", "projects.manage", "projects.access.manage", "projects.structure.manage", "files.read", "files.write");
-        Link(Role.CommercialManagerCode, "org.read", "projects.read", "files.read", "files.write");
+        Link(Role.ProjectDirectorCode, "org.read", "projects.read", "projects.create", "projects.manage", "projects.access.manage", "projects.structure.manage", "files.read", "files.write", "customers.read", "customers.manage");
+        Link(Role.CommercialManagerCode, "org.read", "projects.read", "files.read", "files.write", "customers.read", "customers.manage");
         Link(Role.FinanceOfficerCode, "org.read", "projects.read", "files.read", "files.write");
         Link(Role.SiteEngineerCode, "org.read", "projects.read", "files.read", "files.write");
-        Link(Role.LegalOfficerCode, "org.read", "projects.read", "files.read", "files.write");
+        Link(Role.LegalOfficerCode, "org.read", "projects.read", "files.read", "files.write", "customers.read");
         Link(Role.ViewerCode, "org.read", "projects.read", "files.read");
 
         await dbContext.SaveChangesAsync(ct);

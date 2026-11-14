@@ -499,10 +499,14 @@ export function ProjectStructureModal({
                   <Layers3 className="w-4 h-4 text-teal-800" />
                   {labels.floors}
                 </div>
-                {selectedBuilding && (
+                {canManage && selectedBuilding && (
                   <button
                     type="button"
-                    onClick={() => setShowFloorForm((value) => !value)}
+                    onClick={() => {
+                      setEditingFloorId(null);
+                      setFloorForm({ floorNumber: 0, nameAr: '', nameFr: '' });
+                      setShowFloorForm((value) => !value);
+                    }}
                     className="inline-flex items-center gap-1 rounded border border-slate-200 px-2 py-1 text-xs text-slate-700 hover:bg-slate-50"
                   >
                     <Plus className="w-3.5 h-3.5" />
@@ -515,7 +519,7 @@ export function ProjectStructureModal({
                 <p className="text-xs text-slate-500 p-5 text-center">{language === 'ar' ? 'اختر عمارة لعرض طوابقها.' : 'Sélectionnez un bâtiment pour afficher ses étages.'}</p>
               ) : (
                 <>
-                  {showFloorForm && (
+                  {canManage && showFloorForm && (
                     <form onSubmit={handleCreateFloor} className="p-3 space-y-3 border-b border-slate-100 bg-slate-50/70">
                       <FormField id="structure-floor-number" label={labels.floorNumber}>
                         <input
@@ -548,8 +552,12 @@ export function ProjectStructureModal({
                         />
                       </FormField>
                       <div className="flex justify-end gap-2">
-                        <button type="button" onClick={() => setShowFloorForm(false)} className="text-xs px-3 py-2 border rounded border-slate-200">{language === 'ar' ? 'إلغاء' : 'Annuler'}</button>
-                        <button type="submit" disabled={submitting} className="text-xs px-3 py-2 rounded bg-teal-800 text-white disabled:opacity-60">{labels.addFloor}</button>
+                        <button
+                          type="button"
+                          onClick={() => { setShowFloorForm(false); setEditingFloorId(null); }}
+                          className="text-xs px-3 py-2 border rounded border-slate-200"
+                        >{t.users.cancel}</button>
+                        <button type="submit" disabled={submitting} className="text-xs px-3 py-2 rounded bg-teal-800 text-white disabled:opacity-60">{editingFloorId ? labels.saveStructure : labels.addFloor}</button>
                       </div>
                     </form>
                   )}
@@ -557,20 +565,35 @@ export function ProjectStructureModal({
                     {!selectedBuilding.floors.length ? (
                       <p className="text-xs text-slate-500 p-4 text-center">{labels.noFloors}</p>
                     ) : selectedBuilding.floors.map((floor) => (
-                      <button
-                        type="button"
+                      <div
                         key={floor.id}
-                        onClick={() => setSelectedFloorId(floor.id)}
-                        className={`w-full text-start rounded-md border px-3 py-2.5 flex items-center justify-between gap-2 ${selectedFloorId === floor.id ? 'border-teal-700 bg-teal-50' : 'border-transparent hover:bg-slate-50'}`}
+                        className={`rounded-md border px-2 py-2 flex items-center gap-2 ${selectedFloorId === floor.id ? 'border-teal-700 bg-teal-50' : 'border-transparent hover:bg-slate-50'}`}
                       >
-                        <span>
-                          <span className="block text-sm font-semibold text-slate-800">
-                            <span className="font-data">{floor.floorNumber}</span> · {selectedFloorName(floor)}
+                        <button
+                          type="button"
+                          onClick={() => setSelectedFloorId(floor.id)}
+                          className="flex-1 min-w-0 text-start flex items-center justify-between gap-2"
+                        >
+                          <span>
+                            <span className="block text-sm font-semibold text-slate-800">
+                              <span className="font-data">{floor.floorNumber}</span> · {selectedFloorName(floor)}
+                            </span>
+                            <span className="block text-xs text-slate-500 mt-0.5">{floor.units.length} {labels.units}</span>
                           </span>
-                          <span className="block text-xs text-slate-500 mt-0.5">{floor.units.length} {labels.units}</span>
-                        </span>
-                        {selectedFloorId === floor.id ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
-                      </button>
+                          {selectedFloorId === floor.id ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
+                        </button>
+                        {canManage && (
+                          <button
+                            type="button"
+                            aria-label={labels.editFloor}
+                            title={labels.editFloor}
+                            onClick={() => openEditFloor(floor)}
+                            className="shrink-0 rounded border border-slate-200 p-1.5 text-slate-600 hover:bg-white"
+                          >
+                            <Pencil className="w-3.5 h-3.5" aria-hidden="true" />
+                          </button>
+                        )}
+                      </div>
                     ))}
                   </div>
                 </>

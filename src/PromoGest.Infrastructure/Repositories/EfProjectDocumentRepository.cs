@@ -39,8 +39,11 @@ public sealed class EfProjectDocumentRepository : IProjectDocumentRepository
                     file.Scope == StoredFileScope.Project,
             ct);
 
-    public async Task AddAsync(StoredFile file, CancellationToken ct = default)
-        => await _dbContext.StoredFiles.AddAsync(file, ct);
+    public Task AddAsync(StoredFile file, CancellationToken ct = default)
+    {
+        _dbContext.StoredFiles.Add(file);
+        return Task.CompletedTask;
+    }
 
     public Task SaveChangesAsync(CancellationToken ct = default)
         => _dbContext.SaveChangesAsync(ct);

@@ -1,5 +1,5 @@
 import { useEffect, useState, type FormEvent } from 'react';
-import { Building2, ChevronDown, ChevronRight, Layers3, Plus, X } from 'lucide-react';
+import { Building2, ChevronDown, ChevronRight, Layers3, Pencil, Plus, X } from 'lucide-react';
 import type {
   AppLanguage,
   BuildingStructureDto,
@@ -71,6 +71,8 @@ export function ProjectStructureModal({
   const [showBuildingForm, setShowBuildingForm] = useState(false);
   const [showFloorForm, setShowFloorForm] = useState(false);
   const [showUnitForm, setShowUnitForm] = useState(false);
+  const [editingBuildingId, setEditingBuildingId] = useState<string | null>(null);
+  const [editingFloorId, setEditingFloorId] = useState<string | null>(null);
   const [editingUnitId, setEditingUnitId] = useState<string | null>(null);
   const [editUnitForm, setEditUnitForm] = useState({
     unitNumber: '',
@@ -141,20 +143,33 @@ export function ProjectStructureModal({
     event.preventDefault();
     setError(null);
     setSubmitting(true);
+    const buildingBeingEdited = structure?.buildings.find((item) => item.id === editingBuildingId);
     try {
-      const result = await apiClient.createProjectBuilding(project.id, buildingForm);
+      const result = editingBuildingId && buildingBeingEdited
+        ? await apiClient.updateProjectBuilding(project.id, editingBuildingId, {
+            ...buildingForm,
+            expectedConcurrencyStamp: buildingBeingEdited.concurrencyStamp,
+          })
+        : await apiClient.createProjectBuilding(project.id, buildingForm);
       setStructure(result);
-      const created = result.buildings.find(
-        (building) => building.code === buildingForm.code.trim().toUpperCase()
-      );
-      if (created) {
-        setSelectedBuildingId(created.id);
-        setSelectedFloorId(null);
+      if (!editingBuildingId) {
+        const created = result.buildings.find(
+          (building) => building.code === buildingForm.code.trim().toUpperCase()
+        );
+        if (created) {
+          setSelectedBuildingId(created.id);
+          setSelectedFloorId(null);
+        }
       }
       setBuildingForm({ code: '', nameAr: '', nameFr: '', status: 'Planned' });
+      setEditingBuildingId(null);
       setShowBuildingForm(false);
     } catch (err) {
-      showMutationError(err, 'فشل إضافة العمارة.', 'Échec de l’ajout du bâtiment.');
+      showMutationError(
+        err,
+        editingBuildingId ? 'تعذر تعديل بيانات العمارة.' : 'فشل إضافة العمارة.',
+        editingBuildingId ? 'Impossible de modifier le bâtiment.' : 'Échec de l’ajout du bâtiment.'
+      );
     } finally {
       setSubmitting(false);
     }
@@ -165,27 +180,71 @@ export function ProjectStructureModal({
     if (!selectedBuilding) return;
     setError(null);
     setSubmitting(true);
+    const floorBeingEdited = selectedBuilding.floors.find((item) => item.id === editingFloorId);
     try {
-      const result = await apiClient.createBuildingFloor(
-        project.id,
-        selectedBuilding.id,
-        floorForm
-      );
+      const result = editingFloorId && floorBeingEdited
+        ? await apiClient.updateBuildingFloor(
+            project.id,
+            selectedBuilding.id,
+            editingFloorId,
+            {
+              ...floorForm,
+              expectedConcurrencyStamp: floorBeingEdited.concurrencyStamp,
+            }
+          )
+        : await apiClient.createBuildingFloor(project.id, selectedBuilding.id, floorForm);
       setStructure(result);
-      const updatedBuilding = result.buildings.find(
-        (building) => building.id === selectedBuilding.id
-      );
-      const createdFloor = updatedBuilding?.floors.find(
-        (floor) => floor.floorNumber === floorForm.floorNumber
-      );
-      if (createdFloor) setSelectedFloorId(createdFloor.id);
+      if (!editingFloorId) {
+        const updatedBuilding = result.buildings.find(
+          (building) => building.id === selectedBuilding.id
+        );
+        const createdFloor = updatedBuilding?.floors.find(
+          (floor) => floor.floorNumber === floorForm.floorNumber
+        );
+        if (createdFloor) setSelectedFloorId(createdFloor.id);
+      }
       setFloorForm({ floorNumber: 0, nameAr: '', nameFr: '' });
+      setEditingFloorId(null);
       setShowFloorForm(false);
     } catch (err) {
-      showMutationError(err, 'فشل إضافة الطابق.', 'Échec de l’ajout de l’étage.');
+      showMutationError(
+        err,
+        editingFloorId ? 'تعذر تعديل بيانات الطابق.' : 'فشل إضافة الطابق.',
+        editingFloorId ? 'Impossible de modifier l’étage.' : 'Échec de l’ajout de l’étage.'
+      );
     } finally {
       setSubmitting(false);
     }
+  };
+
+  const openBuildingEditor = (building: BuildingStructureDto) => {
+    setSelectedBuildingId(building.id);
+    setSelectedFloorId(null);
+    setEditingBuildingId(building.id);
+    setBuildingForm({
+      code: building.code,
+      nameAr: building.nameAr,
+      nameFr: building.nameFr,
+      status: building.status,
+    });
+    setEditingFloorId(null);
+    setShowFloorForm(false);
+    setShowUnitForm(false);
+    setShowBuildingForm(true);
+    setError(null);
+  };
+
+  const openFloorEditor = (floor: BuildingFloorDto) => {
+    setEditingFloorId(floor.id);
+    setFloorForm({
+      floorNumber: floor.floorNumber,
+      nameAr: floor.nameAr,
+      nameFr: floor.nameFr,
+    });
+    setShowBuildingForm(false);
+    setShowFloorForm(true);
+    setShowUnitForm(false);
+    setError(null);
   };
 
   const handleCreateUnit = async (event: FormEvent) => {
@@ -370,7 +429,11 @@ export function ProjectStructureModal({
                 </div>
                 <button
                   type="button"
-                  onClick={() => setShowBuildingForm((value) => !value)}
+                  onClick={() => {
+                    setEditingBuildingId(null);
+                    setBuildingForm({ code: '', nameAr: '', nameFr: '', status: 'Planned' });
+                    setShowBuildingForm((value) => !value);
+                  }}
                   className="inline-flex items-center gap-1 rounded border border-slate-200 px-2 py-1 text-xs text-slate-700 hover:bg-slate-50"
                 >
                   <Plus className="w-3.5 h-3.5" />
@@ -422,11 +485,11 @@ export function ProjectStructureModal({
                     </select>
                   </FormField>
                   <div className="flex justify-end gap-2">
-                    <button type="button" onClick={() => setShowBuildingForm(false)} className="text-xs px-3 py-2 border rounded border-slate-200">
+                    <button type="button" onClick={() => { setShowBuildingForm(false); setEditingBuildingId(null); }} className="text-xs px-3 py-2 border rounded border-slate-200">
                       {t.users.cancel}
                     </button>
                     <button type="submit" disabled={submitting} className="text-xs px-3 py-2 rounded bg-teal-800 text-white disabled:opacity-60">
-                      {labels.createBuilding}
+                      {editingBuildingId ? labels.saveBuilding : labels.createBuilding}
                     </button>
                   </div>
                 </form>
@@ -436,27 +499,41 @@ export function ProjectStructureModal({
                 {!structure?.buildings.length ? (
                   <p className="text-xs text-slate-500 p-4 text-center">{labels.structureEmpty}</p>
                 ) : structure.buildings.map((building) => (
-                  <button
-                    type="button"
+                  <div
                     key={building.id}
-                    onClick={() => {
-                      setSelectedBuildingId(building.id);
-                      setSelectedFloorId(null);
-                      setShowFloorForm(false);
-                      setShowUnitForm(false);
-                    }}
-                    className={`w-full text-start rounded-md border px-3 py-2.5 flex items-center justify-between gap-2 ${selectedBuildingId === building.id ? 'border-teal-700 bg-teal-50' : 'border-transparent hover:bg-slate-50'}`}
+                    className={`rounded-md border px-2 py-2 flex items-center gap-2 ${selectedBuildingId === building.id ? 'border-teal-700 bg-teal-50' : 'border-transparent hover:bg-slate-50'}`}
                   >
-                    <span className="min-w-0">
-                      <span className="block text-sm font-semibold text-slate-800 truncate">
-                        <span className="font-data">{building.code}</span> · {selectedBuildingName(building)}
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setSelectedBuildingId(building.id);
+                        setSelectedFloorId(null);
+                        setEditingFloorId(null);
+                        setShowFloorForm(false);
+                        setShowUnitForm(false);
+                      }}
+                      className="flex-1 min-w-0 text-start flex items-center justify-between gap-2"
+                    >
+                      <span className="min-w-0">
+                        <span className="block text-sm font-semibold text-slate-800 truncate">
+                          <span className="font-data">{building.code}</span> · {selectedBuildingName(building)}
+                        </span>
+                        <span className="block text-xs text-slate-500 mt-0.5">
+                          {building.floors.length} {labels.floors} · {statusLabel(building.status)}
+                        </span>
                       </span>
-                      <span className="block text-xs text-slate-500 mt-0.5">
-                        {building.floors.length} {labels.floors} · {statusLabel(building.status)}
-                      </span>
-                    </span>
-                    {selectedBuildingId === building.id ? <ChevronDown className="w-4 h-4 shrink-0" /> : <ChevronRight className="w-4 h-4 shrink-0" />}
-                  </button>
+                      {selectedBuildingId === building.id ? <ChevronDown className="w-4 h-4 shrink-0" /> : <ChevronRight className="w-4 h-4 shrink-0" />}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => openBuildingEditor(building)}
+                      title={labels.editBuilding}
+                      aria-label={labels.editBuilding}
+                      className="p-2 rounded text-slate-600 hover:bg-white border border-transparent hover:border-slate-200"
+                    >
+                      <Pencil className="w-3.5 h-3.5" aria-hidden="true" />
+                    </button>
+                  </div>
                 ))}
               </div>
             </section>
@@ -470,7 +547,11 @@ export function ProjectStructureModal({
                 {selectedBuilding && (
                   <button
                     type="button"
-                    onClick={() => setShowFloorForm((value) => !value)}
+                    onClick={() => {
+                      setEditingFloorId(null);
+                      setFloorForm({ floorNumber: 0, nameAr: '', nameFr: '' });
+                      setShowFloorForm((value) => !value);
+                    }}
                     className="inline-flex items-center gap-1 rounded border border-slate-200 px-2 py-1 text-xs text-slate-700 hover:bg-slate-50"
                   >
                     <Plus className="w-3.5 h-3.5" />
@@ -516,8 +597,8 @@ export function ProjectStructureModal({
                         />
                       </FormField>
                       <div className="flex justify-end gap-2">
-                        <button type="button" onClick={() => setShowFloorForm(false)} className="text-xs px-3 py-2 border rounded border-slate-200">{language === 'ar' ? 'إلغاء' : 'Annuler'}</button>
-                        <button type="submit" disabled={submitting} className="text-xs px-3 py-2 rounded bg-teal-800 text-white disabled:opacity-60">{labels.addFloor}</button>
+                        <button type="button" onClick={() => { setShowFloorForm(false); setEditingFloorId(null); }} className="text-xs px-3 py-2 border rounded border-slate-200">{language === 'ar' ? 'إلغاء' : 'Annuler'}</button>
+                        <button type="submit" disabled={submitting} className="text-xs px-3 py-2 rounded bg-teal-800 text-white disabled:opacity-60">{editingFloorId ? labels.saveFloor : labels.addFloor}</button>
                       </div>
                     </form>
                   )}
@@ -525,20 +606,36 @@ export function ProjectStructureModal({
                     {!selectedBuilding.floors.length ? (
                       <p className="text-xs text-slate-500 p-4 text-center">{labels.noFloors}</p>
                     ) : selectedBuilding.floors.map((floor) => (
-                      <button
-                        type="button"
+                      <div
                         key={floor.id}
-                        onClick={() => setSelectedFloorId(floor.id)}
-                        className={`w-full text-start rounded-md border px-3 py-2.5 flex items-center justify-between gap-2 ${selectedFloorId === floor.id ? 'border-teal-700 bg-teal-50' : 'border-transparent hover:bg-slate-50'}`}
+                        className={`rounded-md border px-2 py-2 flex items-center gap-2 ${selectedFloorId === floor.id ? 'border-teal-700 bg-teal-50' : 'border-transparent hover:bg-slate-50'}`}
                       >
-                        <span>
-                          <span className="block text-sm font-semibold text-slate-800">
-                            <span className="font-data">{floor.floorNumber}</span> · {selectedFloorName(floor)}
+                        <button
+                          type="button"
+                          onClick={() => setSelectedFloorId(floor.id)}
+                          className="flex-1 min-w-0 text-start flex items-center justify-between gap-2"
+                        >
+                          <span>
+                            <span className="block text-sm font-semibold text-slate-800">
+                              <span className="font-data">{floor.floorNumber}</span> · {selectedFloorName(floor)}
+                            </span>
+                            <span className="block text-xs text-slate-500 mt-0.5">{floor.units.length} {labels.units}</span>
                           </span>
-                          <span className="block text-xs text-slate-500 mt-0.5">{floor.units.length} {labels.units}</span>
-                        </span>
-                        {selectedFloorId === floor.id ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
-                      </button>
+                          {selectedFloorId === floor.id ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setSelectedFloorId(floor.id);
+                            openFloorEditor(floor);
+                          }}
+                          title={labels.editFloor}
+                          aria-label={labels.editFloor}
+                          className="p-2 rounded text-slate-600 hover:bg-white border border-transparent hover:border-slate-200"
+                        >
+                          <Pencil className="w-3.5 h-3.5" aria-hidden="true" />
+                        </button>
+                      </div>
                     ))}
                   </div>
                 </>

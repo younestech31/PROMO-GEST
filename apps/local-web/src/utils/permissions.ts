@@ -1,9 +1,17 @@
-import type { AuthenticatedUser, ProjectDto } from '../types/erp';
+import type { AuthenticatedUser, ProjectDto, ProjectMemberDto } from '../types/erp';
 
 export function hasPermission(user: AuthenticatedUser | null, permissionCode: string): boolean {
   if (!user || !user.isActive) return false;
   if (user.isSystemAdministrator) return true;
   return user.permissions.includes(permissionCode);
+}
+
+function getProjectMembership(
+  user: AuthenticatedUser | null,
+  project: ProjectDto
+): ProjectMemberDto | undefined {
+  if (!user || !user.isActive || user.isSystemAdministrator) return undefined;
+  return project.members.find((member) => member.userId === user.id);
 }
 
 export function canManageUsers(user: AuthenticatedUser | null): boolean {
@@ -14,35 +22,30 @@ export function canCreateProject(user: AuthenticatedUser | null): boolean {
   return hasPermission(user, 'projects.create');
 }
 
-export function canManageProjects(user: AuthenticatedUser | null): boolean {
-  return hasPermission(user, 'projects.manage');
+/** Project master-data management requires both the action permission and explicit Project Manager membership. */
+export function canManageProjects(user: AuthenticatedUser | null, project?: ProjectDto): boolean {
+  if (!user || !user.isActive) return false;
+  if (user.isSystemAdministrator) return true;
+  if (!project || !hasPermission(user, 'projects.manage')) return false;
+  return getProjectMembership(user, project)?.roleInProject === 'ProjectManager';
 }
 
+/** Managing a project's team is never granted by an organization-wide role alone. */
 export function canManageProjectAccess(user: AuthenticatedUser | null, project?: ProjectDto): boolean {
   if (!user || !user.isActive) return false;
-  if (user.isSystemAdministrator || hasPermission(user, 'projects.access.manage')) {
-    return true;
-  }
-  if (!project) return false;
-  return project.members.some(
-    (m) => m.userId === user.id && m.roleInProject === 'ProjectManager'
-  );
+  if (user.isSystemAdministrator) return true;
+  if (!project || !hasPermission(user, 'projects.access.manage')) return false;
+  return getProjectMembership(user, project)?.roleInProject === 'ProjectManager';
 }
 
+/** Project membership supplies the resource scope; project capabilities supply structure-management authority. */
 export function canManageProjectStructure(user: AuthenticatedUser | null, project: ProjectDto): boolean {
   if (!user || !user.isActive) return false;
-  if (
-    user.isSystemAdministrator ||
-    hasPermission(user, 'projects.manage') ||
-    hasPermission(user, 'projects.structure.manage')
-  ) {
-    return true;
-  }
-  return project.members.some(
-    (member) =>
-      member.userId === user.id &&
-      (member.canManageConstruction || member.roleInProject === 'ProjectManager')
-  );
+  if (user.isSystemAdministrator) return true;
+  const membership = getProjectMembership(user, project);
+  return Boolean(membership && (
+    membership.canManageConstruction || membership.roleInProject === 'ProjectManager'
+  ));
 }
 
 export function canViewAuditLogs(user: AuthenticatedUser | null): boolean {
@@ -52,64 +55,51 @@ export function canViewAuditLogs(user: AuthenticatedUser | null): boolean {
 export function canReadProjectDocuments(user: AuthenticatedUser | null, project: ProjectDto): boolean {
   if (!user || !user.isActive) return false;
   if (user.isSystemAdministrator) return true;
-  const isProjectScoped = project.members.some((member) => member.userId === user.id) ||
-    user.permissions.includes('projects.manage');
-  return isProjectScoped && user.permissions.includes('files.read');
+  return Boolean(getProjectMembership(user, project)) && hasPermission(user, 'files.read');
 }
 
 export function canUploadProjectDocuments(user: AuthenticatedUser | null, project: ProjectDto): boolean {
   if (!user || !user.isActive) return false;
   if (user.isSystemAdministrator) return true;
-  const membership = project.members.find((member) => member.userId === user.id);
-  const isProjectScoped = Boolean(membership) || user.permissions.includes('projects.manage');
-  const hasDocumentManagement = membership?.canManageDocuments === true ||
-    user.permissions.includes('projects.manage');
-  return isProjectScoped && hasDocumentManagement &&
-    user.permissions.includes('files.read') && user.permissions.includes('files.write');
+  const membership = getProjectMembership(user, project);
+  return Boolean(membership?.canManageDocuments) &&
+    hasPermission(user, 'files.read') &&
+    hasPermission(user, 'files.write');
 }
-
 
 export function canReadProjectCustomers(user: AuthenticatedUser | null, project: ProjectDto): boolean {
   if (!user || !user.isActive) return false;
   if (user.isSystemAdministrator) return true;
-  const isProjectScoped = project.members.some((member) => member.userId === user.id) ||
-    user.permissions.includes('projects.manage');
-  return isProjectScoped && user.permissions.includes('customers.read');
+  return Boolean(getProjectMembership(user, project)) && hasPermission(user, 'customers.read');
 }
 
 export function canManageProjectCustomers(user: AuthenticatedUser | null, project: ProjectDto): boolean {
   if (!user || !user.isActive) return false;
   if (user.isSystemAdministrator) return true;
-  const membership = project.members.find((member) => member.userId === user.id);
-  const isProjectScoped = Boolean(membership) || user.permissions.includes('projects.manage');
-  const canManageInProject = membership?.canManageSales === true ||
-    membership?.roleInProject === 'ProjectManager' ||
-    user.permissions.includes('projects.manage');
-  return isProjectScoped && canManageInProject && user.permissions.includes('customers.manage');
+  const membership = getProjectMembership(user, project);
+  const canManageSales = membership?.canManageSales === true ||
+    membership?.roleInProject === 'ProjectManager';
+  return canManageSales &&
+    hasPermission(user, 'customers.read') &&
+    hasPermission(user, 'customers.manage');
 }
-
 
 export function canReadProjectSalesReservations(user: AuthenticatedUser | null, project: ProjectDto): boolean {
   if (!user || !user.isActive) return false;
   if (user.isSystemAdministrator) return true;
-  const isProjectScoped = project.members.some((member) => member.userId === user.id) ||
-    user.permissions.includes('projects.manage');
-  return isProjectScoped &&
-    user.permissions.includes('sales.reservations.read') &&
-    user.permissions.includes('customers.read');
+  return Boolean(getProjectMembership(user, project)) &&
+    hasPermission(user, 'sales.reservations.read') &&
+    hasPermission(user, 'customers.read');
 }
 
 export function canManageProjectSalesReservations(user: AuthenticatedUser | null, project: ProjectDto): boolean {
   if (!user || !user.isActive) return false;
   if (user.isSystemAdministrator) return true;
-  const membership = project.members.find((member) => member.userId === user.id);
-  const isProjectScoped = Boolean(membership) || user.permissions.includes('projects.manage');
-  const canManageInProject = membership?.canManageSales === true ||
-    membership?.roleInProject === 'ProjectManager' ||
-    user.permissions.includes('projects.manage');
-  return isProjectScoped &&
-    canManageInProject &&
-    user.permissions.includes('sales.reservations.read') &&
-    user.permissions.includes('sales.reservations.manage') &&
-    user.permissions.includes('customers.read');
+  const membership = getProjectMembership(user, project);
+  const canManageSales = membership?.canManageSales === true ||
+    membership?.roleInProject === 'ProjectManager';
+  return canManageSales &&
+    hasPermission(user, 'sales.reservations.read') &&
+    hasPermission(user, 'sales.reservations.manage') &&
+    hasPermission(user, 'customers.read');
 }

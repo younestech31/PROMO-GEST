@@ -296,7 +296,7 @@ export const apiClient = {
     }),
 
   listProjectDocuments: (projectId: string) =>
-    requestJson<ProjectDocumentDto[]>(`/api/projects/${encodeURIComponent(projectId)}/documents`, { method: 'GET' }),
+    requestJson<ProjectDocumentDto[]>(`/api/projects/${encodeURIComponent(projectId)}/documents`, { method: 'GET', cache: 'no-store' }),
 
   uploadProjectDocument: (projectId: string, form: FormData) =>
     requestJson<ProjectDocumentDto>(`/api/projects/${encodeURIComponent(projectId)}/documents`, {

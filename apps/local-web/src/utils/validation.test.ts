@@ -5,7 +5,19 @@ import {
   validateCreateEmployee,
   validateSetupRequest,
 } from './validation';
-import { canManageProjectAccess, canManageUsers, canViewAuditLogs } from './permissions';
+import {
+  canManageProjectAccess,
+  canManageProjectCustomers,
+  canManageProjectSalesReservations,
+  canManageProjectStructure,
+  canManageProjects,
+  canReadProjectCustomers,
+  canReadProjectDocuments,
+  canReadProjectSalesReservations,
+  canUploadProjectDocuments,
+  canManageUsers,
+  canViewAuditLogs,
+} from './permissions';
 import type { AuthenticatedUser, ProjectDto } from '../types/erp';
 
 test('Password strength requires >= 10 chars, upper, lower, and digit', () => {
@@ -119,4 +131,56 @@ test('Permission helpers enforce System Admin and project-level roles', () => {
   assert.equal(canManageUsers(regularUser), false);
   assert.equal(canViewAuditLogs(regularUser), false);
   assert.equal(canManageProjectAccess(regularUser, project), false);
+
+  const projectDirectorWithoutMembership: AuthenticatedUser = {
+    ...regularUser,
+    permissions: [
+      'projects.read',
+      'projects.manage',
+      'projects.access.manage',
+      'projects.structure.manage',
+      'files.read',
+      'files.write',
+      'customers.read',
+      'customers.manage',
+      'sales.reservations.read',
+      'sales.reservations.manage',
+    ],
+  };
+
+  // Organization-level action permissions never substitute for explicit project membership.
+  assert.equal(canManageProjects(projectDirectorWithoutMembership, project), false);
+  assert.equal(canManageProjectAccess(projectDirectorWithoutMembership, project), false);
+  assert.equal(canManageProjectStructure(projectDirectorWithoutMembership, project), false);
+  assert.equal(canReadProjectDocuments(projectDirectorWithoutMembership, project), false);
+  assert.equal(canUploadProjectDocuments(projectDirectorWithoutMembership, project), false);
+  assert.equal(canReadProjectCustomers(projectDirectorWithoutMembership, project), false);
+  assert.equal(canManageProjectCustomers(projectDirectorWithoutMembership, project), false);
+  assert.equal(canReadProjectSalesReservations(projectDirectorWithoutMembership, project), false);
+  assert.equal(canManageProjectSalesReservations(projectDirectorWithoutMembership, project), false);
+
+  const assignedProject: ProjectDto = {
+    ...project,
+    members: [{
+      id: 'membership-1',
+      userId: projectDirectorWithoutMembership.id,
+      username: projectDirectorWithoutMembership.username,
+      fullName: projectDirectorWithoutMembership.fullName,
+      roleInProject: 'ProjectManager',
+      canViewFinancials: true,
+      canManageSales: true,
+      canManageConstruction: true,
+      canManageDocuments: true,
+      assignedAtUtc: '2026-11-15T10:00:00Z',
+    }],
+  };
+  assert.equal(canManageProjects(projectDirectorWithoutMembership, assignedProject), true);
+  assert.equal(canManageProjectAccess(projectDirectorWithoutMembership, assignedProject), true);
+  assert.equal(canManageProjectStructure(projectDirectorWithoutMembership, assignedProject), true);
+  assert.equal(canReadProjectDocuments(projectDirectorWithoutMembership, assignedProject), true);
+  assert.equal(canUploadProjectDocuments(projectDirectorWithoutMembership, assignedProject), true);
+  assert.equal(canReadProjectCustomers(projectDirectorWithoutMembership, assignedProject), true);
+  assert.equal(canManageProjectCustomers(projectDirectorWithoutMembership, assignedProject), true);
+  assert.equal(canReadProjectSalesReservations(projectDirectorWithoutMembership, assignedProject), true);
+  assert.equal(canManageProjectSalesReservations(projectDirectorWithoutMembership, assignedProject), true);
 });

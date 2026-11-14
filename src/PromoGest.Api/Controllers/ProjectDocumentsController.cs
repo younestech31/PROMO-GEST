@@ -22,6 +22,8 @@ public sealed class ProjectDocumentsController : ControllerBase
     [HttpGet]
     public async Task<ActionResult<IReadOnlyList<ProjectDocumentDto>>> List(Guid projectId, CancellationToken ct)
     {
+        Response.Headers.CacheControl = "no-store, no-cache";
+        Response.Headers.Pragma = "no-cache";
         var documents = await _documentService.ListAsync(GetActorUserId(), projectId, GetMetadata(), ct);
         return Ok(documents);
     }

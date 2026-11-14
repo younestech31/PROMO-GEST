@@ -159,6 +159,15 @@ public sealed class PropertyUnit : BaseEntity
         if (!Enum.IsDefined(status))
             throw new DomainException("UNIT_STATUS_INVALID", "A valid property unit status is required.");
 
+        if (RequiresSalesWorkflow(status))
+        {
+            throw new DomainException(
+                "UNIT_STATUS_REQUIRES_SALES_WORKFLOW",
+                "Reserved, sold, and delivered states can only be assigned by the sales and contract workflow.");
+        }
+
+        ValidateMeasurements(grossAreaSquareMeters, netAreaSquareMeters, roomsCount);
+
         const decimal maximumArea = 99_999_999.99m;
         if (grossAreaSquareMeters is < 0 or > maximumArea ||
             netAreaSquareMeters is < 0 or > maximumArea)
@@ -194,6 +203,110 @@ public sealed class PropertyUnit : BaseEntity
             CreatedAtUtc = nowUtc,
             UpdatedAtUtc = nowUtc
         };
+    }
+
+    public void UpdateDetails(
+        string unitNumber,
+        PropertyUnitType unitType,
+        decimal? grossAreaSquareMeters,
+        decimal? netAreaSquareMeters,
+        int? roomsCount,
+        DateTimeOffset nowUtc)
+    {
+        if (Status is PropertyUnitStatus.Reserved or PropertyUnitStatus.Sold or PropertyUnitStatus.Delivered)
+        {
+            throw new DomainException(
+                "UNIT_DETAILS_LOCKED_BY_SALES_WORKFLOW",
+                "Property unit details are locked while the unit is reserved, sold, or delivered.");
+        }
+
+        if (string.IsNullOrWhiteSpace(unitNumber))
+            throw new DomainException("UNIT_NUMBER_REQUIRED", "Property unit number is required.");
+
+        var normalizedUnitNumber = unitNumber.Trim().ToUpperInvariant();
+        EnsureLength(normalizedUnitNumber, 40, "UNIT_NUMBER_TOO_LONG");
+
+        if (!Enum.IsDefined(unitType))
+            throw new DomainException("UNIT_TYPE_INVALID", "A valid property unit type is required.");
+
+        ValidateMeasurements(grossAreaSquareMeters, netAreaSquareMeters, roomsCount);
+
+        UnitNumber = normalizedUnitNumber;
+        NormalizedUnitNumber = normalizedUnitNumber;
+        UnitType = unitType;
+        GrossAreaSquareMeters = grossAreaSquareMeters;
+        NetAreaSquareMeters = netAreaSquareMeters;
+        RoomsCount = roomsCount;
+        Touch(nowUtc);
+    }
+
+    public void ChangeStatus(PropertyUnitStatus newStatus, DateTimeOffset nowUtc)
+    {
+        if (!Enum.IsDefined(newStatus))
+            throw new DomainException("UNIT_STATUS_INVALID", "A valid property unit status is required.");
+
+        if (RequiresSalesWorkflow(newStatus))
+        {
+            throw new DomainException(
+                "UNIT_STATUS_REQUIRES_SALES_WORKFLOW",
+                "Reserved, sold, and delivered states can only be assigned by the sales and contract workflow.");
+        }
+
+        if (RequiresSalesWorkflow(Status))
+        {
+            throw new DomainException(
+                "UNIT_STATUS_LOCKED_BY_SALES_WORKFLOW",
+                "The status of a reserved, sold, or delivered unit can only be changed by the sales and contract workflow.");
+        }
+
+        if (newStatus == Status)
+            return;
+
+        var transitionAllowed = (Status, newStatus) switch
+        {
+            (PropertyUnitStatus.Planned, PropertyUnitStatus.UnderConstruction) => true,
+            (PropertyUnitStatus.Planned, PropertyUnitStatus.Withdrawn) => true,
+            (PropertyUnitStatus.UnderConstruction, PropertyUnitStatus.AvailableForSale) => true,
+            (PropertyUnitStatus.UnderConstruction, PropertyUnitStatus.Withdrawn) => true,
+            (PropertyUnitStatus.AvailableForSale, PropertyUnitStatus.Withdrawn) => true,
+            _ => false
+        };
+
+        if (!transitionAllowed)
+        {
+            throw new DomainException(
+                "UNIT_STATUS_TRANSITION_INVALID",
+                $"The transition from {Status} to {newStatus} is not allowed.");
+        }
+
+        Status = newStatus;
+        Touch(nowUtc);
+    }
+
+    private static bool RequiresSalesWorkflow(PropertyUnitStatus status)
+        => status is PropertyUnitStatus.Reserved or PropertyUnitStatus.Sold or PropertyUnitStatus.Delivered;
+
+    private static void ValidateMeasurements(
+        decimal? grossAreaSquareMeters,
+        decimal? netAreaSquareMeters,
+        int? roomsCount)
+    {
+        const decimal maximumArea = 99_999_999.99m;
+        if (grossAreaSquareMeters is < 0 or > maximumArea ||
+            netAreaSquareMeters is < 0 or > maximumArea)
+        {
+            throw new DomainException("UNIT_AREA_INVALID", "Unit areas must be non-negative and fit the supported range.");
+        }
+
+        if (grossAreaSquareMeters.HasValue &&
+            netAreaSquareMeters.HasValue &&
+            netAreaSquareMeters.Value > grossAreaSquareMeters.Value)
+        {
+            throw new DomainException("UNIT_NET_AREA_EXCEEDS_GROSS", "Net area cannot exceed gross area.");
+        }
+
+        if (roomsCount is < 0 or > 20)
+            throw new DomainException("UNIT_ROOMS_COUNT_INVALID", "Room count must be between 0 and 20.");
     }
 
     private static void EnsureLength(string value, int maximumLength, string errorCode)

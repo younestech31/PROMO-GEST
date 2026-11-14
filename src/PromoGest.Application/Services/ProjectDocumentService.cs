@@ -248,14 +248,14 @@ public sealed class ProjectDocumentService
             ? Array.Empty<string>()
             : await _userRepository.GetEffectivePermissionsAsync(actorUserId, ct);
 
-        var hasGlobalProjectAccess = permissions.Contains("projects.manage", StringComparer.OrdinalIgnoreCase);
-        var hasScope = actor.IsSystemAdministrator || membership is not null || hasGlobalProjectAccess;
+        var hasProjectMembership = membership is not null;
         var hasReadPermission = actor.IsSystemAdministrator ||
             permissions.Contains("files.read", StringComparer.OrdinalIgnoreCase);
         var hasWritePermission = actor.IsSystemAdministrator ||
             permissions.Contains("files.write", StringComparer.OrdinalIgnoreCase);
-        var canAccess = hasScope && hasReadPermission &&
-            (!canWrite || (hasWritePermission && (actor.IsSystemAdministrator || hasGlobalProjectAccess || membership?.CanManageDocuments == true)));
+        var canAccess = (actor.IsSystemAdministrator || hasProjectMembership) && hasReadPermission &&
+            (!canWrite || (hasWritePermission &&
+                (actor.IsSystemAdministrator || membership?.CanManageDocuments == true)));
 
         if (!canAccess)
         {

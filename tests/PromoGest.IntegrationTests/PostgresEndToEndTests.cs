@@ -577,6 +577,40 @@ public sealed class PostgresEndToEndTests : IClassFixture<PostgreSql18Integratio
             Assert.Equal(HttpStatusCode.Created, projectResp.StatusCode);
             var createdProject = await projectResp.Content.ReadFromJsonAsync<ProjectDto>();
 
+            // Project master-data updates are permitted to the system administrator and preserve the immutable project code.
+            var projectUpdate = new UpdateProjectRequest(
+                "إقامة الأطلس المحدثة",
+                "Résidence Atlas Mise à Jour",
+                "31",
+                "Oran",
+                "Bir El Djir",
+                "Nouvelle adresse du projet",
+                "TF-ORAN-2026-001",
+                "PC-ORAN-2026-010",
+                new DateOnly(2026, 11, 13),
+                "UnderConstruction",
+                470_000_000m,
+                4,
+                64);
+            var updateProjectResp = await adminClient.PutAsJsonAsync($"/api/projects/{createdProject!.Id}", projectUpdate);
+            Assert.Equal(HttpStatusCode.OK, updateProjectResp.StatusCode);
+            var updatedProject = await updateProjectResp.Content.ReadFromJsonAsync<ProjectDto>();
+            Assert.NotNull(updatedProject);
+            Assert.Equal(createdProject.Code, updatedProject!.Code);
+            Assert.Equal(projectUpdate.NameAr, updatedProject.NameAr);
+            Assert.Equal(projectUpdate.WilayaCode, updatedProject.WilayaCode);
+            Assert.Equal(projectUpdate.Status, updatedProject.Status);
+            using (var scope = factory.Services.CreateScope())
+            {
+                var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+                var persistedProject = await db.Projects.SingleAsync(project => project.Id == createdProject.Id);
+                Assert.Equal(projectUpdate.NameFr, persistedProject.NameFr);
+                Assert.Equal(projectUpdate.EstimatedBudgetDzd, persistedProject.EstimatedBudgetDzd);
+                Assert.Contains(await db.AuditLogs.ToListAsync(), entry =>
+                    entry.EventType == "PROJECT_UPDATED" &&
+                    entry.TargetEntityId == createdProject.Id.ToString());
+            }
+
             // 8. Authenticate as employee -> test CSRF check, IDOR rejection, role escalation rejection, membership grant & revoke, deactivation session invalidation
             using var employeeClient = factory.CreateClient(new WebApplicationFactoryClientOptions { HandleCookies = true });
             await AttachCsrfTokenAsync(employeeClient);
@@ -584,6 +618,12 @@ public sealed class PostgresEndToEndTests : IClassFixture<PostgreSql18Integratio
             var empLogin = await employeeClient.PostAsJsonAsync("/api/auth/login", new LoginRequest("yasmine.sales", "YasminePass#2026"));
             Assert.Equal(HttpStatusCode.OK, empLogin.StatusCode);
             await AttachCsrfTokenAsync(employeeClient);
+
+            // A regular employee cannot update project master data, even with a valid session and CSRF token.
+            var deniedProjectUpdate = await employeeClient.PutAsJsonAsync(
+                $"/api/projects/{createdProject.Id}",
+                projectUpdate with { NameAr = "تعديل غير مصرح به" });
+            Assert.Equal(HttpStatusCode.Forbidden, deniedProjectUpdate.StatusCode);
 
             // IDOR blocked + audited
             var forbiddenAttempt = await employeeClient.GetAsync($"/api/projects/{createdProject!.Id}");

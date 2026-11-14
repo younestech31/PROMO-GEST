@@ -52,7 +52,8 @@ public sealed class ApplicationSecurityAndFoundationTests
             var t = new DateTimeOffset(2026, 1, 1, 0, 0, 0, TimeSpan.Zero);
             var adminRole = Role.Create(Guid.NewGuid(), Role.SystemAdminCode, "مدير النظام", "Administrateur Système", "Admin", "Admin", true, t);
             var commRole = Role.Create(Guid.NewGuid(), Role.CommercialManagerCode, "مسؤول المبيعات", "Responsable Commercial", "Sales", "Sales", false, t);
-            Roles.AddRange(new[] { adminRole, commRole });
+            var siteEngineerRole = Role.Create(Guid.NewGuid(), Role.SiteEngineerCode, "مهندس الموقع", "Ingénieur de chantier", "Site", "Site", false, t);
+            Roles.AddRange(new[] { adminRole, commRole, siteEngineerRole });
 
             var pRead = Permission.Create(Guid.NewGuid(), "projects.read", "Projects", "قراءة", "Lire", t);
             var pUsers = Permission.Create(Guid.NewGuid(), "users.manage", "Admin", "مستخدمين", "Utilisateurs", t);

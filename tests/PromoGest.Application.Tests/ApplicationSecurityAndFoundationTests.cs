@@ -396,7 +396,7 @@ public sealed class ApplicationSecurityAndFoundationTests
             floor.Id,
             new UpdateBuildingFloorRequest(1, "الطابق الأول", "Premier étage"),
             metadata);
-        var updatedFloor = Assert.Single(updatedBuildingResponse.Buildings).Floors.Single();
+        var updatedFloor = Assert.Single(Assert.Single(updatedFloorResponse.Buildings).Floors);
         Assert.Equal(1, updatedFloor.FloorNumber);
         Assert.Equal("الطابق الأول", updatedFloor.NameAr);
 
@@ -438,7 +438,7 @@ public sealed class ApplicationSecurityAndFoundationTests
             structureSvc.CreateBuildingAsync(
                 init.SystemAdminUserId,
                 project.Id,
-                new CreateBuildingRequest(" a ", "العمارة", "Bâtiment", "Planned"),
+                new CreateBuildingRequest(" a-new ", "العمارة", "Bâtiment", "Planned"),
                 metadata));
         Assert.Equal("BUILDING_CODE_EXISTS", duplicateBuilding.Code);
 
@@ -447,7 +447,7 @@ public sealed class ApplicationSecurityAndFoundationTests
                 init.SystemAdminUserId,
                 project.Id,
                 building.Id,
-                new CreateBuildingFloorRequest(0, "الطابق", "Étage"),
+                new CreateBuildingFloorRequest(1, "الطابق", "Étage"),
                 metadata));
         Assert.Equal("FLOOR_NUMBER_EXISTS", duplicateFloor.Code);
 
@@ -458,7 +458,7 @@ public sealed class ApplicationSecurityAndFoundationTests
                 building.Id,
                 floor.Id,
                 new CreatePropertyUnitRequest(
-                    "a-001",
+                    "a-101",
                     "Apartment",
                     "Planned",
                     100m,

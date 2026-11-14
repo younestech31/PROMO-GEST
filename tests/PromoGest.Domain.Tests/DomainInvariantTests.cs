@@ -278,4 +278,113 @@ public sealed class DomainInvariantTests
         Assert.DoesNotContain("\n", entry.Summary);
         Assert.Equal(300, entry.UserAgent!.Length);
     }
+
+
+    [Fact]
+    public void PropertyUnit_ReservationWorkflowReservesAndReleasesOnlyAvailableUnits()
+    {
+        var unit = PropertyUnit.Create(
+            Guid.NewGuid(),
+            "A-003",
+            PropertyUnitType.Apartment,
+            PropertyUnitStatus.AvailableForSale,
+            100m,
+            90m,
+            3,
+            Guid.NewGuid(),
+            FixedNow);
+
+        var availableStamp = unit.ConcurrencyStamp;
+        unit.ReserveForSalesWorkflow(FixedNow.AddMinutes(1));
+        Assert.Equal(PropertyUnitStatus.Reserved, unit.Status);
+        Assert.NotEqual(availableStamp, unit.ConcurrencyStamp);
+
+        var directTransition = Assert.Throws<DomainException>(() =>
+            unit.ChangeStatus(PropertyUnitStatus.AvailableForSale, FixedNow.AddMinutes(2)));
+        Assert.Equal("UNIT_STATUS_LOCKED_BY_SALES_WORKFLOW", directTransition.Code);
+
+        unit.ReleaseSalesReservation(FixedNow.AddMinutes(3));
+        Assert.Equal(PropertyUnitStatus.AvailableForSale, unit.Status);
+
+        var doubleRelease = Assert.Throws<DomainException>(() =>
+            unit.ReleaseSalesReservation(FixedNow.AddMinutes(4)));
+        Assert.Equal("UNIT_NOT_RESERVED", doubleRelease.Code);
+    }
+
+    [Fact]
+    public void ProjectSalesReservation_EnforcesActiveCancellationAndExpiryLifecycle()
+    {
+        var projectId = Guid.NewGuid();
+        var unitId = Guid.NewGuid();
+        var customerId = Guid.NewGuid();
+        var actorId = Guid.NewGuid();
+        var expiresAt = FixedNow.AddDays(7);
+        var reservation = ProjectSalesReservation.Create(
+            projectId,
+            unitId,
+            customerId,
+            "RSV-20261114-AB12CD34",
+            FixedNow,
+            expiresAt,
+            actorId,
+            FixedNow);
+
+        Assert.Equal(SalesReservationStatus.Active, reservation.Status);
+        Assert.Equal(expiresAt, reservation.ExpiresAtUtc);
+
+        var originalStamp = reservation.ConcurrencyStamp;
+        reservation.Cancel("Customer requested release", actorId, FixedNow.AddHours(1));
+        Assert.Equal(SalesReservationStatus.Cancelled, reservation.Status);
+        Assert.Equal("Customer requested release", reservation.CloseReason);
+        Assert.NotEqual(originalStamp, reservation.ConcurrencyStamp);
+
+        var repeatCancel = Assert.Throws<DomainException>(() =>
+            reservation.Cancel("Repeat", actorId, FixedNow.AddHours(2)));
+        Assert.Equal("RESERVATION_NOT_ACTIVE", repeatCancel.Code);
+
+        var expiring = ProjectSalesReservation.Create(
+            projectId,
+            Guid.NewGuid(),
+            customerId,
+            "RSV-20261114-BC23DE45",
+            FixedNow,
+            expiresAt,
+            actorId,
+            FixedNow);
+        var earlyExpiry = Assert.Throws<DomainException>(() => expiring.Expire(FixedNow.AddDays(6)));
+        Assert.Equal("RESERVATION_NOT_DUE", earlyExpiry.Code);
+
+        expiring.Expire(expiresAt);
+        Assert.Equal(SalesReservationStatus.Expired, expiring.Status);
+        Assert.Equal("EXPIRED", expiring.CloseReason);
+        Assert.Null(expiring.ClosedByUserId);
+    }
+
+    [Fact]
+    public void ProjectSalesReservation_RejectsInvalidExpiryAndCancellationReason()
+    {
+        var invalidExpiry = Assert.Throws<DomainException>(() => ProjectSalesReservation.Create(
+            Guid.NewGuid(),
+            Guid.NewGuid(),
+            Guid.NewGuid(),
+            "RSV-20261114-AB12CD34",
+            FixedNow,
+            FixedNow,
+            Guid.NewGuid(),
+            FixedNow));
+        Assert.Equal("RESERVATION_EXPIRY_INVALID", invalidExpiry.Code);
+
+        var reservation = ProjectSalesReservation.Create(
+            Guid.NewGuid(),
+            Guid.NewGuid(),
+            Guid.NewGuid(),
+            "RSV-20261114-CD34EF56",
+            FixedNow,
+            FixedNow.AddDays(1),
+            Guid.NewGuid(),
+            FixedNow);
+        var reasonRequired = Assert.Throws<DomainException>(() =>
+            reservation.Cancel(" ", Guid.NewGuid(), FixedNow));
+        Assert.Equal("RESERVATION_CLOSE_REASON_REQUIRED", reasonRequired.Code);
+    }
 }

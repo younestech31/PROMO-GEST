@@ -52,7 +52,7 @@ public sealed class Project : BaseEntity
         if (string.IsNullOrWhiteSpace(nameAr) && string.IsNullOrWhiteSpace(nameFr))
             throw new DomainException("PROJECT_NAME_REQUIRED", "Project name in Arabic or French is required.");
         if (!OrganizationSettings.IsValidAlgerianWilayaCode(wilayaCode))
-            throw new DomainException("PROJECT_WILAYA_INVALID", "Valid two-digit Algerian Wilaya code (01-58) is required.");
+            throw new DomainException("PROJECT_WILAYA_INVALID", "Valid two-digit Algerian Wilaya code (01-69) is required.");
         if (string.IsNullOrWhiteSpace(wilayaName))
             throw new DomainException("PROJECT_WILAYA_NAME_REQUIRED", "Wilaya name is required.");
         if (string.IsNullOrWhiteSpace(municipality))
@@ -111,7 +111,7 @@ public sealed class Project : BaseEntity
 
         var normalizedWilayaCode = wilayaCode?.Trim() ?? string.Empty;
         if (!OrganizationSettings.IsValidAlgerianWilayaCode(normalizedWilayaCode))
-            throw new DomainException("PROJECT_WILAYA_INVALID", "Valid two-digit Algerian Wilaya code (01-58) is required.");
+            throw new DomainException("PROJECT_WILAYA_INVALID", "Valid two-digit Algerian Wilaya code (01-69) is required.");
         if (string.IsNullOrWhiteSpace(wilayaName))
             throw new DomainException("PROJECT_WILAYA_NAME_REQUIRED", "Wilaya name is required.");
         if (string.IsNullOrWhiteSpace(municipality))

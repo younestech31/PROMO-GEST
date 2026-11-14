@@ -1013,6 +1013,10 @@ const API_ERROR_MESSAGES: Record<string, { ar: string; fr: string }> = {
     ar: 'لا يمكن إغلاق هذا الحجز لأنه لم يعد نشطاً.',
     fr: 'Cette réservation ne peut plus être clôturée car elle n’est plus active.',
   },
+  RESERVATION_EXPIRY_REACHED: {
+    ar: 'انتهت مدة الحجز؛ سيغلقه النظام آلياً وتُحدّث حالة الوحدة.',
+    fr: 'La réservation a expiré ; le système la clôturera automatiquement et actualisera l’état de l’unité.',
+  },
   RESERVATION_NOT_DUE: {
     ar: 'لم يحن موعد انتهاء هذا الحجز بعد.',
     fr: 'Cette réservation n’a pas encore atteint sa date d’expiration.',

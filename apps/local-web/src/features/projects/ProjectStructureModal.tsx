@@ -1,5 +1,5 @@
 import { useEffect, useState, type FormEvent } from 'react';
-import { Building2, ChevronDown, ChevronRight, Layers3, Plus, X } from 'lucide-react';
+import { Building2, ChevronDown, ChevronRight, Layers3, Pencil, Plus, X } from 'lucide-react';
 import type {
   AppLanguage,
   BuildingStructureDto,
@@ -14,6 +14,7 @@ import { FormField, inputBaseClass } from '../../components/FormField';
 interface ProjectStructureModalProps {
   project: ProjectDto;
   language: AppLanguage;
+  canManage: boolean;
   onClose: () => void;
 }
 
@@ -45,6 +46,7 @@ const UNIT_STATUSES = [
 export function ProjectStructureModal({
   project,
   language,
+  canManage,
   onClose,
 }: ProjectStructureModalProps) {
   const t = getTranslations(language);
@@ -60,6 +62,9 @@ export function ProjectStructureModal({
   const [showBuildingForm, setShowBuildingForm] = useState(false);
   const [showFloorForm, setShowFloorForm] = useState(false);
   const [showUnitForm, setShowUnitForm] = useState(false);
+  const [editingBuildingId, setEditingBuildingId] = useState<string | null>(null);
+  const [editingFloorId, setEditingFloorId] = useState<string | null>(null);
+  const [editingUnitId, setEditingUnitId] = useState<string | null>(null);
 
   const [buildingForm, setBuildingForm] = useState({
     code: '',

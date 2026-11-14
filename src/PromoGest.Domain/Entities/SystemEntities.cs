@@ -143,7 +143,7 @@ public sealed class StoredFile : BaseEntity
             throw new DomainException("FILE_CHECKSUM_INVALID", "Valid SHA-256 checksum is required.");
         if (string.IsNullOrWhiteSpace(category) || category.Trim().Length > 40)
             throw new DomainException("FILE_CATEGORY_INVALID", "A valid document category is required.");
-        if (description?.Trim().Length > 500)
+        if (description is not null && description.Trim().Length > 500)
             throw new DomainException("FILE_DESCRIPTION_TOO_LONG", "Document description must not exceed 500 characters.");
 
         var safeName = originalFileName.Trim().Replace('\\', '/');

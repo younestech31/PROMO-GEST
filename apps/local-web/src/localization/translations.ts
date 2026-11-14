@@ -600,6 +600,10 @@ const API_ERROR_MESSAGES: Record<string, { ar: string; fr: string }> = {
     ar: 'أعاد مضيف المعاينة أو الوسيط استجابة 403 غير متوافقة مع واجهة API. قد يكون الطلب قد حُظر قبل وصوله إلى خدمة PROMO GEST. أعد تحميل المعاينة؛ وإذا استمر الخطأ فافحص طلب initialize في تبويب Network.',
     fr: 'L’hôte d’aperçu ou son proxy a renvoyé une réponse 403 non JSON. La requête a peut-être été bloquée avant le traitement par l’API PROMO GEST. Rechargez l’aperçu et, si le problème persiste, inspectez la requête initialize dans Network.',
   },
+  CONCURRENCY_CONFLICT: {
+    ar: 'تم تعديل هذا السجل بواسطة عملية أخرى. حدّث البيانات ثم أعد المحاولة.',
+    fr: 'Cet enregistrement a été modifié par une autre opération. Rechargez les données puis réessayez.',
+  },
   FORBIDDEN_PROJECT_UPDATE: {
     ar: 'لا تملك صلاحية تعديل البيانات الأساسية لهذا المشروع.',
     fr: 'Vous ne disposez pas du droit de modifier les données principales de ce projet.',

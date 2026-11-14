@@ -37,6 +37,7 @@ All primary keys use UUIDs. Foreign keys, unique indexes, check constraints, and
 | `stored_files` | Local document metadata including category, optional description, scope, project/uploader references, byte length, and SHA-256 checksum; file contents remain on local disk |
 | `project_customers` | Project-scoped individual and legal-entity customer/prospect records, normalized contact keys, lifecycle status, and optional reference to a local project document |
 | `customer_interactions` | Customer communication and follow-up history with author and occurrence/follow-up timestamps |
+| `project_sales_reservations` | Project-scoped reservation lifecycle linked to a registered property unit and customer, including expiry/cancellation, creator/closer, and concurrency token |
 
 ### Key integrity rules
 
@@ -57,6 +58,12 @@ All primary keys use UUIDs. Foreign keys, unique indexes, check constraints, and
 - Customer and interaction enum values, phone normalization, and follow-up date ordering are enforced by database constraints as well as domain validation.
 - Customer identity-document references must resolve to a document in the same project through the application service; users without `files.read` cannot inspect linked document metadata or change the link.
 - Customer data and communication summaries are excluded from audit metadata; audit records identify the project and record IDs without copying names, phone numbers, email addresses, or interaction text.
+- Active reservations are unique per property unit through a PostgreSQL partial unique index. Reservation creation, the unit transition to `Reserved`, and the audit entry are persisted in one EF Core save.
+- A reservation can be created only for an `AvailableForSale` unit and a non-archived customer within the same project. The normal project-structure endpoint cannot assign or remove the `Reserved` state.
+- Cancellation requires a non-empty reason and releases the linked unit to `AvailableForSale` in the same database transaction. Optimistic concurrency stamps prevent stale cancellation or competing unit changes.
+- A background worker expires due active reservations. It releases the linked unit only when its state is still `Reserved`; any mismatch is audited as a warning and the worker does not overwrite the unit's state.
+- Reservation access requires the dedicated `sales.reservations.read` / `sales.reservations.manage` permissions and project scope. Mutations also require project `CanManageSales`, Project Manager role, or `projects.manage`.
+- Reservation audit metadata contains internal project/unit/customer/reservation identifiers only; customer names and contact details are excluded.
 - `customers.read` and `customers.manage` are combined with project scope. Non-administrative write access additionally requires project sales capability or Project Manager role; read-only legal access does not grant customer mutations.
 
 **Planned counts and actual counts are different measures.** `projects.planned_blocks_count` and `projects.planned_units_count` are planning targets. Actual building/unit totals are read from `buildings` and `property_units` through their floor/building relationship; they must never overwrite the planned targets.
@@ -81,6 +88,7 @@ The EF Core migration history currently includes:
 6. `20261114180000_ProjectDocumentMetadata`
 7. `20261114190000_ProjectCustomerRegistry`
 8. `20261114195931_CustomerModelSnapshotReconciliation`
+9. `20261114220000_ProjectSalesReservations`
 
 The model snapshot is maintained alongside the migrations and must remain synchronized with `AppDbContext`.
 

@@ -635,7 +635,7 @@ public sealed class PostgresEndToEndTests : IClassFixture<PostgreSql18Integratio
             // Normalized building codes are unique within the same project.
             var duplicateBuildingResponse = await adminClient.PostAsJsonAsync(
                 $"{structureUrl}/buildings",
-                new CreateBuildingRequest(" a ", "عمارة مكررة", "Bâtiment dupliqué", "Planned"));
+                new CreateBuildingRequest(" a1 ", "عمارة مكررة", "Bâtiment dupliqué", "Planned"));
             Assert.Equal(HttpStatusCode.Conflict, duplicateBuildingResponse.StatusCode);
 
             var floorsUrl = $"{structureUrl}/buildings/{createdBuilding.Id}/floors";
@@ -650,7 +650,7 @@ public sealed class PostgresEndToEndTests : IClassFixture<PostgreSql18Integratio
 
             var duplicateFloorResponse = await adminClient.PostAsJsonAsync(
                 floorsUrl,
-                new CreateBuildingFloorRequest(0, "طابق مكرر", "Étage dupliqué"));
+                new CreateBuildingFloorRequest(1, "طابق مكرر", "Étage dupliqué"));
             Assert.Equal(HttpStatusCode.Conflict, duplicateFloorResponse.StatusCode);
 
             var unitsUrl = $"{floorsUrl}/{createdFloor.Id}/units";
@@ -673,9 +673,54 @@ public sealed class PostgresEndToEndTests : IClassFixture<PostgreSql18Integratio
             Assert.Equal(96.25m, createdUnit.NetAreaSquareMeters);
             Assert.Equal(4, createdUnit.RoomsCount);
 
+            // Update existing hierarchy records without changing their identity or parent relationship.
+            var updateBuildingResponse = await adminClient.PutAsJsonAsync(
+                $"{structureUrl}/buildings/{createdBuilding.Id}",
+                new UpdateBuildingRequest("A1", "العمارة أ المحدثة", "Bâtiment A Mis à Jour", "UnderConstruction"));
+            Assert.Equal(HttpStatusCode.OK, updateBuildingResponse.StatusCode);
+            var updatedBuildingStructure = await updateBuildingResponse.Content.ReadFromJsonAsync<ProjectStructureDto>();
+            Assert.NotNull(updatedBuildingStructure);
+            var updatedBuilding = Assert.Single(updatedBuildingStructure!.Buildings);
+            Assert.Equal(createdBuilding.Id, updatedBuilding.Id);
+            Assert.Equal("A1", updatedBuilding.Code);
+            Assert.Equal("UnderConstruction", updatedBuilding.Status);
+
+            var updateFloorResponse = await adminClient.PutAsJsonAsync(
+                $"{floorsUrl}/{createdFloor.Id}",
+                new UpdateBuildingFloorRequest(1, "الطابق الأول", "Premier étage"));
+            Assert.Equal(HttpStatusCode.OK, updateFloorResponse.StatusCode);
+            var updatedFloorStructure = await updateFloorResponse.Content.ReadFromJsonAsync<ProjectStructureDto>();
+            Assert.NotNull(updatedFloorStructure);
+            var updatedFloor = Assert.Single(Assert.Single(updatedFloorStructure!.Buildings).Floors);
+            Assert.Equal(createdFloor.Id, updatedFloor.Id);
+            Assert.Equal(1, updatedFloor.FloorNumber);
+
+            var updateUnitResponse = await adminClient.PutAsJsonAsync(
+                $"{unitsUrl}/{createdUnit.Id}",
+                new UpdatePropertyUnitRequest("A-101", "Apartment", "UnderConstruction", 120m, 100m, 4));
+            Assert.Equal(HttpStatusCode.OK, updateUnitResponse.StatusCode);
+            var updatedUnitStructure = await updateUnitResponse.Content.ReadFromJsonAsync<ProjectStructureDto>();
+            Assert.NotNull(updatedUnitStructure);
+            var updatedUnit = Assert.Single(
+                Assert.Single(Assert.Single(updatedUnitStructure!.Buildings).Floors).Units);
+            Assert.Equal(createdUnit.Id, updatedUnit.Id);
+            Assert.Equal("A-101", updatedUnit.UnitNumber);
+            Assert.Equal(120m, updatedUnit.GrossAreaSquareMeters);
+            Assert.Equal("UnderConstruction", updatedUnit.Status);
+
+            // The structure workflow cannot mark a unit as reserved, sold or delivered without the corresponding sales/handover workflow.
+            var invalidSalesStateResponse = await adminClient.PostAsJsonAsync(
+                unitsUrl,
+                new CreatePropertyUnitRequest("A-102", "Apartment", "Sold", 100m, 90m, 3));
+            Assert.Equal(HttpStatusCode.BadRequest, invalidSalesStateResponse.StatusCode);
+            var invalidSalesTransitionResponse = await adminClient.PutAsJsonAsync(
+                $"{unitsUrl}/{createdUnit.Id}",
+                new UpdatePropertyUnitRequest("A-101", "Apartment", "Sold", 120m, 100m, 4));
+            Assert.Equal(HttpStatusCode.BadRequest, invalidSalesTransitionResponse.StatusCode);
+
             var duplicateUnitResponse = await adminClient.PostAsJsonAsync(
                 unitsUrl,
-                new CreatePropertyUnitRequest("a-001", "Apartment", "Planned", 100m, 90m, 3));
+                new CreatePropertyUnitRequest("a-101", "Apartment", "Planned", 100m, 90m, 3));
             Assert.Equal(HttpStatusCode.Conflict, duplicateUnitResponse.StatusCode);
 
             var invalidAreaResponse = await adminClient.PostAsJsonAsync(
@@ -695,6 +740,15 @@ public sealed class PostgresEndToEndTests : IClassFixture<PostgreSql18Integratio
                     entry.EventType == "BUILDING_FLOOR_CREATED" && entry.TargetEntityId == createdFloor.Id.ToString());
                 Assert.Contains(await db.AuditLogs.ToListAsync(), entry =>
                     entry.EventType == "PROPERTY_UNIT_CREATED" && entry.TargetEntityId == createdUnit.Id.ToString());
+                Assert.Contains(await db.AuditLogs.ToListAsync(), entry =>
+                    entry.EventType == "BUILDING_UPDATED" && entry.TargetEntityId == createdBuilding.Id.ToString());
+                Assert.Contains(await db.AuditLogs.ToListAsync(), entry =>
+                    entry.EventType == "BUILDING_FLOOR_UPDATED" && entry.TargetEntityId == createdFloor.Id.ToString());
+                Assert.Contains(await db.AuditLogs.ToListAsync(), entry =>
+                    entry.EventType == "PROPERTY_UNIT_UPDATED" && entry.TargetEntityId == createdUnit.Id.ToString());
+                var persistedUnit = await db.PropertyUnits.SingleAsync(unit => unit.Id == createdUnit.Id);
+                Assert.Equal("A-101", persistedUnit.UnitNumber);
+                Assert.Equal(120m, persistedUnit.GrossAreaSquareMeters);
             }
 
             // The seeded Project Director role must also be able to manage project structure via its explicit permission.

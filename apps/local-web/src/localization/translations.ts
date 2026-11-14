@@ -877,6 +877,78 @@ const API_ERROR_MESSAGES: Record<string, { ar: string; fr: string }> = {
     ar: 'محتوى الوثيقة غير موجود على الخادم المحلي.',
     fr: 'Le contenu du document est introuvable sur le serveur local.',
   },
+  CUSTOMER_REFERENCE_INVALID: {
+    ar: 'مرجع المشروع أو الموظف غير صالح.',
+    fr: 'La référence du projet ou de l’employé est invalide.',
+  },
+  CUSTOMER_TYPE_INVALID: {
+    ar: 'حدد نوع الزبون: شخص طبيعي أو شخص معنوي.',
+    fr: 'Sélectionnez le type de client : personne physique ou morale.',
+  },
+  CUSTOMER_SOURCE_INVALID: {
+    ar: 'مصدر التعرف على الزبون غير صالح.',
+    fr: 'La source du contact est invalide.',
+  },
+  CUSTOMER_NAME_REQUIRED: {
+    ar: 'اسم الزبون أو الكيان القانوني مطلوب.',
+    fr: 'Le nom du client ou de l’entité juridique est obligatoire.',
+  },
+  CUSTOMER_NAME_TOO_LONG: {
+    ar: 'اسم الزبون يجب ألا يتجاوز 200 حرف.',
+    fr: 'Le nom du client ne doit pas dépasser 200 caractères.',
+  },
+  CUSTOMER_PHONE_INVALID: {
+    ar: 'أدخل رقم هاتف صحيحاً يحتوي على 7 إلى 15 رقماً.',
+    fr: 'Saisissez un numéro de téléphone valide de 7 à 15 chiffres.',
+  },
+  CUSTOMER_EMAIL_INVALID: {
+    ar: 'عنوان البريد الإلكتروني غير صالح.',
+    fr: 'L’adresse e-mail est invalide.',
+  },
+  CUSTOMER_DUPLICATE: {
+    ar: 'يوجد زبون بالاسم ورقم الهاتف نفسيهما في هذا المشروع.',
+    fr: 'Un client portant le même nom et le même numéro existe déjà dans ce projet.',
+  },
+  CUSTOMER_STATUS_INVALID: {
+    ar: 'حالة سجل الزبون غير صالحة.',
+    fr: 'Le statut du dossier client est invalide.',
+  },
+  PROJECT_CUSTOMER_ACCESS_DENIED: {
+    ar: 'لا تملك صلاحية الاطلاع على سجل زبائن هذا المشروع.',
+    fr: 'Vous n’êtes pas autorisé à consulter les clients de ce projet.',
+  },
+  FORBIDDEN_PROJECT_CUSTOMER_WRITE: {
+    ar: 'لا تملك صلاحية إدارة زبائن هذا المشروع.',
+    fr: 'Vous n’êtes pas autorisé à gérer les clients de ce projet.',
+  },
+  CUSTOMER_IDENTITY_DOCUMENT_ACCESS_DENIED: {
+    ar: 'لا تملك صلاحية الاطلاع على وثائق المشروع لربطها بسجل الزبون.',
+    fr: 'Vous n’êtes pas autorisé à consulter les documents du projet pour les lier au client.',
+  },
+  CUSTOMER_IDENTITY_DOCUMENT_NOT_FOUND: {
+    ar: 'وثيقة الهوية المحددة لا تنتمي إلى هذا المشروع أو لم تعد موجودة.',
+    fr: 'Le document d’identité sélectionné n’appartient pas à ce projet ou n’existe plus.',
+  },
+  CUSTOMER_INTERACTION_TYPE_INVALID: {
+    ar: 'نوع الاتصال غير صالح.',
+    fr: 'Le type de communication est invalide.',
+  },
+  CUSTOMER_INTERACTION_SUBJECT_REQUIRED: {
+    ar: 'موضوع الاتصال مطلوب.',
+    fr: 'L’objet de la communication est obligatoire.',
+  },
+  CUSTOMER_INTERACTION_SUMMARY_REQUIRED: {
+    ar: 'ملخص الاتصال مطلوب.',
+    fr: 'Le résumé de la communication est obligatoire.',
+  },
+  CUSTOMER_INTERACTION_DATE_INVALID: {
+    ar: 'تاريخ الاتصال لا يمكن أن يكون في المستقبل.',
+    fr: 'La date de communication ne peut pas être dans le futur.',
+  },
+  CUSTOMER_FOLLOW_UP_DATE_INVALID: {
+    ar: 'موعد المتابعة لا يمكن أن يسبق تاريخ الاتصال.',
+    fr: 'La date de suivi ne peut pas précéder la communication.',
+  },
   ENDPOINT_NOT_FOUND: {
     ar: 'نقطة النهاية المطلوبة غير موجودة.',
     fr: 'Le point de terminaison demandé est introuvable.',

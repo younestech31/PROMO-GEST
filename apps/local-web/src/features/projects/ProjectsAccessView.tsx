@@ -349,9 +349,16 @@ export function ProjectsAccessView({
                       <div className="font-medium text-slate-900">
                         {language === 'ar' ? p.nameAr : p.nameFr}
                       </div>
-                      <div className="text-xs text-slate-500">
+                      <div className="mt-1 text-xs text-slate-600">
+                        <span className="font-data">{p.actualBuildingsCount}</span>{' '}
+                        {language === 'ar' ? 'عمارات مسجلة' : 'bâtiments enregistrés'} ·{' '}
+                        <span className="font-data">{p.actualUnitsCount}</span>{' '}
+                        {language === 'ar' ? 'وحدات عقارية مسجلة' : 'unités immobilières enregistrées'}
+                      </div>
+                      <div className="mt-0.5 text-[11px] text-slate-400">
+                        {language === 'ar' ? 'المخطط:' : 'Prévu :'}{' '}
                         <span className="font-data">{p.plannedBlocksCount}</span>{' '}
-                        {language === 'ar' ? 'عمارات' : 'blocs'} ·{' '}
+                        {language === 'ar' ? 'عمارات' : 'bâtiments'} ·{' '}
                         <span className="font-data">{p.plannedUnitsCount}</span>{' '}
                         {language === 'ar' ? 'وحدات' : 'unités'}
                       </div>
@@ -642,7 +649,10 @@ export function ProjectsAccessView({
         <ProjectStructureModal
           project={structureProject}
           language={language}
-          onClose={() => setStructureProject(null)}
+          onClose={() => {
+            setStructureProject(null);
+            void loadData();
+          }}
         />
       )}
 

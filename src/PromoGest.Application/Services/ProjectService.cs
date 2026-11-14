@@ -37,7 +37,12 @@ public sealed class ProjectService
             ? await _projectRepository.ListAllWithMembersAsync(ct)
             : await _projectRepository.ListForUserWithMembersAsync(actorUserId, ct);
 
-        return projects.Select(MapProject).ToList();
+        var structureCounts = await _projectRepository.GetStructureCountsByProjectIdsAsync(
+            projects.Select(project => project.Id).ToArray(), ct);
+
+        return projects
+            .Select(project => MapProject(project, structureCounts.GetValueOrDefault(project.Id)))
+            .ToList();
     }
 
     public async Task<ProjectDto> GetProjectByIdAsync(
@@ -72,7 +77,7 @@ public sealed class ProjectService
             throw new NotFoundDomainException("PROJECT_NOT_FOUND", "Project not found.");
         }
 
-        return MapProject(project);
+        return await MapProjectAsync(project, ct);
     }
 
     public async Task<ProjectDto> CreateProjectAsync(
@@ -139,7 +144,7 @@ public sealed class ProjectService
         await _projectRepository.SaveChangesAsync(ct);
 
         var reloaded = await _projectRepository.GetByIdWithMembersAsync(project.Id, ct) ?? project;
-        return MapProject(reloaded);
+        return await MapProjectAsync(reloaded, ct);
     }
 
     public async Task<ProjectDto> UpdateProjectAsync(
@@ -208,7 +213,7 @@ public sealed class ProjectService
         await _projectRepository.SaveChangesAsync(ct);
 
         var reloaded = await _projectRepository.GetByIdWithMembersAsync(project.Id, ct) ?? project;
-        return MapProject(reloaded);
+        return await MapProjectAsync(reloaded, ct);
     }
 
     public async Task<ProjectDto> AssignMemberAsync(
@@ -265,7 +270,7 @@ public sealed class ProjectService
         await _projectRepository.SaveChangesAsync(ct);
 
         var reloaded = await _projectRepository.GetByIdWithMembersAsync(project.Id, ct) ?? project;
-        return MapProject(reloaded);
+        return await MapProjectAsync(reloaded, ct);
     }
 
     public async Task<ProjectDto> RemoveMemberAsync(
@@ -303,7 +308,7 @@ public sealed class ProjectService
         await _projectRepository.SaveChangesAsync(ct);
 
         var reloaded = await _projectRepository.GetByIdWithMembersAsync(project.Id, ct) ?? project;
-        return MapProject(reloaded);
+        return await MapProjectAsync(reloaded, ct);
     }
 
     private async Task<User> RequireActiveActorAsync(
@@ -381,7 +386,14 @@ public sealed class ProjectService
         await _projectRepository.SaveChangesAsync(ct);
     }
 
-    private static ProjectDto MapProject(Project project)
+    private async Task<ProjectDto> MapProjectAsync(Project project, CancellationToken ct)
+    {
+        var structureCounts = await _projectRepository.GetStructureCountsByProjectIdsAsync(
+            new[] { project.Id }, ct);
+        return MapProject(project, structureCounts.GetValueOrDefault(project.Id));
+    }
+
+    private static ProjectDto MapProject(Project project, ProjectStructureCounts structureCounts)
         => new(
             project.Id,
             project.Code,
@@ -398,6 +410,8 @@ public sealed class ProjectService
             project.EstimatedBudgetDzd,
             project.PlannedBlocksCount,
             project.PlannedUnitsCount,
+            structureCounts.BuildingsCount,
+            structureCounts.UnitsCount,
             project.CreatedAtUtc,
             project.Members.Select(m => new ProjectMemberDto(
                 m.Id,

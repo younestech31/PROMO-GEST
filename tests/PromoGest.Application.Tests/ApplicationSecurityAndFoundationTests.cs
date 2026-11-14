@@ -123,6 +123,26 @@ public sealed class ApplicationSecurityAndFoundationTests
             => Task.FromResult<IReadOnlyList<Project>>(Projects);
         public Task<IReadOnlyList<Project>> ListForUserWithMembersAsync(Guid userId, CancellationToken ct = default)
             => Task.FromResult<IReadOnlyList<Project>>(Projects.Where(p => p.Members.Any(m => m.UserId == userId)).ToList());
+        public Task<IReadOnlyDictionary<Guid, ProjectStructureCounts>> GetStructureCountsByProjectIdsAsync(
+            IReadOnlyCollection<Guid> projectIds,
+            CancellationToken ct = default)
+        {
+            var counts = projectIds.Distinct().ToDictionary(projectId => projectId, projectId =>
+            {
+                var buildingIds = Buildings
+                    .Where(building => building.ProjectId == projectId)
+                    .Select(building => building.Id)
+                    .ToHashSet();
+                var floorIds = Floors
+                    .Where(floor => buildingIds.Contains(floor.BuildingId))
+                    .Select(floor => floor.Id)
+                    .ToHashSet();
+                return new ProjectStructureCounts(
+                    buildingIds.Count,
+                    Units.Count(unit => floorIds.Contains(unit.FloorId)));
+            });
+            return Task.FromResult<IReadOnlyDictionary<Guid, ProjectStructureCounts>>(counts);
+        }
         public Task<ProjectMember?> GetMemberAsync(Guid projectId, Guid userId, CancellationToken ct = default)
             => Task.FromResult(Projects.FirstOrDefault(p => p.Id == projectId)?.Members.FirstOrDefault(m => m.UserId == userId));
         public Task AddProjectAsync(Project project, CancellationToken ct = default) { Projects.Add(project); return Task.CompletedTask; }

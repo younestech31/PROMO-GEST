@@ -214,6 +214,39 @@ public sealed class EfProjectRepository : IProjectRepository
             .OrderByDescending(p => p.CreatedAtUtc)
             .ToListAsync(ct);
 
+    public async Task<IReadOnlyDictionary<Guid, ProjectStructureCounts>> GetStructureCountsByProjectIdsAsync(
+        IReadOnlyCollection<Guid> projectIds,
+        CancellationToken ct = default)
+    {
+        var ids = projectIds.Distinct().ToArray();
+        if (ids.Length == 0)
+            return new Dictionary<Guid, ProjectStructureCounts>();
+
+        var buildingCounts = await _dbContext.Buildings
+            .AsNoTracking()
+            .Where(building => ids.Contains(building.ProjectId))
+            .GroupBy(building => building.ProjectId)
+            .Select(group => new { ProjectId = group.Key, Count = group.Count() })
+            .ToDictionaryAsync(item => item.ProjectId, item => item.Count, ct);
+
+        var unitCounts = await (
+            from unit in _dbContext.PropertyUnits.AsNoTracking()
+            join floor in _dbContext.BuildingFloors.AsNoTracking()
+                on unit.FloorId equals floor.Id
+            join building in _dbContext.Buildings.AsNoTracking()
+                on floor.BuildingId equals building.Id
+            where ids.Contains(building.ProjectId)
+            group unit by building.ProjectId into projectUnits
+            select new { ProjectId = projectUnits.Key, Count = projectUnits.Count() }
+        ).ToDictionaryAsync(item => item.ProjectId, item => item.Count, ct);
+
+        return ids.ToDictionary(
+            projectId => projectId,
+            projectId => new ProjectStructureCounts(
+                buildingCounts.GetValueOrDefault(projectId),
+                unitCounts.GetValueOrDefault(projectId)));
+    }
+
     public Task<ProjectMember?> GetMemberAsync(Guid projectId, Guid userId, CancellationToken ct = default)
         => _dbContext.ProjectMembers.FirstOrDefaultAsync(m => m.ProjectId == projectId && m.UserId == userId, ct);
 

@@ -725,6 +725,17 @@ public sealed class PostgresEndToEndTests : IClassFixture<PostgreSql18Integratio
             Assert.Equal(96.25m, createdUnit.NetAreaSquareMeters);
             Assert.Equal(4, createdUnit.RoomsCount);
 
+            // The project list summary must report actual registered structure separately from planning targets.
+            var projectListResponse = await adminClient.GetAsync("/api/projects");
+            Assert.Equal(HttpStatusCode.OK, projectListResponse.StatusCode);
+            var projectList = await projectListResponse.Content.ReadFromJsonAsync<List<ProjectDto>>();
+            Assert.NotNull(projectList);
+            var projectSummary = Assert.Single(projectList!, item => item.Id == createdProject.Id);
+            Assert.Equal(4, projectSummary.PlannedBlocksCount);
+            Assert.Equal(64, projectSummary.PlannedUnitsCount);
+            Assert.Equal(1, projectSummary.ActualBuildingsCount);
+            Assert.Equal(1, projectSummary.ActualUnitsCount);
+
             var duplicateUnitResponse = await adminClient.PostAsJsonAsync(
                 unitsUrl,
                 new CreatePropertyUnitRequest("a-001", "Apartment", "Planned", 100m, 90m, 3));

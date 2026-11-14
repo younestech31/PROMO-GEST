@@ -1,5 +1,5 @@
 import { useEffect, useState, type FormEvent } from 'react';
-import { FolderPlus, KeyRound, Pencil, ShieldAlert, Trash2, Users, X } from 'lucide-react';
+import { FolderPlus, KeyRound, Layers3, Pencil, ShieldAlert, Trash2, Users, X } from 'lucide-react';
 import type {
   AppLanguage,
   AssignProjectMemberRequest,
@@ -11,10 +11,11 @@ import type {
 } from '../../types/erp';
 import { getTranslations, translateApiError } from '../../localization/translations';
 import { ALGERIAN_WILAYAS, findWilaya, formatDzd } from '../../utils/algerianFormat';
-import { canCreateProject, canManageProjectAccess, canManageProjects, canManageUsers } from '../../utils/permissions';
+import { canCreateProject, canManageProjectAccess, canManageProjects, canManageProjectStructure, canManageUsers } from '../../utils/permissions';
 import { validateCreateProject, type ValidationErrors } from '../../utils/validation';
 import { apiClient, ApiError } from '../../services/apiClient';
 import { FormField, inputBaseClass } from '../../components/FormField';
+import { ProjectStructureModal } from './ProjectStructureModal';
 
 interface ProjectsAccessViewProps {
   currentUser: AuthenticatedUser;
@@ -53,6 +54,7 @@ export function ProjectsAccessView({
   const [createOpen, setCreateOpen] = useState(false);
   const [editingProject, setEditingProject] = useState<ProjectDto | null>(null);
   const [accessProject, setAccessProject] = useState<ProjectDto | null>(null);
+  const [structureProject, setStructureProject] = useState<ProjectDto | null>(null);
 
   const [createForm, setCreateForm] = useState<CreateProjectRequest>({
     code: '',
@@ -366,6 +368,16 @@ export function ProjectsAccessView({
                     </td>
                     <td className="py-3 px-4 text-end">
                       <div className="inline-flex items-center justify-end gap-2">
+                        {canManageProjectStructure(currentUser, p) && (
+                          <button
+                            type="button"
+                            onClick={() => setStructureProject(p)}
+                            className="inline-flex items-center gap-1.5 rounded border border-slate-200 px-2.5 py-1 text-xs font-medium text-slate-700 hover:bg-slate-100 whitespace-nowrap"
+                          >
+                            <Layers3 className="w-3.5 h-3.5" aria-hidden="true" />
+                            <span>{t.projects.structureButton}</span>
+                          </button>
+                        )}
                         {canManageProjects(currentUser) && (
                           <button
                             type="button"
@@ -626,6 +638,14 @@ export function ProjectsAccessView({
       )}
 
       {/* Manage Project Access Modal */}
+      {structureProject && (
+        <ProjectStructureModal
+          project={structureProject}
+          language={language}
+          onClose={() => setStructureProject(null)}
+        />
+      )}
+
       {accessProject && (
         <div
           className="fixed inset-0 z-50 bg-slate-950/50 flex items-center justify-center p-4"

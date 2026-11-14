@@ -94,7 +94,7 @@ public sealed class ProjectDocumentService
         if (description is not null && description.Trim().Length > 500)
             throw new DomainException("FILE_DESCRIPTION_TOO_LONG", "Document description must not exceed 500 characters.");
 
-        var safeOriginalFileName = Path.GetFileName((originalFileName ?? string.Empty).Trim().Replace('\\', '/'));
+        var safeOriginalFileName = Path.GetFileName((originalFileName ?? string.Empty).Trim().Replace('\\', '/')) ?? string.Empty;
         safeOriginalFileName = new string(safeOriginalFileName.Where(character => !char.IsControl(character)).ToArray()).Trim();
         if (string.IsNullOrWhiteSpace(safeOriginalFileName))
             throw new DomainException("FILE_NAME_REQUIRED", "Original file name is required.");

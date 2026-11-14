@@ -822,4 +822,83 @@ public sealed class ApplicationSecurityAndFoundationTests
 
         await Assert.ThrowsAsync<IOException>(() => setup.InitializeAsync(ValidInitRequest(), meta));
     }
+
+    [Fact]
+    public async Task ProjectListAndDetail_ComputeActualBuildingAndUnitCountsDynamically_IndependentOfPlannedCounts()
+    {
+        var store = new InMemoryStore();
+        var clock = new FakeClock();
+        var hasher = new Pbkdf2PasswordHasher();
+        var setup = new SetupService(store, hasher, store, clock);
+        var projectSvc = new ProjectService(store, store, store, clock);
+        var structureSvc = new ProjectStructureService(store, store, store, store, clock);
+        var meta = new RequestMetadata("127.0.0.1", "xUnit");
+
+        var init = await setup.InitializeAsync(ValidInitRequest(), meta);
+        var created = await projectSvc.CreateProjectAsync(
+            init.SystemAdminUserId,
+            new CreateProjectRequest(
+                "PRJ-16-COUNTS",
+                "إقامة الرمال الذهبية",
+                "Résidence Les Sables d'Or",
+                "16",
+                "Alger",
+                "Aïn Benian",
+                null,
+                null,
+                null,
+                null,
+                "UnderConstruction",
+                850_000_000m,
+                3,
+                72),
+            meta);
+
+        Assert.Equal(3, created.PlannedBlocksCount);
+        Assert.Equal(72, created.PlannedUnitsCount);
+        Assert.Equal(0, created.ActualBuildingsCount);
+        Assert.Equal(0, created.ActualUnitsCount);
+
+        var s1 = await structureSvc.CreateBuildingAsync(
+            init.SystemAdminUserId,
+            created.Id,
+            new CreateBuildingRequest("BLOC-A", "العمارة أ", "Bâtiment A", "UnderConstruction"),
+            meta);
+        var buildingId = Assert.Single(s1.Buildings).Id;
+
+        var s2 = await structureSvc.CreateFloorAsync(
+            init.SystemAdminUserId,
+            created.Id,
+            buildingId,
+            new CreateBuildingFloorRequest(0, "الطابق الأرضي", "Rez-de-chaussée"),
+            meta);
+        var floorId = Assert.Single(Assert.Single(s2.Buildings).Floors).Id;
+
+        await structureSvc.CreatePropertyUnitAsync(
+            init.SystemAdminUserId,
+            created.Id,
+            buildingId,
+            floorId,
+            new CreatePropertyUnitRequest("A-00-01", "Apartment", "AvailableForSale", 92m, 80m, 3),
+            meta);
+        await structureSvc.CreatePropertyUnitAsync(
+            init.SystemAdminUserId,
+            created.Id,
+            buildingId,
+            floorId,
+            new CreatePropertyUnitRequest("A-00-02", "Apartment", "AvailableForSale", 114m, 99m, 4),
+            meta);
+
+        var listed = Assert.Single(await projectSvc.ListAccessibleProjectsAsync(init.SystemAdminUserId, meta));
+        var detailed = await projectSvc.GetProjectByIdAsync(init.SystemAdminUserId, created.Id, meta);
+
+        Assert.Equal(3, listed.PlannedBlocksCount);
+        Assert.Equal(72, listed.PlannedUnitsCount);
+        Assert.Equal(1, listed.ActualBuildingsCount);
+        Assert.Equal(2, listed.ActualUnitsCount);
+
+        Assert.Equal(listed.ActualBuildingsCount, detailed.ActualBuildingsCount);
+        Assert.Equal(listed.ActualUnitsCount, detailed.ActualUnitsCount);
+    }
 }
+

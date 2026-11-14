@@ -12,13 +12,38 @@ import type { IncomingMessage, ServerResponse } from 'node:http';
 import crypto from 'node:crypto';
 import type {
   AuditLogDto,
+  ChangePropertyUnitStatusRequest,
+  CreateBuildingFloorRequest,
+  CreateBuildingRequest,
+  CreatePropertyUnitRequest,
   InitializeInstallationRequest,
   OrganizationSummary,
   ProjectDto,
+  ProjectStructureDto,
   RoleDto,
+  UpdateBuildingFloorRequest,
+  UpdateBuildingRequest,
+  UpdateProjectRequest,
+  UpdatePropertyUnitRequest,
   UserDto,
 } from './src/types/erp';
 import { getDevPreviewCookieAttributes } from './src/utils/devPreviewCookies';
+import {
+  canUserAccessProjectStructure,
+  changeUnitStatusInStore,
+  computeProjectStructureCounts,
+  createBuildingInStore,
+  createDemoLesSablesStructure,
+  createFloorInStore,
+  createUnitInStore,
+  DevPreviewStoreError,
+  getProjectStructure,
+  updateBuildingInStore,
+  updateFloorInStore,
+  updateProjectInStore,
+  updateUnitInStore,
+  withComputedStructureCounts,
+} from './src/utils/devPreviewProjectStore';
 
 interface StoredUserRecord extends UserDto {
   passwordHash: string;
@@ -107,9 +132,12 @@ const ROLE_PERMS: Record<string, string[]> = {
   SYSTEM_ADMIN: [
     'org.read', 'org.manage', 'users.read', 'users.manage',
     'projects.read', 'projects.create', 'projects.manage', 'projects.access.manage',
-    'audit.read', 'files.read', 'files.write',
+    'projects.structure.manage', 'audit.read', 'files.read', 'files.write',
   ],
-  PROJECT_DIRECTOR: ['org.read', 'projects.read', 'projects.create', 'projects.manage', 'projects.access.manage', 'files.read', 'files.write'],
+  PROJECT_DIRECTOR: [
+    'org.read', 'projects.read', 'projects.create', 'projects.manage',
+    'projects.access.manage', 'projects.structure.manage', 'files.read', 'files.write',
+  ],
   COMMERCIAL_MANAGER: ['org.read', 'projects.read', 'files.read', 'files.write'],
   FINANCE_OFFICER: ['org.read', 'projects.read', 'files.read', 'files.write'],
   SITE_ENGINEER: ['org.read', 'projects.read', 'files.read', 'files.write'],
@@ -178,6 +206,7 @@ export function createPromoGestDevApiPlugin(): Plugin {
   const users: StoredUserRecord[] = [];
   const sessions: StoredSession[] = [];
   const projects: ProjectDto[] = [];
+  const projectStructures = new Map<string, ProjectStructureDto>();
   const auditLogs: AuditLogDto[] = [];
   const csrfSecret = crypto.randomBytes(32);
 
@@ -330,25 +359,30 @@ export function createPromoGestDevApiPlugin(): Plugin {
     };
     users.push(admin);
 
+    const lesSablesId = '30000000-0000-0000-0000-000000000003';
+    const lesSablesStructure = createDemoLesSablesStructure(lesSablesId, nowIso);
+    projectStructures.set(lesSablesId, lesSablesStructure);
+    const lesSablesCounts = computeProjectStructureCounts(lesSablesStructure);
+
     projects.push(
       {
-        id: '30000000-0000-0000-0000-000000000003',
-        code: 'DEMO-ORAN-001',
-        nameAr: 'إقامة النخيل التجريبية',
-        nameFr: 'Résidence Ennahil (démo)',
-        wilayaCode: '31',
-        wilayaName: 'وهران / Oran',
-        municipality: 'بئر الجير / Bir El Djir',
-        address: 'عنوان افتراضي — وهران',
+        id: lesSablesId,
+        code: 'DEMO-16-001',
+        nameAr: 'إقامة الرمال الذهبية (معاينة)',
+        nameFr: "Résidence Les Sables d'Or (démo)",
+        wilayaCode: '16',
+        wilayaName: 'الجزائر / Alger',
+        municipality: 'عين البنيان / Aïn Benian',
+        address: 'حي افتراضي غير حقيقي — بيانات معاينة فقط',
         landTitleReference: 'DEMO-LAND-001',
         buildingPermitNumber: 'DEMO-PERMIT-001',
         buildingPermitDate: '2026-05-15',
         status: 'UnderConstruction',
-        estimatedBudgetDzd: 1250000000,
-        plannedBlocksCount: 4,
-        plannedUnitsCount: 180,
-        actualBuildingsCount: 0,
-        actualUnitsCount: 0,
+        estimatedBudgetDzd: 850000000,
+        plannedBlocksCount: lesSablesCounts.actualBuildingsCount,
+        plannedUnitsCount: lesSablesCounts.actualUnitsCount,
+        actualBuildingsCount: lesSablesCounts.actualBuildingsCount,
+        actualUnitsCount: lesSablesCounts.actualUnitsCount,
         createdAtUtc: nowIso,
         members: [],
       },
@@ -683,7 +717,10 @@ export function createPromoGestDevApiPlugin(): Plugin {
 
         if (method === 'POST' && pathname === '/api/auth/logout') {
           const cookies = parseCookies(req);
-          const raw = cookies[COOKIE_NAME];
+          const authorization = req.headers.authorization;
+          const authorizationValue = Array.isArray(authorization) ? authorization[0] : authorization;
+          const bearerToken = authorizationValue?.match(/^Bearer ([A-Za-z0-9_-]+)$/)?.[1] ?? null;
+          const raw = bearerToken ?? cookies[COOKIE_NAME];
           if (raw) {
             const hashed = hashToken(raw);
             const idx = sessions.findIndex((s) => s.tokenHash === hashed);
@@ -864,7 +901,11 @@ export function createPromoGestDevApiPlugin(): Plugin {
           const visible = currentUser.isSystemAdministrator
             ? projects
             : projects.filter((p) => p.members.some((m) => m.userId === currentUser.id));
-          return sendJson(res, 200, visible);
+          return sendJson(
+            res,
+            200,
+            visible.map((project) => withComputedStructureCounts(project, projectStructures))
+          );
         }
 
         if (method === 'POST' && pathname === '/api/projects') {
@@ -893,26 +934,330 @@ export function createPromoGestDevApiPlugin(): Plugin {
             estimatedBudgetDzd: Number(body.estimatedBudgetDzd || 0),
             plannedBlocksCount: Number(body.plannedBlocksCount || 0),
             plannedUnitsCount: Number(body.plannedUnitsCount || 0),
-        actualBuildingsCount: 0,
-        actualUnitsCount: 0,
+            actualBuildingsCount: 0,
+            actualUnitsCount: 0,
             createdAtUtc: new Date().toISOString(),
             members: [],
           };
           projects.unshift(created);
           addAudit('PROJECT_CREATED', 'Info', `Created project '${created.code}' (${created.nameFr}).`, currentUser, 'Project', created.id);
-          return sendJson(res, 201, created);
+          return sendJson(res, 201, withComputedStructureCounts(created, projectStructures));
         }
 
         const projectDetailMatch = pathname.match(/^\/api\/projects\/([^/]+)$/);
         if (method === 'GET' && projectDetailMatch) {
-          const projectId = projectDetailMatch[1];
+          const projectId = decodeURIComponent(projectDetailMatch[1]);
           const project = projects.find((p) => p.id === projectId);
           if (!currentUser.isSystemAdministrator && (!project || !project.members.some((m) => m.userId === currentUser.id))) {
             addAudit('ACCESS_DENIED', 'Security', `Unauthorized project access attempt by '${currentUser.username}' on '${projectId}'.`, currentUser, 'Project', projectId);
             return sendJson(res, 403, { code: 'PROJECT_ACCESS_DENIED', message: 'Project access denied.' });
           }
           if (!project) return sendJson(res, 404, { code: 'PROJECT_NOT_FOUND', message: 'Project not found.' });
-          return sendJson(res, 200, project);
+          return sendJson(res, 200, withComputedStructureCounts(project, projectStructures));
+        }
+
+        if (method === 'PUT' && projectDetailMatch) {
+          const projectId = decodeURIComponent(projectDetailMatch[1]);
+          const permissions = getPermissions(currentUser);
+          if (!currentUser.isSystemAdministrator && !permissions.includes('projects.manage')) {
+            addAudit(
+              'ACCESS_DENIED',
+              'Security',
+              `Unauthorized project update attempt by '${currentUser.username}' on project ID '${projectId}'.`,
+              currentUser,
+              'Project',
+              projectId
+            );
+            return sendJson(res, 403, {
+              code: 'FORBIDDEN_PROJECT_UPDATE',
+              message: 'You do not have permission to update project details.',
+            });
+          }
+          const project = projects.find((p) => p.id === projectId);
+          if (!project) {
+            return sendJson(res, 404, { code: 'PROJECT_NOT_FOUND', message: 'Project not found.' });
+          }
+          try {
+            const body = await readJsonBody<UpdateProjectRequest>(req);
+            const updated = updateProjectInStore(project, body);
+            addAudit(
+              'PROJECT_UPDATED',
+              'Info',
+              `Updated master data for real estate project '${updated.code}'.`,
+              currentUser,
+              'Project',
+              updated.id
+            );
+            return sendJson(res, 200, withComputedStructureCounts(updated, projectStructures));
+          } catch (err) {
+            if (err instanceof DevPreviewStoreError) {
+              return sendJson(res, err.status, { code: err.code, message: err.message });
+            }
+            throw err;
+          }
+        }
+
+        const authorizeStructureProject = (rawProjectId: string, canManage: boolean): ProjectDto | null => {
+          const projectId = decodeURIComponent(rawProjectId);
+          const project = projects.find((p) => p.id === projectId);
+          if (!project) {
+            sendJson(res, 404, { code: 'PROJECT_NOT_FOUND', message: 'Project not found.' });
+            return null;
+          }
+          const permissions = getPermissions(currentUser);
+          const allowed = canUserAccessProjectStructure(
+            {
+              id: currentUser.id,
+              isSystemAdministrator: currentUser.isSystemAdministrator,
+              permissions,
+            },
+            project,
+            canManage
+          );
+          if (!allowed) {
+            addAudit(
+              'ACCESS_DENIED',
+              'Security',
+              `Unauthorized project-structure ${canManage ? 'management' : 'read'} attempt by '${currentUser.username}' on project '${project.code}'.`,
+              currentUser,
+              'Project',
+              project.id
+            );
+            sendJson(res, 403, {
+              code: canManage ? 'FORBIDDEN_PROJECT_STRUCTURE_MANAGE' : 'PROJECT_ACCESS_DENIED',
+              message: canManage
+                ? "You do not have permission to manage this project's building structure."
+                : "You do not have access to this project's structure.",
+            });
+            return null;
+          }
+          return project;
+        };
+
+        // Project Structure (Buildings, Floors, Property Units)
+        const structureRootMatch = pathname.match(/^\/api\/projects\/([^/]+)\/structure$/);
+        if (method === 'GET' && structureRootMatch) {
+          const project = authorizeStructureProject(structureRootMatch[1], false);
+          if (!project) return;
+          return sendJson(res, 200, getProjectStructure(projectStructures, project.id));
+        }
+
+        const createBuildingMatch = pathname.match(/^\/api\/projects\/([^/]+)\/structure\/buildings$/);
+        if (method === 'POST' && createBuildingMatch) {
+          const project = authorizeStructureProject(createBuildingMatch[1], true);
+          if (!project) return;
+          try {
+            const body = await readJsonBody<CreateBuildingRequest>(req);
+            const result = createBuildingInStore(projectStructures, project.id, body, new Date().toISOString());
+            addAudit(
+              'BUILDING_CREATED',
+              'Info',
+              `Created building '${result.building.code}' in project '${project.code}'.`,
+              currentUser,
+              'Building',
+              result.building.id
+            );
+            return sendJson(res, 200, result.structure);
+          } catch (err) {
+            if (err instanceof DevPreviewStoreError) {
+              return sendJson(res, err.status, { code: err.code, message: err.message });
+            }
+            throw err;
+          }
+        }
+
+        const updateBuildingMatch = pathname.match(/^\/api\/projects\/([^/]+)\/structure\/buildings\/([^/]+)$/);
+        if (method === 'PUT' && updateBuildingMatch) {
+          const project = authorizeStructureProject(updateBuildingMatch[1], true);
+          if (!project) return;
+          try {
+            const body = await readJsonBody<UpdateBuildingRequest>(req);
+            const result = updateBuildingInStore(
+              projectStructures,
+              project.id,
+              decodeURIComponent(updateBuildingMatch[2]),
+              body,
+              new Date().toISOString()
+            );
+            addAudit(
+              'BUILDING_UPDATED',
+              'Info',
+              `Updated building '${result.previousCode}' to '${result.building.code}' in project '${project.code}'.`,
+              currentUser,
+              'Building',
+              result.building.id
+            );
+            return sendJson(res, 200, result.structure);
+          } catch (err) {
+            if (err instanceof DevPreviewStoreError) {
+              return sendJson(res, err.status, { code: err.code, message: err.message });
+            }
+            throw err;
+          }
+        }
+
+        const createFloorMatch = pathname.match(/^\/api\/projects\/([^/]+)\/structure\/buildings\/([^/]+)\/floors$/);
+        if (method === 'POST' && createFloorMatch) {
+          const project = authorizeStructureProject(createFloorMatch[1], true);
+          if (!project) return;
+          try {
+            const body = await readJsonBody<CreateBuildingFloorRequest>(req);
+            const result = createFloorInStore(
+              projectStructures,
+              project.id,
+              decodeURIComponent(createFloorMatch[2]),
+              body,
+              new Date().toISOString()
+            );
+            addAudit(
+              'BUILDING_FLOOR_CREATED',
+              'Info',
+              `Created floor ${result.floor.floorNumber} in building '${result.building.code}' of project '${project.code}'.`,
+              currentUser,
+              'BuildingFloor',
+              result.floor.id
+            );
+            return sendJson(res, 200, result.structure);
+          } catch (err) {
+            if (err instanceof DevPreviewStoreError) {
+              return sendJson(res, err.status, { code: err.code, message: err.message });
+            }
+            throw err;
+          }
+        }
+
+        const updateFloorMatch = pathname.match(/^\/api\/projects\/([^/]+)\/structure\/buildings\/([^/]+)\/floors\/([^/]+)$/);
+        if (method === 'PUT' && updateFloorMatch) {
+          const project = authorizeStructureProject(updateFloorMatch[1], true);
+          if (!project) return;
+          try {
+            const body = await readJsonBody<UpdateBuildingFloorRequest>(req);
+            const result = updateFloorInStore(
+              projectStructures,
+              project.id,
+              decodeURIComponent(updateFloorMatch[2]),
+              decodeURIComponent(updateFloorMatch[3]),
+              body,
+              new Date().toISOString()
+            );
+            addAudit(
+              'BUILDING_FLOOR_UPDATED',
+              'Info',
+              `Updated floor ${result.previousNumber} to ${result.floor.floorNumber} in building '${result.building.code}' of project '${project.code}'.`,
+              currentUser,
+              'BuildingFloor',
+              result.floor.id
+            );
+            return sendJson(res, 200, result.structure);
+          } catch (err) {
+            if (err instanceof DevPreviewStoreError) {
+              return sendJson(res, err.status, { code: err.code, message: err.message });
+            }
+            throw err;
+          }
+        }
+
+        const createUnitMatch = pathname.match(
+          /^\/api\/projects\/([^/]+)\/structure\/buildings\/([^/]+)\/floors\/([^/]+)\/units$/
+        );
+        if (method === 'POST' && createUnitMatch) {
+          const project = authorizeStructureProject(createUnitMatch[1], true);
+          if (!project) return;
+          try {
+            const body = await readJsonBody<CreatePropertyUnitRequest>(req);
+            const result = createUnitInStore(
+              projectStructures,
+              project.id,
+              decodeURIComponent(createUnitMatch[2]),
+              decodeURIComponent(createUnitMatch[3]),
+              body,
+              new Date().toISOString()
+            );
+            addAudit(
+              'PROPERTY_UNIT_CREATED',
+              'Info',
+              `Created property unit '${result.unit.unitNumber}' (${result.unit.unitType}) on floor ${result.floor.floorNumber}, building '${result.building.code}', project '${project.code}'.`,
+              currentUser,
+              'PropertyUnit',
+              result.unit.id
+            );
+            return sendJson(res, 200, result.structure);
+          } catch (err) {
+            if (err instanceof DevPreviewStoreError) {
+              return sendJson(res, err.status, { code: err.code, message: err.message });
+            }
+            throw err;
+          }
+        }
+
+        const updateUnitMatch = pathname.match(
+          /^\/api\/projects\/([^/]+)\/structure\/buildings\/([^/]+)\/floors\/([^/]+)\/units\/([^/]+)$/
+        );
+        if (method === 'PUT' && updateUnitMatch) {
+          const project = authorizeStructureProject(updateUnitMatch[1], true);
+          if (!project) return;
+          try {
+            const body = await readJsonBody<UpdatePropertyUnitRequest>(req);
+            const result = updateUnitInStore(
+              projectStructures,
+              project.id,
+              decodeURIComponent(updateUnitMatch[2]),
+              decodeURIComponent(updateUnitMatch[3]),
+              decodeURIComponent(updateUnitMatch[4]),
+              body,
+              new Date().toISOString()
+            );
+            addAudit(
+              'PROPERTY_UNIT_UPDATED',
+              'Info',
+              `Updated property unit '${result.previousNumber}' to '${result.unit.unitNumber}' in project '${project.code}' (type: ${result.previousType} -> ${result.unit.unitType}).`,
+              currentUser,
+              'PropertyUnit',
+              result.unit.id
+            );
+            return sendJson(res, 200, result.structure);
+          } catch (err) {
+            if (err instanceof DevPreviewStoreError) {
+              return sendJson(res, err.status, { code: err.code, message: err.message });
+            }
+            throw err;
+          }
+        }
+
+        const changeUnitStatusMatch = pathname.match(
+          /^\/api\/projects\/([^/]+)\/structure\/buildings\/([^/]+)\/floors\/([^/]+)\/units\/([^/]+)\/status$/
+        );
+        if (method === 'PUT' && changeUnitStatusMatch) {
+          const project = authorizeStructureProject(changeUnitStatusMatch[1], true);
+          if (!project) return;
+          try {
+            const body = await readJsonBody<ChangePropertyUnitStatusRequest>(req);
+            const result = changeUnitStatusInStore(
+              projectStructures,
+              project.id,
+              decodeURIComponent(changeUnitStatusMatch[2]),
+              decodeURIComponent(changeUnitStatusMatch[3]),
+              decodeURIComponent(changeUnitStatusMatch[4]),
+              body,
+              new Date().toISOString()
+            );
+            if (result.unit.status !== result.previousStatus) {
+              addAudit(
+                'PROPERTY_UNIT_STATUS_CHANGED',
+                'Info',
+                `Changed property unit '${result.unit.unitNumber}' status from ${result.previousStatus} to ${result.unit.status} in project '${project.code}'.`,
+                currentUser,
+                'PropertyUnit',
+                result.unit.id
+              );
+            }
+            return sendJson(res, 200, result.structure);
+          } catch (err) {
+            if (err instanceof DevPreviewStoreError) {
+              return sendJson(res, err.status, { code: err.code, message: err.message });
+            }
+            throw err;
+          }
         }
 
         const projectMembersMatch = pathname.match(/^\/api\/projects\/([^/]+)\/members$/);
@@ -921,7 +1266,7 @@ export function createPromoGestDevApiPlugin(): Plugin {
             addAudit('ACCESS_DENIED', 'Security', `User '${currentUser.username}' attempted unauthorized project membership assignment.`, currentUser, 'Project', projectMembersMatch[1]);
             return sendJson(res, 403, { code: 'FORBIDDEN_PROJECT_ACCESS_ADMIN', message: 'Forbidden.' });
           }
-          const project = projects.find((p) => p.id === projectMembersMatch[1]);
+          const project = projects.find((p) => p.id === decodeURIComponent(projectMembersMatch[1]));
           if (!project) return sendJson(res, 404, { code: 'PROJECT_NOT_FOUND', message: 'Project not found.' });
           const body = await readJsonBody<{
             userId: string;
@@ -949,7 +1294,7 @@ export function createPromoGestDevApiPlugin(): Plugin {
           if (existingIdx >= 0) project.members[existingIdx] = memberRecord;
           else project.members.push(memberRecord);
           addAudit('PROJECT_MEMBER_ASSIGNED', 'Security', `Assigned '${target.username}' to '${project.code}' (${body.roleInProject}).`, currentUser, 'Project', project.id);
-          return sendJson(res, 200, project);
+          return sendJson(res, 200, withComputedStructureCounts(project, projectStructures));
         }
 
         const removeMemberMatch = pathname.match(/^\/api\/projects\/([^/]+)\/members\/([^/]+)$/);
@@ -958,11 +1303,12 @@ export function createPromoGestDevApiPlugin(): Plugin {
             addAudit('ACCESS_DENIED', 'Security', `User '${currentUser.username}' attempted unauthorized project membership revocation.`, currentUser, 'Project', removeMemberMatch[1]);
             return sendJson(res, 403, { code: 'FORBIDDEN_PROJECT_ACCESS_ADMIN', message: 'Forbidden.' });
           }
-          const project = projects.find((p) => p.id === removeMemberMatch[1]);
+          const project = projects.find((p) => p.id === decodeURIComponent(removeMemberMatch[1]));
           if (!project) return sendJson(res, 404, { code: 'PROJECT_NOT_FOUND', message: 'Project not found.' });
-          project.members = project.members.filter((m) => m.userId !== removeMemberMatch[2]);
-          addAudit('PROJECT_MEMBER_REVOKED', 'Security', `Revoked access on '${project.code}' for user '${removeMemberMatch[2]}'.`, currentUser, 'Project', project.id);
-          return sendJson(res, 200, project);
+          const targetUserId = decodeURIComponent(removeMemberMatch[2]);
+          project.members = project.members.filter((m) => m.userId !== targetUserId);
+          addAudit('PROJECT_MEMBER_REVOKED', 'Security', `Revoked access on '${project.code}' for user '${targetUserId}'.`, currentUser, 'Project', project.id);
+          return sendJson(res, 200, withComputedStructureCounts(project, projectStructures));
         }
 
         // Audit

@@ -59,14 +59,10 @@ export function canUserAccessProjectStructure(
   canManage: boolean
 ): boolean {
   if (user.isSystemAdministrator) return true;
-  const hasGlobalManagement =
-    user.permissions.includes('projects.manage') ||
-    user.permissions.includes('projects.structure.manage');
-  if (hasGlobalManagement) return true;
-
   const membership = project.members.find((m) => m.userId === user.id);
+  if (!membership) return false;
   if (!canManage) {
-    return Boolean(membership);
+    return true;
   }
   return Boolean(
     membership && (membership.canManageConstruction || membership.roleInProject === 'ProjectManager')

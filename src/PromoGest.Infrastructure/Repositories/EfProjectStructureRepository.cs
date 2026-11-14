@@ -48,35 +48,45 @@ public sealed class EfProjectStructureRepository : IProjectStructureRepository
             .ToListAsync(ct);
 
     public Task<Building?> GetBuildingAsync(Guid buildingId, CancellationToken ct = default)
-        => _dbContext.Buildings.AsNoTracking()
-            .FirstOrDefaultAsync(building => building.Id == buildingId, ct);
+        => _dbContext.Buildings.FirstOrDefaultAsync(building => building.Id == buildingId, ct);
 
     public Task<BuildingFloor?> GetFloorAsync(Guid floorId, CancellationToken ct = default)
-        => _dbContext.BuildingFloors.AsNoTracking()
-            .FirstOrDefaultAsync(floor => floor.Id == floorId, ct);
+        => _dbContext.BuildingFloors.FirstOrDefaultAsync(floor => floor.Id == floorId, ct);
+
+    public Task<PropertyUnit?> GetUnitAsync(Guid unitId, CancellationToken ct = default)
+        => _dbContext.PropertyUnits.FirstOrDefaultAsync(unit => unit.Id == unitId, ct);
 
     public Task<bool> ExistsBuildingCodeAsync(
         Guid projectId,
         string normalizedCode,
+        Guid? excludeBuildingId = null,
         CancellationToken ct = default)
         => _dbContext.Buildings.AnyAsync(
-            building => building.ProjectId == projectId && building.NormalizedCode == normalizedCode,
+            building => building.ProjectId == projectId &&
+                building.NormalizedCode == normalizedCode &&
+                (!excludeBuildingId.HasValue || building.Id != excludeBuildingId.Value),
             ct);
 
     public Task<bool> ExistsFloorNumberAsync(
         Guid buildingId,
         int floorNumber,
+        Guid? excludeFloorId = null,
         CancellationToken ct = default)
         => _dbContext.BuildingFloors.AnyAsync(
-            floor => floor.BuildingId == buildingId && floor.FloorNumber == floorNumber,
+            floor => floor.BuildingId == buildingId &&
+                floor.FloorNumber == floorNumber &&
+                (!excludeFloorId.HasValue || floor.Id != excludeFloorId.Value),
             ct);
 
     public Task<bool> ExistsUnitNumberAsync(
         Guid floorId,
         string normalizedUnitNumber,
+        Guid? excludeUnitId = null,
         CancellationToken ct = default)
         => _dbContext.PropertyUnits.AnyAsync(
-            unit => unit.FloorId == floorId && unit.NormalizedUnitNumber == normalizedUnitNumber,
+            unit => unit.FloorId == floorId &&
+                unit.NormalizedUnitNumber == normalizedUnitNumber &&
+                (!excludeUnitId.HasValue || unit.Id != excludeUnitId.Value),
             ct);
 
     public async Task AddBuildingAsync(Building building, CancellationToken ct = default)

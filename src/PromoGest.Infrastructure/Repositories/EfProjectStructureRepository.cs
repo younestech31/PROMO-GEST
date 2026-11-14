@@ -64,12 +64,34 @@ public sealed class EfProjectStructureRepository : IProjectStructureRepository
             building => building.ProjectId == projectId && building.NormalizedCode == normalizedCode,
             ct);
 
+    public Task<bool> ExistsBuildingCodeAsync(
+        Guid projectId,
+        string normalizedCode,
+        Guid? excludeBuildingId,
+        CancellationToken ct = default)
+        => _dbContext.Buildings.AnyAsync(
+            building => building.ProjectId == projectId &&
+                building.NormalizedCode == normalizedCode &&
+                (!excludeBuildingId.HasValue || building.Id != excludeBuildingId.Value),
+            ct);
+
     public Task<bool> ExistsFloorNumberAsync(
         Guid buildingId,
         int floorNumber,
         CancellationToken ct = default)
         => _dbContext.BuildingFloors.AnyAsync(
             floor => floor.BuildingId == buildingId && floor.FloorNumber == floorNumber,
+            ct);
+
+    public Task<bool> ExistsFloorNumberAsync(
+        Guid buildingId,
+        int floorNumber,
+        Guid? excludeFloorId,
+        CancellationToken ct = default)
+        => _dbContext.BuildingFloors.AnyAsync(
+            floor => floor.BuildingId == buildingId &&
+                floor.FloorNumber == floorNumber &&
+                (!excludeFloorId.HasValue || floor.Id != excludeFloorId.Value),
             ct);
 
     public Task<bool> ExistsUnitNumberAsync(

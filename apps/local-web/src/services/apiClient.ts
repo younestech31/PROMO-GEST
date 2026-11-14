@@ -13,6 +13,7 @@ import type {
   SessionResponse,
   SetupStatusResponse,
   UpdateEmployeeRequest,
+  UpdateProjectRequest,
   UserDto,
 } from '../types/erp';
 import { isStateChangingMethod, parseCookieValue } from '../utils/csrf';

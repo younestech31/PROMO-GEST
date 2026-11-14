@@ -813,13 +813,6 @@ public sealed class PostgresEndToEndTests : IClassFixture<PostgreSql18Integratio
                     entry.EventType == "PROPERTY_UNIT_UPDATED" && entry.TargetEntityId == createdUnit.Id.ToString());
                 Assert.Contains(await db.AuditLogs.ToListAsync(), entry =>
                     entry.EventType == "PROPERTY_UNIT_STATUS_CHANGED" && entry.TargetEntityId == createdUnit.Id.ToString());
-                Assert.Contains(await db.AuditLogs.ToListAsync(), entry =>
-                    entry.EventType == "PROJECT_DOCUMENT_UPLOADED" &&
-                    entry.TargetEntityType == "StoredFile");
-                Assert.Contains(await db.AuditLogs.ToListAsync(), entry =>
-                    entry.EventType == "PROJECT_DOCUMENT_DOWNLOADED" &&
-                    entry.TargetEntityType == "StoredFile");
-
             }
 
             // Project documents are stored locally, scoped to the project, checksummed, and audited.
@@ -854,6 +847,17 @@ public sealed class PostgresEndToEndTests : IClassFixture<PostgreSql18Integratio
                 Assert.Equal("no-store, no-cache", documentDownloadResponse.Headers.CacheControl?.ToString());
                 Assert.Equal(permitBytes, await documentDownloadResponse.Content.ReadAsByteArrayAsync());
                 Assert.Contains("attachment", documentDownloadResponse.Content.Headers.ContentDisposition?.Disposition ?? string.Empty);
+            }
+
+            using (var scope = factory.Services.CreateScope())
+            {
+                var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+                Assert.Contains(await db.AuditLogs.ToListAsync(), entry =>
+                    entry.EventType == "PROJECT_DOCUMENT_UPLOADED" &&
+                    entry.TargetEntityType == "StoredFile");
+                Assert.Contains(await db.AuditLogs.ToListAsync(), entry =>
+                    entry.EventType == "PROJECT_DOCUMENT_DOWNLOADED" &&
+                    entry.TargetEntityType == "StoredFile");
             }
 
             // Reject unsupported extensions before writing any bytes to the local storage root.

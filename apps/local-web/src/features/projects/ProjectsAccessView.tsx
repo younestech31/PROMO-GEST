@@ -421,7 +421,7 @@ export function ProjectsAccessView({
                             <span>{language === 'ar' ? 'وثائق المشروع' : 'Documents'}</span>
                           </button>
                         )}
-                        {canManageProjects(currentUser) && (
+                        {canManageProjects(currentUser, p) && (
                           <button
                             type="button"
                             onClick={() => openEditProject(p)}

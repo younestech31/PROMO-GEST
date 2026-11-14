@@ -67,3 +67,23 @@ export function canUploadProjectDocuments(user: AuthenticatedUser | null, projec
   return isProjectScoped && hasDocumentManagement &&
     user.permissions.includes('files.read') && user.permissions.includes('files.write');
 }
+
+
+export function canReadProjectCustomers(user: AuthenticatedUser | null, project: ProjectDto): boolean {
+  if (!user || !user.isActive) return false;
+  if (user.isSystemAdministrator) return true;
+  const isProjectScoped = project.members.some((member) => member.userId === user.id) ||
+    user.permissions.includes('projects.manage');
+  return isProjectScoped && user.permissions.includes('customers.read');
+}
+
+export function canManageProjectCustomers(user: AuthenticatedUser | null, project: ProjectDto): boolean {
+  if (!user || !user.isActive) return false;
+  if (user.isSystemAdministrator) return true;
+  const membership = project.members.find((member) => member.userId === user.id);
+  const isProjectScoped = Boolean(membership) || user.permissions.includes('projects.manage');
+  const canManageInProject = membership?.canManageSales === true ||
+    membership?.roleInProject === 'ProjectManager' ||
+    user.permissions.includes('projects.manage');
+  return isProjectScoped && canManageInProject && user.permissions.includes('customers.manage');
+}

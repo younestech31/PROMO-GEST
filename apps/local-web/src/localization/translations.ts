@@ -134,6 +134,8 @@ export interface TranslationBundle {
     buildings: string;
     structureEmpty: string;
     createBuilding: string;
+    editBuilding: string;
+    saveBuilding: string;
     buildingCode: string;
     buildingNameAr: string;
     buildingNameFr: string;
@@ -143,6 +145,8 @@ export interface TranslationBundle {
     floorNameAr: string;
     floorNameFr: string;
     addFloor: string;
+    editFloor: string;
+    saveFloor: string;
     noFloors: string;
     units: string;
     unitNumber: string;
@@ -344,6 +348,8 @@ const AR: TranslationBundle = {
     buildings: 'العمارات',
     structureEmpty: 'لم تتم إضافة أي عمارات لهذا المشروع بعد.',
     createBuilding: 'إضافة عمارة',
+    editBuilding: 'تعديل العمارة',
+    saveBuilding: 'حفظ بيانات العمارة',
     buildingCode: 'رمز العمارة',
     buildingNameAr: 'اسم العمارة بالعربية',
     buildingNameFr: 'اسم العمارة بالفرنسية',
@@ -353,6 +359,8 @@ const AR: TranslationBundle = {
     floorNameAr: 'اسم الطابق بالعربية',
     floorNameFr: 'اسم الطابق بالفرنسية',
     addFloor: 'إضافة طابق',
+    editFloor: 'تعديل الطابق',
+    saveFloor: 'حفظ بيانات الطابق',
     noFloors: 'لا توجد طوابق مسجلة لهذه العمارة.',
     units: 'الوحدات العقارية',
     unitNumber: 'رقم الوحدة',
@@ -554,6 +562,8 @@ const FR: TranslationBundle = {
     buildings: 'Bâtiments',
     structureEmpty: 'Aucun bâtiment n’a encore été ajouté à ce projet.',
     createBuilding: 'Ajouter un bâtiment',
+    editBuilding: 'Modifier le bâtiment',
+    saveBuilding: 'Enregistrer le bâtiment',
     buildingCode: 'Code du bâtiment',
     buildingNameAr: 'Nom du bâtiment en arabe',
     buildingNameFr: 'Nom du bâtiment en français',
@@ -563,6 +573,8 @@ const FR: TranslationBundle = {
     floorNameAr: 'Nom de l’étage en arabe',
     floorNameFr: 'Nom de l’étage en français',
     addFloor: 'Ajouter un étage',
+    editFloor: 'Modifier l’étage',
+    saveFloor: 'Enregistrer l’étage',
     noFloors: 'Aucun étage enregistré pour ce bâtiment.',
     units: 'Unités immobilières',
     unitNumber: 'Numéro de l’unité',

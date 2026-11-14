@@ -59,6 +59,8 @@ public sealed class ProjectStructureService
                     floor.NameAr,
                     floor.NameFr,
                     floor.CreatedAtUtc,
+                    floor.UpdatedAtUtc,
+                    floor.ConcurrencyStamp,
                     unitsByFloor.GetValueOrDefault(floor.Id) ?? new List<PropertyUnitDto>()))
                 .ToList());
 
@@ -72,6 +74,8 @@ public sealed class ProjectStructureService
                 building.NameFr,
                 building.Status.ToString(),
                 building.CreatedAtUtc,
+                building.UpdatedAtUtc,
+                building.ConcurrencyStamp,
                 floorsByBuilding.GetValueOrDefault(building.Id) ?? new List<BuildingFloorDto>()))
             .ToList();
 
@@ -230,6 +234,103 @@ public sealed class ProjectStructureService
         return await GetProjectStructureAsync(actorUserId, projectId, metadata, ct);
     }
 
+
+    public async Task<ProjectStructureDto> UpdateBuildingAsync(
+        Guid actorUserId,
+        Guid projectId,
+        Guid buildingId,
+        UpdateBuildingRequest request,
+        RequestMetadata metadata,
+        CancellationToken ct = default)
+    {
+        var actorAndProject = await RequireActorAndProjectAsync(
+            actorUserId, projectId, canManage: true, metadata, ct);
+
+        var building = await _structureRepository.GetBuildingAsync(buildingId, ct);
+        if (building is null || building.ProjectId != projectId)
+            throw new NotFoundDomainException("BUILDING_NOT_FOUND", "Building not found in this project.");
+
+        EnsureExpectedConcurrencyStamp(building.ConcurrencyStamp, request.ExpectedConcurrencyStamp);
+
+        if (!Enum.TryParse<BuildingStatus>(request.Status, ignoreCase: true, out var status) ||
+            !Enum.IsDefined(status))
+        {
+            throw new DomainException("BUILDING_STATUS_INVALID", "A valid building status is required.");
+        }
+
+        var normalizedCode = request.Code?.Trim().ToUpperInvariant() ?? string.Empty;
+        if (await _structureRepository.ExistsBuildingCodeAsync(projectId, normalizedCode, buildingId, ct))
+        {
+            throw new ConflictDomainException(
+                "BUILDING_CODE_EXISTS",
+                "A building with this code already exists in the project.");
+        }
+
+        var previousCode = building.Code;
+        var nowUtc = _clock.UtcNow;
+        building.UpdateDetails(normalizedCode, request.NameAr, request.NameFr, status, nowUtc);
+
+        await WriteAuditAsync(
+            actorAndProject.Actor,
+            nowUtc,
+            "BUILDING_UPDATED",
+            "Building",
+            building.Id.ToString(),
+            $"Updated building '{previousCode}' to '{building.Code}' in project '{actorAndProject.Project.Code}'.",
+            metadata,
+            ct);
+        await _structureRepository.SaveChangesAsync(ct);
+
+        return await GetProjectStructureAsync(actorUserId, projectId, metadata, ct);
+    }
+
+    public async Task<ProjectStructureDto> UpdateFloorAsync(
+        Guid actorUserId,
+        Guid projectId,
+        Guid buildingId,
+        Guid floorId,
+        UpdateBuildingFloorRequest request,
+        RequestMetadata metadata,
+        CancellationToken ct = default)
+    {
+        var actorAndProject = await RequireActorAndProjectAsync(
+            actorUserId, projectId, canManage: true, metadata, ct);
+
+        var building = await _structureRepository.GetBuildingAsync(buildingId, ct);
+        if (building is null || building.ProjectId != projectId)
+            throw new NotFoundDomainException("BUILDING_NOT_FOUND", "Building not found in this project.");
+
+        var floor = await _structureRepository.GetFloorAsync(floorId, ct);
+        if (floor is null || floor.BuildingId != buildingId)
+            throw new NotFoundDomainException("FLOOR_NOT_FOUND", "Floor not found in this building.");
+
+        EnsureExpectedConcurrencyStamp(floor.ConcurrencyStamp, request.ExpectedConcurrencyStamp);
+
+        if (await _structureRepository.ExistsFloorNumberAsync(buildingId, request.FloorNumber, floorId, ct))
+        {
+            throw new ConflictDomainException(
+                "FLOOR_NUMBER_EXISTS",
+                "This floor number already exists in the building.");
+        }
+
+        var previousNumber = floor.FloorNumber;
+        var nowUtc = _clock.UtcNow;
+        floor.UpdateDetails(request.FloorNumber, request.NameAr, request.NameFr, nowUtc);
+
+        await WriteAuditAsync(
+            actorAndProject.Actor,
+            nowUtc,
+            "BUILDING_FLOOR_UPDATED",
+            "BuildingFloor",
+            floor.Id.ToString(),
+            $"Updated floor {previousNumber} to {floor.FloorNumber} in building '{building.Code}' of project '{actorAndProject.Project.Code}'.",
+            metadata,
+            ct);
+        await _structureRepository.SaveChangesAsync(ct);
+
+        return await GetProjectStructureAsync(actorUserId, projectId, metadata, ct);
+    }
+
     public async Task<ProjectStructureDto> UpdatePropertyUnitAsync(
         Guid actorUserId,
         Guid projectId,
@@ -243,7 +344,7 @@ public sealed class ProjectStructureService
         var scope = await RequireUnitForManagementAsync(
             actorUserId, projectId, buildingId, floorId, unitId, metadata, ct);
 
-        EnsureExpectedConcurrencyStamp(scope.Unit, request.ExpectedConcurrencyStamp);
+        EnsureExpectedConcurrencyStamp(scope.Unit.ConcurrencyStamp, request.ExpectedConcurrencyStamp);
 
         if (!Enum.TryParse<PropertyUnitType>(request.UnitType, ignoreCase: true, out var unitType) ||
             !Enum.IsDefined(unitType))
@@ -300,7 +401,7 @@ public sealed class ProjectStructureService
         var scope = await RequireUnitForManagementAsync(
             actorUserId, projectId, buildingId, floorId, unitId, metadata, ct);
 
-        EnsureExpectedConcurrencyStamp(scope.Unit, request.ExpectedConcurrencyStamp);
+        EnsureExpectedConcurrencyStamp(scope.Unit.ConcurrencyStamp, request.ExpectedConcurrencyStamp);
 
         if (!Enum.TryParse<PropertyUnitStatus>(request.Status, ignoreCase: true, out var newStatus) ||
             !Enum.IsDefined(newStatus))
@@ -357,13 +458,13 @@ public sealed class ProjectStructureService
         return (actorAndProject.Actor, actorAndProject.Project, building, floor, unit);
     }
 
-    private static void EnsureExpectedConcurrencyStamp(PropertyUnit unit, Guid expectedConcurrencyStamp)
+    private static void EnsureExpectedConcurrencyStamp(Guid actualConcurrencyStamp, Guid expectedConcurrencyStamp)
     {
-        if (expectedConcurrencyStamp == Guid.Empty || unit.ConcurrencyStamp != expectedConcurrencyStamp)
+        if (expectedConcurrencyStamp == Guid.Empty || actualConcurrencyStamp != expectedConcurrencyStamp)
         {
             throw new ConflictDomainException(
                 "CONCURRENCY_CONFLICT",
-                "The property unit changed after it was loaded. Reload it before saving.");
+                "This record changed after it was loaded. Reload it before saving.");
         }
     }
 

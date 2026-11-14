@@ -203,6 +203,8 @@ export interface BuildingFloorDto {
   nameAr: string;
   nameFr: string;
   createdAtUtc: string;
+  updatedAtUtc: string;
+  concurrencyStamp: string;
   units: PropertyUnitDto[];
 }
 
@@ -214,6 +216,8 @@ export interface BuildingStructureDto {
   nameFr: string;
   status: string;
   createdAtUtc: string;
+  updatedAtUtc: string;
+  concurrencyStamp: string;
   floors: BuildingFloorDto[];
 }
 
@@ -242,6 +246,14 @@ export interface CreatePropertyUnitRequest {
   grossAreaSquareMeters?: number | null;
   netAreaSquareMeters?: number | null;
   roomsCount?: number | null;
+}
+
+export interface UpdateBuildingRequest extends CreateBuildingRequest {
+  expectedConcurrencyStamp: string;
+}
+
+export interface UpdateBuildingFloorRequest extends CreateBuildingFloorRequest {
+  expectedConcurrencyStamp: string;
 }
 
 export interface UpdatePropertyUnitRequest {

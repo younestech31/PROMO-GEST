@@ -70,7 +70,9 @@ public interface IProjectStructureRepository
     Task<Building?> GetBuildingAsync(Guid buildingId, CancellationToken ct = default);
     Task<BuildingFloor?> GetFloorAsync(Guid floorId, CancellationToken ct = default);
     Task<bool> ExistsBuildingCodeAsync(Guid projectId, string normalizedCode, CancellationToken ct = default);
+    Task<bool> ExistsBuildingCodeAsync(Guid projectId, string normalizedCode, Guid? excludeBuildingId, CancellationToken ct = default);
     Task<bool> ExistsFloorNumberAsync(Guid buildingId, int floorNumber, CancellationToken ct = default);
+    Task<bool> ExistsFloorNumberAsync(Guid buildingId, int floorNumber, Guid? excludeFloorId, CancellationToken ct = default);
     Task<bool> ExistsUnitNumberAsync(
         Guid floorId,
         string normalizedUnitNumber,

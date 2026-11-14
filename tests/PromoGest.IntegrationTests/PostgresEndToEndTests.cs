@@ -653,6 +653,58 @@ public sealed class PostgresEndToEndTests : IClassFixture<PostgreSql18Integratio
                 new CreateBuildingFloorRequest(0, "طابق مكرر", "Étage dupliqué"));
             Assert.Equal(HttpStatusCode.Conflict, duplicateFloorResponse.StatusCode);
 
+            // Building edits preserve identifiers and reject stale versions.
+            var updateBuildingUrl = $"{structureUrl}/buildings/{createdBuilding.Id}";
+            var updateBuildingResponse = await adminClient.PutAsJsonAsync(
+                updateBuildingUrl,
+                new UpdateBuildingRequest(
+                    "A-UPDATED",
+                    "العمارة أ المحدثة",
+                    "Bâtiment A modifié",
+                    "UnderConstruction",
+                    createdBuilding.ConcurrencyStamp));
+            Assert.Equal(HttpStatusCode.OK, updateBuildingResponse.StatusCode);
+            var updatedBuildingStructure = await updateBuildingResponse.Content.ReadFromJsonAsync<ProjectStructureDto>();
+            Assert.NotNull(updatedBuildingStructure);
+            var updatedBuilding = Assert.Single(updatedBuildingStructure!.Buildings);
+            Assert.Equal("A-UPDATED", updatedBuilding.Code);
+            Assert.Equal("UnderConstruction", updatedBuilding.Status);
+            Assert.NotEqual(createdBuilding.ConcurrencyStamp, updatedBuilding.ConcurrencyStamp);
+
+            var staleBuildingResponse = await adminClient.PutAsJsonAsync(
+                updateBuildingUrl,
+                new UpdateBuildingRequest(
+                    "A-STALE",
+                    "اسم قديم",
+                    "Ancien nom",
+                    "Planned",
+                    createdBuilding.ConcurrencyStamp));
+            Assert.Equal(HttpStatusCode.Conflict, staleBuildingResponse.StatusCode);
+
+            var updateFloorUrl = $"{floorsUrl}/{createdFloor.Id}";
+            var updateFloorResponse = await adminClient.PutAsJsonAsync(
+                updateFloorUrl,
+                new UpdateBuildingFloorRequest(
+                    1,
+                    "الطابق الأول",
+                    "Premier étage",
+                    createdFloor.ConcurrencyStamp));
+            Assert.Equal(HttpStatusCode.OK, updateFloorResponse.StatusCode);
+            var updatedFloorStructure = await updateFloorResponse.Content.ReadFromJsonAsync<ProjectStructureDto>();
+            Assert.NotNull(updatedFloorStructure);
+            var updatedFloor = Assert.Single(Assert.Single(updatedFloorStructure!.Buildings).Floors);
+            Assert.Equal(1, updatedFloor.FloorNumber);
+            Assert.NotEqual(createdFloor.ConcurrencyStamp, updatedFloor.ConcurrencyStamp);
+
+            var staleFloorResponse = await adminClient.PutAsJsonAsync(
+                updateFloorUrl,
+                new UpdateBuildingFloorRequest(
+                    2,
+                    "طابق قديم",
+                    "Ancien étage",
+                    createdFloor.ConcurrencyStamp));
+            Assert.Equal(HttpStatusCode.Conflict, staleFloorResponse.StatusCode);
+
             var unitsUrl = $"{floorsUrl}/{createdFloor.Id}/units";
             var unitResponse = await adminClient.PostAsJsonAsync(
                 unitsUrl,
@@ -741,6 +793,10 @@ public sealed class PostgresEndToEndTests : IClassFixture<PostgreSql18Integratio
                 Assert.Contains(await db.AuditLogs.ToListAsync(), entry =>
                     entry.EventType == "BUILDING_FLOOR_CREATED" && entry.TargetEntityId == createdFloor.Id.ToString());
                 Assert.Contains(await db.AuditLogs.ToListAsync(), entry =>
+                    entry.EventType == "BUILDING_UPDATED" && entry.TargetEntityId == createdBuilding.Id.ToString());
+                Assert.Contains(await db.AuditLogs.ToListAsync(), entry =>
+                    entry.EventType == "BUILDING_FLOOR_UPDATED" && entry.TargetEntityId == createdFloor.Id.ToString());
+                Assert.Contains(await db.AuditLogs.ToListAsync(), entry =>
                     entry.EventType == "PROPERTY_UNIT_CREATED" && entry.TargetEntityId == createdUnit.Id.ToString());
                 Assert.Contains(await db.AuditLogs.ToListAsync(), entry =>
                     entry.EventType == "PROPERTY_UNIT_UPDATED" && entry.TargetEntityId == createdUnit.Id.ToString());
@@ -806,6 +862,25 @@ public sealed class PostgresEndToEndTests : IClassFixture<PostgreSql18Integratio
                 $"{structureUrl}/buildings",
                 new CreateBuildingRequest("X", "غير مصرح", "Non autorisé", "Planned"));
             Assert.Equal(HttpStatusCode.Forbidden, deniedStructureCreate.StatusCode);
+
+            var deniedBuildingUpdate = await employeeClient.PutAsJsonAsync(
+                updateBuildingUrl,
+                new UpdateBuildingRequest(
+                    "X",
+                    "تعديل غير مصرح",
+                    "Modification non autorisée",
+                    updatedBuilding.Status,
+                    updatedBuilding.ConcurrencyStamp));
+            Assert.Equal(HttpStatusCode.Forbidden, deniedBuildingUpdate.StatusCode);
+
+            var deniedFloorUpdate = await employeeClient.PutAsJsonAsync(
+                updateFloorUrl,
+                new UpdateBuildingFloorRequest(
+                    updatedFloor.FloorNumber,
+                    "تعديل غير مصرح",
+                    "Modification non autorisée",
+                    updatedFloor.ConcurrencyStamp));
+            Assert.Equal(HttpStatusCode.Forbidden, deniedFloorUpdate.StatusCode);
 
             // IDOR blocked + audited
             var forbiddenAttempt = await employeeClient.GetAsync($"/api/projects/{createdProject!.Id}");

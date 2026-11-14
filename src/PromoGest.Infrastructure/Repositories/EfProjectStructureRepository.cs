@@ -47,12 +47,13 @@ public sealed class EfProjectStructureRepository : IProjectStructureRepository
             .ThenBy(unit => unit.NormalizedUnitNumber)
             .ToListAsync(ct);
 
+    // Tracked reads are required for version-checked aggregate updates.
     public Task<Building?> GetBuildingAsync(Guid buildingId, CancellationToken ct = default)
-        => _dbContext.Buildings.AsNoTracking()
+        => _dbContext.Buildings
             .FirstOrDefaultAsync(building => building.Id == buildingId, ct);
 
     public Task<BuildingFloor?> GetFloorAsync(Guid floorId, CancellationToken ct = default)
-        => _dbContext.BuildingFloors.AsNoTracking()
+        => _dbContext.BuildingFloors
             .FirstOrDefaultAsync(floor => floor.Id == floorId, ct);
 
     public Task<bool> ExistsBuildingCodeAsync(
@@ -63,12 +64,34 @@ public sealed class EfProjectStructureRepository : IProjectStructureRepository
             building => building.ProjectId == projectId && building.NormalizedCode == normalizedCode,
             ct);
 
+    public Task<bool> ExistsBuildingCodeAsync(
+        Guid projectId,
+        string normalizedCode,
+        Guid? excludeBuildingId,
+        CancellationToken ct = default)
+        => _dbContext.Buildings.AnyAsync(
+            building => building.ProjectId == projectId &&
+                building.NormalizedCode == normalizedCode &&
+                (!excludeBuildingId.HasValue || building.Id != excludeBuildingId.Value),
+            ct);
+
     public Task<bool> ExistsFloorNumberAsync(
         Guid buildingId,
         int floorNumber,
         CancellationToken ct = default)
         => _dbContext.BuildingFloors.AnyAsync(
             floor => floor.BuildingId == buildingId && floor.FloorNumber == floorNumber,
+            ct);
+
+    public Task<bool> ExistsFloorNumberAsync(
+        Guid buildingId,
+        int floorNumber,
+        Guid? excludeFloorId,
+        CancellationToken ct = default)
+        => _dbContext.BuildingFloors.AnyAsync(
+            floor => floor.BuildingId == buildingId &&
+                floor.FloorNumber == floorNumber &&
+                (!excludeFloorId.HasValue || floor.Id != excludeFloorId.Value),
             ct);
 
     public Task<bool> ExistsUnitNumberAsync(

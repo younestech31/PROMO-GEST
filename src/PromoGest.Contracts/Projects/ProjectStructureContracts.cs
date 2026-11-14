@@ -12,6 +12,8 @@ public sealed record BuildingStructureDto(
     string NameFr,
     string Status,
     DateTimeOffset CreatedAtUtc,
+    DateTimeOffset UpdatedAtUtc,
+    Guid ConcurrencyStamp,
     IReadOnlyList<BuildingFloorDto> Floors);
 
 public sealed record BuildingFloorDto(
@@ -21,6 +23,8 @@ public sealed record BuildingFloorDto(
     string NameAr,
     string NameFr,
     DateTimeOffset CreatedAtUtc,
+    DateTimeOffset UpdatedAtUtc,
+    Guid ConcurrencyStamp,
     IReadOnlyList<PropertyUnitDto> Units);
 
 public sealed record PropertyUnitDto(
@@ -65,4 +69,17 @@ public sealed record UpdatePropertyUnitRequest(
 
 public sealed record ChangePropertyUnitStatusRequest(
     string Status,
+    Guid ExpectedConcurrencyStamp);
+
+public sealed record UpdateBuildingRequest(
+    string Code,
+    string NameAr,
+    string NameFr,
+    string Status,
+    Guid ExpectedConcurrencyStamp);
+
+public sealed record UpdateBuildingFloorRequest(
+    int FloorNumber,
+    string NameAr,
+    string NameFr,
     Guid ExpectedConcurrencyStamp);

@@ -347,6 +347,8 @@ export function createPromoGestDevApiPlugin(): Plugin {
         estimatedBudgetDzd: 1250000000,
         plannedBlocksCount: 4,
         plannedUnitsCount: 180,
+        actualBuildingsCount: 0,
+        actualUnitsCount: 0,
         createdAtUtc: nowIso,
         members: [],
       },
@@ -366,6 +368,8 @@ export function createPromoGestDevApiPlugin(): Plugin {
         estimatedBudgetDzd: 780000000,
         plannedBlocksCount: 2,
         plannedUnitsCount: 96,
+        actualBuildingsCount: 0,
+        actualUnitsCount: 0,
         createdAtUtc: nowIso,
         members: [],
       }
@@ -889,6 +893,8 @@ export function createPromoGestDevApiPlugin(): Plugin {
             estimatedBudgetDzd: Number(body.estimatedBudgetDzd || 0),
             plannedBlocksCount: Number(body.plannedBlocksCount || 0),
             plannedUnitsCount: Number(body.plannedUnitsCount || 0),
+        actualBuildingsCount: 0,
+        actualUnitsCount: 0,
             createdAtUtc: new Date().toISOString(),
             members: [],
           };

@@ -93,6 +93,21 @@ public interface IProjectStructureRepository
     Task SaveChangesAsync(CancellationToken ct = default);
 }
 
+public sealed record ProjectSalesReservationListItem(
+    ProjectSalesReservation Reservation,
+    string UnitNumber,
+    string CustomerName);
+
+public interface IProjectSalesReservationRepository
+{
+    Task<IReadOnlyList<ProjectSalesReservationListItem>> ListByProjectAsync(Guid projectId, CancellationToken ct = default);
+    Task<ProjectSalesReservation?> GetByProjectAsync(Guid projectId, Guid reservationId, CancellationToken ct = default);
+    Task<PropertyUnit?> GetPropertyUnitForProjectAsync(Guid projectId, Guid propertyUnitId, CancellationToken ct = default);
+    Task<IReadOnlyList<ProjectSalesReservation>> ListDueForExpiryAsync(DateTimeOffset nowUtc, int limit, CancellationToken ct = default);
+    Task AddAsync(ProjectSalesReservation reservation, CancellationToken ct = default);
+    Task SaveChangesAsync(CancellationToken ct = default);
+}
+
 public interface IAuditQueryRepository
 {
     Task<IReadOnlyList<AuditLog>> ListRecentAsync(int limit, CancellationToken ct = default);

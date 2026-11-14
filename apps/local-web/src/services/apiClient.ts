@@ -7,6 +7,8 @@ import type {
   CreateBuildingRequest,
   CreateBuildingFloorRequest,
   CreatePropertyUnitRequest,
+  UpdateBuildingRequest,
+  UpdateBuildingFloorRequest,
   UpdatePropertyUnitRequest,
   ChangePropertyUnitStatusRequest,
   ProjectStructureDto,

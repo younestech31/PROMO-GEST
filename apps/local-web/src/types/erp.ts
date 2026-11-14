@@ -180,6 +180,8 @@ export interface CreateProjectRequest {
   plannedUnitsCount: number;
 }
 
+export type UpdateProjectRequest = Omit<CreateProjectRequest, 'code'>;
+
 export interface AssignProjectMemberRequest {
   userId: string;
   roleInProject: string;

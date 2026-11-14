@@ -5,7 +5,6 @@ using PromoGest.Application.Interfaces;
 using PromoGest.Application.Services;
 using PromoGest.Domain.Interfaces;
 using PromoGest.Infrastructure.Persistence;
-using PromoGest.Infrastructure.HostedServices;
 using PromoGest.Infrastructure.Repositories;
 using PromoGest.Infrastructure.Security;
 using PromoGest.Infrastructure.Storage;
@@ -57,7 +56,6 @@ public static class DependencyInjection
         services.AddScoped<ProjectCustomerService>();
         services.AddScoped<ProjectSalesReservationService>();
         services.AddScoped<ProjectSalesReservationExpiryProcessor>();
-        services.AddHostedService<ProjectSalesReservationExpiryWorker>();
         services.AddScoped<AuditQueryService>();
         services.AddScoped<AdminRecoveryService>();
 

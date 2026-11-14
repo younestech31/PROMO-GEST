@@ -145,10 +145,13 @@ export function ProjectStructureModal({
     setSubmitting(true);
     const buildingBeingEdited = structure?.buildings.find((item) => item.id === editingBuildingId);
     try {
-      const result = editingBuildingId && buildingBeingEdited
+      if (editingBuildingId && !buildingBeingEdited) {
+        throw new Error('The building is no longer present in the loaded project structure.');
+      }
+      const result = editingBuildingId
         ? await apiClient.updateProjectBuilding(project.id, editingBuildingId, {
             ...buildingForm,
-            expectedConcurrencyStamp: buildingBeingEdited.concurrencyStamp,
+            expectedConcurrencyStamp: buildingBeingEdited!.concurrencyStamp,
           })
         : await apiClient.createProjectBuilding(project.id, buildingForm);
       setStructure(result);
@@ -182,14 +185,17 @@ export function ProjectStructureModal({
     setSubmitting(true);
     const floorBeingEdited = selectedBuilding.floors.find((item) => item.id === editingFloorId);
     try {
-      const result = editingFloorId && floorBeingEdited
+      if (editingFloorId && !floorBeingEdited) {
+        throw new Error('The floor is no longer present in the loaded building.');
+      }
+      const result = editingFloorId
         ? await apiClient.updateBuildingFloor(
             project.id,
             selectedBuilding.id,
             editingFloorId,
             {
               ...floorForm,
-              expectedConcurrencyStamp: floorBeingEdited.concurrencyStamp,
+              expectedConcurrencyStamp: floorBeingEdited!.concurrencyStamp,
             }
           )
         : await apiClient.createBuildingFloor(project.id, selectedBuilding.id, floorForm);

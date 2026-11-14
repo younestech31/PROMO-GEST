@@ -149,8 +149,17 @@ public sealed class ApplicationSecurityAndFoundationTests
             => Task.FromResult(Buildings.Any(b => b.ProjectId == projectId && b.NormalizedCode == normalizedCode));
         public Task<bool> ExistsFloorNumberAsync(Guid buildingId, int floorNumber, CancellationToken ct = default)
             => Task.FromResult(Floors.Any(f => f.BuildingId == buildingId && f.FloorNumber == floorNumber));
-        public Task<bool> ExistsUnitNumberAsync(Guid floorId, string normalizedUnitNumber, CancellationToken ct = default)
-            => Task.FromResult(Units.Any(u => u.FloorId == floorId && u.NormalizedUnitNumber == normalizedUnitNumber));
+        public Task<bool> ExistsUnitNumberAsync(
+            Guid floorId,
+            string normalizedUnitNumber,
+            Guid? excludeUnitId = null,
+            CancellationToken ct = default)
+            => Task.FromResult(Units.Any(u =>
+                u.FloorId == floorId &&
+                u.NormalizedUnitNumber == normalizedUnitNumber &&
+                (!excludeUnitId.HasValue || u.Id != excludeUnitId.Value)));
+        public Task<PropertyUnit?> GetPropertyUnitForUpdateAsync(Guid floorId, Guid unitId, CancellationToken ct = default)
+            => Task.FromResult(Units.FirstOrDefault(u => u.FloorId == floorId && u.Id == unitId));
         public Task AddBuildingAsync(Building building, CancellationToken ct = default) { Buildings.Add(building); return Task.CompletedTask; }
         public Task AddFloorAsync(BuildingFloor floor, CancellationToken ct = default) { Floors.Add(floor); return Task.CompletedTask; }
         public Task AddPropertyUnitAsync(PropertyUnit unit, CancellationToken ct = default) { Units.Add(unit); return Task.CompletedTask; }
@@ -356,6 +365,66 @@ public sealed class ApplicationSecurityAndFoundationTests
         Assert.Equal(96.25m, unit.NetAreaSquareMeters);
         Assert.Equal(4, unit.RoomsCount);
 
+        var updatedStructure = await structureSvc.UpdatePropertyUnitAsync(
+            init.SystemAdminUserId,
+            project.Id,
+            building.Id,
+            floor.Id,
+            unit.Id,
+            new UpdatePropertyUnitRequest(
+                "A-001",
+                "Apartment",
+                113m,
+                97m,
+                4,
+                unit.ConcurrencyStamp),
+            metadata);
+        var updatedUnit = Assert.Single(
+            Assert.Single(Assert.Single(updatedStructure.Buildings).Floors).Units);
+        Assert.Equal(113m, updatedUnit.GrossAreaSquareMeters);
+        Assert.Equal(97m, updatedUnit.NetAreaSquareMeters);
+        Assert.NotEqual(unit.ConcurrencyStamp, updatedUnit.ConcurrencyStamp);
+
+        var staleUpdate = await Assert.ThrowsAsync<ConflictDomainException>(() =>
+            structureSvc.UpdatePropertyUnitAsync(
+                init.SystemAdminUserId,
+                project.Id,
+                building.Id,
+                floor.Id,
+                unit.Id,
+                new UpdatePropertyUnitRequest(
+                    "A-001",
+                    "Apartment",
+                    114m,
+                    97m,
+                    4,
+                    unit.ConcurrencyStamp),
+                metadata));
+        Assert.Equal("CONCURRENCY_CONFLICT", staleUpdate.Code);
+
+        var withdrawnStructure = await structureSvc.ChangePropertyUnitStatusAsync(
+            init.SystemAdminUserId,
+            project.Id,
+            building.Id,
+            floor.Id,
+            unit.Id,
+            new ChangePropertyUnitStatusRequest("Withdrawn", updatedUnit.ConcurrencyStamp),
+            metadata);
+        var withdrawnUnit = Assert.Single(
+            Assert.Single(Assert.Single(withdrawnStructure.Buildings).Floors).Units);
+        Assert.Equal("Withdrawn", withdrawnUnit.Status);
+
+        var forbiddenSaleStatus = await Assert.ThrowsAsync<DomainException>(() =>
+            structureSvc.ChangePropertyUnitStatusAsync(
+                init.SystemAdminUserId,
+                project.Id,
+                building.Id,
+                floor.Id,
+                unit.Id,
+                new ChangePropertyUnitStatusRequest("Sold", withdrawnUnit.ConcurrencyStamp),
+                metadata));
+        Assert.Equal("UNIT_STATUS_REQUIRES_SALES_WORKFLOW", forbiddenSaleStatus.Code);
+
         var duplicateBuilding = await Assert.ThrowsAsync<ConflictDomainException>(() =>
             structureSvc.CreateBuildingAsync(
                 init.SystemAdminUserId,
@@ -431,6 +500,8 @@ public sealed class ApplicationSecurityAndFoundationTests
         Assert.Contains(store.AuditLogs, entry => entry.EventType == "BUILDING_CREATED");
         Assert.Contains(store.AuditLogs, entry => entry.EventType == "BUILDING_FLOOR_CREATED");
         Assert.Contains(store.AuditLogs, entry => entry.EventType == "PROPERTY_UNIT_CREATED");
+        Assert.Contains(store.AuditLogs, entry => entry.EventType == "PROPERTY_UNIT_UPDATED");
+        Assert.Contains(store.AuditLogs, entry => entry.EventType == "PROPERTY_UNIT_STATUS_CHANGED");
         Assert.Contains(store.AuditLogs, entry => entry.EventType == "ACCESS_DENIED" && entry.ActorUserId == employee.Id);
     }
 

@@ -63,6 +63,34 @@ public sealed class ProjectStructureController : ControllerBase
         return Ok(structure);
     }
 
+    [HttpPut("buildings/{buildingId:guid}/floors/{floorId:guid}/units/{unitId:guid}")]
+    public async Task<ActionResult<ProjectStructureDto>> UpdatePropertyUnit(
+        Guid projectId,
+        Guid buildingId,
+        Guid floorId,
+        Guid unitId,
+        [FromBody] UpdatePropertyUnitRequest request,
+        CancellationToken ct)
+    {
+        var structure = await _structureService.UpdatePropertyUnitAsync(
+            GetActorUserId(), projectId, buildingId, floorId, unitId, request, GetMetadata(), ct);
+        return Ok(structure);
+    }
+
+    [HttpPut("buildings/{buildingId:guid}/floors/{floorId:guid}/units/{unitId:guid}/status")]
+    public async Task<ActionResult<ProjectStructureDto>> ChangePropertyUnitStatus(
+        Guid projectId,
+        Guid buildingId,
+        Guid floorId,
+        Guid unitId,
+        [FromBody] ChangePropertyUnitStatusRequest request,
+        CancellationToken ct)
+    {
+        var structure = await _structureService.ChangePropertyUnitStatusAsync(
+            GetActorUserId(), projectId, buildingId, floorId, unitId, request, GetMetadata(), ct);
+        return Ok(structure);
+    }
+
     private Guid GetActorUserId()
     {
         var raw = User.FindFirstValue(ClaimTypes.NameIdentifier);

@@ -199,7 +199,8 @@ public sealed class ProjectStructureService
 
         var unitNumber = request.UnitNumber?.Trim() ?? string.Empty;
         var normalizedUnitNumber = unitNumber.ToUpperInvariant();
-        if (await _structureRepository.ExistsUnitNumberAsync(floorId, normalizedUnitNumber, ct))
+        if (await _structureRepository.ExistsUnitNumberAsync(
+            floorId, normalizedUnitNumber, excludeUnitId: null, ct: ct))
             throw new ConflictDomainException("UNIT_NUMBER_EXISTS", "A property unit with this number already exists on the floor.");
 
         var nowUtc = _clock.UtcNow;
@@ -227,6 +228,143 @@ public sealed class ProjectStructureService
         await _structureRepository.SaveChangesAsync(ct);
 
         return await GetProjectStructureAsync(actorUserId, projectId, metadata, ct);
+    }
+
+    public async Task<ProjectStructureDto> UpdatePropertyUnitAsync(
+        Guid actorUserId,
+        Guid projectId,
+        Guid buildingId,
+        Guid floorId,
+        Guid unitId,
+        UpdatePropertyUnitRequest request,
+        RequestMetadata metadata,
+        CancellationToken ct = default)
+    {
+        var scope = await RequireUnitForManagementAsync(
+            actorUserId, projectId, buildingId, floorId, unitId, metadata, ct);
+
+        EnsureExpectedConcurrencyStamp(scope.Unit, request.ExpectedConcurrencyStamp);
+
+        if (!Enum.TryParse<PropertyUnitType>(request.UnitType, ignoreCase: true, out var unitType) ||
+            !Enum.IsDefined(unitType))
+        {
+            throw new DomainException("UNIT_TYPE_INVALID", "A valid property unit type is required.");
+        }
+
+        var unitNumber = request.UnitNumber?.Trim() ?? string.Empty;
+        var normalizedUnitNumber = unitNumber.ToUpperInvariant();
+        if (await _structureRepository.ExistsUnitNumberAsync(
+            floorId, normalizedUnitNumber, excludeUnitId: unitId, ct: ct))
+        {
+            throw new ConflictDomainException(
+                "UNIT_NUMBER_EXISTS",
+                "A property unit with this number already exists on the floor.");
+        }
+
+        var previousNumber = scope.Unit.UnitNumber;
+        var previousType = scope.Unit.UnitType;
+        var nowUtc = _clock.UtcNow;
+
+        scope.Unit.UpdateDetails(
+            unitNumber,
+            unitType,
+            request.GrossAreaSquareMeters,
+            request.NetAreaSquareMeters,
+            request.RoomsCount,
+            nowUtc);
+
+        await WriteAuditAsync(
+            scope.Actor,
+            nowUtc,
+            "PROPERTY_UNIT_UPDATED",
+            "PropertyUnit",
+            scope.Unit.Id.ToString(),
+            $"Updated property unit '{previousNumber}' to '{scope.Unit.UnitNumber}' in project '{scope.Project.Code}' (type: {previousType} -> {unitType}).",
+            metadata,
+            ct);
+        await _structureRepository.SaveChangesAsync(ct);
+
+        return await GetProjectStructureAsync(actorUserId, projectId, metadata, ct);
+    }
+
+    public async Task<ProjectStructureDto> ChangePropertyUnitStatusAsync(
+        Guid actorUserId,
+        Guid projectId,
+        Guid buildingId,
+        Guid floorId,
+        Guid unitId,
+        ChangePropertyUnitStatusRequest request,
+        RequestMetadata metadata,
+        CancellationToken ct = default)
+    {
+        var scope = await RequireUnitForManagementAsync(
+            actorUserId, projectId, buildingId, floorId, unitId, metadata, ct);
+
+        EnsureExpectedConcurrencyStamp(scope.Unit, request.ExpectedConcurrencyStamp);
+
+        if (!Enum.TryParse<PropertyUnitStatus>(request.Status, ignoreCase: true, out var newStatus) ||
+            !Enum.IsDefined(newStatus))
+        {
+            throw new DomainException("UNIT_STATUS_INVALID", "A valid property unit status is required.");
+        }
+
+        var previousStatus = scope.Unit.Status;
+        var nowUtc = _clock.UtcNow;
+        scope.Unit.ChangeStatus(newStatus, nowUtc);
+
+        if (scope.Unit.Status != previousStatus)
+        {
+            await WriteAuditAsync(
+                scope.Actor,
+                nowUtc,
+                "PROPERTY_UNIT_STATUS_CHANGED",
+                "PropertyUnit",
+                scope.Unit.Id.ToString(),
+                $"Changed property unit '{scope.Unit.UnitNumber}' status from {previousStatus} to {scope.Unit.Status} in project '{scope.Project.Code}'.",
+                metadata,
+                ct);
+            await _structureRepository.SaveChangesAsync(ct);
+        }
+
+        return await GetProjectStructureAsync(actorUserId, projectId, metadata, ct);
+    }
+
+    private async Task<(User Actor, Project Project, Building Building, BuildingFloor Floor, PropertyUnit Unit)>
+        RequireUnitForManagementAsync(
+            Guid actorUserId,
+            Guid projectId,
+            Guid buildingId,
+            Guid floorId,
+            Guid unitId,
+            RequestMetadata metadata,
+            CancellationToken ct)
+    {
+        var actorAndProject = await RequireActorAndProjectAsync(
+            actorUserId, projectId, canManage: true, metadata, ct);
+
+        var building = await _structureRepository.GetBuildingAsync(buildingId, ct);
+        if (building is null || building.ProjectId != projectId)
+            throw new NotFoundDomainException("BUILDING_NOT_FOUND", "Building not found in this project.");
+
+        var floor = await _structureRepository.GetFloorAsync(floorId, ct);
+        if (floor is null || floor.BuildingId != buildingId)
+            throw new NotFoundDomainException("FLOOR_NOT_FOUND", "Floor not found in this building.");
+
+        var unit = await _structureRepository.GetPropertyUnitForUpdateAsync(floorId, unitId, ct);
+        if (unit is null)
+            throw new NotFoundDomainException("UNIT_NOT_FOUND", "Property unit not found on this floor.");
+
+        return (actorAndProject.Actor, actorAndProject.Project, building, floor, unit);
+    }
+
+    private static void EnsureExpectedConcurrencyStamp(PropertyUnit unit, Guid expectedConcurrencyStamp)
+    {
+        if (expectedConcurrencyStamp == Guid.Empty || unit.ConcurrencyStamp != expectedConcurrencyStamp)
+        {
+            throw new ConflictDomainException(
+                "CONCURRENCY_CONFLICT",
+                "The property unit changed after it was loaded. Reload it before saving.");
+        }
     }
 
     private async Task<Project> RequireProjectAccessAsync(
@@ -326,5 +464,7 @@ public sealed class ProjectStructureService
             unit.GrossAreaSquareMeters,
             unit.NetAreaSquareMeters,
             unit.RoomsCount,
-            unit.CreatedAtUtc);
+            unit.CreatedAtUtc,
+            unit.UpdatedAtUtc,
+            unit.ConcurrencyStamp);
 }

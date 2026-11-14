@@ -192,6 +192,8 @@ export interface PropertyUnitDto {
   netAreaSquareMeters: number | null;
   roomsCount: number | null;
   createdAtUtc: string;
+  updatedAtUtc: string;
+  concurrencyStamp: string;
 }
 
 export interface BuildingFloorDto {
@@ -240,6 +242,20 @@ export interface CreatePropertyUnitRequest {
   grossAreaSquareMeters?: number | null;
   netAreaSquareMeters?: number | null;
   roomsCount?: number | null;
+}
+
+export interface UpdatePropertyUnitRequest {
+  unitNumber: string;
+  unitType: string;
+  grossAreaSquareMeters: number | null;
+  netAreaSquareMeters: number | null;
+  roomsCount: number | null;
+  expectedConcurrencyStamp: string;
+}
+
+export interface ChangePropertyUnitStatusRequest {
+  status: string;
+  expectedConcurrencyStamp: string;
 }
 
 export interface AssignProjectMemberRequest {

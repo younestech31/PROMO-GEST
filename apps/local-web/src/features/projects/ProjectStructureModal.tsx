@@ -6,6 +6,7 @@ import type {
   BuildingFloorDto,
   ProjectDto,
   ProjectStructureDto,
+  PropertyUnitDto,
 } from '../../types/erp';
 import { getTranslations, translateApiError } from '../../localization/translations';
 import { apiClient, ApiError } from '../../services/apiClient';
@@ -42,6 +43,16 @@ const UNIT_STATUSES = [
   { code: 'Withdrawn', ar: 'مسحوبة', fr: 'Retiré' },
 ];
 
+const INITIAL_UNIT_STATUSES = UNIT_STATUSES.filter(
+  (status) => ['Planned', 'UnderConstruction', 'AvailableForSale'].includes(status.code)
+);
+
+const NEXT_UNIT_STATUSES: Record<string, string[]> = {
+  Planned: ['UnderConstruction', 'Withdrawn'],
+  UnderConstruction: ['AvailableForSale', 'Withdrawn'],
+  AvailableForSale: ['Withdrawn'],
+};
+
 export function ProjectStructureModal({
   project,
   language,
@@ -60,6 +71,15 @@ export function ProjectStructureModal({
   const [showBuildingForm, setShowBuildingForm] = useState(false);
   const [showFloorForm, setShowFloorForm] = useState(false);
   const [showUnitForm, setShowUnitForm] = useState(false);
+  const [editingUnitId, setEditingUnitId] = useState<string | null>(null);
+  const [editUnitForm, setEditUnitForm] = useState({
+    unitNumber: '',
+    unitType: 'Apartment',
+    grossAreaSquareMeters: '',
+    netAreaSquareMeters: '',
+    roomsCount: '',
+  });
+  const [statusSelections, setStatusSelections] = useState<Record<string, string>>({});
 
   const [buildingForm, setBuildingForm] = useState({
     code: '',
@@ -203,6 +223,82 @@ export function ProjectStructureModal({
       setShowUnitForm(false);
     } catch (err) {
       showMutationError(err, 'فشل إضافة الوحدة العقارية.', 'Échec de l’ajout de l’unité immobilière.');
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const beginEditUnit = (unit: PropertyUnitDto) => {
+    setEditingUnitId(unit.id);
+    setEditUnitForm({
+      unitNumber: unit.unitNumber,
+      unitType: unit.unitType,
+      grossAreaSquareMeters: unit.grossAreaSquareMeters?.toString() ?? '',
+      netAreaSquareMeters: unit.netAreaSquareMeters?.toString() ?? '',
+      roomsCount: unit.roomsCount?.toString() ?? '',
+    });
+    setError(null);
+  };
+
+  const handleUpdateUnit = async (event: FormEvent, unit: PropertyUnitDto) => {
+    event.preventDefault();
+    if (!selectedBuilding || !selectedFloor) return;
+    setError(null);
+    setSubmitting(true);
+    try {
+      const result = await apiClient.updatePropertyUnit(
+        project.id,
+        selectedBuilding.id,
+        selectedFloor.id,
+        unit.id,
+        {
+          unitNumber: editUnitForm.unitNumber,
+          unitType: editUnitForm.unitType,
+          grossAreaSquareMeters: editUnitForm.grossAreaSquareMeters === ''
+            ? null
+            : Number(editUnitForm.grossAreaSquareMeters),
+          netAreaSquareMeters: editUnitForm.netAreaSquareMeters === ''
+            ? null
+            : Number(editUnitForm.netAreaSquareMeters),
+          roomsCount: editUnitForm.roomsCount === '' ? null : Number(editUnitForm.roomsCount),
+          expectedConcurrencyStamp: unit.concurrencyStamp,
+        }
+      );
+      setStructure(result);
+      setEditingUnitId(null);
+    } catch (err) {
+      showMutationError(err, 'تعذر حفظ تعديلات الوحدة.', 'Impossible d’enregistrer les modifications de l’unité.');
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const handleChangeUnitStatus = async (unit: PropertyUnitDto) => {
+    if (!selectedBuilding || !selectedFloor) return;
+    const nextStatus = statusSelections[unit.id] ?? NEXT_UNIT_STATUSES[unit.status]?.[0];
+    if (!nextStatus || nextStatus === unit.status) return;
+
+    setError(null);
+    setSubmitting(true);
+    try {
+      const result = await apiClient.changePropertyUnitStatus(
+        project.id,
+        selectedBuilding.id,
+        selectedFloor.id,
+        unit.id,
+        {
+          status: nextStatus,
+          expectedConcurrencyStamp: unit.concurrencyStamp,
+        }
+      );
+      setStructure(result);
+      setStatusSelections((current) => {
+        const updated = { ...current };
+        delete updated[unit.id];
+        return updated;
+      });
+    } catch (err) {
+      showMutationError(err, 'تعذر تحديث حالة الوحدة.', 'Impossible de mettre à jour le statut de l’unité.');
     } finally {
       setSubmitting(false);
     }
@@ -464,6 +560,9 @@ export function ProjectStructureModal({
                 )}
               </div>
 
+              <p className="px-3 py-2 text-[11px] leading-relaxed text-slate-600 bg-slate-50 border-b border-slate-100">
+                {labels.salesWorkflowNotice}
+              </p>
               {!selectedFloor ? (
                 <p className="text-xs text-slate-500 p-5 text-center">{language === 'ar' ? 'اختر طابقاً لعرض وحداته العقارية.' : 'Sélectionnez un étage pour afficher ses unités.'}</p>
               ) : (
@@ -499,7 +598,7 @@ export function ProjectStructureModal({
                           onChange={(event) => setUnitForm((form) => ({ ...form, status: event.target.value }))}
                           className={inputBaseClass}
                         >
-                          {UNIT_STATUSES.map((status) => (
+                          {INITIAL_UNIT_STATUSES.map((status) => (
                             <option key={status.code} value={status.code}>{language === 'ar' ? status.ar : status.fr}</option>
                           ))}
                         </select>
@@ -552,17 +651,126 @@ export function ProjectStructureModal({
                     {!selectedFloor.units.length ? (
                       <p className="text-xs text-slate-500 p-4 text-center">{labels.noUnits}</p>
                     ) : selectedFloor.units.map((unit) => (
-                      <div key={unit.id} className="rounded-md border border-slate-100 px-3 py-2.5">
-                        <div className="flex items-center justify-between gap-2">
-                          <span className="font-data font-semibold text-sm text-slate-900">{unit.unitNumber}</span>
-                          <span className="text-[11px] text-slate-600">{statusLabel(unit.status)}</span>
-                        </div>
-                        <div className="text-xs text-slate-600 mt-1">{unitTypeLabel(unit.unitType)}</div>
-                        <div className="text-[11px] text-slate-500 mt-1 flex flex-wrap gap-x-3">
-                          {unit.grossAreaSquareMeters !== null && <span>{labels.grossArea}: <span className="font-data">{unit.grossAreaSquareMeters}</span></span>}
-                          {unit.netAreaSquareMeters !== null && <span>{labels.netArea}: <span className="font-data">{unit.netAreaSquareMeters}</span></span>}
-                          {unit.roomsCount !== null && <span>{labels.roomsCount}: <span className="font-data">{unit.roomsCount}</span></span>}
-                        </div>
+                      <div key={unit.id} className="rounded-md border border-slate-100 px-3 py-3 space-y-2">
+                        {editingUnitId === unit.id ? (
+                          <form onSubmit={(event) => void handleUpdateUnit(event, unit)} className="space-y-3">
+                            <FormField id={`edit-unit-number-${unit.id}`} label={labels.unitNumber}>
+                              <input
+                                id={`edit-unit-number-${unit.id}`}
+                                required
+                                value={editUnitForm.unitNumber}
+                                onChange={(event) => setEditUnitForm((form) => ({ ...form, unitNumber: event.target.value }))}
+                                className={inputBaseClass}
+                                dir="ltr"
+                              />
+                            </FormField>
+                            <FormField id={`edit-unit-type-${unit.id}`} label={labels.unitType}>
+                              <select
+                                id={`edit-unit-type-${unit.id}`}
+                                value={editUnitForm.unitType}
+                                onChange={(event) => setEditUnitForm((form) => ({ ...form, unitType: event.target.value }))}
+                                className={inputBaseClass}
+                              >
+                                {UNIT_TYPES.map((type) => (
+                                  <option key={type.code} value={type.code}>{language === 'ar' ? type.ar : type.fr}</option>
+                                ))}
+                              </select>
+                            </FormField>
+                            <div className="grid grid-cols-2 gap-3">
+                              <FormField id={`edit-unit-gross-${unit.id}`} label={labels.grossArea}>
+                                <input
+                                  id={`edit-unit-gross-${unit.id}`}
+                                  type="number"
+                                  min="0"
+                                  step="0.01"
+                                  value={editUnitForm.grossAreaSquareMeters}
+                                  onChange={(event) => setEditUnitForm((form) => ({ ...form, grossAreaSquareMeters: event.target.value }))}
+                                  className={`${inputBaseClass} font-data`}
+                                  dir="ltr"
+                                />
+                              </FormField>
+                              <FormField id={`edit-unit-net-${unit.id}`} label={labels.netArea}>
+                                <input
+                                  id={`edit-unit-net-${unit.id}`}
+                                  type="number"
+                                  min="0"
+                                  step="0.01"
+                                  value={editUnitForm.netAreaSquareMeters}
+                                  onChange={(event) => setEditUnitForm((form) => ({ ...form, netAreaSquareMeters: event.target.value }))}
+                                  className={`${inputBaseClass} font-data`}
+                                  dir="ltr"
+                                />
+                              </FormField>
+                            </div>
+                            <FormField id={`edit-unit-rooms-${unit.id}`} label={labels.roomsCount}>
+                              <input
+                                id={`edit-unit-rooms-${unit.id}`}
+                                type="number"
+                                min="0"
+                                max="20"
+                                value={editUnitForm.roomsCount}
+                                onChange={(event) => setEditUnitForm((form) => ({ ...form, roomsCount: event.target.value }))}
+                                className={`${inputBaseClass} font-data`}
+                                dir="ltr"
+                              />
+                            </FormField>
+                            <div className="flex justify-end gap-2">
+                              <button type="button" disabled={submitting} onClick={() => setEditingUnitId(null)} className="text-xs px-3 py-2 border rounded border-slate-200">
+                                {t.users.cancel}
+                              </button>
+                              <button type="submit" disabled={submitting} className="text-xs px-3 py-2 rounded bg-teal-800 text-white disabled:opacity-60">
+                                {labels.saveUnit}
+                              </button>
+                            </div>
+                          </form>
+                        ) : (
+                          <>
+                            <div className="flex items-center justify-between gap-2">
+                              <span className="font-data font-semibold text-sm text-slate-900">{unit.unitNumber}</span>
+                              <span className="text-[11px] text-slate-600">{statusLabel(unit.status)}</span>
+                            </div>
+                            <div className="text-xs text-slate-600">{unitTypeLabel(unit.unitType)}</div>
+                            <div className="text-[11px] text-slate-500 flex flex-wrap gap-x-3">
+                              {unit.grossAreaSquareMeters !== null && <span>{labels.grossArea}: <span className="font-data">{unit.grossAreaSquareMeters}</span></span>}
+                              {unit.netAreaSquareMeters !== null && <span>{labels.netArea}: <span className="font-data">{unit.netAreaSquareMeters}</span></span>}
+                              {unit.roomsCount !== null && <span>{labels.roomsCount}: <span className="font-data">{unit.roomsCount}</span></span>}
+                            </div>
+                            <div className="flex flex-wrap items-center justify-between gap-2 pt-1">
+                              {!['Reserved', 'Sold', 'Delivered'].includes(unit.status) && (
+                                <button
+                                  type="button"
+                                  disabled={submitting}
+                                  onClick={() => beginEditUnit(unit)}
+                                  className="text-xs px-2.5 py-1.5 rounded border border-slate-200 text-slate-700 hover:bg-slate-50 disabled:opacity-60"
+                                >
+                                  {labels.editUnit}
+                                </button>
+                              )}
+                              {(NEXT_UNIT_STATUSES[unit.status]?.length ?? 0) > 0 && (
+                                <div className="flex items-center gap-1.5 ms-auto">
+                                  <select
+                                    aria-label={labels.unitStatus}
+                                    value={statusSelections[unit.id] ?? NEXT_UNIT_STATUSES[unit.status][0]}
+                                    onChange={(event) => setStatusSelections((current) => ({ ...current, [unit.id]: event.target.value }))}
+                                    className="rounded border border-slate-200 px-2 py-1.5 text-xs bg-white"
+                                  >
+                                    {NEXT_UNIT_STATUSES[unit.status].map((status) => (
+                                      <option key={status} value={status}>{statusLabel(status)}</option>
+                                    ))}
+                                  </select>
+                                  <button
+                                    type="button"
+                                    disabled={submitting || (statusSelections[unit.id] ?? NEXT_UNIT_STATUSES[unit.status][0]) === unit.status}
+                                    onClick={() => void handleChangeUnitStatus(unit)}
+                                    className="text-xs px-2.5 py-1.5 rounded bg-slate-800 text-white hover:bg-slate-900 disabled:opacity-50"
+                                  >
+                                    {labels.changeUnitStatus}
+                                  </button>
+                                </div>
+                              )}
+                            </div>
+                          </>
+                        )}
                       </div>
                     ))}
                   </div>

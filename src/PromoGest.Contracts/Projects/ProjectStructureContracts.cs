@@ -32,7 +32,9 @@ public sealed record PropertyUnitDto(
     decimal? GrossAreaSquareMeters,
     decimal? NetAreaSquareMeters,
     int? RoomsCount,
-    DateTimeOffset CreatedAtUtc);
+    DateTimeOffset CreatedAtUtc,
+    DateTimeOffset UpdatedAtUtc,
+    Guid ConcurrencyStamp);
 
 public sealed record CreateBuildingRequest(
     string Code,
@@ -52,3 +54,15 @@ public sealed record CreatePropertyUnitRequest(
     decimal? GrossAreaSquareMeters,
     decimal? NetAreaSquareMeters,
     int? RoomsCount);
+
+public sealed record UpdatePropertyUnitRequest(
+    string UnitNumber,
+    string UnitType,
+    decimal? GrossAreaSquareMeters,
+    decimal? NetAreaSquareMeters,
+    int? RoomsCount,
+    Guid ExpectedConcurrencyStamp);
+
+public sealed record ChangePropertyUnitStatusRequest(
+    string Status,
+    Guid ExpectedConcurrencyStamp);

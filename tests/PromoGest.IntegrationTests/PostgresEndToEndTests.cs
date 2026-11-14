@@ -576,6 +576,7 @@ public sealed class PostgresEndToEndTests : IClassFixture<PostgreSql18Integratio
                 null, null, null, null, "Commercialization", 450_000_000m, 4, 64));
             Assert.Equal(HttpStatusCode.Created, projectResp.StatusCode);
             var createdProject = await projectResp.Content.ReadFromJsonAsync<ProjectDto>();
+            Assert.NotNull(createdProject);
 
             // Project master-data updates are permitted to the system administrator and preserve the immutable project code.
             var projectUpdate = new UpdateProjectRequest(
@@ -610,6 +611,38 @@ public sealed class PostgresEndToEndTests : IClassFixture<PostgreSql18Integratio
                     entry.EventType == "PROJECT_UPDATED" &&
                     entry.TargetEntityId == createdProject.Id.ToString());
             }
+
+            // The seeded Project Director role must also be able to update projects via its projects.manage permission.
+            var directorCreateResp = await adminClient.PostAsJsonAsync("/api/users", new CreateEmployeeRequest(
+                "youssef.director",
+                "Youssef Director",
+                "youssef.director@atlasimmo.dz",
+                null,
+                "YoussefDirector#2026",
+                "fr",
+                new[] { Role.ProjectDirectorCode }));
+            Assert.Equal(HttpStatusCode.Created, directorCreateResp.StatusCode);
+
+            using var directorClient = factory.CreateClient(new WebApplicationFactoryClientOptions { HandleCookies = true });
+            await AttachCsrfTokenAsync(directorClient);
+            var directorLoginResp = await directorClient.PostAsJsonAsync(
+                "/api/auth/login",
+                new LoginRequest("youssef.director", "YoussefDirector#2026"));
+            Assert.Equal(HttpStatusCode.OK, directorLoginResp.StatusCode);
+            await AttachCsrfTokenAsync(directorClient);
+
+            var directorUpdate = projectUpdate with
+            {
+                NameAr = "إقامة الأطلس - تحديث مدير المشاريع",
+                NameFr = "Résidence Atlas - Mise à jour du directeur"
+            };
+            var directorUpdateResp = await directorClient.PutAsJsonAsync(
+                $"/api/projects/{createdProject.Id}",
+                directorUpdate);
+            Assert.Equal(HttpStatusCode.OK, directorUpdateResp.StatusCode);
+            var directorUpdatedProject = await directorUpdateResp.Content.ReadFromJsonAsync<ProjectDto>();
+            Assert.NotNull(directorUpdatedProject);
+            Assert.Equal(directorUpdate.NameAr, directorUpdatedProject!.NameAr);
 
             // 8. Authenticate as employee -> test CSRF check, IDOR rejection, role escalation rejection, membership grant & revoke, deactivation session invalidation
             using var employeeClient = factory.CreateClient(new WebApplicationFactoryClientOptions { HandleCookies = true });

@@ -67,6 +67,24 @@ test('Setup validation rejects mismatched passwords and invalid NIF', () => {
     'fr'
   );
   assert.ok(badWilaya.wilayaCode);
+
+  const validNewWilaya = validateSetupRequest(
+    {
+      legalName: 'SARL Promotion',
+      legalForm: 'SARL',
+      wilayaCode: '69',
+      wilayaName: 'الأبيض سيدي الشيخ',
+      address: 'Centre',
+      defaultLanguage: 'ar',
+      adminUsername: 'admin',
+      adminFullName: 'Karim',
+      adminEmail: 'karim@promo.dz',
+      adminPassword: 'StrongPassword1',
+    },
+    'StrongPassword1',
+    'ar'
+  );
+  assert.equal(validNewWilaya.wilayaCode, undefined);
 });
 
 test('Employee validation prevents assigning SYSTEM_ADMIN role to employees', () => {

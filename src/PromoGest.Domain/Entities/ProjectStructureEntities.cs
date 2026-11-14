@@ -63,6 +63,38 @@ public sealed class Building : BaseEntity
         };
     }
 
+    public void UpdateDetails(
+        string code,
+        string nameAr,
+        string nameFr,
+        BuildingStatus status,
+        DateTimeOffset nowUtc)
+    {
+        if (string.IsNullOrWhiteSpace(code))
+            throw new DomainException("BUILDING_CODE_REQUIRED", "Building code is required.");
+
+        var normalizedCode = code.Trim().ToUpperInvariant();
+        EnsureLength(normalizedCode, 40, "BUILDING_CODE_TOO_LONG");
+
+        if (string.IsNullOrWhiteSpace(nameAr) && string.IsNullOrWhiteSpace(nameFr))
+            throw new DomainException("BUILDING_NAME_REQUIRED", "Building name in Arabic or French is required.");
+
+        var effectiveAr = string.IsNullOrWhiteSpace(nameAr) ? nameFr.Trim() : nameAr.Trim();
+        var effectiveFr = string.IsNullOrWhiteSpace(nameFr) ? nameAr.Trim() : nameFr.Trim();
+        EnsureLength(effectiveAr, 200, "BUILDING_NAME_TOO_LONG");
+        EnsureLength(effectiveFr, 200, "BUILDING_NAME_TOO_LONG");
+
+        if (!Enum.IsDefined(status))
+            throw new DomainException("BUILDING_STATUS_INVALID", "A valid building status is required.");
+
+        Code = normalizedCode;
+        NormalizedCode = normalizedCode;
+        NameAr = effectiveAr;
+        NameFr = effectiveFr;
+        Status = status;
+        Touch(nowUtc);
+    }
+
     private static void EnsureLength(string value, int maximumLength, string errorCode)
     {
         if (value.Length > maximumLength)
@@ -112,6 +144,29 @@ public sealed class BuildingFloor : BaseEntity
         };
     }
 
+    public void UpdateDetails(
+        int floorNumber,
+        string nameAr,
+        string nameFr,
+        DateTimeOffset nowUtc)
+    {
+        if (floorNumber is < -10 or > 200)
+            throw new DomainException("FLOOR_NUMBER_INVALID", "Floor number must be between -10 and 200.");
+
+        if (string.IsNullOrWhiteSpace(nameAr) && string.IsNullOrWhiteSpace(nameFr))
+            throw new DomainException("FLOOR_NAME_REQUIRED", "Floor name in Arabic or French is required.");
+
+        var effectiveAr = string.IsNullOrWhiteSpace(nameAr) ? nameFr.Trim() : nameAr.Trim();
+        var effectiveFr = string.IsNullOrWhiteSpace(nameFr) ? nameAr.Trim() : nameFr.Trim();
+        EnsureLength(effectiveAr, 100, "FLOOR_NAME_TOO_LONG");
+        EnsureLength(effectiveFr, 100, "FLOOR_NAME_TOO_LONG");
+
+        FloorNumber = floorNumber;
+        NameAr = effectiveAr;
+        NameFr = effectiveFr;
+        Touch(nowUtc);
+    }
+
     private static void EnsureLength(string value, int maximumLength, string errorCode)
     {
         if (value.Length > maximumLength)
@@ -159,6 +214,11 @@ public sealed class PropertyUnit : BaseEntity
         if (!Enum.IsDefined(status))
             throw new DomainException("UNIT_STATUS_INVALID", "A valid property unit status is required.");
 
+        if (IsSalesManagedStatus(status))
+            throw new DomainException(
+                "UNIT_STATUS_REQUIRES_SALES_WORKFLOW",
+                "Reserved, sold, and delivered statuses must be managed by the future sales and handover workflows.");
+
         const decimal maximumArea = 99_999_999.99m;
         if (grossAreaSquareMeters is < 0 or > maximumArea ||
             netAreaSquareMeters is < 0 or > maximumArea)
@@ -195,6 +255,72 @@ public sealed class PropertyUnit : BaseEntity
             UpdatedAtUtc = nowUtc
         };
     }
+
+    public void UpdateDetails(
+        string unitNumber,
+        PropertyUnitType unitType,
+        PropertyUnitStatus status,
+        decimal? grossAreaSquareMeters,
+        decimal? netAreaSquareMeters,
+        int? roomsCount,
+        DateTimeOffset nowUtc)
+    {
+        if (string.IsNullOrWhiteSpace(unitNumber))
+            throw new DomainException("UNIT_NUMBER_REQUIRED", "Property unit number is required.");
+
+        var normalizedUnitNumber = unitNumber.Trim().ToUpperInvariant();
+        EnsureLength(normalizedUnitNumber, 40, "UNIT_NUMBER_TOO_LONG");
+
+        if (!Enum.IsDefined(unitType))
+            throw new DomainException("UNIT_TYPE_INVALID", "A valid property unit type is required.");
+
+        if (!Enum.IsDefined(status))
+            throw new DomainException("UNIT_STATUS_INVALID", "A valid property unit status is required.");
+
+        // Reservation, sale, and handover states are owned by their respective business workflows.
+        // Structure managers may correct other fields while preserving an existing sales-managed state.
+        if (status != Status && (IsSalesManagedStatus(Status) || IsSalesManagedStatus(status)))
+            throw new DomainException(
+                "UNIT_STATUS_REQUIRES_SALES_WORKFLOW",
+                "Reserved, sold, and delivered statuses must be managed by the sales and handover workflows.");
+
+        ValidateAreasAndRooms(grossAreaSquareMeters, netAreaSquareMeters, roomsCount);
+
+        UnitNumber = normalizedUnitNumber;
+        NormalizedUnitNumber = normalizedUnitNumber;
+        UnitType = unitType;
+        Status = status;
+        GrossAreaSquareMeters = grossAreaSquareMeters;
+        NetAreaSquareMeters = netAreaSquareMeters;
+        RoomsCount = roomsCount;
+        Touch(nowUtc);
+    }
+
+    private static void ValidateAreasAndRooms(
+        decimal? grossAreaSquareMeters,
+        decimal? netAreaSquareMeters,
+        int? roomsCount)
+    {
+        const decimal maximumArea = 99_999_999.99m;
+        if (grossAreaSquareMeters is < 0 or > maximumArea ||
+            netAreaSquareMeters is < 0 or > maximumArea)
+        {
+            throw new DomainException("UNIT_AREA_INVALID", "Unit areas must be non-negative and fit the supported range.");
+        }
+
+        if (grossAreaSquareMeters.HasValue &&
+            netAreaSquareMeters.HasValue &&
+            netAreaSquareMeters.Value > grossAreaSquareMeters.Value)
+        {
+            throw new DomainException("UNIT_NET_AREA_EXCEEDS_GROSS", "Net area cannot exceed gross area.");
+        }
+
+        if (roomsCount is < 0 or > 20)
+            throw new DomainException("UNIT_ROOMS_COUNT_INVALID", "Room count must be between 0 and 20.");
+    }
+
+    private static bool IsSalesManagedStatus(PropertyUnitStatus status)
+        => status is PropertyUnitStatus.Reserved or PropertyUnitStatus.Sold or PropertyUnitStatus.Delivered;
 
     private static void EnsureLength(string value, int maximumLength, string errorCode)
     {

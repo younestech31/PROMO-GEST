@@ -8,6 +8,17 @@ export interface AlgerianWilaya {
 
 export const ALGERIAN_LEGAL_FORMS = ['SARL', 'SPA', 'EURL', 'SNC', 'SCS', 'SPAS', 'EPIC', 'OTHER'] as const;
 
+export function formatAlgerianLegalForm(code: string, lang: AppLanguage): string {
+  switch (code) {
+    case 'SPAS':
+      return lang === 'ar' ? 'شركة مساهمة مبسطة (SPAS)' : 'Société par actions simplifiée (SPAS)';
+    case 'OTHER':
+      return lang === 'ar' ? 'أخرى' : 'Autre';
+    default:
+      return code;
+  }
+}
+
 export const ALGERIAN_WILAYAS: readonly AlgerianWilaya[] = [
   { code: '01', nameAr: 'أدرار', nameFr: 'Adrar' },
   { code: '02', nameAr: 'الشلف', nameFr: 'Chlef' },

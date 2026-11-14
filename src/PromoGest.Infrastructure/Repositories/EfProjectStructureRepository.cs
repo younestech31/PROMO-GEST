@@ -74,9 +74,20 @@ public sealed class EfProjectStructureRepository : IProjectStructureRepository
     public Task<bool> ExistsUnitNumberAsync(
         Guid floorId,
         string normalizedUnitNumber,
+        Guid? excludeUnitId = null,
         CancellationToken ct = default)
         => _dbContext.PropertyUnits.AnyAsync(
-            unit => unit.FloorId == floorId && unit.NormalizedUnitNumber == normalizedUnitNumber,
+            unit => unit.FloorId == floorId &&
+                unit.NormalizedUnitNumber == normalizedUnitNumber &&
+                (!excludeUnitId.HasValue || unit.Id != excludeUnitId.Value),
+            ct);
+
+    public Task<PropertyUnit?> GetPropertyUnitForUpdateAsync(
+        Guid floorId,
+        Guid unitId,
+        CancellationToken ct = default)
+        => _dbContext.PropertyUnits.FirstOrDefaultAsync(
+            unit => unit.Id == unitId && unit.FloorId == floorId,
             ct);
 
     public async Task AddBuildingAsync(Building building, CancellationToken ct = default)

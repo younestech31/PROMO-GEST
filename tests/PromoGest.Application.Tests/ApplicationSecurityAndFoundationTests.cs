@@ -147,8 +147,16 @@ public sealed class ApplicationSecurityAndFoundationTests
             => Task.FromResult(Floors.FirstOrDefault(f => f.Id == floorId));
         public Task<bool> ExistsBuildingCodeAsync(Guid projectId, string normalizedCode, CancellationToken ct = default)
             => Task.FromResult(Buildings.Any(b => b.ProjectId == projectId && b.NormalizedCode == normalizedCode));
+        public Task<bool> ExistsBuildingCodeAsync(Guid projectId, string normalizedCode, Guid? excludeBuildingId, CancellationToken ct = default)
+            => Task.FromResult(Buildings.Any(b => b.ProjectId == projectId &&
+                b.NormalizedCode == normalizedCode &&
+                (!excludeBuildingId.HasValue || b.Id != excludeBuildingId.Value)));
         public Task<bool> ExistsFloorNumberAsync(Guid buildingId, int floorNumber, CancellationToken ct = default)
             => Task.FromResult(Floors.Any(f => f.BuildingId == buildingId && f.FloorNumber == floorNumber));
+        public Task<bool> ExistsFloorNumberAsync(Guid buildingId, int floorNumber, Guid? excludeFloorId, CancellationToken ct = default)
+            => Task.FromResult(Floors.Any(f => f.BuildingId == buildingId &&
+                f.FloorNumber == floorNumber &&
+                (!excludeFloorId.HasValue || f.Id != excludeFloorId.Value)));
         public Task<bool> ExistsUnitNumberAsync(
             Guid floorId,
             string normalizedUnitNumber,
@@ -329,6 +337,15 @@ public sealed class ApplicationSecurityAndFoundationTests
             structureSvc.GetProjectStructureAsync(employee.Id, project.Id, metadata));
         Assert.Equal("PROJECT_ACCESS_DENIED", readDenied.Code);
 
+        var editDenied = await Assert.ThrowsAsync<ForbiddenDomainException>(() =>
+            structureSvc.UpdateBuildingAsync(
+                employee.Id,
+                project.Id,
+                Guid.NewGuid(),
+                new UpdateBuildingRequest("X", "غير مصرح", "Non autorisé", "Planned", Guid.NewGuid()),
+                metadata));
+        Assert.Equal("PROJECT_NOT_FOUND", editDenied.Code);
+
         var initial = await structureSvc.CreateBuildingAsync(
             init.SystemAdminUserId,
             project.Id,
@@ -345,6 +362,65 @@ public sealed class ApplicationSecurityAndFoundationTests
             metadata);
         var floor = Assert.Single(Assert.Single(floorResponse.Buildings).Floors);
         Assert.Equal(0, floor.FloorNumber);
+
+        var updatedBuildingResponse = await structureSvc.UpdateBuildingAsync(
+            init.SystemAdminUserId,
+            project.Id,
+            building.Id,
+            new UpdateBuildingRequest(
+                "A-RENAMED",
+                "العمارة أ - معدلة",
+                "Bâtiment A - Modifié",
+                "UnderConstruction",
+                building.ConcurrencyStamp),
+            metadata);
+        var updatedBuilding = Assert.Single(updatedBuildingResponse.Buildings);
+        Assert.Equal("A-RENAMED", updatedBuilding.Code);
+        Assert.Equal("UnderConstruction", updatedBuilding.Status);
+        Assert.NotEqual(building.ConcurrencyStamp, updatedBuilding.ConcurrencyStamp);
+
+        var staleBuildingUpdate = await Assert.ThrowsAsync<ConflictDomainException>(() =>
+            structureSvc.UpdateBuildingAsync(
+                init.SystemAdminUserId,
+                project.Id,
+                building.Id,
+                new UpdateBuildingRequest(
+                    "A-STALE",
+                    "اسم قديم",
+                    "Ancien nom",
+                    "Planned",
+                    building.ConcurrencyStamp),
+                metadata));
+        Assert.Equal("CONCURRENCY_CONFLICT", staleBuildingUpdate.Code);
+
+        var updatedFloorResponse = await structureSvc.UpdateFloorAsync(
+            init.SystemAdminUserId,
+            project.Id,
+            building.Id,
+            floor.Id,
+            new UpdateBuildingFloorRequest(
+                1,
+                "الطابق الأول",
+                "Premier étage",
+                floor.ConcurrencyStamp),
+            metadata);
+        var updatedFloor = Assert.Single(Assert.Single(updatedFloorResponse.Buildings).Floors);
+        Assert.Equal(1, updatedFloor.FloorNumber);
+        Assert.NotEqual(floor.ConcurrencyStamp, updatedFloor.ConcurrencyStamp);
+
+        var staleFloorUpdate = await Assert.ThrowsAsync<ConflictDomainException>(() =>
+            structureSvc.UpdateFloorAsync(
+                init.SystemAdminUserId,
+                project.Id,
+                building.Id,
+                floor.Id,
+                new UpdateBuildingFloorRequest(
+                    2,
+                    "تعديل قديم",
+                    "Ancienne modification",
+                    floor.ConcurrencyStamp),
+                metadata));
+        Assert.Equal("CONCURRENCY_CONFLICT", staleFloorUpdate.Code);
 
         var unitResponse = await structureSvc.CreatePropertyUnitAsync(
             init.SystemAdminUserId,
@@ -429,7 +505,7 @@ public sealed class ApplicationSecurityAndFoundationTests
             structureSvc.CreateBuildingAsync(
                 init.SystemAdminUserId,
                 project.Id,
-                new CreateBuildingRequest(" a ", "العمارة", "Bâtiment", "Planned"),
+                new CreateBuildingRequest(" a-renamed ", "العمارة", "Bâtiment", "Planned"),
                 metadata));
         Assert.Equal("BUILDING_CODE_EXISTS", duplicateBuilding.Code);
 
@@ -438,7 +514,7 @@ public sealed class ApplicationSecurityAndFoundationTests
                 init.SystemAdminUserId,
                 project.Id,
                 building.Id,
-                new CreateBuildingFloorRequest(0, "الطابق", "Étage"),
+                new CreateBuildingFloorRequest(1, "الطابق", "Étage"),
                 metadata));
         Assert.Equal("FLOOR_NUMBER_EXISTS", duplicateFloor.Code);
 
@@ -498,7 +574,9 @@ public sealed class ApplicationSecurityAndFoundationTests
         Assert.Equal(2, Assert.Single(employeeFloor.Buildings).Floors.Count);
 
         Assert.Contains(store.AuditLogs, entry => entry.EventType == "BUILDING_CREATED");
+        Assert.Contains(store.AuditLogs, entry => entry.EventType == "BUILDING_UPDATED");
         Assert.Contains(store.AuditLogs, entry => entry.EventType == "BUILDING_FLOOR_CREATED");
+        Assert.Contains(store.AuditLogs, entry => entry.EventType == "BUILDING_FLOOR_UPDATED");
         Assert.Contains(store.AuditLogs, entry => entry.EventType == "PROPERTY_UNIT_CREATED");
         Assert.Contains(store.AuditLogs, entry => entry.EventType == "PROPERTY_UNIT_UPDATED");
         Assert.Contains(store.AuditLogs, entry => entry.EventType == "PROPERTY_UNIT_STATUS_CHANGED");

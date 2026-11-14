@@ -159,6 +159,8 @@ export interface ProjectDto {
   estimatedBudgetDzd: number;
   plannedBlocksCount: number;
   plannedUnitsCount: number;
+  actualBuildingsCount: number;
+  actualUnitsCount: number;
   createdAtUtc: string;
   members: ProjectMemberDto[];
 }

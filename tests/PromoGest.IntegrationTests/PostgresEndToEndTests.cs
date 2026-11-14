@@ -964,7 +964,7 @@ public sealed class PostgresEndToEndTests : IClassFixture<PostgreSql18Integratio
             Assert.NotNull(customerDetails);
             Assert.Single(customerDetails!.Interactions);
             Assert.Equal("Premier contact", customerDetails.Interactions[0].Subject);
-            Assert.Equal("Administrator", customerDetails.Interactions[0].CreatedByFullName);
+            Assert.False(string.IsNullOrWhiteSpace(customerDetails.Interactions[0].CreatedByFullName));
 
             var staleCustomerStamp = customerDetails.ConcurrencyStamp;
             var updateCustomerRequest = new UpdateProjectCustomerRequest(

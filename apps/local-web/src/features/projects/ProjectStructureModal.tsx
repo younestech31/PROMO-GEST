@@ -6,6 +6,7 @@ import type {
   BuildingFloorDto,
   ProjectDto,
   ProjectStructureDto,
+  PropertyUnitDto,
 } from '../../types/erp';
 import { getTranslations, translateApiError } from '../../localization/translations';
 import { apiClient, ApiError } from '../../services/apiClient';
@@ -42,6 +43,16 @@ const UNIT_STATUSES = [
   { code: 'Withdrawn', ar: 'مسحوبة', fr: 'Retiré' },
 ];
 
+const INITIAL_UNIT_STATUSES = UNIT_STATUSES.filter(
+  (status) => ['Planned', 'UnderConstruction', 'AvailableForSale'].includes(status.code)
+);
+
+const NEXT_UNIT_STATUSES: Record<string, string[]> = {
+  Planned: ['UnderConstruction', 'Withdrawn'],
+  UnderConstruction: ['AvailableForSale', 'Withdrawn'],
+  AvailableForSale: ['Withdrawn'],
+};
+
 export function ProjectStructureModal({
   project,
   language,
@@ -60,6 +71,15 @@ export function ProjectStructureModal({
   const [showBuildingForm, setShowBuildingForm] = useState(false);
   const [showFloorForm, setShowFloorForm] = useState(false);
   const [showUnitForm, setShowUnitForm] = useState(false);
+  const [editingUnitId, setEditingUnitId] = useState<string | null>(null);
+  const [editUnitForm, setEditUnitForm] = useState({
+    unitNumber: '',
+    unitType: 'Apartment',
+    grossAreaSquareMeters: '',
+    netAreaSquareMeters: '',
+    roomsCount: '',
+  });
+  const [statusSelections, setStatusSelections] = useState<Record<string, string>>({});
 
   const [buildingForm, setBuildingForm] = useState({
     code: '',
@@ -203,6 +223,82 @@ export function ProjectStructureModal({
       setShowUnitForm(false);
     } catch (err) {
       showMutationError(err, 'فشل إضافة الوحدة العقارية.', 'Échec de l’ajout de l’unité immobilière.');
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const beginEditUnit = (unit: PropertyUnitDto) => {
+    setEditingUnitId(unit.id);
+    setEditUnitForm({
+      unitNumber: unit.unitNumber,
+      unitType: unit.unitType,
+      grossAreaSquareMeters: unit.grossAreaSquareMeters?.toString() ?? '',
+      netAreaSquareMeters: unit.netAreaSquareMeters?.toString() ?? '',
+      roomsCount: unit.roomsCount?.toString() ?? '',
+    });
+    setError(null);
+  };
+
+  const handleUpdateUnit = async (event: FormEvent, unit: PropertyUnitDto) => {
+    event.preventDefault();
+    if (!selectedBuilding || !selectedFloor) return;
+    setError(null);
+    setSubmitting(true);
+    try {
+      const result = await apiClient.updatePropertyUnit(
+        project.id,
+        selectedBuilding.id,
+        selectedFloor.id,
+        unit.id,
+        {
+          unitNumber: editUnitForm.unitNumber,
+          unitType: editUnitForm.unitType,
+          grossAreaSquareMeters: editUnitForm.grossAreaSquareMeters === ''
+            ? null
+            : Number(editUnitForm.grossAreaSquareMeters),
+          netAreaSquareMeters: editUnitForm.netAreaSquareMeters === ''
+            ? null
+            : Number(editUnitForm.netAreaSquareMeters),
+          roomsCount: editUnitForm.roomsCount === '' ? null : Number(editUnitForm.roomsCount),
+          expectedConcurrencyStamp: unit.concurrencyStamp,
+        }
+      );
+      setStructure(result);
+      setEditingUnitId(null);
+    } catch (err) {
+      showMutationError(err, 'تعذر حفظ تعديلات الوحدة.', 'Impossible d’enregistrer les modifications de l’unité.');
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const handleChangeUnitStatus = async (unit: PropertyUnitDto) => {
+    if (!selectedBuilding || !selectedFloor) return;
+    const nextStatus = statusSelections[unit.id] ?? NEXT_UNIT_STATUSES[unit.status]?.[0];
+    if (!nextStatus || nextStatus === unit.status) return;
+
+    setError(null);
+    setSubmitting(true);
+    try {
+      const result = await apiClient.changePropertyUnitStatus(
+        project.id,
+        selectedBuilding.id,
+        selectedFloor.id,
+        unit.id,
+        {
+          status: nextStatus,
+          expectedConcurrencyStamp: unit.concurrencyStamp,
+        }
+      );
+      setStructure(result);
+      setStatusSelections((current) => {
+        const updated = { ...current };
+        delete updated[unit.id];
+        return updated;
+      });
+    } catch (err) {
+      showMutationError(err, 'تعذر تحديث حالة الوحدة.', 'Impossible de mettre à jour le statut de l’unité.');
     } finally {
       setSubmitting(false);
     }

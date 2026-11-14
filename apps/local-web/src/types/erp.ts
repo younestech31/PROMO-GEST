@@ -254,6 +254,36 @@ export interface AddCustomerInteractionRequest {
   nextFollowUpAtUtc?: string | null;
 }
 
+export interface ProjectSalesReservationDto {
+  id: string;
+  projectId: string;
+  propertyUnitId: string;
+  unitNumber: string;
+  projectCustomerId: string;
+  customerName: string;
+  reservationNumber: string;
+  status: 'Active' | 'Cancelled' | 'Expired' | string;
+  reservedAtUtc: string;
+  expiresAtUtc: string;
+  closedAtUtc: string | null;
+  closedByUserId: string | null;
+  closeReason: string | null;
+  createdByUserId: string;
+  createdAtUtc: string;
+  concurrencyStamp: string;
+}
+
+export interface CreateProjectSalesReservationRequest {
+  propertyUnitId: string;
+  projectCustomerId: string;
+  expiresAtUtc: string;
+}
+
+export interface CancelProjectSalesReservationRequest {
+  reason: string;
+  expectedConcurrencyStamp: string;
+}
+
 export interface CreateProjectRequest {
   code: string;
   nameAr: string;

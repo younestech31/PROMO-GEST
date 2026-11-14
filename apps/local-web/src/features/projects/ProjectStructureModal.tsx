@@ -373,17 +373,23 @@ export function ProjectStructureModal({
                   {labels.buildings}
                   <span className="text-xs font-data text-slate-500">({structure?.buildings.length ?? 0})</span>
                 </div>
-                <button
-                  type="button"
-                  onClick={() => setShowBuildingForm((value) => !value)}
-                  className="inline-flex items-center gap-1 rounded border border-slate-200 px-2 py-1 text-xs text-slate-700 hover:bg-slate-50"
-                >
-                  <Plus className="w-3.5 h-3.5" />
-                  {labels.createBuilding}
-                </button>
+                {canManage && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setEditingBuildingId(null);
+                      setBuildingForm({ code: '', nameAr: '', nameFr: '', status: 'Planned' });
+                      setShowBuildingForm((value) => !value);
+                    }}
+                    className="inline-flex items-center gap-1 rounded border border-slate-200 px-2 py-1 text-xs text-slate-700 hover:bg-slate-50"
+                  >
+                    <Plus className="w-3.5 h-3.5" />
+                    {labels.createBuilding}
+                  </button>
+                )}
               </div>
 
-              {showBuildingForm && (
+              {canManage && showBuildingForm && (
                 <form onSubmit={handleCreateBuilding} className="p-3 space-y-3 border-b border-slate-100 bg-slate-50/70">
                   <FormField id="structure-building-code" label={labels.buildingCode}>
                     <input
@@ -427,11 +433,15 @@ export function ProjectStructureModal({
                     </select>
                   </FormField>
                   <div className="flex justify-end gap-2">
-                    <button type="button" onClick={() => setShowBuildingForm(false)} className="text-xs px-3 py-2 border rounded border-slate-200">
+                    <button
+                      type="button"
+                      onClick={() => { setShowBuildingForm(false); setEditingBuildingId(null); }}
+                      className="text-xs px-3 py-2 border rounded border-slate-200"
+                    >
                       {t.users.cancel}
                     </button>
                     <button type="submit" disabled={submitting} className="text-xs px-3 py-2 rounded bg-teal-800 text-white disabled:opacity-60">
-                      {labels.createBuilding}
+                      {editingBuildingId ? labels.saveStructure : labels.createBuilding}
                     </button>
                   </div>
                 </form>
@@ -441,27 +451,44 @@ export function ProjectStructureModal({
                 {!structure?.buildings.length ? (
                   <p className="text-xs text-slate-500 p-4 text-center">{labels.structureEmpty}</p>
                 ) : structure.buildings.map((building) => (
-                  <button
-                    type="button"
+                  <div
                     key={building.id}
-                    onClick={() => {
-                      setSelectedBuildingId(building.id);
-                      setSelectedFloorId(null);
-                      setShowFloorForm(false);
-                      setShowUnitForm(false);
-                    }}
-                    className={`w-full text-start rounded-md border px-3 py-2.5 flex items-center justify-between gap-2 ${selectedBuildingId === building.id ? 'border-teal-700 bg-teal-50' : 'border-transparent hover:bg-slate-50'}`}
+                    className={`rounded-md border px-2 py-2 flex items-center gap-2 ${selectedBuildingId === building.id ? 'border-teal-700 bg-teal-50' : 'border-transparent hover:bg-slate-50'}`}
                   >
-                    <span className="min-w-0">
-                      <span className="block text-sm font-semibold text-slate-800 truncate">
-                        <span className="font-data">{building.code}</span> · {selectedBuildingName(building)}
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setSelectedBuildingId(building.id);
+                        setSelectedFloorId(null);
+                        setShowFloorForm(false);
+                        setShowUnitForm(false);
+                        setEditingFloorId(null);
+                        setEditingUnitId(null);
+                      }}
+                      className="flex-1 min-w-0 text-start flex items-center justify-between gap-2"
+                    >
+                      <span className="min-w-0">
+                        <span className="block text-sm font-semibold text-slate-800 truncate">
+                          <span className="font-data">{building.code}</span> · {selectedBuildingName(building)}
+                        </span>
+                        <span className="block text-xs text-slate-500 mt-0.5">
+                          {building.floors.length} {labels.floors} · {statusLabel(building.status)}
+                        </span>
                       </span>
-                      <span className="block text-xs text-slate-500 mt-0.5">
-                        {building.floors.length} {labels.floors} · {statusLabel(building.status)}
-                      </span>
-                    </span>
-                    {selectedBuildingId === building.id ? <ChevronDown className="w-4 h-4 shrink-0" /> : <ChevronRight className="w-4 h-4 shrink-0" />}
-                  </button>
+                      {selectedBuildingId === building.id ? <ChevronDown className="w-4 h-4 shrink-0" /> : <ChevronRight className="w-4 h-4 shrink-0" />}
+                    </button>
+                    {canManage && (
+                      <button
+                        type="button"
+                        aria-label={labels.editBuilding}
+                        title={labels.editBuilding}
+                        onClick={() => openEditBuilding(building)}
+                        className="shrink-0 rounded border border-slate-200 p-1.5 text-slate-600 hover:bg-white"
+                      >
+                        <Pencil className="w-3.5 h-3.5" aria-hidden="true" />
+                      </button>
+                    )}
+                  </div>
                 ))}
               </div>
             </section>

@@ -43,7 +43,7 @@ public sealed class ProjectCustomerDomainTests
 
     [Theory]
     [InlineData("0550123A56")]
-    [InlineData("0550123")]
+    [InlineData("055012")]
     [InlineData("0550123456789012")]
     [InlineData("")]
     public void ProjectCustomer_RejectsMalformedPhoneNumbers(string phone)

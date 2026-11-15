@@ -1,7 +1,7 @@
 # PROMO GEST — UI Implementation & Gap Matrix
 
 **Document role:** Source-audited inventory of the current React user interface, its API-backed actions, module ownership, and the gap between today's interface and the product interaction model. This is a current-state record, not a redesign specification or browser-acceptance certificate.  
-**Current main documentation snapshot:** 5415f0e668a55f902ac2802e1669af58ad7ec410.  
+**Main commit inspected at audit start:** 5415f0e668a55f902ac2802e1669af58ad7ec410.  
 **Last code-changing source commit:** 6bbd97f70ed0fb63cf226a1117cf6e83c359d2be (PR #44).  
 **Latest green CI:** Run #531 / 43752672569; all three jobs passed on 15 November 2026.
 
@@ -67,7 +67,7 @@ The project directory displays actions for Structure, Customers/Prospects, Reser
 
 Latest repository evidence at the time of this audit:
 
-- Current main is 5415f0e668a55f902ac2802e1669af58ad7ec410; last application-code change is 6bbd97f70ed0fb63cf226a1117cf6e83c359d2be.
+- Main commit inspected at audit start is 5415f0e668a55f902ac2802e1669af58ad7ec410; last application-code change is 6bbd97f70ed0fb63cf226a1117cf6e83c359d2be.
 - GitHub Actions Run #531 / [43752672569](https://github.com/younestech31/PROMO-GEST/actions/runs/43752672569) passed all three jobs: Frontend, .NET 10 + PostgreSQL 18, and Windows publish.
 - Frontend strict TypeScript check, **38/38** frontend tests, production SPA build, ASP.NET Core static-host build, and preview-leak checks passed.
 - Domain tests **27/27**, Application tests **14/14**, and PostgreSQL 18 integration tests **9/9** passed. Linux publish/shell validation and the database, storage, and Data Protection restore drill passed. Windows x64 publish, DPAPI key-ring recovery, and PowerShell validation passed.

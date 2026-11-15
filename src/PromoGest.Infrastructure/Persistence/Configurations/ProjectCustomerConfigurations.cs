@@ -21,6 +21,7 @@ public sealed class ProjectCustomerConfiguration : IEntityTypeConfiguration<Proj
         builder.HasKey(x => x.Id);
         builder.Property(x => x.Id).HasColumnName("id");
         builder.Property(x => x.ProjectId).HasColumnName("project_id").IsRequired();
+        builder.Property(x => x.PartyId).HasColumnName("party_id").IsRequired();
         builder.Property(x => x.CustomerType).HasColumnName("customer_type").HasConversion<string>().HasMaxLength(20).IsRequired();
         builder.Property(x => x.DisplayName).HasColumnName("display_name").HasMaxLength(200).IsRequired();
         builder.Property(x => x.NormalizedDisplayName).HasColumnName("normalized_display_name").HasMaxLength(200).IsRequired();
@@ -43,6 +44,8 @@ public sealed class ProjectCustomerConfiguration : IEntityTypeConfiguration<Proj
             .HasField("_interactions")
             .UsePropertyAccessMode(PropertyAccessMode.Field);
 
+        builder.HasIndex(x => x.PartyId)
+            .HasDatabaseName("ix_project_customers_party_id");
         builder.HasIndex(x => new { x.ProjectId, x.NormalizedDisplayName, x.NormalizedPhone })
             .IsUnique()
             .HasDatabaseName("ux_project_customers_project_name_phone");
@@ -50,6 +53,12 @@ public sealed class ProjectCustomerConfiguration : IEntityTypeConfiguration<Proj
             .HasDatabaseName("ix_project_customers_project_status");
         builder.HasIndex(x => x.IdentityDocumentStoredFileId)
             .HasDatabaseName("ix_project_customers_identity_document");
+
+        builder.HasOne(x => x.Party)
+            .WithMany()
+            .HasForeignKey(x => x.PartyId)
+            .OnDelete(DeleteBehavior.Restrict)
+            .IsRequired();
 
         builder.HasOne<Project>()
             .WithMany()

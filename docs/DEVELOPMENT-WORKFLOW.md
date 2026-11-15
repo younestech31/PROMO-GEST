@@ -5,13 +5,26 @@
 
 ---
 
+## 0. Product-First Intake and Scope Control
+
+Before accepting a task, identify the business workflow it advances, its module (A–L), roadmap phase, upstream dependencies, and acceptance evidence. Prioritize real blockers, security defects, data-integrity risks, and work that closes the current phase. Put unrelated cosmetic requests, speculative enhancements, and non-blocking cleanup in a backlog; do not let them displace the active roadmap task.
+
+The product interaction model should separate:
+1. **Organization workspace** — role-aware daily work and cross-project tasks/indicators.
+2. **Project selection/switching** — explicit selection of authorized projects.
+3. **Active project workspace** — project-scoped modules with persistent project identity.
+
+Technical administration (health, database readiness, backups, security audit, and user/role administration) must be available in the appropriate administrative area without becoming the primary daily-work interface. Use `PROJECT-NAVIGATION-UX.md` as a proposal to review against the business workflows and implementation; do not launch an unbounded redesign or claim the proposal is implemented.
+
+A UI screen or technical component is not a business deliverable by itself. Map every changed screen/API to its actual business requirement, domain module, permission, data owner, and downstream workflow.
+
 ## 1. Before Starting Any Change
 
 Every contributor or engineering session **must** complete these 5 preparation steps before editing code, migrations, or docs:
 
 1. **Read the Canonical Engineering Suite:**
    - [MASTER-BLUEPRINT.md](MASTER-BLUEPRINT.md) (status taxonomy & scope boundaries)
-   - [CURRENT-STATE-BASELINE.md](CURRENT-STATE-BASELINE.md) (audited source baseline `727fddf5...`, CI #520 evidence, active Phase 0 boundaries)
+   - [CURRENT-STATE-BASELINE.md](CURRENT-STATE-BASELINE.md) (audited source baseline `6bbd97f70ed0fb63cf226a1117cf6e83c359d2be`, CI #526 evidence, user-confirmed AI Studio preview smoke check, and remaining Phase 0 gates)
    - [DOMAIN-MODEL.md](DOMAIN-MODEL.md) (literal schema, concurrency, Party vs ProjectCustomer rules)
    - [SECURITY-AND-PERMISSIONS.md](SECURITY-AND-PERMISSIONS.md) (hashing, cookies, CSRF, 18 permissions, resource scoping)
    - [MASTER-ROADMAP.md](MASTER-ROADMAP.md) (dependencies & phase sequencing)

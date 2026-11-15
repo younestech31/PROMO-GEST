@@ -1,9 +1,9 @@
 # PROMO GEST — Current State Baseline
 
 **Document Role:** Evidence-backed snapshot of the repository, not a product roadmap.  
-**Audited Source Baseline:** `727fddf59a293cb888549afce10c2d7328a4d484` (PR #42 merge).  
-**Previous Canonical Documentation Snapshot:** `143e6edcaa97ed44cc4d7343809dfc427117e978` (superseded by this evidence refresh).  
-**Latest Green CI:** GitHub Actions Run **#520** / `43734734647`, on the audited source commit above.  
+**Audited Source Baseline:** `6bbd97f70ed0fb63cf226a1117cf6e83c359d2be` (PR #44 merge).  
+**Previous Canonical Documentation Snapshot:** `fd72c6b872e584829657505cc0c1d4dfe38d3020` (PR #43; superseded by this alignment refresh).  
+**Latest Green CI:** GitHub Actions Run **#526** / `43743107914`, on the audited source commit above; all three jobs passed.  
 **Governing Rule:** A feature is `IMPLEMENTED_AND_VERIFIED` only when its code and applicable automated verification pass in the audited baseline. A green pipeline does not certify untested browser UX, preview parity, production installation, or legal/accounting correctness.
 
 ---
@@ -12,10 +12,10 @@
 
 | Layer / Subsystem | Status | Current Evidence | Remaining Boundary |
 |---|---|---|---|
-| Domain Core (`PromoGest.Domain`) | `IMPLEMENTED_AND_VERIFIED` | CI #520: **27/27** Domain tests passed. | Additional coverage is added with each domain change. |
-| Application Services (`PromoGest.Application`) | `IMPLEMENTED_AND_VERIFIED` | CI #520: **14/14** Application tests passed, including Party denial auditing and identity-mirror synchronization coverage. | Browser-level workflows are outside this test suite. |
-| PostgreSQL 18 Integration (`PromoGest.IntegrationTests`) | `IMPLEMENTED_AND_VERIFIED` | CI #520: solution build succeeded and **9/9** integration tests passed against PostgreSQL 18. | CI evidence is not a substitute for a customer-site installation drill. |
-| Local React SPA (`apps/local-web`) | `PARTIALLY_IMPLEMENTED` | CI #520: TypeScript strict check, **36/36** pure TypeScript tests, production build, ASP.NET Core static-hosting output, and preview-leak checks passed. | Manual Arabic RTL / French LTR browser review remains outstanding. The Vite fallback simulator is intentionally not the production API and remains incomplete. |
+| Domain Core (`PromoGest.Domain`) | `IMPLEMENTED_AND_VERIFIED` | CI #526: **27/27** Domain tests passed. | Additional coverage is added with each domain change. |
+| Application Services (`PromoGest.Application`) | `IMPLEMENTED_AND_VERIFIED` | CI #526: **14/14** Application tests passed, including Party denial auditing and identity-mirror synchronization coverage. | Browser-level workflows are outside this test suite. |
+| PostgreSQL 18 Integration (`PromoGest.IntegrationTests`) | `IMPLEMENTED_AND_VERIFIED` | CI #526: solution build succeeded and **9/9** integration tests passed against PostgreSQL 18. | CI evidence is not a substitute for a customer-site installation drill. |
+| Local React SPA (`apps/local-web`) | `PARTIALLY_IMPLEMENTED` | CI #526: TypeScript strict check, **38/38** pure TypeScript tests, production build, ASP.NET Core static-hosting output, and preview-leak checks passed. | Manual Arabic RTL / French LTR browser review remains outstanding. The Vite fallback simulator is intentionally not the production API and remains incomplete. |
 | C2 Party / Customer identity foundation | `IMPLEMENTED_AND_VERIFIED` | PRs #35–#38 merged; Application and PostgreSQL 18 tests cover concurrency stamps, denial audit, cross-project Party reuse, identity-collision rejection, and synchronization of linked customer mirrors. | Duplicate identity columns remain transitional mirrors until the Phase 1 migration retires them. |
 | Organization profile editing | `PARTIALLY_IMPLEMENTED` | Organization profile view is read-only; `org.manage` is seeded. | `PUT /api/organization` is not implemented. |
 | Modules F–J (Contracts through SCF/Tax) | `PLANNED` | Architecture and legal/accounting prerequisites are documented. | No production business implementation; practitioner sign-off remains mandatory. |
@@ -23,13 +23,13 @@
 
 ## 2. Verified CI Evidence
 
-### GitHub Actions Run #520 — 15 November 2026
-- **Frontend job:** passed. `npm run lint` (`tsc --noEmit`), `npm test` (**36/36**), SPA build, ASP.NET Core `wwwroot` build, static-hosting checks, and preview-leak checks all completed successfully.
+### GitHub Actions Run #526 — 15 November 2026
+- **Frontend job:** passed. `npm run lint` (`tsc --noEmit`), `npm test` (**38/38**), SPA build, ASP.NET Core `wwwroot` build, static-hosting checks, and preview-leak checks all completed successfully.
 - **.NET 10 / PostgreSQL 18 job:** passed. Solution build with warnings as errors succeeded; Domain **27/27**, Application **14/14**, and PostgreSQL 18 Integration **9/9** tests passed.
 - **Windows publish job:** passed. Windows x64 publish, machine-scoped Data Protection recovery verification, and PowerShell validation all succeeded.
-- **Overall result:** all three CI jobs completed with `success` on commit `143e6edcaa97ed44cc4d7343809dfc427117e978`.
+- **Overall result:** all three CI jobs completed with `success` on commit `6bbd97f70ed0fb63cf226a1117cf6e83c359d2be`.
 
-[Open CI Run #520](https://github.com/younestech31/PROMO-GEST/actions/runs/43734734647)
+[Open CI Run #526](https://github.com/younestech31/PROMO-GEST/actions/runs/43743107914)
 
 ### C2 Party / Customer changes merged and verified
 - **PR #35:** fixed `CS7036` by passing the actual `PartyConcurrencyStamp` returned by the customer-details response. No synthetic token or weakened concurrency check was introduced.
@@ -41,17 +41,19 @@ The former `CS7036` compilation blocker is **resolved**, not an active blocker. 
 
 ## 3. Phase 0 — Remaining Work
 
-Phase 0 remains `IN_PROGRESS`, but its main-code CI and C2 synchronization gates are green. Remaining work is bounded:
+Phase 0 remains `IN_PROGRESS`. The latest main CI is green, and the product owner confirmed that the real Google AI Studio development server/API and PostgreSQL development connection are working. The previously reported generic internal errors on the project customer/prospect and reservation pages were confirmed resolved after PR #44. This is targeted smoke evidence, not full end-to-end acceptance.
 
-1. **Real preview/API path:** verify that AI Studio is actually proxying to the ASP.NET Core API when `ASPNETCORE_URL` is configured, rather than silently exercising the Vite-only in-memory simulator. Validate the Cloud SQL development connection and cookie/CSRF flow in that real API path.
-2. **Manual bilingual browser review:** inspect the principal workflows in Arabic RTL and French LTR; automated TypeScript tests do not prove visual/browser correctness.
-3. **Transitional Party mirrors:** `Party` is canonical. `project_customers` identity columns are synchronized and collision-checked while retained for compatibility. Retiring those columns is Phase 1 work and requires a reviewed migration plus backfill/rollback tests.
-4. **Scope boundary:** organization profile editing and the 69-Wilaya / commune reference-data integration remain Phase 1 items. Legal contracts, collections, SCF and tax modules remain gated by practitioner review.
+Remaining Phase 0 work is bounded:
+
+1. **Manual bilingual browser review:** inspect the primary workflows in Arabic RTL and French LTR on desktop and mobile. Automated TypeScript tests do not prove visual or browser correctness.
+2. **Business-workflow verification:** exercise read/create/update/cancel paths, authorization boundaries, persistence/reload, and safe error handling in the real API using fictional development records. The reported pages loading without the previous error does not prove every operation is complete.
+3. **Preview separation:** keep the Vite-only in-memory simulator clearly separate from real API evidence; it intentionally lacks full parity.
+4. **Phase 1 boundary:** organization profile editing, structure authorization alignment, retirement of transitional Party mirrors, and the versioned 69-Wilaya / commune reference catalogue remain Phase 1 work. Later legal, collection, SCF, and tax modules retain their practitioner gates.
 
 ## 4. Preview Boundary (Do Not Confuse with Production)
 
 - `apps/local-web/dev-api-middleware.ts` is loaded only when no real ASP.NET Core proxy target is selected or when `PROMOGEST_VITE_ONLY=1` explicitly selects the in-memory simulator. It is not a full implementation of the ASP.NET Core API.
-- When `ASPNETCORE_URL` is configured, Vite proxies `/api` and `/health` to that ASP.NET Core host. The development launcher verifies `/health/ready` before starting Vite; it fails closed if a required local API or database prerequisite is unavailable. Both real-API launchers automatically provision .NET 10 per-user through Microsoft's official installer when the SDK is missing.
+- When `ASPNETCORE_URL` is configured, Vite proxies `/api` and `/health` to that ASP.NET Core host. The default `npm run dev` launcher verifies prerequisites, waits for the configured Cloud SQL socket, applies pending EF Core migrations with the separate migration identity, reapplies least-privilege runtime grants, verifies API readiness, and only then starts Vite. Both real-API launchers provision .NET 10 per-user through Microsoft's official installer when the SDK is missing.
 - The Vite-only simulator still lacks parity for Party, Customers, Reservations and Documents, does not model all 18 permissions, and retains a setup Wilaya validation range of 01–58. These are preview limitations; they must not be mistaken for production API behavior.
 - Production builds serve the static React bundle from ASP.NET Core and do not bundle the Vite development middleware.
 
@@ -74,7 +76,7 @@ The later AI Studio log at **17:09:56** identified the next prerequisite exactly
 
 PR #42 adds the shared `scripts/ensure-dotnet10.sh` bootstrap to both `npm run dev` and `npm run dev:cloudsql`. It checks for a compatible SDK, downloads Microsoft's official `dotnet-install.sh` over HTTPS only when needed, installs the .NET 10 SDK in `$HOME/.dotnet` without root permissions, and verifies the selected version before proceeding. A newly recreated preview container may need to download the SDK again. The first startup requires outbound HTTPS access to `dot.net` and sufficient free disk space.
 
-CI #520 verifies the no-SDK bootstrap path with a mocked installer, in addition to Bash syntax, TypeScript, frontend, PostgreSQL 18, and Windows release checks. This proves the bootstrap logic and regression contract, but does not substitute for starting the live AI Studio preview with its own network and Cloud SQL socket.
+CI #526 verifies the default Cloud SQL migration/grant startup sequence, .NET 10 bootstrap regression, frontend checks, PostgreSQL 18 integration, and Windows release checks. These automated tests verify the launcher contract; they do not replace live-preview checks, which the product owner has now smoke-tested successfully in Google AI Studio.
 
 ## 6. AI Studio Runtime Incident — 15 November 2026
 
@@ -86,12 +88,18 @@ A browser HAR captured a same-origin customer-create request at **13:48:49 UTC**
 - The HAR did not record a `Cookie` request header or an `Authorization` header on either POST. Because `ProjectCustomersController` is `[Authorize]`, this must be checked against the browser cookie store and `GET /api/auth/me`; the HAR alone does not establish whether authentication was actually absent or simply omitted by the export.
 - The second response includes a `traceparent` correlation value. The application logs the exception and request path as `Unhandled exception while processing POST .../customers`, but the HAR does not contain the server stack trace.
 
-**Disposition:** Root cause is **NOT YET IDENTIFIED**. Do not disable CSRF, remove `[Authorize]`, or broaden PostgreSQL permissions as a speculative workaround. Obtain the matching ASP.NET Core exception log before changing application code or database grants.
+**Disposition:** The previously reported customer/prospect registry and reservation page errors were confirmed by the product owner as resolved in the live AI Studio development preview after PR #44. PR #44 makes the default development launcher apply pending Cloud SQL migrations and refresh least-privilege runtime grants before API readiness. The earlier HAR's individual POST exception still cannot be attributed conclusively without its matching server stack trace; do not claim that the HAR alone proves a specific exception cause. Never disable CSRF, remove `[Authorize]`, or broaden PostgreSQL permissions speculatively.
 
 The `GET /health/ready` endpoint only checks `Database.CanConnectAsync` and whether `organization_settings` is initialized. It does **not** verify that EF Core migrations are current. Therefore `databaseConnected: true` and `isInitialized: true` do not prove that the `parties` and current `project_customers` schema is present.
+
+### PR #44 — Cloud SQL startup schema/grant preparation
+
+PR #44 (`6bbd97f`) changes the normal AI Studio `npm run dev` path so a configured loopback ASP.NET Core API is not launched against an unprepared Cloud SQL schema. The launcher requires both the runtime and migration identities, waits for the SQL socket, runs the API migration command using the migration identity, reapplies least-privilege runtime grants, then checks API readiness and starts Vite. The dedicated `dev:cloudsql` runner marks its completed migration pass to avoid running it twice.
+
+The owner subsequently confirmed that the preview server is working and the project customer/prospect and reservation pages no longer show the reported generic internal error. No production database, credentials, or customer deployment was changed by this development fix.
 
 ## 7. Other Recorded Findings
 
 - `OrganizationProfileView.tsx` remains read-only; `PUT /api/organization` is not present.
 - The screenshot `public/assets/aistudio/Screenshot_2026-11-15-12-54-54-202-edit_com.android.chrome_743cf16d.jpg` is a development-debugging artifact added before this baseline. It should be removed in a separately scoped asset-cleanup PR after confirming no product reference uses it; it was not changed in the C2 fixes.
-- No Cloud SQL production-data migration or customer deployment is implied by CI #520. The Cloud SQL environment remains a non-production development integration.
+- No Cloud SQL production-data migration or customer deployment is implied by CI #526. The Cloud SQL environment remains a non-production development integration.

@@ -31,6 +31,7 @@ public sealed record ProjectDto(
     int ActualBuildingsCount,
     int ActualUnitsCount,
     DateTimeOffset CreatedAtUtc,
+    Guid ConcurrencyStamp,
     IReadOnlyList<ProjectMemberDto> Members);
 
 public sealed record CreateProjectRequest(
@@ -62,7 +63,8 @@ public sealed record UpdateProjectRequest(
     string Status,
     decimal EstimatedBudgetDzd,
     int PlannedBlocksCount,
-    int PlannedUnitsCount);
+    int PlannedUnitsCount,
+    Guid ExpectedConcurrencyStamp);
 
 public sealed record AssignProjectMemberRequest(
     Guid UserId,

@@ -202,6 +202,14 @@ public sealed class ProjectService
         var project = await _projectRepository.GetByIdWithMembersAsync(projectId, ct)
             ?? throw new NotFoundDomainException("PROJECT_NOT_FOUND", "Project not found.");
 
+        if (request.ExpectedConcurrencyStamp == Guid.Empty ||
+            request.ExpectedConcurrencyStamp != project.ConcurrencyStamp)
+        {
+            throw new ConflictDomainException(
+                "PROJECT_CONCURRENCY_CONFLICT",
+                "This project changed after it was loaded. Reload the latest project data and review your changes before saving.");
+        }
+
         if (!Enum.TryParse<ProjectStatus>(request.Status, ignoreCase: true, out var parsedStatus) ||
             !Enum.IsDefined(parsedStatus))
         {
@@ -463,6 +471,7 @@ public sealed class ProjectService
             structureCounts.BuildingsCount,
             structureCounts.UnitsCount,
             project.CreatedAtUtc,
+            project.ConcurrencyStamp,
             project.Members.Select(m => new ProjectMemberDto(
                 m.Id,
                 m.UserId,

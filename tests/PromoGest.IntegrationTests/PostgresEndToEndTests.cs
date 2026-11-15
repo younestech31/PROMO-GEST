@@ -616,7 +616,8 @@ public sealed class PostgresEndToEndTests : IClassFixture<PostgreSql18Integratio
                 "UnderConstruction",
                 470_000_000m,
                 4,
-                64);
+                64,
+                createdProject!.ConcurrencyStamp);
             var updateProjectResp = await adminClient.PutAsJsonAsync($"/api/projects/{createdProject!.Id}", projectUpdate);
             Assert.Equal(HttpStatusCode.OK, updateProjectResp.StatusCode);
             var updatedProject = await updateProjectResp.Content.ReadFromJsonAsync<ProjectDto>();
@@ -625,6 +626,49 @@ public sealed class PostgresEndToEndTests : IClassFixture<PostgreSql18Integratio
             Assert.Equal(projectUpdate.NameAr, updatedProject.NameAr);
             Assert.Equal(projectUpdate.WilayaCode, updatedProject.WilayaCode);
             Assert.Equal(projectUpdate.Status, updatedProject.Status);
+            Assert.NotEqual(createdProject.ConcurrencyStamp, updatedProject.ConcurrencyStamp);
+
+            // A second editor submitting the original version must receive a conflict and must not overwrite the first save.
+            var staleProjectUpdate = projectUpdate with
+            {
+                NameAr = "تعديل متقادم",
+                NameFr = "Modification obsolète"
+            };
+            var staleProjectUpdateResponse = await adminClient.PutAsJsonAsync(
+                $"/api/projects/{createdProject.Id}",
+                staleProjectUpdate);
+            Assert.Equal(HttpStatusCode.Conflict, staleProjectUpdateResponse.StatusCode);
+            var staleProjectError = await staleProjectUpdateResponse.Content.ReadAsStringAsync();
+            Assert.Contains("PROJECT_CONCURRENCY_CONFLICT", staleProjectError, StringComparison.Ordinal);
+            var projectAfterStaleAttempt = await adminClient.GetFromJsonAsync<ProjectDto>(
+                $"/api/projects/{createdProject.Id}");
+            Assert.NotNull(projectAfterStaleAttempt);
+            Assert.Equal(updatedProject.NameAr, projectAfterStaleAttempt!.NameAr);
+            Assert.Equal(updatedProject.ConcurrencyStamp, projectAfterStaleAttempt.ConcurrencyStamp);
+
+            // Two requests based on the same version must produce one winner and one conflict.
+            var raceUpdateA = projectUpdate with
+            {
+                NameAr = "تحديث متزامن أ",
+                ExpectedConcurrencyStamp = projectAfterStaleAttempt.ConcurrencyStamp
+            };
+            var raceUpdateB = projectUpdate with
+            {
+                NameAr = "تحديث متزامن ب",
+                ExpectedConcurrencyStamp = projectAfterStaleAttempt.ConcurrencyStamp
+            };
+            var projectUpdateRaceResponses = await Task.WhenAll(
+                adminClient.PutAsJsonAsync($"/api/projects/{createdProject.Id}", raceUpdateA),
+                adminClient.PutAsJsonAsync($"/api/projects/{createdProject.Id}", raceUpdateB));
+            Assert.Equal(1, projectUpdateRaceResponses.Count(response => response.StatusCode == HttpStatusCode.OK));
+            Assert.Equal(1, projectUpdateRaceResponses.Count(response => response.StatusCode == HttpStatusCode.Conflict));
+            updatedProject = await adminClient.GetFromJsonAsync<ProjectDto>(
+                $"/api/projects/{createdProject.Id}");
+            Assert.NotNull(updatedProject);
+            Assert.Contains(updatedProject!.NameAr, new[] { raceUpdateA.NameAr, raceUpdateB.NameAr });
+            Assert.Equal(updatedProject.ConcurrencyStamp, (await adminClient.GetFromJsonAsync<ProjectDto>(
+                $"/api/projects/{createdProject.Id}"))!.ConcurrencyStamp);
+
             using (var scope = factory.Services.CreateScope())
             {
                 var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
@@ -1120,12 +1164,12 @@ public sealed class PostgresEndToEndTests : IClassFixture<PostgreSql18Integratio
                 raceUnit.Id,
                 createdCustomer.Id,
                 DateTimeOffset.UtcNow.AddDays(3));
-            var raceResponses = await Task.WhenAll(
+            var reservationRaceResponses = await Task.WhenAll(
                 adminClient.PostAsJsonAsync($"/api/projects/{createdProject.Id}/reservations", raceRequest),
                 adminClient.PostAsJsonAsync($"/api/projects/{createdProject.Id}/reservations", raceRequest));
-            Assert.Equal(1, raceResponses.Count(response => response.StatusCode == HttpStatusCode.Created));
-            Assert.Equal(1, raceResponses.Count(response => response.StatusCode == HttpStatusCode.Conflict));
-            var winningResponse = raceResponses.Single(response => response.StatusCode == HttpStatusCode.Created);
+            Assert.Equal(1, reservationRaceResponses.Count(response => response.StatusCode == HttpStatusCode.Created));
+            Assert.Equal(1, reservationRaceResponses.Count(response => response.StatusCode == HttpStatusCode.Conflict));
+            var winningResponse = reservationRaceResponses.Single(response => response.StatusCode == HttpStatusCode.Created);
             var winningReservation = await winningResponse.Content.ReadFromJsonAsync<ProjectSalesReservationDto>();
             Assert.NotNull(winningReservation);
             var raceReservationCount = await adminClient.GetFromJsonAsync<List<ProjectSalesReservationDto>>(
@@ -1248,7 +1292,8 @@ public sealed class PostgresEndToEndTests : IClassFixture<PostgreSql18Integratio
             var directorUpdate = projectUpdate with
             {
                 NameAr = "إقامة الأطلس - تحديث مدير المشاريع",
-                NameFr = "Résidence Atlas - Mise à jour du directeur"
+                NameFr = "Résidence Atlas - Mise à jour du directeur",
+                ExpectedConcurrencyStamp = updatedProject.ConcurrencyStamp
             };
 
             // A global Project Director role grants the action permission, not access to an unassigned project.
@@ -1322,7 +1367,8 @@ public sealed class PostgresEndToEndTests : IClassFixture<PostgreSql18Integratio
                 NameFr = "Résidence du Directeur - Mise à Jour",
                 WilayaCode = "31",
                 WilayaName = "Oran",
-                Municipality = "Bir El Djir"
+                Municipality = "Bir El Djir",
+                ExpectedConcurrencyStamp = directorOwnedProject.ConcurrencyStamp
             };
             var directorOwnUpdateResponse = await directorClient.PutAsJsonAsync(
                 $"/api/projects/{directorOwnedProject.Id}",
@@ -1339,10 +1385,15 @@ public sealed class PostgresEndToEndTests : IClassFixture<PostgreSql18Integratio
                 $"/api/projects/{createdProject.Id}/members",
                 new AssignProjectMemberRequest(directorCreatedUserId, "ProjectManager", true, true, true, true));
             Assert.Equal(HttpStatusCode.OK, directorProjectAssignment.StatusCode);
+            var projectAfterManagerAssignment = await directorProjectAssignment.Content.ReadFromJsonAsync<ProjectDto>();
+            Assert.NotNull(projectAfterManagerAssignment);
 
             var directorAssignedUpdate = await directorClient.PutAsJsonAsync(
                 $"/api/projects/{createdProject.Id}",
-                directorUpdate);
+                directorUpdate with
+                {
+                    ExpectedConcurrencyStamp = projectAfterManagerAssignment!.ConcurrencyStamp
+                });
             Assert.Equal(HttpStatusCode.OK, directorAssignedUpdate.StatusCode);
             var directorUpdatedProject = await directorAssignedUpdate.Content.ReadFromJsonAsync<ProjectDto>();
             Assert.NotNull(directorUpdatedProject);

@@ -151,6 +151,7 @@ export function ProjectsAccessView({
           estimatedBudgetDzd: createForm.estimatedBudgetDzd,
           plannedBlocksCount: createForm.plannedBlocksCount,
           plannedUnitsCount: createForm.plannedUnitsCount,
+          expectedConcurrencyStamp: editingProject.concurrencyStamp,
         };
         const updated = await apiClient.updateProject(editingProject.id, payload);
         const next = projects.map((project) => project.id === updated.id ? updated : project);
@@ -185,7 +186,13 @@ export function ProjectsAccessView({
         plannedUnitsCount: 0,
       });
     } catch (err) {
-      if (err instanceof ApiError) {
+      if (err instanceof ApiError && err.code === 'PROJECT_CONCURRENCY_CONFLICT') {
+        setModalError(
+          language === 'ar'
+            ? 'تغيّرت بيانات هذا المشروع بعد فتح نموذج التعديل. لم تُحفظ تغييراتك. أعد تحميل بيانات المشروع وراجع تعديلاتك قبل المحاولة مجدداً.'
+            : 'Ce projet a été modifié depuis l’ouverture du formulaire. Vos changements n’ont pas été enregistrés. Rechargez la dernière version et vérifiez vos modifications avant de réessayer.'
+        );
+      } else if (err instanceof ApiError) {
         setModalError(translateApiError(err.code, err.message, language));
       } else {
         setModalError(

@@ -661,7 +661,8 @@ public sealed class ApplicationSecurityAndFoundationTests
             "UnderConstruction",
             175_000_000m,
             3,
-            36);
+            36,
+            created.ConcurrencyStamp);
 
         var updated = await projectSvc.UpdateProjectAsync(
             init.SystemAdminUserId,
@@ -682,6 +683,18 @@ public sealed class ApplicationSecurityAndFoundationTests
             entry.EventType == "PROJECT_UPDATED" &&
             entry.TargetEntityId == created.Id.ToString());
 
+        var staleUpdate = updateRequest with
+        {
+            NameAr = "تعديل قديم يجب رفضه",
+            NameFr = "Modification obsolète à rejeter"
+        };
+        var staleError = await Assert.ThrowsAsync<ConflictDomainException>(() =>
+            projectSvc.UpdateProjectAsync(init.SystemAdminUserId, created.Id, staleUpdate, metadata));
+        Assert.Equal("PROJECT_CONCURRENCY_CONFLICT", staleError.Code);
+        var stillCurrent = await projectSvc.GetProjectByIdAsync(init.SystemAdminUserId, created.Id, metadata);
+        Assert.Equal(updated.NameAr, stillCurrent.NameAr);
+        Assert.Equal(updated.ConcurrencyStamp, stillCurrent.ConcurrencyStamp);
+
         var denied = await Assert.ThrowsAsync<ForbiddenDomainException>(() =>
             projectSvc.UpdateProjectAsync(employee.Id, created.Id, updateRequest, metadata));
         Assert.Equal("FORBIDDEN_PROJECT_UPDATE", denied.Code);
@@ -690,11 +703,11 @@ public sealed class ApplicationSecurityAndFoundationTests
             entry.ActorUserId == employee.Id &&
             entry.TargetEntityId == created.Id.ToString());
 
-        var invalidBudget = updateRequest with { EstimatedBudgetDzd = -1m };
+        var invalidBudget = updateRequest with { EstimatedBudgetDzd = -1m, ExpectedConcurrencyStamp = updated.ConcurrencyStamp };
         await Assert.ThrowsAsync<DomainException>(() =>
             projectSvc.UpdateProjectAsync(init.SystemAdminUserId, created.Id, invalidBudget, metadata));
 
-        var invalidStatus = updateRequest with { Status = "999" };
+        var invalidStatus = updateRequest with { Status = "999", ExpectedConcurrencyStamp = updated.ConcurrencyStamp };
         var statusError = await Assert.ThrowsAsync<DomainException>(() =>
             projectSvc.UpdateProjectAsync(init.SystemAdminUserId, created.Id, invalidStatus, metadata));
         Assert.Equal("PROJECT_STATUS_INVALID", statusError.Code);

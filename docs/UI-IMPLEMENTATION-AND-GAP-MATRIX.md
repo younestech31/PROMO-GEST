@@ -3,7 +3,7 @@
 **Document role:** Source-audited inventory of the current React user interface, its API-backed actions, module ownership, and the gap between today's interface and the product interaction model. This is a current-state record, not a redesign specification or browser-acceptance certificate.  
 **Main commit inspected at audit start:** 5415f0e668a55f902ac2802e1669af58ad7ec410.  
 **Last code-changing source commit:** 6bbd97f70ed0fb63cf226a1117cf6e83c359d2be (PR #44).  
-**Latest green CI:** Run #531 / 43752672569; all three jobs passed on 15 November 2026.
+**Latest green CI at audit start:** Run #531 / 43752672569; all three jobs passed on 15 November 2026.
 
 ## 1. Reading this matrix correctly
 

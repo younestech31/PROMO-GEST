@@ -1,6 +1,6 @@
 # ADR 0006 — Project access requires explicit membership
 
-- **Status:** Proposed for acceptance with foundation remediation PR
+- **Status:** Accepted and implemented in PR #25 (merged to `main` on 15 November 2026)
 - **Date:** 15 November 2026
 - **Decision owners:** PROMO GEST product and engineering
 - **Scope:** all project-owned business records and project administration

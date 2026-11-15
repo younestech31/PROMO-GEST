@@ -1,7 +1,9 @@
 # PROMO GEST — Master Engineering Blueprint
 
 **Document Role:** Single authoritative index & master entry point for the PROMO GEST local-first real estate developer ERP (*promoteur immobilier* — Algeria).  
-**Last Verified Against Repository:** `main` at commit `ec8769a5f778429cad0fec8f35d59f84f93b049d` (PR #34 merged **2026-11-15**; verified against GitHub Actions Run `43710844749`, `.github/workflows/ci.yml`, `src/`, `apps/local-web/`, `tests/`, `deploy/`, `scripts/`, and 11 EF Core migrations).  
+**Source-Code Baseline Commit:** `2eee4771f2e5de23809e1b5fcf5a559c6ad48994` (PR #34 merge serves as historical context).  
+**Current Documentation Revision Commit:** `d34eba606e5e2473898deed5e31a73eef2e7374d`.  
+**Latest CI Verification Runs:** GitHub Actions Run `43710844749` & Run `43713215866` (frontend passed successfully; .NET/PostgreSQL & Windows solution builds failed due to `CS7036` at `PostgresEndToEndTests.cs:1072` caused by missing `PartyConcurrencyStamp` parameter, so integration tests did not execute).  
 **Governing Charter:** Local-first, on-premises per organization, PostgreSQL 18 single source of truth, single System Administrator (`SYSTEM_ADMIN`), HTTP-only `SameSite=Strict` cookie sessions (`promogest_session`) + CSRF, local filesystem storage with SHA-256 verification, Arabic RTL primary / French LTR secondary, Algerian DZD & legal context.
 
 ---
@@ -28,23 +30,21 @@ Every claim across this blueprint uses **strictly one** of the six evidence-back
 | # | Document | Purpose & Scope |
 |---|---|---|
 | 1 | [MASTER-BLUEPRINT.md](MASTER-BLUEPRINT.md) | This master index, executive product vision, product scope boundaries, completion scorecard, and navigation map. |
-| 2 | [CURRENT-STATE-BASELINE.md](CURRENT-STATE-BASELINE.md) | Honest baseline anchored at commit `ec8769a5f778429cad0fec8f35d59f84f93b049d` (PR #34), GitHub Actions Run `43710844749`, 11 EF migrations, exact test/build results, active C2 defects, and preview drift. |
+| 2 | [CURRENT-STATE-BASELINE.md](CURRENT-STATE-BASELINE.md) | Honest baseline anchored at code commit `2eee4771f2e5de23809e1b5fcf5a559c6ad48994` / doc commit `d34eba606e5e2473898deed5e31a73eef2e7374d`, CI Runs `43710844749` & `43713215866`, 11 EF migrations, exact test/build results, active C2 defects, and preview drift. |
 | 3 | [SYSTEM-ARCHITECTURE.md](SYSTEM-ARCHITECTURE.md) | Clean/Layered dependency graph, modular monolith boundaries, HTTP middleware pipeline, and SPA hosting model. |
 | 4 | [DOMAIN-MODEL.md](DOMAIN-MODEL.md) | Authoritative schema matching `AppDbContextModelSnapshot.cs` & migrations, Party vs ProjectCustomer separation, concurrency, and planned contract/financial models. |
 | 5 | [MODULE-CATALOG.md](MODULE-CATALOG.md) | All 12 ERP domains (**A–L**) mapped from current implementation through target contracts, K-Min vs K-Full document split, Algerian contract types, and unified financial event flow. |
 | 6 | [MASTER-ROADMAP.md](MASTER-ROADMAP.md) | Dependency-ordered phased roadmap, parallelizable vs gated streams, stage transition gates, and program risks. |
-| 7 | [SECURITY-AND-PERMISSIONS.md](SECURITY-AND-PERMISSIONS.md) | `Pbkdf2PasswordHasher` (PBKDF2-SHA512), `promogest_session`, 18 permissions × 7 seeded roles classified by actual API/UI enforcement, `ProjectMember` scope, SoD, and audit controls. |
+| 7 | [SECURITY-AND-PERMISSIONS.md](SECURITY-AND-PERMISSIONS.md) | `Pbkdf2PasswordHasher` (PBKDF2-SHA512), `promogest_session`, 18 permissions × 7 seeded roles classified by actual API/UI enforcement, resource scoping, SoD, and audit controls. |
 | 8 | [DATA-AND-LOCAL-DEPLOYMENT.md](DATA-AND-LOCAL-DEPLOYMENT.md) | Local PG18 3-role topology, Data Protection (Windows DPAPI / Linux PKCS#12), Caddy LAN HTTPS, backup/restore drills, offline boundary, and Cloud SQL non-prod isolation. |
 | 9 | [QUALITY-AND-RELEASE-GATES.md](QUALITY-AND-RELEASE-GATES.md) | Mandatory per-module acceptance gates (`G1–G10`) and practitioner legal/CPA sign-off gates. |
-| 10 | [DECISION-LOG.md](DECISION-LOG.md) | Consolidated ADRs `0001–0010`, Party/ProjectCustomer canonical ownership decision, password-hashing policy, CI `43710844749` record, practitioner sign-off register, and drift log. |
+| 10 | [DECISION-LOG.md](DECISION-LOG.md) | Consolidated ADRs `0001–0010`, Party/ProjectCustomer canonical ownership decision, password-hashing policy, CI run records, practitioner sign-off register, and drift log. |
 | 11 | [DEVELOPMENT-WORKFLOW.md](DEVELOPMENT-WORKFLOW.md) | Mandatory pre-work, in-development, post-development, and Definition-of-Done governance preventing architectural drift. |
 | 12 | [REQUIREMENT-TRACEABILITY.md](REQUIREMENT-TRACEABILITY.md) | Complete traceability matrix linking functional requirements across Domains **A–L** to code, endpoints, permissions, views, tests, and gates. |
 
 ---
 
 ## 3. Existing Specialized Reference Documents (Preserved & Cross-Linked)
-
-The following repository documents retain detailed domain, legal, operational, and historical audit context and remain cross-linked from the canonical suite:
 
 - **Legal & Regulatory Baseline:** [ALGERIAN-REAL-ESTATE-LEGAL-DOMAIN.md](ALGERIAN-REAL-ESTATE-LEGAL-DOMAIN.md) (Law 11-04, Executive Decree 13-431, FGCMPI, Finance Laws 2025/2026)
 - **Territorial & Administrative Data:** [ALGERIAN-REFERENCE-DATA.md](ALGERIAN-REFERENCE-DATA.md), [REFERENCE-DATA-GOVERNANCE.md](REFERENCE-DATA-GOVERNANCE.md) (Law 26-06, Decrees 26-206 & 26-208, Wilayas 01–69)
@@ -65,18 +65,18 @@ The following repository documents retain detailed domain, legal, operational, a
 3. **Counterparties (Party), CRM & Holds:** Organization-wide `parties` identity (`id`, `party_kind`, `display_name`), project-scoped `project_customers` & `customer_interactions`, and internal lot/unit holds (`project_sales_reservations`), cleanly separated from future Statutory Reservation Contracts, VSP / *Acte Notarié* sales contracts, regulated payment milestones, and DZD collections.
 4. **Execution, Accounting & Statutory Compliance:** Works/construction tracking (lots, contractor situations, FGCMPI/legal compliance), suppliers/inventory, **Algerian SCF (Système Comptable Financier)** journal generation, VAT/IBS/TAP/IRG tax tracking (Finance Laws 2025/2026 gated on qualified accountant review), and local reporting.
 
-### High-Level Program Status Snapshot (`main` at `ec8769a5f778429cad0fec8f35d59f84f93b049d`)
+### High-Level Program Status Snapshot (Code Baseline: `2eee4771f2e5de23809e1b5fcf5a559c6ad48994`)
 
 | Layer / Domain | Current State | Verification Evidence |
 |---|---|---|
-| Domain Core (`PromoGest.Domain`) | `IMPLEMENTED_AND_VERIFIED` | Builds cleanly; **27/27** `PromoGest.Domain.Tests` pass |
-| Application Services (`PromoGest.Application` — Setup/Auth/Users/Audit/Projects/Structure) | `IMPLEMENTED_AND_VERIFIED` | **10/10** `PromoGest.Application.Tests` pass |
-| C2 Party & Customer Changes (PR #34) | `IMPLEMENTED_NOT_VERIFIED` | Committed & merged into `main` (`ec8769a5...`), **not yet verified** end-to-end (`PartyDirectoryService` & updated `ProjectCustomerService` lack Application/PG18 coverage; active defects in [CURRENT-STATE-BASELINE.md](CURRENT-STATE-BASELINE.md)) |
-| PostgreSQL 18 Integration Suite (`PromoGest.IntegrationTests`) | `BLOCKED` | **Compile failure (`CS7036`)** at `PostgresEndToEndTests.cs:1072` (`PartyConcurrencyStamp`). In CI Run `43710844749`, PG18 container started cleanly, while `backend-and-postgres` & `windows-publish-and-powershell` failed during build before integration tests executed |
-| Local React SPA (`apps/local-web`) | `PARTIALLY_IMPLEMENTED` | CI `frontend` job succeeded (`tsc --noEmit` 0 errors, **24/24** pure TS unit tests pass, `wwwroot` leak check clean); `dev-api-middleware.ts` lacks 6 permissions & Docs/Customers/Reservations/Parties handlers |
+| Domain Core (`PromoGest.Domain`) | `IMPLEMENTED_AND_VERIFIED` | Builds cleanly; **27/27** `PromoGest.Domain.Tests` pass locally |
+| Application Services (`PromoGest.Application` — Setup/Auth/Users/Audit/Projects/Structure) | `IMPLEMENTED_AND_VERIFIED` | Builds cleanly; **10/10** `PromoGest.Application.Tests` pass locally |
+| C2 Party & Customer Changes | `IMPLEMENTED_NOT_VERIFIED` | Committed in `2eee4771...` (`PartyDirectoryService` & updated `ProjectCustomerService` lack Application/PG18 coverage; active defects in [CURRENT-STATE-BASELINE.md](CURRENT-STATE-BASELINE.md)) |
+| PostgreSQL 18 Integration Suite (`PromoGest.IntegrationTests`) | `BLOCKED` | **Compile failure (`CS7036`)** at `PostgresEndToEndTests.cs:1072` (`PartyConcurrencyStamp`). In CI Runs `43710844749` & `43713215866`, PG18 service containers started cleanly, while `.NET/Postgres` and Windows jobs failed during build before integration tests executed |
+| Local React SPA (`apps/local-web`) | `IMPLEMENTED_AND_VERIFIED` (Frontend) | CI `frontend` job succeeded (`tsc --noEmit` 0 errors, **24/24** pure TS unit tests pass, `wwwroot` leak check clean); `dev-api-middleware.ts` lacks 6 permissions & Docs/Customers/Reservations/Parties handlers |
 | Organization Profile Edit (`PUT /api/organization`) | `PARTIALLY_IMPLEMENTED` | `OrganizationProfileView.tsx` is read-only; `org.manage` seeded but no update endpoint exists |
 | Modules F–J & L (Contracts, DZD Finance/Installments, Works/Chantier, Procurement/Stock, SCF Accounting, Reporting) | `PLANNED` | Design baselines documented; zero production tables, services, endpoints, or UI implemented |
-| Module K (Document Vault `stored_files`) | `PARTIALLY_IMPLEMENTED` | Project file upload/list/download + SHA-256 verification implemented (`IMPLEMENTED_NOT_VERIFIED`); update/archive endpoints and entity-level linking (`Contract`, `Reservation`, `Milestone`, `Party`) not yet implemented |
+| Module K (Document Vault `stored_files`) | `PARTIALLY_IMPLEMENTED` | Project file upload/list/download + SHA-256 verification implemented (`IMPLEMENTED_NOT_VERIFIED`); update/archive endpoints and entity-level linking not yet implemented |
 
 ---
 

@@ -11,13 +11,13 @@ Every contributor or engineering session **must** complete these 5 preparation s
 
 1. **Read the Canonical Engineering Suite:**
    - [MASTER-BLUEPRINT.md](MASTER-BLUEPRINT.md) (status taxonomy & scope boundaries)
-   - [CURRENT-STATE-BASELINE.md](CURRENT-STATE-BASELINE.md) (verified commit state, active blockers, CI reality)
+   - [CURRENT-STATE-BASELINE.md](CURRENT-STATE-BASELINE.md) (verified commit baseline `2eee4771...`, active blockers, CI reality)
    - [DOMAIN-MODEL.md](DOMAIN-MODEL.md) (literal schema, concurrency, Party vs ProjectCustomer rules)
-   - [SECURITY-AND-PERMISSIONS.md](SECURITY-AND-PERMISSIONS.md) (hashing, cookies, CSRF, 18 permissions, `ProjectMember` rules)
+   - [SECURITY-AND-PERMISSIONS.md](SECURITY-AND-PERMISSIONS.md) (hashing, cookies, CSRF, 18 permissions, resource scoping)
    - [MASTER-ROADMAP.md](MASTER-ROADMAP.md) (dependencies & phase sequencing)
    - Applicable ADRs in `docs/ADR/` (`0001–0010`) and [DECISION-LOG.md](DECISION-LOG.md).
 2. **Verify Prerequisite Dependencies:**
-   - Check [MASTER-ROADMAP.md](MASTER-ROADMAP.md) and [REQUIREMENT-TRACEABILITY.md](REQUIREMENT-TRACEABILITY.md) to ensure the target module is **unblocked** (for example: no Phase 2 Contracts work while Phase 0 `CS7036` / C2 blockers or `K-Min` remain open).
+   - Check [MASTER-ROADMAP.md](MASTER-ROADMAP.md) and [REQUIREMENT-TRACEABILITY.md](REQUIREMENT-TRACEABILITY.md) to ensure the target module is **unblocked**.
    - For Algerian legal, notarial, VSP/FGCMPI, territorial, or SCF/tax features, verify whether **Practitioner Sign-Off** exists in [DECISION-LOG.md](DECISION-LOG.md) Section 3 before encoding statutory rules.
 3. **Write a Brief Change Record (Task / PR Brief) Covering 6 Mandatory Elements:**
    - **Goal:** Exact business/technical outcome (vertical slice).
@@ -40,7 +40,7 @@ Every contributor or engineering session **must** complete these 5 preparation s
 ## 2. During Development
 
 1. **Isolated Vertical-Slice Branch Only:**
-   - Work in a focused feature/fix/docs branch (never push directly to `main`, never commit straight to `main`).
+   - Work in a focused feature/fix/docs branch (never push directly to `main`).
    - One PR = one coherent vertical slice or cohesive bug-fix batch.
 2. **Prohibited Mixing & Sweeping Refactors:**
    - **Never** mix unrelated module additions, opportunistic rewrites, or cosmetic folder shuffles into an active bugfix or vertical-slice PR.
@@ -51,8 +51,10 @@ Every contributor or engineering session **must** complete these 5 preparation s
 4. **PostgreSQL 18 First-Class Integrity:**
    - Every new entity invariant (singletons, partial unique constraints, valid state enums, immutability triggers, positive DZD amounts) **must** live in **both** `PromoGest.Domain` **and** a forward EF Core migration + `AppDbContextModelSnapshot.cs` (`G1`, `G2`).
    - Monetary amounts must always use DZD `decimal` (`numeric(18,2)`) — never `float` or `double`.
-   - Every sensitive read/write/denial **must** invoke `IAuditLogger` before persistence completes (`G6`).
-   - Every unsafe `/api/*` state-changing route must remain protected by `CsrfValidationMiddleware` (`X-CSRF-TOKEN`), session auth (`promogest_session`), permission check, and explicit `ProjectMember` check (`G3`, `G4`).
+   - **Authentication vs Authorization:** Authentication verifies who the user is (via HTTP-only `promogest_session` cookie + `SessionAuthenticationHandler`). Authorization verifies what the user is allowed to do (via seeded permissions and role assignments).
+   - **Resource Scoping & `ProjectMember` Checks:** Global permissions govern application-wide features (e.g., creating projects, managing users), whereas `ProjectMember` explicit membership checks (`CanManageConstruction`, `CanManageSales`, `CanManageDocuments`) are strictly required for project-scoped business records (projects, structure, documents, customers, reservations). Not every API requires `ProjectMember` checks (e.g., organization status, authentication, global user management, audit logs do not).
+   - **CSRF Enforcement:** Every unsafe `/api/*` request (POST, PUT, PATCH, DELETE) remains strictly mandatory to provide a valid `X-CSRF-TOKEN` header validated by `CsrfValidationMiddleware`.
+   - **Audit Logging:** Every sensitive read/write/denial **must** invoke `IAuditWriter` before persistence completes (`G6`).
    - Do not modify `apps/local-web` without keeping `dev-api-middleware.ts` permissions/contracts synchronized (or explicitly marking preview gaps).
 5. **Zero Placeholder Code & Zero Runtime Secret Leaks:**
    - Never add stub endpoints returning fake success, empty files, or unverified `mock` data inside `src/` or `apps/local-web/`.
@@ -85,19 +87,14 @@ Execute the complete verification checklist locally and in CI before declaring w
 5. **Evidence-Backed Documentation Update:**
    - Update [CURRENT-STATE-BASELINE.md](CURRENT-STATE-BASELINE.md), [DOMAIN-MODEL.md](DOMAIN-MODEL.md), [MODULE-CATALOG.md](MODULE-CATALOG.md), [REQUIREMENT-TRACEABILITY.md](REQUIREMENT-TRACEABILITY.md), and [DECISION-LOG.md](DECISION-LOG.md) to reflect exact observed code, migrations, and passing test counts.
 6. **Pull Request & CI Gate:**
-   - Open an independent PR with the 6-item Change Record summary and exact CI/test evidence.
-   - **Strict Merge Prohibition:** Never merge a PR while `frontend`, `backend-and-postgres`, or `windows-publish-and-powershell` CI jobs fail or have unfixed warnings/compile errors.
+   - Open an independent PR with the Change Record summary and exact CI/test evidence.
+   - **Strict Merge Prohibition:** Never merge a PR while CI jobs fail or have unfixed warnings/compile errors.
 
 ---
 
 ## 4. Completion Rule ("Definition of Done")
 
-A task, requirement (`REQ-*`), or ERP module is **never** considered complete unless **all 7 criteria** below are satisfied simultaneously with verifiable evidence:
-
-1. **Real End-to-End Implementation:** Schema + Domain + Application + Infrastructure + Controller + Frontend view exist with real PostgreSQL persistence (zero stub/fake fallbacks).
-2. **Automated Test Coverage Passed:** Corresponding tests exist and **passed** across Domain (`PromoGest.Domain.Tests`), Application (`PromoGest.Application.Tests`), PG18 Integration (`PromoGest.IntegrationTests`), and Frontend (`apps/local-web`).
-3. **Verified Authorization & Security:** Permissions, `ProjectMember` scope, CSRF, optimistic concurrency (`409`), and immutable `AuditLog` assertions explicitly pass — including denial paths (`401`/`403`/`409`).
-4. **Data & Migration Integrity:** Migrations apply cleanly upward from empty DB and from previous baseline, matching `AppDbContextModelSnapshot.cs` cleanly under `promogest_owner` while runtime works cleanly under least-privilege `promogest_app`.
-5. **Bilingual Offline-Safe UI:** Verified in Arabic (`RTL`) and French (`LTR`) with proper DZD formatting, zero secrets/tokens in browser storage, and zero unhandled console errors.
-6. **Green CI Across All Jobs:** Full GitHub Actions run (`frontend`, `backend-and-postgres`, `windows-publish-and-powershell`) passed on the PR commit without skipping tests.
-7. **Synchronized Canonical Docs:** Traceability matrix (`REQUIREMENT-TRACEABILITY.md`), `CURRENT-STATE-BASELINE.md`, and relevant ADRs match the merged commit 1-to-1.
+The Definition of Done depends strictly on the applicable layers and scope of each requirement:
+- **Documentation-Only Tasks:** Complete when canonical docs are updated, verified against code, internal links validated, and constraints respected (no source code or migration edits forced).
+- **CLI / Infrastructure Tasks:** Complete when scripts/CLI tooling, integration tests, and configuration hardening pass successfully.
+- **Full Feature / Vertical Slice Requirements:** Requires real end-to-end implementation across Schema + Domain + Application + Infrastructure + Controller + Frontend view, passing automated tests across Domain, Application, PG18 Integration, and Frontend, verified authorization & security, data/migration integrity, bilingual offline-safe UI, green CI, and synchronized canonical docs.

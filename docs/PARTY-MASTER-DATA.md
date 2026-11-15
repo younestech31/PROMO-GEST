@@ -1,6 +1,6 @@
 # PROMO GEST — Organization-Wide Party & Master-Data Design
 
-**Status:** Architecture baseline for Gate C; implementation and migration are not yet started.  
+**Status:** Gate C architecture baseline; the first Party-identity slice is implemented on `feat/gate-c-party-identity-foundation` and is awaiting CI/PR acceptance. Gate C as a whole is not complete.  
 **Baseline reviewed:** `main` at `e051f1b60b2babfc2dba91fe9a7d512cd8357b3a` (15 November 2026).  
 **Scope:** party identity, project relationships, CRM continuity, employee identity and login-account separation.
 
@@ -20,7 +20,21 @@ The design must:
 
 This is a design decision, not authorization to migrate a live organization database. No Cloud SQL or customer data is to be changed by this design work.
 
-## 2. Verified current implementation
+## 2. Initial C1 implementation slice
+
+The current feature branch introduces the first executable Party identity layer:
+
+- `Party` stores canonical party kind (person/legal entity), display name, normalized name, timestamps and an optimistic-concurrency stamp.
+- `project_customers.party_id` is required and references `parties.id`. Existing rows are backfilled one-to-one, reusing each existing `project_customers.id` as its initial Party ID. This preserves legacy customer UUIDs and does not merge similar names or phone numbers.
+- Customer create/update workflows create and update Party identity in the same database unit of work. Customer API responses expose `partyId`; customer display names and types are read from Party.
+- Phone, email, address, contact person, preferred language, source, status, identity-document reference and interactions remain project-relationship data. They are not promoted to organization-wide contact points in this slice.
+- Reservation summaries resolve the customer display name through Party while reservation IDs and customer foreign keys remain unchanged.
+
+This slice deliberately does **not** yet implement organization-wide Party search/selection, sharing one Party across multiple project relationships through the API, the full `ProjectPartyRole` model, general Party contact points/identifiers, Employee records, or reconciliation/merge tooling. The schema permits later expansion, but no cross-project Party attachment or data disclosure route is exposed. The application continues to create one Party for each newly created project-customer record until the next reviewed CRM workflow is delivered.
+
+The migration is additive and reversible only while Party remains in the documented one-to-one compatibility state; its `Down` path refuses rollback if Party relationships or identity values have advanced beyond that safe boundary. It has not been applied to Cloud SQL or any organization database.
+
+## 3. Legacy project-scoped CRM baseline
 
 The current relational model contains:
 - `project_customers`, keyed by its own UUID and required to reference one `project_id`;

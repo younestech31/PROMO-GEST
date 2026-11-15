@@ -1,7 +1,7 @@
 # PROMO GEST — Consolidated Decision Log & Architecture Decision Records (ADRs)
 
 **Document Role:** Single repository of architectural, design, and governance decisions for PROMO GEST.  
-**Current Audit Evidence Anchor:** Latest source change PR #48; merged main SHA `23f019de7c787c0f93b5b7f0b5cec69992ff087a`; latest green CI Run #539 / `43763807711` (all three jobs passed). D-004 and D-005 remain historical evidence records.
+**Current Audit Evidence Anchor:** Latest application runtime source change PR #48; source commit `23f019de7c787c0f93b5b7f0b5cec69992ff087a`; main snapshot `14428830eb0b81beedecc2136ba65fdf68a23266` (PR #49 documentation-only); latest green main CI Run #541 / `43764687600` (all three jobs passed). D-004 and D-005 remain historical evidence records.
 
 ---
 

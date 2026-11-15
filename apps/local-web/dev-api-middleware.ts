@@ -988,7 +988,7 @@ export function createPromoGestDevApiPlugin(): Plugin {
             );
             return sendJson(res, 403, {
               code: 'FORBIDDEN_PROJECT_UPDATE',
-              message: 'You must be an explicitly assigned Project Manager to update this project's master data.',
+              message: "You must be an explicitly assigned Project Manager to update this project's master data.",
             });
           }
           try {
@@ -1283,7 +1283,7 @@ export function createPromoGestDevApiPlugin(): Plugin {
               (!getPermissions(currentUser).includes('projects.access.manage') ||
                actorMembership?.roleInProject !== 'ProjectManager')) {
             addAudit('ACCESS_DENIED', 'Security', `User '${currentUser.username}' attempted unauthorized project membership assignment.`, currentUser, 'Project', projectMembersMatch[1]);
-            return sendJson(res, 403, { code: 'FORBIDDEN_PROJECT_ACCESS_ADMIN', message: 'Only an assigned Project Manager may manage this project team.' });
+            return sendJson(res, 403, { code: 'FORBIDDEN_PROJECT_ACCESS_ADMIN', message: "Only an assigned Project Manager may manage this project's team." });
           }
           const body = await readJsonBody<{
             userId: string;
@@ -1334,7 +1334,7 @@ export function createPromoGestDevApiPlugin(): Plugin {
               (!getPermissions(currentUser).includes('projects.access.manage') ||
                actorMembership?.roleInProject !== 'ProjectManager')) {
             addAudit('ACCESS_DENIED', 'Security', `User '${currentUser.username}' attempted unauthorized project membership revocation.`, currentUser, 'Project', removeMemberMatch[1]);
-            return sendJson(res, 403, { code: 'FORBIDDEN_PROJECT_ACCESS_ADMIN', message: 'Only an assigned Project Manager may manage this project team.' });
+            return sendJson(res, 403, { code: 'FORBIDDEN_PROJECT_ACCESS_ADMIN', message: "Only an assigned Project Manager may manage this project's team." });
           }
           const targetUserId = decodeURIComponent(removeMemberMatch[2]);
           const targetMembership = project.members.find((m) => m.userId === targetUserId);

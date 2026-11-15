@@ -64,6 +64,7 @@ public sealed class ApplicationSecurityAndFoundationTests
             RolePermissions.Add(RolePermission.Create(adminRole.Id, pUsers.Id));
             RolePermissions.Add(RolePermission.Create(adminRole.Id, pAudit.Id));
             RolePermissions.Add(RolePermission.Create(commRole.Id, pRead.Id));
+            RolePermissions.Add(RolePermission.Create(siteEngineerRole.Id, pRead.Id));
         }
 
         public Task<OrganizationSettings?> GetOrganizationSettingsAsync(CancellationToken ct = default) => Task.FromResult(Org);

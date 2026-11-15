@@ -1,4 +1,4 @@
-import { ArrowLeft, ArrowRight, CheckCircle2, Database, FolderKanban, ShieldCheck, Users } from 'lucide-react';
+import { ArrowLeft, ArrowRight, Database, FolderKanban, ShieldCheck, Users } from 'lucide-react';
 import type { AppLanguage, HealthStatusResponse, ProjectDto, SessionResponse } from '../../types/erp';
 import { getTranslations } from '../../localization/translations';
 import { formatDzd, formatLocalDateTime } from '../../utils/algerianFormat';
@@ -87,10 +87,6 @@ export function OverviewView({
           <h2 className="text-xs font-semibold text-slate-500 mb-3">
             {t.overview.systemHealthHeading}
           </h2>
-          <div className="flex items-center gap-2 text-sm font-bold text-emerald-700">
-            <CheckCircle2 className="w-4 h-4 shrink-0" aria-hidden="true" />
-            <span>{health?.previewMode || health?.databaseConnected ? t.serverConnected : t.serverDisconnected}</span>
-          </div>
           <dl className="mt-4 pt-4 border-t border-slate-100 space-y-2 text-xs">
             <div className="flex justify-between gap-2">
               <dt className="text-slate-500 flex items-center gap-1.5">
@@ -100,7 +96,7 @@ export function OverviewView({
               <dd className="font-data text-slate-900">
                 {health?.previewMode
                   ? (language === 'ar' ? 'ذاكرة مؤقتة · بيانات تجريبية' : 'Mémoire temporaire · Démo')
-                  : `PostgreSQL 18 · ${health?.databaseConnected ? 'OK' : 'OFFLINE'}`}
+                  : `PostgreSQL 18${health?.databaseConnected ? ' · OK' : ''}`}
               </dd>
             </div>
             <div className="flex justify-between gap-2">

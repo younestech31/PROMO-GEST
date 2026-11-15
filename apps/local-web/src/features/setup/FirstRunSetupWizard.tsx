@@ -97,7 +97,7 @@ export function FirstRunSetupWizard({
       if (err instanceof ApiError && err.code === 'SETUP_ALREADY_INITIALIZED') {
         await onInitialized();
       } else if (err instanceof ApiConnectionError) {
-        setSubmitError(t.serverDisconnectedBannerTitle);
+        setSubmitError(t.operationTemporarilyUnavailable);
       } else if (err instanceof ApiError) {
         setSubmitError(translateApiError(err.code, err.message, language));
       } else {

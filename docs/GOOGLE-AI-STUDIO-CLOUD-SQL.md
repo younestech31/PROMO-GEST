@@ -17,14 +17,17 @@ Cloud SQL is activated only when `SQL_HOST` is present and the ASP.NET Core envi
 
 ## Run the real API behind Vite
 
-The AI Studio preview container must have the **.NET 10 SDK** installed. The current Node-only preview environment may not include it.
+The AI Studio preview container may not include the .NET SDK. Both real-API launchers now source `scripts/ensure-dotnet10.sh` and automatically provision the **.NET 10 SDK** into the current user's `$HOME/.dotnet` directory when no compatible SDK is available. The installer is Microsoft's official non-admin `dotnet-install.sh` script and is pinned to the `10.0` channel. No root access or repository-stored binary is required.
 
-Install it into the current user profile using Microsoft's official installer:
+The first real-API startup therefore requires outbound HTTPS access to `dot.net` and enough free container storage to download the SDK. The installed SDK is reused while the preview container's home directory persists; a newly recreated container may need to download it again. The launcher verifies the selected SDK version before building or starting the API. If outbound downloads are blocked, it exits with an explicit installer/network error rather than starting Vite against a missing API.
+
+To install it manually before starting the preview instead, use: 
 
 ```bash
 curl -fsSL https://dot.net/v1/dotnet-install.sh -o /tmp/dotnet-install.sh
-bash /tmp/dotnet-install.sh --channel 10.0
-export PATH="$HOME/.dotnet:$PATH"
+bash /tmp/dotnet-install.sh --channel 10.0 --install-dir "$HOME/.dotnet" --no-path
+export DOTNET_ROOT="$HOME/.dotnet"
+export PATH="$DOTNET_ROOT:$PATH"
 dotnet --version
 ```
 
@@ -43,7 +46,7 @@ The runner:
 5. Sets default privileges for future tables and sequences created by the migration identity.
 6. Starts the API using `SQL_USER`, checks `/health/ready`, then starts Vite on port 3000 with its existing `/api` and `/health` proxy.
 
-The Vite proxy is implemented in both `vite.config.ts` and `apps/local-web/vite.config.ts`. The `npm run dev` launcher now verifies the configured API's `/health/ready` endpoint before starting Vite. For a loopback target, it starts or waits for the local ASP.NET Core process; if its .NET/Cloud SQL prerequisites are missing or the API does not become ready, the launcher exits instead of starting a broken Vite proxy.
+The Vite proxy is implemented in both `vite.config.ts` and `apps/local-web/vite.config.ts`. The `npm run dev` launcher now verifies the configured API's `/health/ready` endpoint before starting Vite. For a loopback target, it ensures .NET 10 is available through the shared per-user bootstrap, starts or waits for the local ASP.NET Core process, and if Cloud SQL prerequisites are missing or the API does not become ready it exits instead of starting a broken Vite proxy.
 
 For frontend-only work with the in-memory simulator, select it explicitly with `PROMOGEST_VITE_ONLY=1 npm run dev`. This flag takes precedence over an inherited `ASPNETCORE_URL` so the simulator cannot accidentally proxy to an absent local API. Do not use Vite-only mode to validate PostgreSQL persistence, real authentication, or customer workflows.
 
@@ -68,6 +71,7 @@ The frontend is served by Vite in AI Studio, but when `ASPNETCORE_URL` is config
   ```
 
 - When using `npm run dev` with `scripts/dev-with-local-api.sh`, inspect `/tmp/promogest-api-dev.log` instead. If the launcher reports that the API did not become ready, Vite is intentionally not started; resolve the specific missing .NET, SQL environment, socket, or database-readiness prerequisite shown in the log.
+- If the launcher reports that the .NET 10 SDK is unavailable, the shared bootstrap has failed before starting the API. Check whether the preview container can reach `https://dot.net/v1/dotnet-install.sh`, whether `$HOME/.dotnet` is writable, and whether the installer reports missing Linux dependencies or insufficient disk space.
 - If Vite is serving on port 3000 while requests fail with `ECONNREFUSED 127.0.0.1:5055`, no process is listening on that API port. Do not treat this as a frontend or PostgreSQL permissions problem; check the launcher diagnostics and the API process log.
 - Correlate the backend entry with the request timestamp and the `traceparent` trace ID returned by the API. Look for `Unhandled exception while processing POST /api/projects/.../customers`.
 - Verify that the browser sends the `promogest_session` cookie (or the in-memory preview bearer header when using the Vite-only demo). Check `GET /api/auth/me` in the same browser session. Do not paste session cookies, bearer tokens, CSRF tokens, passwords, or real customer data into issue reports.

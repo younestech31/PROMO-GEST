@@ -29,17 +29,8 @@ for variable in SQL_HOST SQL_DB_NAME SQL_USER SQL_PASSWORD SQL_ADMIN_USER SQL_AD
   fi
 done
 
-if ! command -v dotnet >/dev/null 2>&1; then
-  echo "ERROR: .NET 10 SDK is not installed in this AI Studio container." >&2
-  echo "Install it with the official dotnet-install.sh script; see docs/GOOGLE-AI-STUDIO-CLOUD-SQL.md." >&2
-  exit 127
-fi
-
-DOTNET_SDK_VERSION="$(dotnet --version)"
-if [[ "$DOTNET_SDK_VERSION" != 10.* ]]; then
-  echo "ERROR: PROMO GEST requires the .NET 10 SDK; detected $DOTNET_SDK_VERSION." >&2
-  exit 1
-fi
+source "$ROOT_DIR/scripts/ensure-dotnet10.sh"
+promogest_ensure_dotnet10
 
 if [[ ! -S "$SQL_HOST/.s.PGSQL.5432" ]]; then
   echo "ERROR: Cloud SQL Unix socket is not active at SQL_HOST/.s.PGSQL.5432." >&2

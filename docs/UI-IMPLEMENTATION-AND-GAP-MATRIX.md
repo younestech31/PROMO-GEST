@@ -76,11 +76,11 @@ Latest repository evidence at the time of this audit:
 
 **Owner-attested as passed:** Arabic RTL / French LTR desktop/mobile review for the listed real workflows; login/session/CSRF; projects and structure; customers/interactions; internal holds including cancellation/expiry; document upload/download/SHA-256; authorization/audit/concurrency/safe errors; and persistence after reload. See the owner-attested result register in `PHASE-0-MANUAL-ACCEPTANCE.md`.
 
-**Still not evidenced:** P0-A01 first-run setup against a separate empty disposable database and rejection of a second initialization. Browser/version metadata and sanitized per-case artifacts were not attached. Navigation proposal approval is explicitly deferred to a bounded Phase 1 design review.
+**Still not evidenced:** P0-A01 first-run setup against a separate empty disposable database and rejection of a second initialization; and P0-A04 logout followed by protected-route/session-revocation verification. Browser/version metadata and sanitized per-case artifacts were not attached. Navigation proposal approval is explicitly deferred to a bounded Phase 1 design review.
 
 ## 7. Next work by dependency order
 
-1. **Phase 0:** run the unconfirmed P0-A01 first-run setup scenario against a separate empty disposable database. Retain the Product Owner-attested `PASS` record for the other named workflows; do not use Vite-only simulator results as API or persistence evidence.
+1. **Phase 0:** run the unconfirmed P0-A01 first-run setup scenario against a separate empty disposable database and P0-A04 logout/session-revocation scenario. Retain the Product Owner-attested `PASS` record for the other named workflows; do not use Vite-only simulator results as API or persistence evidence.
 2. **Phase 1 design review:** revisit the bounded three-level navigation proposal in `PROJECT-NAVIGATION-UX.md`; no broad redesign is authorized by the deferral record alone.
 3. **Phase 1, only after Phase 0 gates pass:** organization profile editing; structure authorization alignment; reviewed Party/ProjectCustomer transitional mirror retirement migration/backfill/rollback; and versioned official Wilaya/commune reference data under ADR-0010.
 4. **Later phases:** proceed strictly through Phase 2–5, with K-Min and qualified Algerian legal/accounting review before legal/financial/statutory code.

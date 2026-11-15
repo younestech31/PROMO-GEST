@@ -1,7 +1,7 @@
 # PROMO GEST — Organization-Wide Party & Master-Data Design
 
 **Status:** Architecture baseline for Gate C; implementation and migration are not yet started.  
-**Baseline reviewed:** \`main\` at \`e051f1b60b2babfc2dba91fe9a7d512cd8357b3a\` (15 November 2026).  
+**Baseline reviewed:** `main` at `e051f1b60b2babfc2dba91fe9a7d512cd8357b3a` (15 November 2026).  
 **Scope:** party identity, project relationships, CRM continuity, employee identity and login-account separation.
 
 ## 1. Purpose and non-negotiable constraints
@@ -23,12 +23,12 @@ This is a design decision, not authorization to migrate a live organization data
 ## 2. Verified current implementation
 
 The current relational model contains:
-- \`project_customers\`, keyed by its own UUID and required to reference one \`project_id\`;
+- `project_customers`, keyed by its own UUID and required to reference one `project_id`;
 - customer type, display name and normalized name, a required phone and normalized phone, optional contact person, email, address, preferred language, source, status and optional identity-document file reference;
-- a unique index on \`(project_id, normalized_display_name, normalized_phone)\`, which prevents a duplicate only within the same project;
-- \`customer_interactions\`, each linked to a project customer and a creator user;
+- a unique index on `(project_id, normalized_display_name, normalized_phone)`, which prevents a duplicate only within the same project;
+- `customer_interactions`, each linked to a project customer and a creator user;
 - reservations linked to a project customer and a property unit;
-- \`users\`, which currently combines login credentials, security state, username, full name and account contact/profile fields;
+- `users`, which currently combines login credentials, security state, username, full name and account contact/profile fields;
 - project membership and role assignments which are separate from the customer record.
 
 There is no organization-wide Party entity and no Employee master entity at this baseline. The existing project customer ID is therefore a business reference in use, not a disposable CRM row.
@@ -113,7 +113,7 @@ Uniqueness must be role- and lifecycle-aware. Do not impose a blanket uniqueness
 
 ### 3.6 Customer compatibility profile
 
-The current \`ProjectCustomer\` record must remain addressable while reservations and interactions depend on it.
+The current `ProjectCustomer` record must remain addressable while reservations and interactions depend on it.
 
 Recommended transition:
 1. introduce canonical Party identity and a project relationship;

@@ -2,8 +2,8 @@
 
 **Document Role:** Single authoritative index & master entry point for the PROMO GEST local-first real estate developer ERP (*promoteur immobilier* — Algeria).  
 **Last Code-Changing Source Commit:** `6bbd97f70ed0fb63cf226a1117cf6e83c359d2be` (PR #44 merge).  
-**Current Main Documentation Snapshot:** `4d025ca19a7711df1d4df327b05ee4846cac3267` (PR #45).  
-**Latest Green CI:** GitHub Actions Run #529 / `43746793430` on current main; all three jobs passed.  
+**Current Main Documentation Snapshot:** `5415f0e668a55f902ac2802e1669af58ad7ec410` (PR #46).  
+**Latest Green CI:** GitHub Actions Run #531 / `43752672569` on current main; all three jobs passed.  
 **Governing Charter:** Local-first, on-premises per organization, PostgreSQL 18 single source of truth, single System Administrator (`SYSTEM_ADMIN`), HTTP-only `SameSite=Strict` cookie sessions (`promogest_session`) + CSRF, local filesystem storage with SHA-256 verification, Arabic RTL primary / French LTR secondary, Algerian DZD & legal context.
 
 ---
@@ -30,7 +30,7 @@ Every claim across this blueprint uses **strictly one** of the six evidence-back
 | # | Document | Purpose & Scope |
 |---|---|---|
 | 1 | [MASTER-BLUEPRINT.md](MASTER-BLUEPRINT.md) | This master index, executive product vision, product scope boundaries, completion scorecard, and navigation map. |
-| 2 | [CURRENT-STATE-BASELINE.md](CURRENT-STATE-BASELINE.md) | Evidence-backed status at source commit `6bbd97f7...`, CI #529, current test counts, merged C2 corrections, transitional Party mirrors, and explicit AI Studio preview boundaries. |
+| 2 | [CURRENT-STATE-BASELINE.md](CURRENT-STATE-BASELINE.md) | Evidence-backed status at source commit `6bbd97f7...`, CI #531, current test counts, merged C2 corrections, transitional Party mirrors, and explicit AI Studio preview boundaries. |
 | 3 | [SYSTEM-ARCHITECTURE.md](SYSTEM-ARCHITECTURE.md) | Clean/Layered dependency graph, modular monolith boundaries, HTTP middleware pipeline, and SPA hosting model. |
 | 4 | [DOMAIN-MODEL.md](DOMAIN-MODEL.md) | Authoritative schema matching `AppDbContextModelSnapshot.cs` & migrations, Party vs ProjectCustomer separation, concurrency, and planned contract/financial models. |
 | 5 | [MODULE-CATALOG.md](MODULE-CATALOG.md) | All 12 ERP domains (**A–L**) mapped from current implementation through target contracts, K-Min vs K-Full document split, Algerian contract types, and unified financial event flow. |
@@ -66,15 +66,15 @@ Every claim across this blueprint uses **strictly one** of the six evidence-back
 3. **Counterparties (Party), CRM & Holds:** Organization-wide `parties` identity (`id`, `party_kind`, `display_name`), project-scoped `project_customers` & `customer_interactions`, and internal lot/unit holds (`project_sales_reservations`), cleanly separated from future Statutory Reservation Contracts, VSP / *Acte Notarié* sales contracts, regulated payment milestones, and DZD collections.
 4. **Execution, Accounting & Statutory Compliance:** Works/construction tracking (lots, contractor situations, FGCMPI/legal compliance), suppliers/inventory, **Algerian SCF (Système Comptable Financier)** journal generation, VAT/IBS/TAP/IRG tax tracking (Finance Laws 2025/2026 gated on qualified accountant review), and local reporting.
 
-### High-Level Program Status Snapshot (Code Baseline: `6bbd97f70ed0fb63cf226a1117cf6e83c359d2be`, CI #529)
+### High-Level Program Status Snapshot (Code Baseline: `6bbd97f70ed0fb63cf226a1117cf6e83c359d2be`, CI #531)
 
 | Layer / Domain | Current State | Verification Evidence |
 |---|---|---|
-| Domain Core (`PromoGest.Domain`) | `IMPLEMENTED_AND_VERIFIED` | CI #529: **27/27** Domain tests passed |
-| Application Services (`PromoGest.Application`) | `IMPLEMENTED_AND_VERIFIED` | CI #529: **14/14** Application tests passed |
+| Domain Core (`PromoGest.Domain`) | `IMPLEMENTED_AND_VERIFIED` | CI #531: **27/27** Domain tests passed |
+| Application Services (`PromoGest.Application`) | `IMPLEMENTED_AND_VERIFIED` | CI #531: **14/14** Application tests passed |
 | C2 Party / Customer identity foundation | `IMPLEMENTED_AND_VERIFIED` | PRs #35–#38 merged; audit denials, concurrency, cross-project reuse, identity-collision rejection, and linked mirror synchronization are covered by Application and PostgreSQL 18 tests |
-| PostgreSQL 18 Integration Suite (`PromoGest.IntegrationTests`) | `IMPLEMENTED_AND_VERIFIED` | CI #529: **9/9** PostgreSQL 18 integration tests passed; former `CS7036` is resolved |
-| Local React SPA (`apps/local-web`) | `PARTIALLY_IMPLEMENTED` | CI #529: strict TypeScript check, **38/38** pure tests, production build and `wwwroot` checks pass; manual RTL/LTR browser review and full parity of the Vite-only simulator remain outstanding |
+| PostgreSQL 18 Integration Suite (`PromoGest.IntegrationTests`) | `IMPLEMENTED_AND_VERIFIED` | CI #531: **9/9** PostgreSQL 18 integration tests passed; former `CS7036` is resolved |
+| Local React SPA (`apps/local-web`) | `PARTIALLY_IMPLEMENTED` | CI #531: strict TypeScript check, **38/38** pure tests, production build and `wwwroot` checks pass; manual RTL/LTR browser review and full parity of the Vite-only simulator remain outstanding |
 | Organization Profile Edit (`PUT /api/organization`) | `PARTIALLY_IMPLEMENTED` | `OrganizationProfileView.tsx` is read-only; `org.manage` is seeded but no update endpoint exists |
 | Modules F–J & L (Contracts, DZD Finance/Installments, Works/Chantier, Procurement/Stock, SCF Accounting, Reporting) | `PLANNED` | Design baselines documented; no production business modules implemented |
 | Module K (Document Vault `stored_files`) | `PARTIALLY_IMPLEMENTED` | K-Min upload/list/download and SHA-256 API path pass PostgreSQL 18 E2E; metadata lifecycle, structured links and K-Full archival remain unimplemented |

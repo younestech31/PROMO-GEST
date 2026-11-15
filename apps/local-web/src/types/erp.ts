@@ -233,6 +233,7 @@ export interface ProjectCustomerDto {
 }
 
 export interface CreateProjectCustomerRequest {
+  partyId?: string | null;
   customerType: string;
   displayName: string;
   contactPerson?: string | null;
@@ -242,6 +243,12 @@ export interface CreateProjectCustomerRequest {
   preferredLanguage: AppLanguage;
   source: string;
   identityDocumentStoredFileId?: string | null;
+}
+
+export interface PartyDirectoryItemDto {
+  id: string;
+  kind: 'Person' | 'LegalEntity' | string;
+  displayName: string;
 }
 
 export interface UpdateProjectCustomerRequest extends CreateProjectCustomerRequest {

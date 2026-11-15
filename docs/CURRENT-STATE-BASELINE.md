@@ -2,8 +2,8 @@
 
 **Document Role:** Evidence-backed snapshot of the repository, not a product roadmap.  
 **Last Code-Changing Source Baseline:** `6bbd97f70ed0fb63cf226a1117cf6e83c359d2be` (PR #44 merge; no application-code changes in PR #46).  
-**Current Main Documentation Snapshot:** `5415f0e668a55f902ac2802e1669af58ad7ec410` (PR #46; documentation-only alignment).  
-**Latest Green CI:** GitHub Actions Run **#531** / `43752672569`, on current main (`5415f0e668a55f902ac2802e1669af58ad7ec410`); all three jobs passed.  
+**Main Commit Inspected at Audit Start:** `5415f0e668a55f902ac2802e1669af58ad7ec410` (PR #46; documentation-only alignment).  
+**Latest Green CI at Audit Start:** GitHub Actions Run **#531** / `43752672569`, on current main (`5415f0e668a55f902ac2802e1669af58ad7ec410`); all three jobs passed.  
 **Governing Rule:** A feature is `IMPLEMENTED_AND_VERIFIED` only when its code and applicable automated verification pass in the audited baseline. A green pipeline does not certify untested browser UX, preview parity, production installation, or legal/accounting correctness.
 
 ---
@@ -41,7 +41,7 @@ The former `CS7036` compilation blocker is **resolved**, not an active blocker. 
 
 ### Current UI implementation snapshot
 
-The screen-by-screen source inventory is maintained in [UI-IMPLEMENTATION-AND-GAP-MATRIX.md](UI-IMPLEMENTATION-AND-GAP-MATRIX.md). The current React shell exposes five route states: overview, projects, users, audit, and organization. The project directory contains working project, structure, customer, internal-hold, and document operations, but those project operations are opened from the directory as modals. A dedicated project switcher and active project workspace are not implemented. The matrix separates source/API presence from manual browser acceptance; it does not claim Arabic RTL or French LTR browser review has passed.
+The screen-by-screen source inventory is maintained in [UI-IMPLEMENTATION-AND-GAP-MATRIX.md](UI-IMPLEMENTATION-AND-GAP-MATRIX.md), and the execution steps/evidence rules for the outstanding manual checks are in [PHASE-0-MANUAL-ACCEPTANCE.md](PHASE-0-MANUAL-ACCEPTANCE.md). The current React shell exposes five route states: overview, projects, users, audit, and organization. The project directory contains working project, structure, customer, internal-hold, and document operations, but those project operations are opened from the directory as modals. A dedicated project switcher and active project workspace are not implemented. The matrix separates source/API presence from manual browser acceptance; it does not claim Arabic RTL or French LTR browser review has passed.
 
 ## 3. Phase 0 — Remaining Work
 
@@ -49,8 +49,8 @@ Phase 0 remains `IN_PROGRESS`. The latest main CI (#531) is green, and the produ
 
 Remaining Phase 0 work is bounded:
 
-1. **Manual bilingual browser review:** inspect the primary workflows in Arabic RTL and French LTR on desktop and mobile. Automated TypeScript tests do not prove visual or browser correctness.
-2. **Business-workflow verification:** exercise read/create/update/cancel paths, authorization boundaries, persistence/reload, and safe error handling in the real API using fictional development records. The reported pages loading without the previous error does not prove every operation is complete.
+1. **Manual bilingual browser review:** execute [PHASE-0-MANUAL-ACCEPTANCE.md](PHASE-0-MANUAL-ACCEPTANCE.md) across Arabic RTL and French LTR on desktop and mobile. All current checklist entries remain `NOT_RUN` until evidence is captured; automated TypeScript tests do not prove visual or browser correctness.
+2. **Business-workflow verification:** complete the read/create/update/cancel, authorization, persistence/reload, CSRF, document-integrity, and safe-error cases in [PHASE-0-MANUAL-ACCEPTANCE.md](PHASE-0-MANUAL-ACCEPTANCE.md) against the real API using fictional development records. Page loading alone does not prove every operation is complete.
 3. **Preview separation:** keep the Vite-only in-memory simulator clearly separate from real API evidence; it intentionally lacks full parity.
 4. **Phase 1 boundary:** organization profile editing, structure authorization alignment, retirement of transitional Party mirrors, and the versioned 69-Wilaya / commune reference catalogue remain Phase 1 work. Later legal, collection, SCF, and tax modules retain their practitioner gates.
 

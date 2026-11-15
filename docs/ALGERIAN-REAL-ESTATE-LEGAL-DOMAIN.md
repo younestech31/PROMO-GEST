@@ -51,8 +51,10 @@ Other relevant provisions include:
 - Article 30: reservation and VSP contracts must include land origin, land-title number where applicable, subdivision permit, development/viability certificate, and building-permit date/number.
 - Article 34: VSP is in authentic form and subject to registration/publicity formalities; a contradictory possession/delivery minute is established at the same notary office.
 - Article 35: except for the statutory reservation contract, an agreement transferring ownership in residential or professional property and requiring instalments/deposits before construction completion must take VSP form, otherwise it is null.
-- Article 37: VSP must state price composition and an instalment schedule tied to progress of works.
-- Article 38: the contract must state whether the price is revisable and, if so, the revision formula and relevant constraints. The exact application must be reviewed against the current consolidated text and transaction.
+- Article 36: a VSP contract may not be concluded where the promoter has declared loans intended to finance construction. This is a statutory eligibility restriction that needs qualified legal interpretation for the actual financing structure; the ERP must not simplify it into a generic rule that every bank relationship prohibits VSP.
+- Article 37: VSP must state the price composition and an instalment schedule linked to works progress.
+- Article 38: the contract must state whether the price is revisable and, if so, the revision method. The formula must be based on changes in cost components and official price indices for materials, equipment and labour. The text sets a maximum 20% revision against the initial planned price, subject to the stated exceptional/unforeseeable circumstances affecting project economic balance. Any application requires review against the current consolidated text and the specific contract.
+- Article 39: possession under a VSP is not permitted before the required certificate of conformity is issued.
 
 The application must keep an internal hold, a statutory reservation contract, a VSP contract and a completed/built-property sale deed as distinct document and lifecycle types.
 
@@ -74,11 +76,16 @@ This is not an arbitrary calendar-only instalment plan. Contractual due events m
 ### Required domain capabilities
 
 - Contract price and price composition are versioned.
+- Before a VSP is signed, the applicable promotion guarantee/insurance must already be subscribed as required by Law 11-04 Article 42 read with Articles 54–55. Keep the guarantee issuer, reference, coverage, validity period and evidence as controlled contract prerequisites; do not enable signature based only on a free-text checkbox.
+- A VSP payment must not be requested or accepted before the contract is signed or before the relevant receivable is due, in line with Article 42. Keep this VSP rule distinct from the statutory reservation advance path and its Fund account.
+- The VSP eligibility review must capture whether the promoter has declared loans intended to finance construction; Article 36 requires legal review before the system treats the VSP route as available.
 - Each scheduled tranche identifies its legal/contractual basis, percentage or amount, trigger, due rule and contract version.
 - A construction milestone moves through explicit states such as Draft, Submitted, UnderReview, Accepted or Rejected; it is not accepted merely because a user changes a progress percentage.
 - The milestone record stores its project/building scope, completion date, reviewer, evidence document references, decision timestamp and rejection/rework reason.
 - Milestone acceptance creates an auditable contractual due event. It does not itself create a cash receipt.
 - The resulting receivable, actual payment, payment allocation, tax event and accounting posting are separate records.
+- Under Law 11-04 Articles 54–55, a promoter undertaking a project for sale before completion is subject to promotion-guarantee obligations and approved promoters must be affiliated with the Guarantee Fund. The project/contract record should retain applicable guarantee evidence and validity, not just a boolean "insured" flag.
+- Under Article 42, no VSP collection should be enabled before contract signature or before the relevant amount is due. Statutory reservation advances remain a separate path.
 - Price amendments or contract addenda must not silently recalculate already executed or paid tranches. Use an explicit amendment and approved recalculation policy.
 - Percentage rounding and the final residual must reconcile exactly to the contractual price; no floating-point arithmetic for money.
 
@@ -184,6 +191,8 @@ The following are deliberately not encoded as universal rules in this baseline:
 - exact tax-base and invoice treatment for different VSP/reservation payment flows;
 - detailed notarial document, registration and publicity checklists for each contract type;
 - application of price revision, force majeure and delay penalties to particular clauses/facts;
+- detailed application of Law 11-04 Article 36 to a promoter's disclosed construction-finance facilities;
+- project-specific guarantee coverage, certificate references and renewal/continuity rules under Articles 54–55;
 - treatment of buyer-requested modifications (TMA), assignment/cession, contract novation, rescission and damages;
 - treatment of bank financing and construction finance restrictions under the current consolidated law;
 - stamp duty and cash-payment rules for each payment channel;

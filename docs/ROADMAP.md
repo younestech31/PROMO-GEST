@@ -123,7 +123,7 @@ Delivered scope:
 
 ### M5b — Contract lifecycle
 
-Build separate workflows for the internal unit hold, statutory reservation contract, VSP contract and completed-property sale deed. Model authenticated/notarized evidence, versioned terms, amendments, approval, statutory cancellation/notice evidence, possession and delivery. VSP instalments must be linked to the legally specified construction stages, not only calendar dates. See [Algerian Real-Estate Legal Domain](ALGERIAN-REAL-ESTATE-LEGAL-DOMAIN.md). Legal clauses, model forms and execution rules require qualified Algerian notarial/legal review before any generated or stored document is treated as legally valid.
+Build separate workflows for the internal unit hold, statutory reservation contract, VSP contract and completed-property sale deed. Model authenticated/notarized evidence, versioned terms, amendments, approval, statutory cancellation/notice evidence, promotion-guarantee prerequisites, possession and delivery. VSP instalments must be linked to the legally specified construction stages, not only calendar dates. Enforce VSP signature/payment prerequisites and certificate-of-conformity evidence as reviewed legal gates. See [Algerian Real-Estate Legal Domain](ALGERIAN-REAL-ESTATE-LEGAL-DOMAIN.md). Legal clauses, model forms and execution rules require qualified Algerian notarial/legal review before any generated or stored document is treated as legally valid.
 
 A reservation or draft contract must never mark a unit as sold.
 
@@ -139,7 +139,7 @@ Validate chart of accounts, journals, posting rules, VAT/tax treatment, invoice/
 
 ## Milestone 7 — Construction and site execution
 
-Add work breakdown structures, work packages, baseline schedules, contractors' work, progress measurements, site diaries, quality/inspection records, change orders, variations, handover readiness and budget variance controls. Link evidence to project documents. Define how measured progress and commitments feed cost control without double-counting financial transactions.
+Add work breakdown structures, work packages, baseline schedules, contractors' work, progress measurements, site diaries, quality/inspection records, change orders, variations, handover readiness and budget variance controls. Link evidence to project documents. VSP-linked milestones require formal submission, review, evidence and acceptance history; accepted milestones feed contractual due events, while possession remains gated by the required certificate of conformity. Define how measured progress and commitments feed cost control without double-counting financial transactions.
 
 ## Milestone 8 — Procurement, suppliers and inventory
 

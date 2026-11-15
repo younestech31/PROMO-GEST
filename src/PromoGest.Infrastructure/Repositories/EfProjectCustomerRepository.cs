@@ -19,6 +19,7 @@ public sealed class EfProjectCustomerRepository : IProjectCustomerRepository
         CancellationToken ct = default)
         => await _dbContext.ProjectCustomers
             .AsNoTracking()
+            .Include(customer => customer.Party)
             .Include(customer => customer.Interactions)
             .Where(customer => customer.ProjectId == projectId)
             .OrderByDescending(customer => customer.UpdatedAtUtc)
@@ -29,6 +30,7 @@ public sealed class EfProjectCustomerRepository : IProjectCustomerRepository
         Guid customerId,
         CancellationToken ct = default)
         => _dbContext.ProjectCustomers
+            .Include(customer => customer.Party)
             .Include(customer => customer.IdentityDocumentFile)
             .Include(customer => customer.Interactions)
             .ThenInclude(interaction => interaction.CreatedByUser)
@@ -44,10 +46,16 @@ public sealed class EfProjectCustomerRepository : IProjectCustomerRepository
         CancellationToken ct = default)
         => _dbContext.ProjectCustomers.AnyAsync(customer =>
             customer.ProjectId == projectId &&
-            customer.NormalizedDisplayName == normalizedDisplayName &&
+            customer.Party.NormalizedDisplayName == normalizedDisplayName &&
             customer.NormalizedPhone == normalizedPhone &&
             (!excludeCustomerId.HasValue || customer.Id != excludeCustomerId.Value),
             ct);
+
+    public Task AddPartyAsync(Party party, CancellationToken ct = default)
+    {
+        _dbContext.Parties.Add(party);
+        return Task.CompletedTask;
+    }
 
     public Task AddCustomerAsync(ProjectCustomer customer, CancellationToken ct = default)
     {

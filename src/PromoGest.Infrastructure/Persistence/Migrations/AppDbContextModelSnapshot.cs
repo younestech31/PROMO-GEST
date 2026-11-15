@@ -607,6 +607,57 @@ namespace PromoGest.Infrastructure.Persistence.Migrations
                         });
                 });
 
+            modelBuilder.Entity("PromoGest.Domain.Entities.Party", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<Guid>("ConcurrencyStamp")
+                        .IsConcurrencyToken()
+                        .HasColumnType("uuid")
+                        .HasColumnName("concurrency_stamp");
+
+                    b.Property<DateTimeOffset>("CreatedAtUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at_utc");
+
+                    b.Property<string>("DisplayName")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)")
+                        .HasColumnName("display_name");
+
+                    b.Property<string>("Kind")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)")
+                        .HasColumnName("party_kind");
+
+                    b.Property<string>("NormalizedDisplayName")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)")
+                        .HasColumnName("normalized_display_name");
+
+                    b.Property<DateTimeOffset>("UpdatedAtUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at_utc");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("NormalizedDisplayName")
+                        .HasDatabaseName("ix_parties_normalized_display_name");
+
+                    b.ToTable("parties", null, t =>
+                        {
+                            t.HasCheckConstraint("ck_parties_kind", "party_kind IN ('Person', 'LegalEntity')");
+
+                            t.HasCheckConstraint("ck_parties_name_non_empty", "length(btrim(display_name)) > 0");
+                        });
+                });
+
             modelBuilder.Entity("PromoGest.Domain.Entities.ProjectCustomer", b =>
                 {
                     b.Property<Guid>("Id")
@@ -675,6 +726,10 @@ namespace PromoGest.Infrastructure.Persistence.Migrations
                         .HasColumnType("character varying(20)")
                         .HasColumnName("normalized_phone");
 
+                    b.Property<Guid>("PartyId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("party_id");
+
                     b.Property<string>("Phone")
                         .IsRequired()
                         .HasMaxLength(40)
@@ -713,6 +768,9 @@ namespace PromoGest.Infrastructure.Persistence.Migrations
 
                     b.HasIndex("IdentityDocumentStoredFileId")
                         .HasDatabaseName("ix_project_customers_identity_document");
+
+                    b.HasIndex("PartyId")
+                        .HasDatabaseName("ix_project_customers_party_id");
 
                     b.HasIndex("ProjectId", "Status")
                         .HasDatabaseName("ix_project_customers_project_status");
@@ -1522,6 +1580,12 @@ namespace PromoGest.Infrastructure.Persistence.Migrations
 
             modelBuilder.Entity("PromoGest.Domain.Entities.ProjectCustomer", b =>
                 {
+                    b.HasOne("PromoGest.Domain.Entities.Party", "Party")
+                        .WithMany()
+                        .HasForeignKey("PartyId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
                     b.HasOne("PromoGest.Domain.Entities.User", null)
                         .WithMany()
                         .HasForeignKey("CreatedByUserId")
@@ -1540,6 +1604,8 @@ namespace PromoGest.Infrastructure.Persistence.Migrations
                         .IsRequired();
 
                     b.Navigation("IdentityDocumentFile");
+
+                    b.Navigation("Party");
                 });
 
             modelBuilder.Entity("PromoGest.Domain.Entities.ProjectMember", b =>

@@ -32,3 +32,9 @@ public enum CustomerInteractionType
     Visit = 4,
     Note = 5
 }
+
+public enum PartyKind
+{
+    Person = 1,
+    LegalEntity = 2
+}

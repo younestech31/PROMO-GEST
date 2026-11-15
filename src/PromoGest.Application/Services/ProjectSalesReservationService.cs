@@ -96,7 +96,7 @@ public sealed class ProjectSalesReservationService
             ct,
             saveChanges: true);
 
-        return Map(reservation, unit.UnitNumber, customer.DisplayName);
+        return Map(reservation, unit.UnitNumber, customer.Party.DisplayName);
     }
 
     public async Task<ProjectSalesReservationDto> CreateAsync(
@@ -177,7 +177,7 @@ public sealed class ProjectSalesReservationService
 
         await _reservationRepository.SaveChangesAsync(ct);
 
-        return Map(reservation, unit.UnitNumber, customer.DisplayName);
+        return Map(reservation, unit.UnitNumber, customer.Party.DisplayName);
     }
 
     public async Task<ProjectSalesReservationDto> CancelAsync(
@@ -252,7 +252,7 @@ public sealed class ProjectSalesReservationService
 
         await _reservationRepository.SaveChangesAsync(ct);
 
-        return Map(reservation, unit.UnitNumber, customer.DisplayName);
+        return Map(reservation, unit.UnitNumber, customer.Party.DisplayName);
     }
 
     private async Task<(User Actor, Project Project)> RequireProjectAccessAsync(

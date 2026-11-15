@@ -37,6 +37,7 @@ public sealed class ProjectCustomerDomainTests
         Assert.Equal("+213 550-123-456", customer.Phone);
         Assert.Equal("213550123456", customer.NormalizedPhone);
         Assert.Equal("LEILA@EXAMPLE.DZ", customer.NormalizedEmail);
+        Assert.Equal(customer.Id, customer.PartyId);
         Assert.Equal(ProjectCustomerStatus.Prospect, customer.Status);
         Assert.Equal("ar", customer.PreferredLanguage);
     }

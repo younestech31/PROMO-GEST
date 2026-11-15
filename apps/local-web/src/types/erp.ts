@@ -181,6 +181,7 @@ export interface ProjectDocumentDto {
 
 export interface ProjectCustomerListItemDto {
   id: string;
+  partyId?: string;
   customerType: string;
   displayName: string;
   contactPerson: string | null;
@@ -213,6 +214,7 @@ export interface CustomerInteractionDto {
 
 export interface ProjectCustomerDto {
   id: string;
+  partyId?: string;
   projectId: string;
   customerType: string;
   displayName: string;

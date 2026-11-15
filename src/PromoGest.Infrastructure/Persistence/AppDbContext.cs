@@ -21,6 +21,7 @@ public sealed class AppDbContext : DbContext
     public DbSet<AuditLog> AuditLogs => Set<AuditLog>();
     public DbSet<SystemSetting> SystemSettings => Set<SystemSetting>();
     public DbSet<StoredFile> StoredFiles => Set<StoredFile>();
+    public DbSet<Party> Parties => Set<Party>();
     public DbSet<ProjectCustomer> ProjectCustomers => Set<ProjectCustomer>();
     public DbSet<CustomerInteraction> CustomerInteractions => Set<CustomerInteraction>();
     public DbSet<ProjectSalesReservation> ProjectSalesReservations => Set<ProjectSalesReservation>();

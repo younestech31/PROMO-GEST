@@ -21,7 +21,7 @@
 
 ---
 
-## 2. Current Gate Status Against Baseline (Last Code-Changing Source Commit `6bbd97f70ed0fb63cf226a1117cf6e83c359d2be`; current main `5415f0e668a55f902ac2802e1669af58ad7ec410`)
+## 2. Current Gate Status Against Baseline (Last Code-Changing Source Commit `6bbd97f70ed0fb63cf226a1117cf6e83c359d2be`; main commit inspected at audit start `5415f0e668a55f902ac2802e1669af58ad7ec410`)
 
 ### GitHub Actions Run #531 — 15 November 2026
 - **Frontend job — passed:** `npm run lint` (`tsc --noEmit`), `npm test` (**38/38**), SPA build, ASP.NET Core `wwwroot` build, static-hosting checks, and dev-preview leakage checks.
@@ -39,10 +39,10 @@
 
 ### Gate Interpretation
 - **G1–G7 and G9:** automated build, domain/application suites, CSRF/auth/authorization paths, concurrency checks, audit protections, and PostgreSQL 18 integration execution passed in Run #531 for the tested requirements.
-- **G8:** the automated portion passed: strict TypeScript check, **38/38** frontend tests, SPA build, ASP.NET Core static-hosting output, and preview-leak checks. The product owner previously confirmed a targeted real Google AI Studio server/API/PostgreSQL development smoke check and that the customer/prospect and reservation pages no longer showed the reported generic error after PR #44. That smoke check is not full CRUD/persistence/authorization acceptance. Manual Arabic RTL / French LTR browser verification across desktop and mobile, real cookie/CSRF interaction, and the named business workflows remain outstanding. The Vite-only fallback simulator is not full API parity and must never be treated as production/API evidence.
+- **G8:** the automated portion passed: strict TypeScript check, **38/38** frontend tests, SPA build, ASP.NET Core static-hosting output, and preview-leak checks. The product owner previously confirmed a targeted real Google AI Studio server/API/PostgreSQL development smoke check and that the customer/prospect and reservation pages no longer showed the reported generic error after PR #44. That smoke check is not full CRUD/persistence/authorization acceptance. Manual Arabic RTL / French LTR browser verification across desktop and mobile, real cookie/CSRF interaction, and the named business workflows remain outstanding. Execute and record them using [PHASE-0-MANUAL-ACCEPTANCE.md](PHASE-0-MANUAL-ACCEPTANCE.md); that protocol is prepared but its test cases are not executed or passed by this CI run. The Vite-only fallback simulator is not full API parity and must never be treated as production/API evidence.
 - **G10:** Windows x64 publish, DPAPI recovery and PowerShell validation passed. Customer-site installation and a restore drill remain separate release-acceptance activities.
 
-**Release Implication:** The previous `CS7036` blocker is closed and current main CI (#531) is green. Phase 0 remains `IN_PROGRESS` until manual bilingual browser workflows and focused real-API CRUD/persistence/authorization acceptance are evidenced. Phase 1 and statutory/practitioner sign-offs remain prerequisites for production release and downstream legal/financial modules.
+**Release Implication:** The previous `CS7036` blocker is closed and audited main CI (#531) is green. Phase 0 remains `IN_PROGRESS` until manual bilingual browser workflows and focused real-API CRUD/persistence/authorization acceptance are evidenced. Phase 1 and statutory/practitioner sign-offs remain prerequisites for production release and downstream legal/financial modules.
 
 ---
 

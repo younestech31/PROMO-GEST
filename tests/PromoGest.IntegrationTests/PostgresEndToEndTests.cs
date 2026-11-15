@@ -1164,12 +1164,12 @@ public sealed class PostgresEndToEndTests : IClassFixture<PostgreSql18Integratio
                 raceUnit.Id,
                 createdCustomer.Id,
                 DateTimeOffset.UtcNow.AddDays(3));
-            var projectUpdateRaceResponses = await Task.WhenAll(
+            var reservationRaceResponses = await Task.WhenAll(
                 adminClient.PostAsJsonAsync($"/api/projects/{createdProject.Id}/reservations", raceRequest),
                 adminClient.PostAsJsonAsync($"/api/projects/{createdProject.Id}/reservations", raceRequest));
-            Assert.Equal(1, projectUpdateRaceResponses.Count(response => response.StatusCode == HttpStatusCode.Created));
-            Assert.Equal(1, projectUpdateRaceResponses.Count(response => response.StatusCode == HttpStatusCode.Conflict));
-            var winningResponse = projectUpdateRaceResponses.Single(response => response.StatusCode == HttpStatusCode.Created);
+            Assert.Equal(1, reservationRaceResponses.Count(response => response.StatusCode == HttpStatusCode.Created));
+            Assert.Equal(1, reservationRaceResponses.Count(response => response.StatusCode == HttpStatusCode.Conflict));
+            var winningResponse = reservationRaceResponses.Single(response => response.StatusCode == HttpStatusCode.Created);
             var winningReservation = await winningResponse.Content.ReadFromJsonAsync<ProjectSalesReservationDto>();
             Assert.NotNull(winningReservation);
             var raceReservationCount = await adminClient.GetFromJsonAsync<List<ProjectSalesReservationDto>>(

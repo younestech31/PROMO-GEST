@@ -1015,6 +1015,21 @@ export function createPromoGestDevApiPlugin(): Plugin {
         const authorizeStructureProject = (rawProjectId: string, canManage: boolean): ProjectDto | null => {
           const projectId = decodeURIComponent(rawProjectId);
           const project = projects.find((p) => p.id === projectId);
+          if (!project && !currentUser.isSystemAdministrator) {
+            addAudit(
+              'ACCESS_DENIED',
+              'Security',
+              `Unauthorized project-structure access attempt by '${currentUser.username}' on project ID '${projectId}'.`,
+              currentUser,
+              'Project',
+              projectId
+            );
+            sendJson(res, 403, {
+              code: canManage ? 'FORBIDDEN_PROJECT_STRUCTURE_MANAGE' : 'PROJECT_ACCESS_DENIED',
+              message: 'Project access denied.',
+            });
+            return null;
+          }
           if (!project) {
             sendJson(res, 404, { code: 'PROJECT_NOT_FOUND', message: 'Project not found.' });
             return null;

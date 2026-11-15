@@ -29,7 +29,9 @@ Gates A and B are green and closed. Gate C is now the next implementation gate. 
 
 ## Gate C — Canonical master data and reference data
 
-**Status: design baseline recorded; schema, migration and UI implementation not started.**
+**Status: initial C1 Party-identity slice implemented on `feat/gate-c-party-identity-foundation`; CI/PR acceptance pending. Gate C remains open.**
+
+The first slice adds the `Party` aggregate, required `project_customers.party_id`, deterministic one-to-one backfill preserving legacy customer UUIDs, Party-backed CRM identity reads/updates, and migration/domain/integration coverage. It does not yet provide organization-wide Party selection, reusable multi-project Party relationships, full `ProjectPartyRole`, contact-point/identifier management, Employee records, or duplicate reconciliation. No migration has been applied to Cloud SQL or an organization installation.
 
 Gate C is split into controlled deliverables:
 
@@ -39,7 +41,7 @@ Gate C is split into controlled deliverables:
 4. **C4 — Documents and identity evidence:** review the existing project-scoped StoredFile permissions before any identity document is made organization-wide; do not copy files or broaden access silently.
 5. **C5 — Acceptance:** additive migrations, PostgreSQL 18 backfill/restore tests, project-isolation tests, concurrency checks, reconciliation reports and local installation rehearsal.
 
-No schema migration, destructive data transformation, Cloud SQL mutation or hosted deployment is included in this documentation baseline. The first Gate C code change must carry its own migration and restore rehearsal.
+The Party foundation code includes an additive EF migration and PostgreSQL integration coverage. CI/PR and a representative legacy-row backfill rehearsal must pass before it is accepted. No schema migration has been applied to Cloud SQL, no customer/organization data has been changed, and no hosted deployment is authorized.
 
 Before implementing M5b/M5c, use [Algerian Real-Estate Legal Domain](ALGERIAN-REAL-ESTATE-LEGAL-DOMAIN.md) to model statutory reservation separately from VSP, stage-linked instalments, notarial evidence and the distinction between VAT taxable event and VAT rate. Professional legal, tax and accounting review remains mandatory.
 

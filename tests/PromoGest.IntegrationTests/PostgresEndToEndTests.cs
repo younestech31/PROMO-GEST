@@ -616,7 +616,8 @@ public sealed class PostgresEndToEndTests : IClassFixture<PostgreSql18Integratio
                 "UnderConstruction",
                 470_000_000m,
                 4,
-                64);
+                64,
+                createdProject!.ConcurrencyStamp);
             var updateProjectResp = await adminClient.PutAsJsonAsync($"/api/projects/{createdProject!.Id}", projectUpdate);
             Assert.Equal(HttpStatusCode.OK, updateProjectResp.StatusCode);
             var updatedProject = await updateProjectResp.Content.ReadFromJsonAsync<ProjectDto>();
@@ -625,6 +626,26 @@ public sealed class PostgresEndToEndTests : IClassFixture<PostgreSql18Integratio
             Assert.Equal(projectUpdate.NameAr, updatedProject.NameAr);
             Assert.Equal(projectUpdate.WilayaCode, updatedProject.WilayaCode);
             Assert.Equal(projectUpdate.Status, updatedProject.Status);
+            Assert.NotEqual(createdProject.ConcurrencyStamp, updatedProject.ConcurrencyStamp);
+
+            // A second editor submitting the original version must receive a conflict and must not overwrite the first save.
+            var staleProjectUpdate = projectUpdate with
+            {
+                NameAr = "تعديل متقادم",
+                NameFr = "Modification obsolète"
+            };
+            var staleProjectUpdateResponse = await adminClient.PutAsJsonAsync(
+                $"/api/projects/{createdProject.Id}",
+                staleProjectUpdate);
+            Assert.Equal(HttpStatusCode.Conflict, staleProjectUpdateResponse.StatusCode);
+            var staleProjectError = await staleProjectUpdateResponse.Content.ReadAsStringAsync();
+            Assert.Contains("PROJECT_CONCURRENCY_CONFLICT", staleProjectError, StringComparison.Ordinal);
+            var projectAfterStaleAttempt = await adminClient.GetFromJsonAsync<ProjectDto>(
+                $"/api/projects/{createdProject.Id}");
+            Assert.NotNull(projectAfterStaleAttempt);
+            Assert.Equal(updatedProject.NameAr, projectAfterStaleAttempt!.NameAr);
+            Assert.Equal(updatedProject.ConcurrencyStamp, projectAfterStaleAttempt.ConcurrencyStamp);
+
             using (var scope = factory.Services.CreateScope())
             {
                 var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
@@ -1248,7 +1269,8 @@ public sealed class PostgresEndToEndTests : IClassFixture<PostgreSql18Integratio
             var directorUpdate = projectUpdate with
             {
                 NameAr = "إقامة الأطلس - تحديث مدير المشاريع",
-                NameFr = "Résidence Atlas - Mise à jour du directeur"
+                NameFr = "Résidence Atlas - Mise à jour du directeur",
+                ExpectedConcurrencyStamp = updatedProject.ConcurrencyStamp
             };
 
             // A global Project Director role grants the action permission, not access to an unassigned project.
@@ -1322,7 +1344,8 @@ public sealed class PostgresEndToEndTests : IClassFixture<PostgreSql18Integratio
                 NameFr = "Résidence du Directeur - Mise à Jour",
                 WilayaCode = "31",
                 WilayaName = "Oran",
-                Municipality = "Bir El Djir"
+                Municipality = "Bir El Djir",
+                ExpectedConcurrencyStamp = directorOwnedProject.ConcurrencyStamp
             };
             var directorOwnUpdateResponse = await directorClient.PutAsJsonAsync(
                 $"/api/projects/{directorOwnedProject.Id}",
@@ -1339,10 +1362,15 @@ public sealed class PostgresEndToEndTests : IClassFixture<PostgreSql18Integratio
                 $"/api/projects/{createdProject.Id}/members",
                 new AssignProjectMemberRequest(directorCreatedUserId, "ProjectManager", true, true, true, true));
             Assert.Equal(HttpStatusCode.OK, directorProjectAssignment.StatusCode);
+            var projectAfterManagerAssignment = await directorProjectAssignment.Content.ReadFromJsonAsync<ProjectDto>();
+            Assert.NotNull(projectAfterManagerAssignment);
 
             var directorAssignedUpdate = await directorClient.PutAsJsonAsync(
                 $"/api/projects/{createdProject.Id}",
-                directorUpdate);
+                directorUpdate with
+                {
+                    ExpectedConcurrencyStamp = projectAfterManagerAssignment!.ConcurrencyStamp
+                });
             Assert.Equal(HttpStatusCode.OK, directorAssignedUpdate.StatusCode);
             var directorUpdatedProject = await directorAssignedUpdate.Content.ReadFromJsonAsync<ProjectDto>();
             Assert.NotNull(directorUpdatedProject);

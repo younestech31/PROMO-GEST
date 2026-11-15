@@ -650,13 +650,11 @@ public sealed class PostgresEndToEndTests : IClassFixture<PostgreSql18Integratio
             var raceUpdateA = projectUpdate with
             {
                 NameAr = "تحديث متزامن أ",
-                NameFr = "Mise à jour concurrente A",
                 ExpectedConcurrencyStamp = projectAfterStaleAttempt.ConcurrencyStamp
             };
             var raceUpdateB = projectUpdate with
             {
                 NameAr = "تحديث متزامن ب",
-                NameFr = "Mise à jour concurrente B",
                 ExpectedConcurrencyStamp = projectAfterStaleAttempt.ConcurrencyStamp
             };
             var raceResponses = await Task.WhenAll(

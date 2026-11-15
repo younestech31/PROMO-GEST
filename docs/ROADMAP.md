@@ -13,9 +13,9 @@ This is the working delivery sequence for the local-first Algerian real-estate p
 
 ## Foundation hardening gate — before expanding the module surface
 
-**Status: in progress on `fix/foundation-project-scope-and-localization`; merge is gated on the remediation CI run.**
+**Status: COMPLETED.** PR #25 is merged into `main` (commit `1935ad1`); both PR CI and post-merge `main` CI passed all three jobs.
 
-The November 2026 source review identified and is correcting project-scope authorization bypasses, missing creator membership, project-ID existence disclosure on project-scoped routes, and the outdated Wilaya code range. See [Foundation Audit](FOUNDATION-AUDIT-2026-11.md) and the linked security/localization ADRs.
+The November 2026 source review identified project-scope authorization bypasses, missing creator membership, project-ID existence disclosure on project-scoped routes, and the outdated Wilaya code range. These were remediated and merged through PR #25. See [Foundation Audit](FOUNDATION-AUDIT-2026-11.md) and the linked accepted security/localization ADRs.
 
 This gate is a prerequisite across the existing milestones, not a new business module. It includes:
 - Explicit project membership plus action permission for every project-owned API operation.
@@ -25,7 +25,7 @@ This gate is a prerequisite across the existing milestones, not a new business m
 - Official Algeria Wilaya codes 01–69, bilingual labels, and regression tests.
 - A verified baseline CI run on the remediation branch.
 
-Do not proceed to CRM master-data migration, cross-project navigation or additional business modules until the authorization and localization checks are merged and green.
+Gate A is green and closed. Proceed to Gate B (project master-data concurrency) before CRM master-data migration, cross-project navigation or additional business modules.
 
 ## Milestone 1 — Secure local platform foundation
 

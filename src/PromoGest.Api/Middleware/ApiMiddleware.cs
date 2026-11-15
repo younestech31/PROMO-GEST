@@ -130,6 +130,15 @@ public sealed class SecurityHeadersMiddleware
         context.Response.Headers["Content-Security-Policy"] =
             "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; font-src 'self' data:; img-src 'self' data:; connect-src 'self'; frame-ancestors 'none'; base-uri 'self'; form-action 'self'";
 
+        // API and health responses can contain session, customer, project, or operational
+        // data. Prevent browser and intermediary HTTP caches from storing those responses.
+        // Static SPA assets are intentionally excluded so their existing cache policy is unchanged.
+        if (context.Request.Path.StartsWithSegments("/api", StringComparison.OrdinalIgnoreCase) ||
+            context.Request.Path.StartsWithSegments("/health", StringComparison.OrdinalIgnoreCase))
+        {
+            context.Response.Headers["Cache-Control"] = "no-store";
+        }
+
         await _next(context);
     }
 }

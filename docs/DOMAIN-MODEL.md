@@ -1,107 +1,122 @@
-# PROMO GEST — Domain Model & PostgreSQL 18 Schema
+# PROMO GEST — Domain Model & Schema Specification
 
-**Authoritative Source:** Verified directly against `src/PromoGest.Domain/Entities/`, `src/PromoGest.Infrastructure/Persistence/Configurations/`, `src/PromoGest.Infrastructure/Persistence/AppDbContext.cs`, and all 11 migrations in `src/PromoGest.Infrastructure/Migrations/`.
+**Authoritative Source:** Verified directly against `src/PromoGest.Domain/Entities/`, `src/PromoGest.Infrastructure/Persistence/Configurations/`, `src/PromoGest.Infrastructure/Persistence/DbInitializer.cs`, and `src/PromoGest.Infrastructure/Persistence/Migrations/AppDbContextModelSnapshot.cs` across all 11 migrations.
+
+> **Strict Truth Boundary:** Sections 1–3 describe **only what physically exists** in Domain entities, EF Core configurations, and PostgreSQL 18 migrations today. Future entities and columns appear strictly in **Section 5 (Planned Domain Model)** and must never be treated as existing schema.
 
 ---
 
 ## 1. Entity & Relationship Map (Current Database Reality)
 
 ```text
-  organizations (singleton: singleton_key = 1)
+  organization_settings (singleton_guard = 1)
+  system_settings (key unique)
 
   users ──< user_roles >── roles ──< role_permissions >── permissions
     │
-    ├──< user_sessions (token_hash SHA-256, expires_at_utc, revoked_at_utc)
+    ├──< user_sessions (token_hash SHA-256, security_stamp, is_revoked)
     ├──< audit_logs (immutable via PostgreSQL trigger; actor_user_id nullable)
+    ├──< stored_files (optional project_id -> projects; scope Organization|Project)
     └──< project_members >── projects
                                 │
                                 ├──< buildings ──< building_floors ──< property_units
                                 │                                           ▲
-                                ├──< project_documents                      │ (1 active reservation
+                                ├──< stored_files (Project scope)           │ (1 active hold
                                 │                                           │  per unit via partial index)
   parties ──< project_customers ──────────< project_sales_reservations ─────┘
-                    │
+                    │              │
+                    │              └──> stored_files (optional identity_document_stored_file_id)
                     └──< customer_interactions
 ```
 
 ---
 
-## 2. Implemented Tables, Keys, Constraints & Indexes
+## 2. Current Database Reality (Exact Columns, Keys & Constraints)
 
 ### 2.1 Core Governance, Auth & Audit
 
-| Table | Primary Key | Key Columns & Constraints | Unique / Partial Indexes & DB Guards |
-|---|---|---|---|
-| `organizations` | `id` (`uuid`) | `legal_name`, `legal_form`, `wilaya_code` (2 chars), `wilaya_name`, `address`, `default_language` (`ar`\|`fr`), `currency_code` (`DZD`), `singleton_key` (`int`) | `CHECK (singleton_key = 1)` + `UNIQUE (singleton_key)` enforces single organization per installation |
-| `users` | `id` (`uuid`) | `username`, `normalized_username`, `email`, `normalized_email`, `password_hash` (Argon2id), `is_system_administrator`, `is_active`, `preferred_language`, `failed_login_attempts`, `lockout_end_utc`, `concurrency_stamp` | `UNIQUE (normalized_username)`, `UNIQUE (normalized_email)`, **`ux_users_single_system_admin` (`UNIQUE (is_system_administrator) WHERE is_system_administrator = TRUE`)** |
-| `roles` | `id` (`uuid`) | `code` (unique), `name_ar`, `name_fr`, `is_system_role` | 7 seeded roles (`SYSTEM_ADMIN`, `PROJECT_DIRECTOR`, `PROJECT_ENGINEER`, `SALES_AGENT`, `ACCOUNTANT`, `PROCUREMENT_OFFICER`, `AUDIT_VIEWER`) |
-| `permissions` | `id` (`uuid`) | `code` (unique), `module`, `description_ar`, `description_fr` | 18 seeded permissions |
-| `role_permissions` | `(role_id, permission_id)` | FKs to `roles`, `permissions` (`CASCADE`) | Composite PK |
-| `user_roles` | `(user_id, role_id)` | FKs to `users`, `roles` (`CASCADE`) | Composite PK |
-| `user_sessions` | `id` (`uuid`) | `user_id`, `token_hash` (64 hex SHA-256), `expires_at_utc`, `revoked_at_utc`, `ip_address`, `user_agent` | `UNIQUE (token_hash)` |
-| `audit_logs` | `id` (`uuid`) | `occurred_at_utc`, `actor_user_id` (`SET NULL`), `actor_username`, `event_type`, `severity`, `target_entity_type`, `target_entity_id`, `summary`, `metadata_json` (`jsonb`), `ip_address` | **PostgreSQL trigger (`BEFORE UPDATE OR DELETE`) raises exception (`prevent_audit_log_mutation`)**; append-only |
+| Table | PK & Columns (Exact EF/PG Names) | Unique / Partial Indexes & DB Guards |
+|---|---|---|
+| `organization_settings` | `id` (`uuid`), `legal_name` (`200`), `trade_name` (`200?`), `legal_form` (`24`), `nif` (`32?`), `nis` (`32?`), `trade_register_number` (`64?`), `tax_article_number` (`64?`), `share_capital_dzd` (`numeric(18,2)?`), `wilaya_code` (`4`), `wilaya_name` (`100`), `address` (`300`), `phone` (`40?`), `email` (`160?`), `default_language` (`4`), `currency_code` (`3`), `is_initialized` (`bool`), `initialized_at_utc` (`timestamptz?`), `singleton_guard` (`int`), `created_at_utc`, `updated_at_utc`, `concurrency_stamp` | `ux_organization_settings_singleton` (`UNIQUE (singleton_guard)`); `CHECK (singleton_guard = 1)`, `CHECK (currency_code = 'DZD')`, `CHECK (default_language IN ('ar', 'fr'))`, `CHECK (share_capital_dzd IS NULL OR share_capital_dzd >= 0)` |
+| `users` | `id` (`uuid`), `username` (`64`), `normalized_username` (`64`), `full_name` (`150`), `email` (`160`), `normalized_email` (`160`), `phone` (`40?`), `password_hash` (`512` — **PBKDF2-SHA512**, format `PBKDF2-SHA512$310000$<salt>$<hash>`), `is_system_administrator` (`bool`), `is_active` (`bool`), `preferred_language` (`4`), `failed_login_attempts` (`int`), `lockout_end_utc`, `last_login_at_utc`, `security_stamp` (`uuid`), `created_at_utc`, `updated_at_utc`, `concurrency_stamp` | `ux_users_normalized_username`, `ux_users_normalized_email`, **`ux_users_single_system_admin` (`UNIQUE (is_system_administrator) WHERE is_system_administrator = true`)**; `CHECK (failed_login_attempts >= 0)`, `CHECK (preferred_language IN ('ar', 'fr'))`, `CHECK (char_length(username) >= 3)` |
+| `roles` | `id` (`uuid`), `code` (`64`), `name_ar` (`120`), `name_fr` (`120`), `description_ar` (`300`), `description_fr` (`300`), `is_system_role` (`bool`), `created_at_utc`, `updated_at_utc`, `concurrency_stamp` | `ux_roles_code`; **Exact 7 seeded roles (`DbInitializer.cs`):** `SYSTEM_ADMIN`, `PROJECT_DIRECTOR`, `COMMERCIAL_MANAGER`, `FINANCE_OFFICER`, `SITE_ENGINEER`, `LEGAL_OFFICER`, `VIEWER` |
+| `permissions` | `id` (`uuid`), `code` (`100`), `module` (`64`), `description_ar` (`300`), `description_fr` (`300`), `created_at_utc`, `updated_at_utc`, `concurrency_stamp` | `ux_permissions_code`; 18 seeded permissions (see [SECURITY-AND-PERMISSIONS.md](SECURITY-AND-PERMISSIONS.md)) |
+| `role_permissions` | `(role_id, permission_id)` composite PK | FKs to `roles`, `permissions` (`Cascade`) |
+| `user_roles` | `(user_id, role_id)` composite PK, `assigned_by_user_id` (`uuid?`), `assigned_at_utc` | FK `users` (`Cascade`), FK `roles` (`Restrict`) |
+| `user_sessions` | `id` (`uuid`), `user_id`, `token_hash` (`64` hex SHA-256), `security_stamp` (`uuid`), `created_at_utc`, `expires_at_utc`, `last_seen_at_utc`, `ip_address` (`64?`), `user_agent` (`300?`), `is_revoked` (`bool`), `revoked_at_utc` | `ux_user_sessions_token_hash`, `ix_user_sessions_user_id`; FK `users` (`Cascade`) |
+| `audit_logs` | `id` (`uuid`), `occurred_at_utc`, `actor_user_id` (`uuid?`), `actor_username` (`64?`), `event_type` (`64`), `severity` (`24`), `target_entity_type` (`64?`), `target_entity_id` (`64?`), `summary` (`500`), `metadata_json` (`jsonb?`), `ip_address` (`64?`), `user_agent` (`300?`) | `ix_audit_logs_event_type`, `ix_audit_logs_occurred_at_utc`; **PostgreSQL trigger `BEFORE UPDATE OR DELETE` (`prevent_audit_log_mutation`)** enforces append-only immutability |
+| `system_settings` | `id` (`uuid`), `key` (`120`), `value` (`2000`), `category` (`64`), `is_encrypted` (`bool`), `description` (`300?`), `created_at_utc`, `updated_at_utc`, `concurrency_stamp` | `ux_system_settings_key` |
 
-### 2.2 Real Estate Projects, Structure & Documents
+### 2.2 Real Estate Projects, Physical Structure & Stored Files
 
-| Table | Primary Key | Key Columns & Concurrency | Key Constraints & Indexes |
-|---|---|---|---|
-| `projects` | `id` (`uuid`) | `code`, `normalized_code`, `name`, `wilaya_code`, `wilaya_name`, `municipality`, `project_type`, `status`, `planned_blocks_count`, `planned_units_count`, `estimated_budget_dzd` (`numeric(18,2)`), `concurrency_stamp` | `UNIQUE (normalized_code)`; `actualBuildingsCount`/`actualUnitsCount` computed dynamically from child tables |
-| `project_members` | `(project_id, user_id)` | `role_in_project` (`ProjectManager`, `SiteEngineer`, `SalesRepresentative`, `Accountant`, `Procurement`, `Observer`), `can_manage_sales`, `can_manage_finance`, `can_manage_construction`, `can_manage_documents`, `assigned_at_utc` | Composite PK; cascade from `projects` and `users` |
-| `buildings` | `id` (`uuid`) | `project_id`, `code`, `normalized_code`, `name`, `total_floors`, `status`, `concurrency_stamp` | `UNIQUE (project_id, normalized_code)`; FK `projects` (`CASCADE` at DB, unused in API) |
-| `building_floors` | `id` (`uuid`) | `building_id`, `floor_number`, `code`, `normalized_code`, `name`, `concurrency_stamp` | `UNIQUE (building_id, floor_number)`, `UNIQUE (building_id, normalized_code)` |
-| `property_units` | `id` (`uuid`) | `building_floor_id`, `code`, `normalized_code`, `unit_type`, `commercial_status` (`Available`, `Reserved`, `Sold`, `Blocked`), `area_sqm`, `price_dzd` (`numeric(18,2)`), `room_count`, `orientation`, `concurrency_stamp` | `UNIQUE (building_floor_id, normalized_code)`; `CHECK` on positive/non-negative area & price |
-| `project_documents` | `id` (`uuid`) | `project_id`, `title`, `category`, `original_file_name`, `storage_relative_path`, `content_type`, `file_size_bytes`, `sha256_checksum`, `is_archived`, `uploaded_by_user_id` (`Restrict`), `concurrency_stamp` | `UNIQUE (storage_relative_path)`; SHA-256 verified on every download |
+| Table | PK & Columns (Exact EF/PG Names) | Key Constraints & Indexes |
+|---|---|---|
+| `projects` | `id` (`uuid`), `code` (`40`), `normalized_code` (`40`), `name_ar` (`200`), `name_fr` (`200`), `wilaya_code` (`4`), `wilaya_name` (`100`), `municipality` (`120`), `address` (`300?`), `land_title_reference` (`120?`), `building_permit_number` (`120?`), `building_permit_date` (`date?`), `planned_blocks_count` (`int`), `planned_units_count` (`int`), `estimated_budget_dzd` (`numeric(18,2)`), `status` (`32`), `created_by_user_id` (`Restrict`), `created_at_utc`, `updated_at_utc`, `concurrency_stamp` | `ux_projects_normalized_code`, `ix_projects_wilaya_code`, `ix_projects_created_by_user_id`; `CHECK (planned_blocks_count >= 0)`, `CHECK (planned_units_count >= 0)`, `CHECK (estimated_budget_dzd >= 0)`; dynamic `actualBuildingsCount`/`actualUnitsCount` computed in queries |
+| `project_members` | `id` (`uuid`), `project_id`, `user_id`, `role_in_project` (`40`), `can_view_financials`, `can_manage_sales`, `can_manage_construction`, `can_manage_documents`, `assigned_by_user_id`, `assigned_at_utc`, `created_at_utc`, `updated_at_utc`, `concurrency_stamp` | `ux_project_members_project_user` (`UNIQUE (project_id, user_id)`), `ix_project_members_user_id`; FKs `projects`, `users` (`Cascade`) |
+| `buildings` | `id` (`uuid`), `project_id`, `code` (`40`), `normalized_code` (`40`), `name_ar` (`200`), `name_fr` (`200`), `status` (`24`: `Planned`, `UnderConstruction`, `Completed`, `Suspended`), `created_by_user_id` (`Restrict`), `created_at_utc`, `updated_at_utc`, `concurrency_stamp` | `ux_buildings_project_code` (`UNIQUE (project_id, normalized_code)`); `CHECK (length(btrim(code)) > 0)`, `CHECK (status IN (...))`; FK `projects` (`Restrict`) |
+| `building_floors` | `id` (`uuid`), `building_id`, `floor_number` (`int`), `name_ar` (`100`), `name_fr` (`100`), `created_at_utc`, `updated_at_utc`, `concurrency_stamp` | `ux_building_floors_building_number` (`UNIQUE (building_id, floor_number)`); `CHECK (floor_number BETWEEN -10 AND 200)`; FK `buildings` (`Cascade`) |
+| `property_units` | `id` (`uuid`), `floor_id`, `unit_number` (`40`), `normalized_unit_number` (`40`), `unit_type` (`24`: `Apartment`, `Shop`, `ParkingSpace`, `Office`, `Storage`), `status` (`32`: `Planned`, `UnderConstruction`, `AvailableForSale`, `Reserved`, `Sold`, `Delivered`, `Withdrawn`), `gross_area_square_meters` (`numeric(10,2)?`), `net_area_square_meters` (`numeric(10,2)?`), `rooms_count` (`int?`), `created_by_user_id` (`Restrict`), `created_at_utc`, `updated_at_utc`, `concurrency_stamp` | `ux_property_units_floor_number` (`UNIQUE (floor_id, normalized_unit_number)`), `ix_property_units_status`; `CHECK` constraints for non-negative areas, `net <= gross`, `rooms_count BETWEEN 0 AND 20`, valid `unit_type` & `status`; FK `building_floors` (`Cascade`) |
+| `stored_files` | `id` (`uuid`), `original_file_name` (`255`), `stored_relative_path` (`500`), `content_type` (`120`), `size_bytes` (`bigint`), `sha256_checksum` (`64`), `category` (`40`: `Legal`, `LandAndTitle`, `Permits`, `Plans`, `Engineering`, `Commercial`, `Financial`, `Correspondence`, `Other`), `description` (`500?`), `scope` (`32`), `project_id` (`uuid?`), `uploaded_by_user_id` (`Restrict`), `created_at_utc`, `updated_at_utc`, `concurrency_stamp` | `ux_stored_files_relative_path` (`UNIQUE (stored_relative_path)`), `ix_stored_files_project_id`, `ix_stored_files_uploaded_by_user_id`; `CHECK (size_bytes > 0)`, `CHECK (category IN (...))`; SHA-256 verified on every download |
 
-### 2.3 Party, Project Customers, Interactions & Reservations
+### 2.3 Party, Project Customers, Interactions & Reservations (Literal Schema)
 
-| Table | Primary Key | Key Columns & Concurrency | Key Constraints & Indexes (Exact Inspected Truth) |
-|---|---|---|---|
-| `parties` | `id` (`uuid`) | `kind` (`Person` \| `LegalEntity`), `display_name`, `normalized_display_name`, `primary_phone`, `normalized_phone`, `email`, `national_id_number`, `nif`, `nis`, `trade_register_number`, `tax_article_number`, `concurrency_stamp` | Added in migration #10; 1:1 backfilled from existing `project_customers` |
-| `project_customers` | `id` (`uuid`) | `project_id`, `party_id` (`NOT NULL`), `customer_type`, `display_name`, `normalized_display_name`, `phone`, `normalized_phone`, `email`, `national_id_number`, `nif`, `trade_register_number`, `address`, `status` (`Prospect`, `ActiveBuyer`, `Archived`), `notes`, `concurrency_stamp` | `ux_project_customers_project_name_phone` on `(project_id, normalized_display_name, normalized_phone)` **AND** `ux_project_customers_project_party` (`UNIQUE (project_id, party_id)`, migration #11); FKs to `projects` & `parties` (`Restrict`) |
-| `customer_interactions` | `id` (`uuid`) | `project_customer_id`, `interaction_type`, `occurred_at_utc`, `summary`, `recorded_by_user_id` (`Restrict`) | FK `project_customers` (`Cascade`) |
-| `project_sales_reservations` | `id` (`uuid`) | `project_id`, `property_unit_id`, `project_customer_id`, `reservation_number`, `normalized_reservation_number`, `status` (`Active`, `Cancelled`, `Expired`, `ConvertedToContract`), `reserved_at_utc`, `expires_at_utc`, `agreed_price_dzd`, `deposit_amount_dzd`, `notes`, `concurrency_stamp` | `UNIQUE (project_id, normalized_reservation_number)`; **`ux_reservations_active_unit` (`UNIQUE (property_unit_id) WHERE status = 'Active'`)** |
+> **Critical Correction:** `parties` currently stores **only** canonical identity columns (`id`, `party_kind`, `display_name`, `normalized_display_name`, timestamps, `concurrency_stamp`). Phone, email, address, and identity document attachments live on `project_customers`. Fiscal/national identifiers (`NIF`, `NIS`, `RC`, `CNI`) are **not** stored on `parties` or `project_customers` today (`NIF`, `NIS`, `RC`, `tax_article_number` exist only on `organization_settings` for the developer organization itself).
+
+| Table | Exact Implemented Columns (Domain + EF Configuration + Snapshot) | Key Constraints & Indexes |
+|---|---|---|
+| `parties` | `id` (`uuid`), **`party_kind`** (`20`: `'Person'` \| `'LegalEntity'`), `display_name` (`200`), `normalized_display_name` (`200`), `created_at_utc`, `updated_at_utc`, `concurrency_stamp` | `ix_parties_normalized_display_name` (non-unique index); `ck_parties_kind` (`party_kind IN ('Person', 'LegalEntity')`), `ck_parties_name_non_empty` (`length(btrim(display_name)) > 0`). Migration #10 backfilled 1:1 from `project_customers` reusing UUIDs. |
+| `project_customers` | `id` (`uuid`), `project_id` (`uuid`), `party_id` (`uuid NOT NULL`), `customer_type` (`20`: `'Individual'` \| `'LegalEntity'`), `display_name` (`200`), `normalized_display_name` (`200`), `contact_person` (`150?`), `phone` (`40`), `normalized_phone` (`20`), `email` (`254?`), `normalized_email` (`254?`), `address` (`300?`), `preferred_language` (`2`: `'ar'` \| `'fr'`), `source` (`24`: `WalkIn`, `Phone`, `Referral`, `Website`, `SocialMedia`, `Other`), `status` (`24`: `Prospect`, `Qualified`, `Customer`, `Archived`), `identity_document_stored_file_id` (`uuid?`), `created_by_user_id` (`uuid`), `created_at_utc`, `updated_at_utc`, `concurrency_stamp` | `ux_project_customers_project_party` (`UNIQUE (project_id, party_id)` — Migration #11), `ux_project_customers_project_name_phone` (`UNIQUE (project_id, normalized_display_name, normalized_phone)` — Migration #7), `ix_project_customers_party_id`, `ix_project_customers_project_status`, `ix_project_customers_identity_document`; FKs `projects`, `parties`, `stored_files`, `users` (all `Restrict`). |
+| `customer_interactions` | `id` (`uuid`), `project_customer_id` (`uuid`), `interaction_type` (`24`: `Call`, `Email`, `Meeting`, `Visit`, `Note`), `subject` (`120`), `summary` (`1500`), `occurred_at_utc`, `next_follow_up_at_utc` (`timestamptz?`), `created_by_user_id` (`uuid`), `created_at_utc`, `updated_at_utc`, `concurrency_stamp` | `ix_customer_interactions_customer_occurred`; `ck_customer_interactions_type`, `ck_customer_interactions_follow_up` (`next_follow_up_at_utc IS NULL OR next_follow_up_at_utc >= occurred_at_utc`); FKs `project_customers` (`Restrict`), `users` (`Restrict`). |
+| `project_sales_reservations` | `id` (`uuid`), `project_id` (`uuid`), `property_unit_id` (`uuid`), `project_customer_id` (`uuid`), `reservation_number` (`50`), `status` (`20`: `Active`, `Cancelled`, `Expired`), `reserved_at_utc`, `expires_at_utc`, `closed_at_utc` (`timestamptz?`), `closed_by_user_id` (`uuid?`), `close_reason` (`300?`), `created_by_user_id` (`uuid`), `created_at_utc`, `updated_at_utc`, `concurrency_stamp` | `ux_project_sales_reservations_project_number` (`UNIQUE (project_id, reservation_number)`), **`ux_project_sales_reservations_active_unit` (`UNIQUE (property_unit_id) WHERE status = 'Active'`)**, `ix_project_sales_reservations_customer`, `ix_project_sales_reservations_project_status_expiry`; `ck_project_sales_reservations_closure`, `ck_project_sales_reservations_expiry`, `ck_project_sales_reservations_status`; all FKs `Restrict`. *(Note: represents an internal unit hold only — no monetary deposit column exists yet.)* |
 
 ---
 
-## 3. Concurrency & Consistency Model
+## 3. Architectural Boundary: Party vs ProjectCustomer & Identity Documents
+
+To prevent domain conflation or cross-project data leakage, the model strictly separates **five layers**:
+
+1. **Canonical Party Identity (`parties`):** Organization-wide identity (`id`, `party_kind`, `display_name`, `normalized_display_name`, `concurrency_stamp`). Owned centrally so one person or legal entity can participate across multiple projects without duplicating their legal identity.
+2. **Project-Scoped Customer Relationship (`project_customers`):** Project-specific relationship (`project_id`, `party_id`, `status`, `source`, `preferred_language`, `created_by_user_id`). Uniquely constrained per `(project_id, party_id)`.
+3. **Contact & Project-Specific Information:** `phone`, `normalized_phone`, `email`, `normalized_email`, `address`, `contact_person`, and `customer_interactions` (`subject`, `summary`, `occurred_at_utc`, `next_follow_up_at_utc`) remain strictly project-scoped so a sales conversation or project phone contact in Project A never leaks via organization-wide Party search (`GET /api/parties`).
+4. **Identity Documents & Access Boundaries:** `identity_document_stored_file_id` references a project-scoped `stored_files` row (`Scope = Project`, matching `ProjectId`). Even when a user holds `customers.manage`, linking or viewing identity document metadata requires `files.read` and same-project membership (`ProjectCustomerService.ValidateIdentityDocumentAsync`), preserving strict PII isolation.
+5. **Dual-Column Stabilization Policy (Decision Record):**  
+   - **Canonical Identity Owner:** `parties` (`PartyKind`, `DisplayName`, `NormalizedDisplayName`) is the sole legal/canonical identity authority (`ProjectCustomerService` DTOs already return `customer.Party.DisplayName` & `customer.Party.Kind`).
+   - **Legacy Columns Retained During Transition:** `project_customers.display_name`, `normalized_display_name`, `customer_type`, and index `ux_project_customers_project_name_phone` remain temporarily for Migration #10 compatibility and rollback safety.
+   - **Propagation & Retirement Rule:** No uncontrolled bulk sync may touch historical rows without review. Updates to `Party` via `PUT /api/parties/{id}` and customer edits must resolve the stale duplicate index/mirror cleanly before dropping `project_customers.display_name`/`normalized_display_name`/`ux_project_customers_project_name_phone` in a future tested Phase 1 migration backed by backup/restore verification.
+   - **Manual Merge Only:** Future Party consolidation must be explicit, human-reviewed, audited, and non-destructive — never auto-merged by normalized name or phone.
+
+---
+
+## 4. Concurrency & Consistency Model
 
 - Every mutable aggregate carries a `Guid ConcurrencyStamp` mapped via EF Core `.IsConcurrencyToken()`.
 - **Explicit Compare-and-Swap (`ExpectedConcurrencyStamp`):**
-  - `UpdateProjectRequest` enforces ADR-0008 compare-and-swap (`PROJECT_CONCURRENCY_CONFLICT`), and membership add/remove rotates `Project.ConcurrencyStamp`.
+  - `UpdateProjectRequest` enforces ADR-0008 CAS (`PROJECT_CONCURRENCY_CONFLICT`), and membership add/remove rotates `Project.ConcurrencyStamp`.
   - `UpdatePartyIdentityRequest` compares `ConcurrencyStamp` (`PARTY_CONCURRENCY_CONFLICT`).
-  - `UpdateProjectCustomerRequest` carries **both** `ConcurrencyStamp` (customer record) and `PartyConcurrencyStamp` (linked canonical Party).
-  - Buildings, Floors, Units, Documents, and Reservations carry independent `ConcurrencyStamp` tokens returning HTTP 409 on stale writes.
-- **Note on Dual Columns (`ProjectCustomer` vs `Party`):** Currently `project_customers` retains `display_name` / `normalized_display_name` alongside `parties.display_name` / `normalized_display_name`. Editing a Party via `PUT /api/parties/{id}` updates `parties` without cascading to `project_customers`, creating a known consistency gap documented in [CURRENT-STATE-BASELINE.md](CURRENT-STATE-BASELINE.md) and targeted for resolution in Gate C2 stabilization.
+  - `UpdateProjectCustomerRequest` carries **both** `ConcurrencyStamp` (customer record) and `PartyConcurrencyStamp` (linked canonical `Party`).
+  - Buildings, floors, units, and reservations carry independent `ConcurrencyStamp` tokens returning HTTP `409` on stale writes.
 
 ---
 
-## 4. End-to-End Business Lifecycles
+## 5. Planned Domain Model (Not Yet Implemented)
 
-### 4.1 Implemented Lifecycle (Modules A–E, K-partial)
-```text
-[FirstRunSetup] -> [Project (Planning -> InProgress -> Completed/Archived)]
-                     ├── Buildings -> BuildingFloors -> PropertyUnits (Available)
-                     └── Party (Person/LegalEntity) -> ProjectCustomer (Prospect)
-                                                            │
-                                                            ▼ (Create Reservation)
-                                           ProjectSalesReservation (Active) ◄──► PropertyUnit (Reserved)
-                                                │             │
-                                        (Cancel / Expire)     ▼ (Future Gate D: ConvertToContract)
-                                                │         [SaleContract (VSP / Acte Notarié)]
-                                                ▼         PropertyUnit (Sold)
-                                    PropertyUnit (Available)
-```
+> **Planned Only (`PLANNED`):** None of the tables, columns, or workflows in this section exist in `src/` or EF migrations today. Implementing legal, tax, or SCF entities remains gated on **Phase 0 stabilization**, **qualified Algerian legal/notarial review**, and **CPA/SCF sign-off** ([QUALITY-AND-RELEASE-GATES.md](QUALITY-AND-RELEASE-GATES.md)).
 
-### 4.2 Planned Downstream Lifecycle (Gates D–G)
-`SaleContract (VSP / Final)` → `InstallmentSchedule (Decree 13-431 milestones or agreed tranches)` → `PaymentAllocation / Receipt (DZD)` → `TreasuryAccount` + `ScfJournalEntry` + `TaxObligation (TVA 9%/19% on collection per Law 24-08 Art. 59 / Law 25-17 Art. 53)` + `ContractorWorkSituation (Chantier)`.
+### 5.1 Planned Master Data & Counterparty Extensions (Module D + A)
+- **`PartyContactPoint` (`PLANNED`):** Multi-purpose contact channels (`Phone`, `Email`, `Address`) attached to `Party`, non-unique globally, with optional project-level overrides rather than overwriting shared Party data.
+- **`PartyIdentifier` (`PLANNED`):** Typed legal/fiscal identifiers (`CNI`, `Passport`, `NIF`, `NIS`, `RC`, `ArtTax`) with issuing jurisdiction, purpose justification, field-level protection/masking, and restricted authorization (`ADR-0009`, excluding PII from audit metadata and logs).
+- **`PartyRepresentative` (`PLANNED`):** Natural-person `Party` authorized to represent a `LegalEntity` `Party` with supporting authority documents.
+- **`Employee` (`PLANNED`):** Organization-owned HR/employment entity linked optionally to natural-person `Party` and optionally to `User` (`ADR-0009`).
+- **`AdministrativeUnit` (`PLANNED`):** Versioned, effective-dated 69 Wilayas / 1,541 communes dataset (`ADR-0010`).
 
----
+### 5.2 Planned Algerian Legal Contract Hierarchy & Lifecycles (Module F)
+PROMO GEST must never collapse distinct Algerian legal instruments into one generic status:
+1. **Internal Unit Hold (`ProjectSalesReservation` — *Implemented, Hold Only*):** Project-scoped operational hold (`Active`, `Cancelled`, `Expired`) preventing double allocation of a `PropertyUnit`. Not a statutory contract under Law 11-04 and never generates promoter treasury cash.
+2. **Statutory Reservation Contract (`StatutoryReservationContract` — `PLANNED`, Law 11-04 Art. 27 / 32 / 33):** Formal reservation agreement backed by an escrow advance account opened in the reserver's name at FGCMPI; records escrow account/reference, advance amount (subject to statutory cap, not unrestricted promoter cash), notary/document links, buyer-requested termination (15% retention path under Law 11-04 Art. 32 pending legal validation) or promoter judicial-notice termination paths, and conversion window toward final notarial sale deed.
+3. **VSP Contract (*Vente sur Plan*, `VspContract` — `PLANNED`, Law 11-04 Art. 28 / 30 / 34–39 & Executive Decree 13-431):** Authentic under-construction sale contract requiring land/title/permit references, verified promotion guarantee/insurance prerequisite (Art. 42, 54–55), construction-finance eligibility review (Art. 36), buyer co-ownership shares, price composition, immutable versioned schedule linked to physical milestones, price-revision clauses, and delivery certificate of conformity prerequisites.
+4. **Completed Property Sale / *Acte Notarié* (`FinalSaleDeed` — `PLANNED`, Law 11-04 Art. 25 / 33):** Authentic notarial sale deed for built/accepted units recording notary office, deed reference/date, publicity registration reference, executed local document link, and contradictory possession/handover minute (*PV de prise de possession*).
 
-## 5. Target Planned Entities (Not Yet in Code)
-
-To avoid inventing schema prematurely, target entities are designed at contract boundary level in [MODULE-CATALOG.md](MODULE-CATALOG.md) and gated by [MASTER-ROADMAP.md](MASTER-ROADMAP.md):
-- **Reference Data:** `AdministrativeUnit` (versioned, effective-dated 69 Wilayas / 1,541 communes per ADR-0010).
-- **HR Separation:** `Employee` (linked optionally to `Party` + optionally to `User` per ADR-0009).
-- **Contracts & Finance:** `SaleContract`, `ContractMilestone`, `PaymentReceipt`, `TreasuryAccount`, `CashBankTransaction`, `Refund`.
-- **Construction & Procurement:** `ProjectLot`, `Subcontractor`, `WorkOrder`, `WorkProgressSituation` (*attachement / décompte*), `PurchaseOrder`, `StockItem`, `StockMovement`.
-- **SCF Accounting:** `FiscalPeriod`, `ScfAccount`, `ScfJournal`, `JournalEntry`, `JournalEntryLine` (balanced `Debit == Credit` in DZD `numeric(18,2)`).
+### 5.3 Planned Cross-Module Financial & Operational Flow Entities (Modules F, G, H, J)
+- **Sales & Commitments:** `ContractVersion` (immutable amendments/addenda), `ContractPartyRole` (co-buyers, representatives, shares), `PaymentObligation / Installment` (immutable schedule tranches in DZD `numeric(18,2)`).
+- **Execution & Collections:** `ConstructionMilestoneEvidence` (submitted/reviewed/accepted progress proof driving VSP due events — never overwritten via raw %), `PaymentReceipt` (explicit promoter cash/bank receipt separate from FGCMPI escrow), `PaymentAllocation` (allocating receipts to specific obligations), `RefundOrReversal` (non-destructive cancellations, retentions, bounced check reversals).
+- **Fiscal & SCF Ledger:** `TaxEvent` (explicit collection-based VAT trigger, legal basis, effective date, 9%/19% rate metadata — never hardcoded without CPA sign-off), `FiscalPeriod`, `ScfAccount`, `ScfJournal`, `ScfJournalEntry` + `ScfJournalEntryLine` (immutable double-entry balanced postings referencing project, unit, contract, and party; adjustments via explicit reversal entries *extourne*).

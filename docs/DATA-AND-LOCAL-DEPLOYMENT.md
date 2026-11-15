@@ -23,8 +23,8 @@ PROMO GEST enforces a strict **3-role database separation**:
 
 - **Root Path:** Configured via `Storage:RootDirectory` (Linux template: `/var/lib/promogest/storage`; Windows template: `C:\PromoGest\storage`).
 - **Path Traversal Defense:** Relative storage paths are server-generated (`projects/{projectId}/...`) and validated against root canonical path before I/O.
-- **Cryptographic Verification:** SHA-256 digest computed on upload, persisted in `project_documents.sha256_checksum`, and re-verified on download to detect disk corruption or tampering.
-- **Upload Guardrails:** Whitelisted extensions/MIME types (`pdf`, `png`, `jpg`, `jpeg`, `docx`, `xlsx`) and 25 MB per-file cap enforced server-side.
+- **Cryptographic Verification:** SHA-256 digest computed on upload, persisted in `stored_files.sha256_checksum`, and re-verified on download to detect disk corruption or tampering.
+- **Upload Guardrails:** Whitelisted extensions/MIME types (`pdf`, `png`, `jpg`, `jpeg`, `webp`, `doc`, `docx`, `xls`, `xlsx`, `txt`, `csv`) and magic-byte/archive validation with a 25 MB per-file cap enforced server-side.
 
 ---
 
@@ -61,7 +61,7 @@ ASP.NET Core Data Protection secures Antiforgery/CSRF tokens and server-side pro
 ## 5. Backup, Restore & Disaster Recovery Drills
 
 - **Backup Scripts (`scripts/backup-promogest.sh`, `backup-promogest.ps1`):** Captures consistent PostgreSQL custom dump (`pg_dump -Fc`) + local document storage directory + manifest checksums.
-- **Restore & Verification (`scripts/verify-backup-restore.sh`, `restore-promogest.ps1`):** Creates/targets an isolated verification database, restores dump via `pg_restore`, validates table row counts and `project_documents` SHA-256 digests against storage files.
+- **Restore & Verification (`scripts/verify-backup-restore.sh`, `restore-promogest.ps1`):** Creates/targets an isolated verification database, restores dump via `pg_restore`, validates table row counts and `stored_files` SHA-256 digests against storage files.
 - **Offline Boundary (`apps/local-web/public/sw.js` & [OFFLINE-OPERATION.md](OFFLINE-OPERATION.md)):**
   - Service worker caches **only static UI shell assets** (`/`, `/index.html`, `/manifest.webmanifest`, local fonts/icons).
   - `/api/*` and `/health/*` requests are **never cached offline** (`network-only`).

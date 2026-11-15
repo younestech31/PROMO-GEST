@@ -104,6 +104,17 @@ export function updateProjectInStore(
   project: ProjectDto,
   request: UpdateProjectRequest
 ): ProjectDto {
+  if (
+    !request.expectedConcurrencyStamp ||
+    request.expectedConcurrencyStamp !== project.concurrencyStamp
+  ) {
+    throw new DevPreviewStoreError(
+      409,
+      'PROJECT_CONCURRENCY_CONFLICT',
+      'This project changed after it was loaded. Reload the latest project data and review your changes before saving.'
+    );
+  }
+
   const { ar, fr } = normalizeRequiredText(
     request.nameAr,
     request.nameFr,
@@ -154,6 +165,7 @@ export function updateProjectInStore(
   project.estimatedBudgetDzd = estimatedBudgetDzd;
   project.plannedBlocksCount = plannedBlocksCount;
   project.plannedUnitsCount = plannedUnitsCount;
+  project.concurrencyStamp = crypto.randomUUID();
   return project;
 }
 

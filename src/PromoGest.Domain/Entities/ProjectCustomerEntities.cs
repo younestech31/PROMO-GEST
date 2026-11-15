@@ -13,6 +13,8 @@ public sealed class ProjectCustomer : BaseEntity
     private ProjectCustomer() { }
 
     public Guid ProjectId { get; private set; }
+    public Guid PartyId { get; private set; }
+    public Party Party { get; private set; } = null!;
     public CustomerType CustomerType { get; private set; }
     public string DisplayName { get; private set; } = string.Empty;
     public string NormalizedDisplayName { get; private set; } = string.Empty;
@@ -42,7 +44,8 @@ public sealed class ProjectCustomer : BaseEntity
         CustomerSource source,
         Guid? identityDocumentStoredFileId,
         Guid createdByUserId,
-        DateTimeOffset nowUtc)
+        DateTimeOffset nowUtc,
+        Guid? partyId = null)
     {
         if (projectId == Guid.Empty || createdByUserId == Guid.Empty)
             throw new DomainException("CUSTOMER_REFERENCE_INVALID", "A valid project and creator are required.");
@@ -50,10 +53,16 @@ public sealed class ProjectCustomer : BaseEntity
         var normalized = NormalizeAndValidate(
             customerType, displayName, contactPerson, phone, email, address, preferredLanguage, source);
 
+        var customerId = Guid.NewGuid();
+        var resolvedPartyId = partyId ?? customerId;
+        if (resolvedPartyId == Guid.Empty)
+            throw new DomainException("CUSTOMER_PARTY_REFERENCE_INVALID", "A valid party reference is required.");
+
         return new ProjectCustomer
         {
-            Id = Guid.NewGuid(),
+            Id = customerId,
             ProjectId = projectId,
+            PartyId = resolvedPartyId,
             CustomerType = customerType,
             DisplayName = normalized.DisplayName,
             NormalizedDisplayName = normalized.NormalizedDisplayName,
@@ -71,6 +80,14 @@ public sealed class ProjectCustomer : BaseEntity
             CreatedAtUtc = nowUtc,
             UpdatedAtUtc = nowUtc
         };
+    }
+
+    public void AttachParty(Party party)
+    {
+        ArgumentNullException.ThrowIfNull(party);
+        if (party.Id != PartyId)
+            throw new DomainException("CUSTOMER_PARTY_REFERENCE_INVALID", "The party identifier does not match this customer relationship.");
+        Party = party;
     }
 
     public void UpdateDetails(

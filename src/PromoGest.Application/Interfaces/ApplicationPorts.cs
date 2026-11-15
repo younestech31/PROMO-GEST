@@ -146,6 +146,7 @@ public interface IPartyRepository
     Task<Party?> GetByIdAsync(Guid partyId, CancellationToken ct = default);
     Task<IReadOnlyList<Party>> SearchDirectoryAsync(string normalizedPrefix, int limit, CancellationToken ct = default);
     Task AddAsync(Party party, CancellationToken ct = default);
+    Task SaveChangesAsync(CancellationToken ct = default);
 }
 
 public interface IProjectCustomerRepository

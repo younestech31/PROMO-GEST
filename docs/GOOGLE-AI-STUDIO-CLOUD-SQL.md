@@ -51,6 +51,27 @@ On Linux Development only, when no local Data Protection certificate is configur
 
 The database persists in Cloud SQL, but uploaded file bytes continue to use the existing local `LocalFileStorageService`. They are not stored in Cloud SQL and may be lost when the AI Studio container is recycled. Do not use real customer, employee, property, contract, or financial records.
 
+
+## Troubleshooting a real API request failure
+
+The frontend is served by Vite in AI Studio, but when `ASPNETCORE_URL` is configured the Vite server proxies `/api` and `/health` to the real ASP.NET Core process. The presence of a Vite `/src/...` script URL does not mean API requests are handled by the in-memory Vite simulator.
+
+- A non-JSON `403` from Google Frontend is a preview-host/proxy response, not necessarily an ASP.NET Core authorization or CSRF decision. The frontend currently retries a mutating non-JSON `403` once after refreshing the CSRF token.
+- A subsequent JSON `500` with the API security headers means the request reached the ASP.NET Core pipeline. `ExceptionHandlingMiddleware` writes the exception stack to the backend log and returns only a generic `INTERNAL_ERROR` response. The response body alone cannot identify the root cause.
+- When running `npm run dev:cloudsql`, the API process writes stdout/stderr to a temporary `/tmp/promogest-cloudsql-api.*.log` file. While the runner is still active, find and inspect the newest file from a second terminal:
+
+  ```bash
+  LOG_FILE="$(ls -t /tmp/promogest-cloudsql-api.*.log 2>/dev/null | head -n 1)"
+  test -n "$LOG_FILE" && tail -n 160 "$LOG_FILE"
+  ```
+
+- When using `npm run dev` with `scripts/dev-with-local-api.sh`, inspect `/tmp/promogest-api-dev.log` instead.
+- Correlate the backend entry with the request timestamp and the `traceparent` trace ID returned by the API. Look for `Unhandled exception while processing POST /api/projects/.../customers`.
+- Verify that the browser sends the `promogest_session` cookie (or the in-memory preview bearer header when using the Vite-only demo). Check `GET /api/auth/me` in the same browser session. Do not paste session cookies, bearer tokens, CSRF tokens, passwords, or real customer data into issue reports.
+- `GET /health/ready` confirms database connectivity and basic initialization only; it does not check EF migration status. The `dev:cloudsql` runner must complete its `--migrate` step using the separate `SQL_ADMIN_USER` identity before the API is considered schema-ready.
+
+Do not fix this failure by disabling CSRF, weakening authentication, exposing the API publicly, or granting broad database privileges. Identify the server exception first.
+
 ## Production boundary
 
 - Production keeps the organization's local PostgreSQL 18 connection string.

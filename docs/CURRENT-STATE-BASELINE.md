@@ -55,6 +55,19 @@ Phase 0 remains `IN_PROGRESS`, but its main-code CI and C2 synchronization gates
 - The Vite-only simulator still lacks parity for Party, Customers, Reservations and Documents, does not model all 18 permissions, and retains a setup Wilaya validation range of 01–58. These are preview limitations; they must not be mistaken for production API behavior.
 - Production builds serve the static React bundle from ASP.NET Core and do not bundle the Vite development middleware.
 
+## 5. AI Studio Runtime Incident — 15 November 2026
+
+A browser HAR captured a same-origin customer-create request at **13:48:49 UTC**:
+- First `POST /api/projects/{projectId}/customers`: `403`, `text/html`, returned by Google Frontend.
+- The client code retries one non-JSON `403` for a mutating request after obtaining a fresh CSRF token. This explains the second POST; it is a retry, not a separate user submission.
+- Retry: `500`, `application/json`, with the API security headers. This reached the ASP.NET Core response pipeline and was handled by `ExceptionHandlingMiddleware` as a generic internal error.
+- The HAR did not record a `Cookie` request header or an `Authorization` header on either POST. Because `ProjectCustomersController` is `[Authorize]`, this must be checked against the browser cookie store and `GET /api/auth/me`; the HAR alone does not establish whether authentication was actually absent or simply omitted by the export.
+- The second response includes a `traceparent` correlation value. The application logs the exception and request path as `Unhandled exception while processing POST .../customers`, but the HAR does not contain the server stack trace.
+
+**Disposition:** Root cause is **NOT YET IDENTIFIED**. Do not disable CSRF, remove `[Authorize]`, or broaden PostgreSQL permissions as a speculative workaround. Obtain the matching ASP.NET Core exception log before changing application code or database grants.
+
+The `GET /health/ready` endpoint only checks `Database.CanConnectAsync` and whether `organization_settings` is initialized. It does **not** verify that EF Core migrations are current. Therefore `databaseConnected: true` and `isInitialized: true` do not prove that the `parties` and current `project_customers` schema is present.
+
 ## 5. Other Recorded Findings
 
 - `OrganizationProfileView.tsx` remains read-only; `PUT /api/organization` is not present.

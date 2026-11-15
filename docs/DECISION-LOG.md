@@ -1,7 +1,7 @@
 # PROMO GEST — Consolidated Decision Log & Architecture Decision Records (ADRs)
 
 **Document Role:** Single repository of architectural, design, and governance decisions for PROMO GEST.  
-**Audit Evidence Anchor:** Last application-code change `6bbd97f70ed0fb63cf226a1117cf6e83c359d2be` (PR #44); main SHA inspected for the PR #46 record `5415f0e668a55f902ac2802e1669af58ad7ec410`; latest green CI at that audit point #531 / `43752672569` (all three jobs passed). D-004 and D-005 are historical evidence records; later documentation-only commits do not change the application-code baseline.
+**Current Audit Evidence Anchor:** Latest source change PR #48; merged main SHA `23f019de7c787c0f93b5b7f0b5cec69992ff087a`; latest green CI Run #539 / `43763807711` (all three jobs passed). D-004 and D-005 remain historical evidence records.
 
 ---
 
@@ -22,7 +22,7 @@
 
 ---
 
-## 2. Key Architectural Decisions (`D-001` to `D-004`)
+## 2. Key Architectural Decisions (`D-001` to `D-006`)
 
 ### `D-001`: Party vs ProjectCustomer Separation & Resolution
 - **Decision:** The organization-wide `parties` table is the canonical source of truth for counterparty identity (`id`, `party_kind`, `display_name`). Project-scoped `project_customers` maintain relationship-specific contact, status, source and document data linked to a Party. Until the Phase 1 retirement migration is applied, the duplicated display-name/type fields are transitional mirrors: every canonical identity change synchronizes all linked customer mirrors and advances their concurrency stamps. Duplicate detection considers both canonical and legacy mirror names; a change is rejected if it would collide with a different Party in any linked project. Retire the mirrors only through a reviewed EF migration with backfill, uniqueness checks and rollback tests. Fuzzy auto-merging remains rejected in favor of human-approved manual Party merge workflows.
@@ -36,11 +36,18 @@
 ### `D-004`: Baseline Commit & CI Record (`c890ba05...` & Run #495)
 - **Decision:** The latest audited source baseline is `c890ba05e83831fb965d855d1e7c2d7ab1d8a643`, merged through PR #38. GitHub Actions Run #495 (`43720679970`) passed all three jobs: Frontend (24/24 tests), .NET/PG18 (27 Domain, 14 Application, 9 Integration tests), and Windows publish/PowerShell validation. The former `CS7036` blocker is resolved by PR #35; PRs #36–#38 close Party audit, authorization, mirror-sync and identity-collision defects. Manual preview/browser validation and Phase 1 work remain open.
 
-### `D-005`: Main Snapshot & Post-Merge CI Record (PR #46 / Run #531)
-- **Decision:** The `main` commit recorded for this audit was `5415f0e668a55f902ac2802e1669af58ad7ec410`. PR #46 was a documentation-only change that adds the source-audited UI implementation/gap matrix and synchronizes the baseline, roadmap, module catalog, navigation proposal, traceability, quality and security guidance. It does not change application code, API contracts, database schema, migrations, business data, credentials, or security policy.
-- **Source baseline:** The last application-code change remains `6bbd97f70ed0fb63cf226a1117cf6e83c359d2be` (PR #44). PR #45 and PR #46 changed documentation only.
-- **Verification:** GitHub Actions Run #531 (`43752672569`) ran on the merged `main` SHA and all three jobs passed: Frontend (**38/38** tests), .NET 10 / PostgreSQL 18 (Domain **27/27**, Application **14/14**, Integration **9/9**, plus restore checks), and Windows publish/PowerShell validation.
-- **Remaining acceptance:** Phase 0 remains `IN_PROGRESS`. Manual Arabic RTL / French LTR browser review and focused real-API workflow acceptance (CRUD, persistence/reload, cookie/CSRF and authorization boundaries) are not proven by this CI run.
+### `D-005`: Historical Main Snapshot & CI Record (PR #46 / Run #531)
+- **Decision:** The `main` commit recorded for that earlier audit was `5415f0e668a55f902ac2802e1669af58ad7ec410`. PR #46 was a documentation-only change that added the source-audited UI implementation/gap matrix and synchronized baseline, roadmap, module catalog, navigation proposal, traceability, quality and security guidance. It did not change application code, API contracts, database schema, migrations, business data, credentials, or security policy.
+- **Source baseline at that time:** The application-code baseline was `6bbd97f70ed0fb63cf226a1117cf6e83c359d2be` (PR #44). PR #45 and PR #46 changed documentation only.
+- **Verification at that time:** GitHub Actions Run #531 (`43752672569`) ran on main SHA `5415f0e...` and all three jobs passed: Frontend (**38/38** tests), .NET 10 / PostgreSQL 18 (Domain **27/27**, Application **14/14**, Integration **9/9**, plus restore checks), and Windows publish/PowerShell validation.
+- **Remaining acceptance:** Phase 0 remained `IN_PROGRESS`. Manual Arabic RTL / French LTR browser review and focused real-API workflow acceptance (CRUD, persistence/reload, cookie/CSRF and authorization boundaries) were not proven by that CI run.
+
+### `D-006`: Do Not Store API or Health Responses in HTTP Caches (PR #48 / Run #539)
+- **Decision:** `SecurityHeadersMiddleware` assigns `Cache-Control: no-store` to every request whose path belongs to `/api` or `/health`, case-insensitively. The rule applies centrally so it does not depend on individual frontend calls remembering to set Fetch `cache: 'no-store'`.
+- **Boundary:** Static SPA routes (`/`, `/index.html`), hashed `/assets/*`, and `/manifest.webmanifest` are excluded. Existing Service Worker rules still bypass API and health requests; they are a separate protection layer and are not changed by this decision.
+- **Rationale:** Authenticated API responses may contain session, customer, project, or operational data. A Service Worker bypass does not control the browser's ordinary HTTP cache, and selective frontend fetch options do not reliably cover all API calls.
+- **Regression coverage:** `SecurityHeadersMiddlewareTests.cs` covers API/health paths including unknown endpoints, uppercase prefixes, static shell/assets, and near-miss routes (`/apiary`, `/healthcare`). The policy does not alter cookies, CSRF, permissions, persistence, database schema, migrations, or cloud/local deployment boundaries.
+- **Verification:** PR #48 (`73b3afbe748619c73489dc6f7f736a70d3607567`) passed all three PR CI jobs in Run #538 (`43763596953`). Squash merge `23f019de7c787c0f93b5b7f0b5cec69992ff087a` was verified by post-merge Run #539 (`43763807711`), with all three jobs successful.
 
 ---
 

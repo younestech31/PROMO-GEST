@@ -316,6 +316,18 @@ export const apiClient = {
   downloadProjectDocument: (projectId: string, fileId: string) =>
     requestBlob(`/api/projects/${encodeURIComponent(projectId)}/documents/${encodeURIComponent(fileId)}/download`),
 
+  searchPartyDirectory: (query: string) =>
+    requestJson<PartyDirectoryItemDto[]>(`/api/parties?query=${encodeURIComponent(query)}`, {
+      method: 'GET',
+      cache: 'no-store',
+    }),
+
+  updatePartyIdentity: (partyId: string, payload: UpdatePartyIdentityRequest) =>
+    requestJson<PartyDirectoryItemDto>(`/api/parties/${encodeURIComponent(partyId)}`, {
+      method: 'PUT',
+      body: JSON.stringify(payload),
+    }),
+
   listProjectCustomers: (projectId: string) =>
     requestJson<ProjectCustomerListItemDto[]>(`/api/projects/${encodeURIComponent(projectId)}/customers`, {
       method: 'GET',

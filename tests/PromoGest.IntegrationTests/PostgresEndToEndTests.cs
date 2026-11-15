@@ -1110,7 +1110,6 @@ public sealed class PostgresEndToEndTests : IClassFixture<PostgreSql18Integratio
             Assert.Equal("LegalEntity", updatedCustomer.CustomerType);
             Assert.Equal(createdCustomer.PartyId, updatedCustomer.PartyId);
             Assert.NotEqual(staleCustomerStamp, updatedCustomer.ConcurrencyStamp);
-            Assert.NotEqual(sharedPartyCustomerInitialStamp, sharedPartyCustomer.ConcurrencyStamp);
 
             using (var partyScope = factory.Services.CreateScope())
             {
@@ -1129,6 +1128,9 @@ public sealed class PostgresEndToEndTests : IClassFixture<PostgreSql18Integratio
                     Assert.Equal("SARL ليلى بن عيسى المحدثة".ToUpperInvariant(), customer.NormalizedDisplayName);
                     Assert.Equal(CustomerType.LegalEntity, customer.CustomerType);
                 });
+                Assert.NotEqual(
+                    sharedPartyCustomerInitialStamp,
+                    linkedCustomers.Single(customer => customer.Id == sharedPartyCustomer.Id).ConcurrencyStamp);
             }
 
             var staleUpdateResponse = await adminClient.PutAsJsonAsync(

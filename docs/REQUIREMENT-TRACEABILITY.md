@@ -1,6 +1,6 @@
 # PROMO GEST — Requirement Traceability Matrix
 
-**Document Role:** End-to-end engineering traceability table linking every PROMO GEST requirement (Domains **A–L** + Operations) to its domain entity, application service, API route, UI screen, authorization rule, tests, release gates, and verified `Current State` at last code-changing source commit `6bbd97f70ed0fb63cf226a1117cf6e83c359d2be`, re-run by latest main CI #531 (`43752672569`). Main commit inspected at audit start: `5415f0e668a55f902ac2802e1669af58ad7ec410`.  
+**Document Role:** End-to-end engineering traceability table linking every PROMO GEST requirement (Domains **A–L** + Operations) to its domain entity, application service, API route, UI screen, authorization rule, tests, release gates, and verified `Current State` at last code-changing source commit `6bbd97f70ed0fb63cf226a1117cf6e83c359d2be`, re-run by main CI #531 at audit start (`43752672569`). Main commit inspected at audit start: `5415f0e668a55f902ac2802e1669af58ad7ec410`.  
 **Status Legend (Strict 6-State Taxonomy):**  
 - `IMPLEMENTED_AND_VERIFIED`: Code exists AND passed automated verification in the audited repository baseline.  
 - `IMPLEMENTED_NOT_VERIFIED`: Code exists in workspace, but automated build/integration/E2E verification failed or could not run.  

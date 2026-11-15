@@ -1,7 +1,7 @@
 # PROMO GEST — Consolidated Decision Log & Architecture Decision Records (ADRs)
 
 **Document Role:** Single repository of architectural, design, and governance decisions for PROMO GEST.  
-**Current Evidence Anchor:** Last application-code change `6bbd97f70ed0fb63cf226a1117cf6e83c359d2be` (PR #44); current main documentation commit `5415f0e668a55f902ac2802e1669af58ad7ec410` (PR #46); latest green CI #531 / `43752672569` (all three jobs passed). Historical baseline records below are retained as historical records.
+**Audit Evidence Anchor:** Last application-code change `6bbd97f70ed0fb63cf226a1117cf6e83c359d2be` (PR #44); main SHA inspected for the PR #46 record `5415f0e668a55f902ac2802e1669af58ad7ec410`; latest green CI at that audit point #531 / `43752672569` (all three jobs passed). D-004 and D-005 are historical evidence records; later documentation-only commits do not change the application-code baseline.
 
 ---
 
@@ -36,8 +36,8 @@
 ### `D-004`: Baseline Commit & CI Record (`c890ba05...` & Run #495)
 - **Decision:** The latest audited source baseline is `c890ba05e83831fb965d855d1e7c2d7ab1d8a643`, merged through PR #38. GitHub Actions Run #495 (`43720679970`) passed all three jobs: Frontend (24/24 tests), .NET/PG18 (27 Domain, 14 Application, 9 Integration tests), and Windows publish/PowerShell validation. The former `CS7036` blocker is resolved by PR #35; PRs #36–#38 close Party audit, authorization, mirror-sync and identity-collision defects. Manual preview/browser validation and Phase 1 work remain open.
 
-### `D-005`: Current Main Snapshot & Post-Merge CI Record (PR #46 / Run #531)
-- **Decision:** The current `main` commit is `5415f0e668a55f902ac2802e1669af58ad7ec410`. PR #46 is a documentation-only change that adds the source-audited UI implementation/gap matrix and synchronizes the baseline, roadmap, module catalog, navigation proposal, traceability, quality and security guidance. It does not change application code, API contracts, database schema, migrations, business data, credentials, or security policy.
+### `D-005`: Main Snapshot & Post-Merge CI Record (PR #46 / Run #531)
+- **Decision:** The `main` commit recorded for this audit was `5415f0e668a55f902ac2802e1669af58ad7ec410`. PR #46 was a documentation-only change that adds the source-audited UI implementation/gap matrix and synchronizes the baseline, roadmap, module catalog, navigation proposal, traceability, quality and security guidance. It does not change application code, API contracts, database schema, migrations, business data, credentials, or security policy.
 - **Source baseline:** The last application-code change remains `6bbd97f70ed0fb63cf226a1117cf6e83c359d2be` (PR #44). PR #45 and PR #46 changed documentation only.
 - **Verification:** GitHub Actions Run #531 (`43752672569`) ran on the merged `main` SHA and all three jobs passed: Frontend (**38/38** tests), .NET 10 / PostgreSQL 18 (Domain **27/27**, Application **14/14**, Integration **9/9**, plus restore checks), and Windows publish/PowerShell validation.
 - **Remaining acceptance:** Phase 0 remains `IN_PROGRESS`. Manual Arabic RTL / French LTR browser review and focused real-API workflow acceptance (CRUD, persistence/reload, cookie/CSRF and authorization boundaries) are not proven by this CI run.

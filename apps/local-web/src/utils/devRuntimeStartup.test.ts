@@ -9,7 +9,7 @@ const readSource = (path: string) => readFileSync(new URL(path, import.meta.url)
 const launcherPath = new URL('../../../../scripts/dev-with-local-api.sh', import.meta.url);
 const launcher = readFileSync(launcherPath, 'utf8');
 const rootVite = readSource('../../../../vite.config.ts');
-const appVite = readSource('../../../vite.config.ts');
+const appVite = readSource('../../vite.config.ts');
 
 test('development launcher has valid Bash syntax', () => {
   const result = spawnSync('bash', ['-n', fileURLToPath(launcherPath)], {

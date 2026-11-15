@@ -3,8 +3,8 @@
 All 12 functional ERP domains required by PROMO GEST, mapped strictly using the 6-state taxonomy against actual inspected code, controllers, EF configurations, and tests.
 
 **Last Code-Changing Source Baseline:** `6bbd97f70ed0fb63cf226a1117cf6e83c359d2be` (PR #44 merge).  
-**Current Main Documentation Snapshot:** `4d025ca19a7711df1d4df327b05ee4846cac3267` (PR #45).  
-**Latest Green CI:** Run **#529** / `43746793430` — frontend, .NET/PostgreSQL 18, and Windows jobs all passed.  
+**Main Commit Inspected at Audit Start:** `5415f0e668a55f902ac2802e1669af58ad7ec410` (PR #46).  
+**Latest Green CI at Audit Start:** Run **#531** / `43752672569` — frontend, .NET/PostgreSQL 18, and Windows jobs all passed.  
 **Live Preview Evidence:** On 15 November 2026, the product owner confirmed that the real Google AI Studio development server/API was operating and that the previously failing project customer/prospect and reservation pages no longer displayed the reported generic internal error after PR #44. This is a targeted page-level smoke check; it does not certify every CRUD path or the manual Arabic RTL/French LTR review.
 
 ---
@@ -57,7 +57,7 @@ All 12 functional ERP domains required by PROMO GEST, mapped strictly using the 
 - **Frontend surface:** `ProjectCustomerRegistryModal.tsx` supports project customer registry, canonical Party search/selection, customer details, CRM interactions/follow-up fields, and linked identity-document download. A full lead pipeline, standalone Party directory, and broader contact/representative management are not present.
 - **Current Reality:**
   - *Project Customer Registry (C1):* `GET/POST /api/projects/{id}/customers`, `GET/PUT .../customers/{customerId}`, `POST .../customers/{customerId}/interactions`.
-  - *Party Directory (C2, PRs #35–#38):* `GET /api/parties`, `PUT /api/parties/{partyId}`; canonical `parties` identity remains authoritative. Unauthorized reads/identity changes are security-audited; `previousKind` is captured correctly; updates synchronize every linked `project_customers` identity mirror, advance relationship concurrency stamps, and reject duplicate name/phone collisions before mutation. Application and PostgreSQL 18 integration tests pass in CI #529. **The final retirement of redundant relationship identity columns remains Phase 1 migration work.**
+  - *Party Directory (C2, PRs #35–#38):* `GET /api/parties`, `PUT /api/parties/{partyId}`; canonical `parties` identity remains authoritative. Unauthorized reads/identity changes are security-audited; `previousKind` is captured correctly; updates synchronize every linked `project_customers` identity mirror, advance relationship concurrency stamps, and reject duplicate name/phone collisions before mutation. Application and PostgreSQL 18 integration tests pass in CI #531. **The final retirement of redundant relationship identity columns remains Phase 1 migration work.**
   - *Employee Master (`PLANNED`):* No `Employee` table yet (`ADR-0009`).
 - **Target Scope (`PLANNED`):** Resolve C2 defects; designate `parties` as sole name/kind master & retire redundant `project_customers` copies cleanly; add `PartyContactPoint`, protected `PartyIdentifier`, `PartyRepresentative`, human-approved manual `Party` merge workflow, Supplier/Subcontractor roles, and `Employee` detached from `User`.
 
@@ -65,7 +65,7 @@ All 12 functional ERP domains required by PROMO GEST, mapped strictly using the 
 - **Frontend surface:** `ProjectSalesReservationsModal.tsx` lists holds, creates them for an available unit and project customer with an expiry, and cancels with a reason. This is an internal hold only; it is not a statutory contract and does not collect money.
 - **Current Reality:** `GET /api/projects/{id}/reservations`, `GET .../reservations/{reservationId}`, `POST .../reservations`, `POST .../reservations/{reservationId}/cancel` (expiry runs automatically on due holds via service/worker; no `/expire` HTTP endpoint). Transitions unit `AvailableForSale -> Reserved` (enforced by partial unique index `ux_project_sales_reservations_active_unit`) and releases `Reserved -> AvailableForSale` on cancel/expiry.
 - **Explicit Legal Boundary:** `ProjectSalesReservation` is strictly an **Internal Unit Hold**, **NOT** a Law 11-04 statutory reservation contract, and collects **zero** promoter treasury cash today.
-- **Verification:** PostgreSQL 18 E2E covers create/read/list, active-hold uniqueness, cancellation and unit release, concurrent reservation race (one winner), and expiry processing. CI #529 executes the integration suite successfully. The Vite-only preview simulator still lacks `/reservations`; that is a development-preview limitation, not the production ASP.NET Core API.
+- **Verification:** PostgreSQL 18 E2E covers create/read/list, active-hold uniqueness, cancellation and unit release, concurrent reservation race (one winner), and expiry processing. CI #531 executes the integration suite successfully. The Vite-only preview simulator still lacks `/reservations`; that is a development-preview limitation, not the production ASP.NET Core API.
 
 ### F. Contracts, Commitments & Legal Deeds (`PLANNED`)
 **Prerequisite:** Phase 0 + Phase 1 + **K-Min** Document Capabilities + **Qualified Algerian Legal/Notarial Sign-Off**.
@@ -97,7 +97,7 @@ Promoter commitments must strictly distinguish **four separate record types** (n
 - **Frontend surface:** `ProjectDocumentsModal.tsx` supports project-file upload, category/description, list, and download. Metadata editing, soft archive, structured business-entity links, retention, and K-Full remain unimplemented.
 Resolves the former catalog vs roadmap dependency conflict by splitting Module K cleanly into **two explicit tiers**:
 1. **`K-Min` (Required Before Phase 2 — Contracts & Chantier):**
-   - **Current Reality (`IMPLEMENTED_NOT_VERIFIED` for full user-facing workflow):** `stored_files` (`GET/POST /api/projects/{id}/documents`, `GET .../download`), `LocalFileStorageService`, SHA-256 verification on upload/download, whitelist (`pdf`, images, Office docs, txt/csv, max 25 MB). PostgreSQL 18 E2E exercises upload, list, download, checksum and invalid file rejection in green CI #529; manual browser UX and metadata/archive/link extensions remain outstanding.
+   - **Current Reality (`IMPLEMENTED_NOT_VERIFIED` for full user-facing workflow):** `stored_files` (`GET/POST /api/projects/{id}/documents`, `GET .../download`), `LocalFileStorageService`, SHA-256 verification on upload/download, whitelist (`pdf`, images, Office docs, txt/csv, max 25 MB). PostgreSQL 18 E2E exercises upload, list, download, checksum and invalid file rejection in green CI #531; manual browser UX and metadata/archive/link extensions remain outstanding.
    - **Required Additions before Phase 2:** Add metadata update/soft-archive lifecycle + explicit structured attachment links (`DocumentLink` / FK references) binding SHA-256 `StoredFile` records to `ProjectSalesReservation`, Legal Contracts (`StatutoryReservation`, `VSP`, `FinalSaleDeed`), `ContractVersion`, `ConstructionMilestoneEvidence`, `PaymentReceipt`, and authorized `Party` KYC files with strict permission isolation.
 2. **`K-Full` (Scheduled in Phase 5):**
    - Full cross-enterprise attachment links across Procurement, Inventory, HR, and SCF vouchers; retention policies; legal hold tags; cold-storage reconciliation & bulk export bundles.

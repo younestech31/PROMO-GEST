@@ -22,3 +22,5 @@ The demo workspace contains:
 ## Testing the real installation
 
 To validate the actual first-run installation, authentication, persistence, and data changes, run the published/local ASP.NET Core API with PostgreSQL 18 and serve the built SPA from that API. The Vite demo workspace is only a UI-preview aid and is not a substitute for that production-like test.
+
+For the remaining Phase 0 workflow checks, use [PHASE-0-MANUAL-ACCEPTANCE.md](PHASE-0-MANUAL-ACCEPTANCE.md). Use the real API mode for persistence and authorization tests; the checklist explicitly keeps all unexecuted cases marked `NOT_RUN`.

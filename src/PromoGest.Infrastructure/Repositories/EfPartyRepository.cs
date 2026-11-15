@@ -35,8 +35,10 @@ public sealed class EfPartyRepository : IPartyRepository
             .ToListAsync(ct);
     }
 
-    public Task AddAsync(Party party, CancellationToken ct = default)
-        => _dbContext.Parties.AddAsync(party, ct).AsTask();
+    public async Task AddAsync(Party party, CancellationToken ct = default)
+    {
+        await _dbContext.Parties.AddAsync(party, ct);
+    }
 
     public Task SaveChangesAsync(CancellationToken ct = default)
         => _dbContext.SaveChangesAsync(ct);

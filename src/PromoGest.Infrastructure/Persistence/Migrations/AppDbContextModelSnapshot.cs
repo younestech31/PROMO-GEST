@@ -772,6 +772,10 @@ namespace PromoGest.Infrastructure.Persistence.Migrations
                     b.HasIndex("PartyId")
                         .HasDatabaseName("ix_project_customers_party_id");
 
+                    b.HasIndex("ProjectId", "PartyId")
+                        .IsUnique()
+                        .HasDatabaseName("ux_project_customers_project_party");
+
                     b.HasIndex("ProjectId", "Status")
                         .HasDatabaseName("ix_project_customers_project_status");
 

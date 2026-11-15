@@ -33,6 +33,7 @@ public sealed record CustomerInteractionDto(
 public sealed record ProjectCustomerDto(
     Guid Id,
     Guid PartyId,
+    Guid PartyConcurrencyStamp,
     Guid ProjectId,
     string CustomerType,
     string DisplayName,
@@ -64,7 +65,13 @@ public sealed record CreateProjectCustomerRequest(
 public sealed record PartyDirectoryItemDto(
     Guid Id,
     string Kind,
-    string DisplayName);
+    string DisplayName,
+    Guid ConcurrencyStamp);
+
+public sealed record UpdatePartyIdentityRequest(
+    string Kind,
+    string DisplayName,
+    Guid ConcurrencyStamp);
 
 public sealed record UpdateProjectCustomerRequest(
     string CustomerType,
@@ -77,7 +84,8 @@ public sealed record UpdateProjectCustomerRequest(
     string Source,
     string Status,
     Guid? IdentityDocumentStoredFileId,
-    Guid ConcurrencyStamp);
+    Guid ConcurrencyStamp,
+    Guid PartyConcurrencyStamp);
 
 public sealed record AddCustomerInteractionRequest(
     string Type,

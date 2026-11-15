@@ -46,6 +46,10 @@ public sealed class ProjectCustomerConfiguration : IEntityTypeConfiguration<Proj
 
         builder.HasIndex(x => x.PartyId)
             .HasDatabaseName("ix_project_customers_party_id");
+
+        builder.HasIndex(x => new { x.ProjectId, x.PartyId })
+            .IsUnique()
+            .HasDatabaseName("ux_project_customers_project_party");
         builder.HasIndex(x => new { x.ProjectId, x.NormalizedDisplayName, x.NormalizedPhone })
             .IsUnique()
             .HasDatabaseName("ux_project_customers_project_name_phone");

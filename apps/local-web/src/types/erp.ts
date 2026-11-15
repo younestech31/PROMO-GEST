@@ -215,6 +215,7 @@ export interface CustomerInteractionDto {
 export interface ProjectCustomerDto {
   id: string;
   partyId?: string;
+  partyConcurrencyStamp: string;
   projectId: string;
   customerType: string;
   displayName: string;
@@ -249,11 +250,19 @@ export interface PartyDirectoryItemDto {
   id: string;
   kind: 'Person' | 'LegalEntity' | string;
   displayName: string;
+  concurrencyStamp: string;
+}
+
+export interface UpdatePartyIdentityRequest {
+  kind: 'Person' | 'LegalEntity' | string;
+  displayName: string;
+  concurrencyStamp: string;
 }
 
 export interface UpdateProjectCustomerRequest extends CreateProjectCustomerRequest {
   status: string;
   concurrencyStamp: string;
+  partyConcurrencyStamp: string;
 }
 
 export interface AddCustomerInteractionRequest {

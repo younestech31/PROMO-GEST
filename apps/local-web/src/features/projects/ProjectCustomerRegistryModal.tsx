@@ -1,10 +1,11 @@
 import { useCallback, useEffect, useState, type FormEvent } from 'react';
-import { Download, LoaderCircle, Plus, UserRound, X } from 'lucide-react';
+import { Download, LoaderCircle, Plus, Search, UserRound, X } from 'lucide-react';
 import type {
   AppLanguage,
   CreateProjectCustomerRequest,
   ProjectCustomerDto,
   ProjectCustomerListItemDto,
+  PartyDirectoryItemDto,
   ProjectDocumentDto,
   ProjectDto,
   UpdateProjectCustomerRequest,
@@ -16,10 +17,13 @@ interface ProjectCustomerRegistryModalProps {
   project: ProjectDto;
   language: AppLanguage;
   canManage: boolean;
+  canReadPartyDirectory: boolean;
+  canManagePartyIdentity: boolean;
   onClose: () => void;
 }
 
 interface CustomerFormState {
+  partyId: string;
   customerType: string;
   displayName: string;
   contactPerson: string;
@@ -33,6 +37,7 @@ interface CustomerFormState {
 }
 
 const emptyForm = (language: AppLanguage): CustomerFormState => ({
+  partyId: '',
   customerType: 'Individual',
   displayName: '',
   contactPerson: '',
@@ -97,6 +102,8 @@ export function ProjectCustomerRegistryModal({
   project,
   language,
   canManage,
+  canReadPartyDirectory,
+  canManagePartyIdentity,
   onClose,
 }: ProjectCustomerRegistryModalProps) {
   const isArabic = language === 'ar';
@@ -109,6 +116,10 @@ export function ProjectCustomerRegistryModal({
   const [showForm, setShowForm] = useState(false);
   const [editing, setEditing] = useState(false);
   const [form, setForm] = useState<CustomerFormState>(() => emptyForm(language));
+  const [partyQuery, setPartyQuery] = useState('');
+  const [partyResults, setPartyResults] = useState<PartyDirectoryItemDto[]>([]);
+  const [selectedParty, setSelectedParty] = useState<PartyDirectoryItemDto | null>(null);
+  const [partySearching, setPartySearching] = useState(false);
   const [interactionType, setInteractionType] = useState('Call');
   const [interactionSubject, setInteractionSubject] = useState('');
   const [interactionSummary, setInteractionSummary] = useState('');
@@ -154,6 +165,9 @@ export function ProjectCustomerRegistryModal({
 
   const openNewForm = () => {
     setForm(emptyForm(language));
+    setPartyQuery('');
+    setPartyResults([]);
+    setSelectedParty(null);
     setEditing(false);
     setShowForm(true);
     setError(null);
@@ -161,7 +175,11 @@ export function ProjectCustomerRegistryModal({
 
   const openEditForm = () => {
     if (!details) return;
+    setPartyQuery('');
+    setPartyResults([]);
+    setSelectedParty(null);
     setForm({
+      partyId: details.partyId ?? '',
       customerType: details.customerType,
       displayName: details.displayName,
       contactPerson: details.contactPerson ?? '',
@@ -176,6 +194,42 @@ export function ProjectCustomerRegistryModal({
     setEditing(true);
     setShowForm(true);
     setError(null);
+  };
+
+  const searchPartyDirectory = async () => {
+    const query = partyQuery.trim();
+    if (query.length < 2) {
+      setError(isArabic ? 'أدخل حرفين على الأقل للبحث في دليل الأطراف.' : 'Saisissez au moins deux caractères pour rechercher un tiers.');
+      return;
+    }
+
+    setError(null);
+    setPartySearching(true);
+    try {
+      const results = await apiClient.searchPartyDirectory(query);
+      setPartyResults(results);
+    } catch (err) {
+      setPartyResults([]);
+      setError(errorText(err, language));
+    } finally {
+      setPartySearching(false);
+    }
+  };
+
+  const chooseParty = (party: PartyDirectoryItemDto) => {
+    setSelectedParty(party);
+    setForm((current) => ({
+      ...current,
+      partyId: party.id,
+      customerType: party.kind === 'Person' ? 'Individual' : 'LegalEntity',
+      displayName: party.displayName,
+    }));
+    setPartyResults([]);
+  };
+
+  const clearSelectedParty = () => {
+    setSelectedParty(null);
+    setForm((current) => ({ ...current, partyId: '' }));
   };
 
   const submitCustomer = async (event: FormEvent) => {
@@ -202,10 +256,14 @@ export function ProjectCustomerRegistryModal({
           ...common,
           status: form.status,
           concurrencyStamp: details.concurrencyStamp,
+          partyConcurrencyStamp: details.partyConcurrencyStamp,
         };
         saved = await apiClient.updateProjectCustomer(project.id, details.id, updatePayload);
       } else {
-        const createPayload: CreateProjectCustomerRequest = common;
+        const createPayload: CreateProjectCustomerRequest = {
+          ...common,
+          partyId: form.partyId || null,
+        };
         saved = await apiClient.createProjectCustomer(project.id, createPayload);
       }
 
@@ -356,17 +414,79 @@ export function ProjectCustomerRegistryModal({
                     </button>
                   </div>
 
+                  {!editing && canReadPartyDirectory && (
+                    <section className="space-y-2 rounded border border-slate-200 bg-slate-50 p-3">
+                      <div className="text-xs font-semibold text-slate-800">
+                        {isArabic ? 'إعادة استخدام هوية مسجلة في المؤسسة' : 'Réutiliser une identité du répertoire'}
+                      </div>
+                      {selectedParty ? (
+                        <div className="flex items-center justify-between gap-3 rounded border border-teal-200 bg-white px-3 py-2">
+                          <div className="min-w-0">
+                            <div className="truncate text-xs font-semibold text-slate-900">{selectedParty.displayName}</div>
+                            <div className="text-[10px] text-slate-500">
+                              {selectedParty.kind === 'Person'
+                                ? (isArabic ? 'شخص طبيعي' : 'Personne physique')
+                                : (isArabic ? 'شخص معنوي' : 'Personne morale')}
+                            </div>
+                          </div>
+                          <button type="button" onClick={clearSelectedParty} className="shrink-0 text-xs font-semibold text-rose-700 hover:underline">
+                            {isArabic ? 'إلغاء الربط' : 'Dissocier'}
+                          </button>
+                        </div>
+                      ) : (
+                        <>
+                          <div className="flex gap-2">
+                            <input
+                              className={inputClass}
+                              value={partyQuery}
+                              onChange={(e) => setPartyQuery(e.target.value)}
+                              onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); void searchPartyDirectory(); } }}
+                              maxLength={100}
+                              placeholder={isArabic ? 'ابحث بالاسم القانوني...' : 'Rechercher par nom...'}
+                            />
+                            <button type="button" disabled={partySearching || partyQuery.trim().length < 2} onClick={() => void searchPartyDirectory()} className="inline-flex shrink-0 items-center gap-1 rounded bg-slate-800 px-3 py-2 text-xs font-semibold text-white disabled:opacity-50">
+                              {partySearching ? <LoaderCircle className="h-3.5 w-3.5 animate-spin"/> : <Search className="h-3.5 w-3.5"/>}
+                              {isArabic ? 'بحث' : 'Rechercher'}
+                            </button>
+                          </div>
+                          {partyResults.length > 0 && (
+                            <div className="max-h-36 space-y-1 overflow-y-auto rounded border border-slate-200 bg-white p-1">
+                              {partyResults.map((party) => (
+                                <button key={party.id} type="button" onClick={() => chooseParty(party)} className="flex w-full items-center justify-between gap-2 rounded px-2 py-2 text-start text-xs hover:bg-teal-50">
+                                  <span className="font-medium text-slate-800">{party.displayName}</span>
+                                  <span className="shrink-0 text-[10px] text-slate-500">{party.kind === 'Person' ? (isArabic ? 'شخص' : 'Personne') : (isArabic ? 'مؤسسة' : 'Société')}</span>
+                                </button>
+                              ))}
+                            </div>
+                          )}
+                          <p className="text-[10px] text-slate-500">
+                            {isArabic
+                              ? 'سيتم ربط سجل هذا المشروع بالهوية فقط؛ تبقى بيانات الاتصال والمتابعات خاصة بالمشروع.'
+                              : 'Seule l’identité est partagée ; les coordonnées et suivis restent propres au projet.'}
+                          </p>
+                        </>
+                      )}
+                    </section>
+                  )}
+
+                  {editing && !canManagePartyIdentity && (
+                    <p className="rounded bg-slate-50 px-3 py-2 text-[10px] text-slate-600">
+                      {isArabic
+                        ? 'اسم ونوع الطرف هوية مؤسسية مشتركة؛ تعديلها يتطلب صلاحية إدارة الهوية المركزية.'
+                        : 'Le nom et le type sont une identité partagée ; leur modification exige le droit de gestion centralisée.'}
+                    </p>
+                  )}
                   <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                     <label className={labelClass}>
                       <span>{isArabic ? 'نوع الزبون' : 'Type de client'}</span>
-                      <select className={inputClass} value={form.customerType} onChange={(e) => setForm((current) => ({ ...current, customerType: e.target.value }))}>
+                      <select disabled={editing && !canManagePartyIdentity} className={inputClass} value={form.customerType} onChange={(e) => setForm((current) => ({ ...current, customerType: e.target.value }))}>
                         <option value="Individual">{isArabic ? 'شخص طبيعي' : 'Personne physique'}</option>
                         <option value="LegalEntity">{isArabic ? 'شخص معنوي / مؤسسة' : 'Personne morale / société'}</option>
                       </select>
                     </label>
                     <label className={labelClass}>
                       <span>{isArabic ? 'الاسم الكامل أو التسمية القانونية *' : 'Nom complet ou raison sociale *'}</span>
-                      <input required maxLength={200} className={inputClass} value={form.displayName} onChange={(e) => setForm((current) => ({ ...current, displayName: e.target.value }))} />
+                      <input required maxLength={200} readOnly={(editing && !canManagePartyIdentity) || Boolean(selectedParty)} className={inputClass} value={form.displayName} onChange={(e) => setForm((current) => ({ ...current, displayName: e.target.value }))} />
                     </label>
                     <label className={labelClass}>
                       <span>{isArabic ? 'الشخص المسؤول عن الاتصال' : 'Personne à contacter'}</span>

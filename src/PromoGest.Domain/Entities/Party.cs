@@ -64,7 +64,7 @@ public sealed class Party : BaseEntity
 
         var normalizedDisplayName = Regex.Replace(
             (displayName ?? string.Empty).Normalize(NormalizationForm.FormKC).Trim(),
-            @"\\s+",
+            @"\s+",
             " ");
 
         if (string.IsNullOrWhiteSpace(normalizedDisplayName))

@@ -17,7 +17,7 @@ All 12 functional ERP domains required by PROMO GEST, mapped strictly using the 
 | **B** | Real Estate Projects | `IMPLEMENTED_AND_VERIFIED` | Domain A |
 | **C** | Physical Structure & Property Units | `IMPLEMENTED_AND_VERIFIED` *(no DELETE/bulk; `projects.structure.manage` note)* | Domain B |
 | **D** | Counterparties (Party), Customers & CRM | `PARTIALLY_IMPLEMENTED` *(C1/C2 API flows verified; Phase 1 master-data completion remains)* | Domains A, B |
-| **E** | Commercial Operations & Internal Unit Holds | `IMPLEMENTED_NOT_VERIFIED` | Domains B, C, D |
+| **E** | Commercial Operations & Internal Unit Holds | `IMPLEMENTED_AND_VERIFIED` | Domains B, C, D |
 | **F** | Contracts, Commitments & Legal Deeds | `PLANNED` | Domains C, D, E, **K-Min** |
 | **G** | Installments, Collections & Treasury (DZD) | `PLANNED` | Domains D, F |
 | **H** | Construction Works & Chantier Tracking | `PLANNED` | Domains B, D, **K-Min** |

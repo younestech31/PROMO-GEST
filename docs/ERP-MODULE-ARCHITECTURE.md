@@ -1,5 +1,7 @@
 # PROMO GEST — Enterprise ERP Module Architecture
 
+> **Canonical Reference Notice:** For the complete 12-domain module catalog (A–L) mapped using the strict 6-state taxonomy, see [MODULE-CATALOG.md](MODULE-CATALOG.md) and [MASTER-BLUEPRINT.md](MASTER-BLUEPRINT.md).
+
 **Status:** Accepted product architecture; implementation is staged through the roadmap  
 **Applies to:** The single-organization, local-first PROMO GEST installation
 

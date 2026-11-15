@@ -1,5 +1,7 @@
 # PROMO GEST — Organization-Wide Party & Master-Data Design
 
+> **Canonical Reference Notice:** Subsequent unverified C2 Party endpoints (`PartiesController`, `PartyDirectoryService`, migration #11) exist in the workspace alongside a `CS7036` test compilation error and sync/audit defects; see [CURRENT-STATE-BASELINE.md](CURRENT-STATE-BASELINE.md) and [DECISION-LOG.md](DECISION-LOG.md).
+
 **Status:** initial C1 Party-identity foundation merged into `main` through PR #31; all CI jobs passed. Gate C as a whole remains open.  
 **Baseline reviewed:** `main` at `a33b2eec52d8ab430521699e79b7efa821d2ccad` (15 November 2026).  
 **Scope:** party identity, project relationships, CRM continuity, employee identity and login-account separation.

@@ -1,5 +1,7 @@
 # PROMO GEST — System Architecture
 
+> **Canonical Reference Notice:** For the verified repository baseline, dependency boundaries, and full engineering blueprint, see [MASTER-BLUEPRINT.md](MASTER-BLUEPRINT.md), [SYSTEM-ARCHITECTURE.md](SYSTEM-ARCHITECTURE.md), and [CURRENT-STATE-BASELINE.md](CURRENT-STATE-BASELINE.md).
+
 ## 1. Architectural Identity
 PROMO GEST is a **local-first, self-hosted, multi-user ERP** designed specifically for Algerian real estate development organizations (*promoteurs immobiliers*).
 

@@ -1,5 +1,7 @@
 # PROMO GEST — Product Milestones & Delivery Roadmap
 
+> **Canonical Reference Notice:** For the consolidated dependency-ordered phases, Phase 0 stabilization blockers, and release gates, see [MASTER-ROADMAP.md](MASTER-ROADMAP.md) and [QUALITY-AND-RELEASE-GATES.md](QUALITY-AND-RELEASE-GATES.md).
+
 This is the working delivery sequence for the local-first Algerian real-estate promotion ERP. Milestone status is based on code and automated verification in the repository; a green CI run is not, by itself, proof of production readiness or user acceptance.
 
 ## Product boundaries

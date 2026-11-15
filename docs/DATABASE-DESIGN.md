@@ -1,5 +1,7 @@
 # PROMO GEST — Database Design (PostgreSQL 18)
 
+> **Canonical Reference Notice:** This document stops at migration #10; for the verified 11-migration inventory (`20261115120000_UniqueProjectPartyCustomerLink`), concurrency tokens, and deployment roles, see [DOMAIN-MODEL.md](DOMAIN-MODEL.md), [CURRENT-STATE-BASELINE.md](CURRENT-STATE-BASELINE.md), and [DATA-AND-LOCAL-DEPLOYMENT.md](DATA-AND-LOCAL-DEPLOYMENT.md).
+
 ## 1. Database ownership and trust boundaries
 
 PROMO GEST is a **single-tenant, local-first ERP**. Each organization operates its own PostgreSQL 18 database on its premises. The database is the authoritative source for organization, employee, project, inventory, audit, and (in later milestones) commercial records.

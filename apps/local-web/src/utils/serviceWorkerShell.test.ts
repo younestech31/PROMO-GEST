@@ -106,3 +106,20 @@ test('service worker never intercepts API, health, or non-GET requests', () => {
     assert.equal(intercepted, false, `request must bypass Cache Storage: ${request.method} ${request.url}`);
   }
 });
+
+test('manifest.webmanifest is valid JSON and linked with use-credentials in index.html', () => {
+  const manifestRaw = readFileSync(new URL('../../public/manifest.webmanifest', import.meta.url), 'utf8');
+  const manifest = JSON.parse(manifestRaw) as Record<string, unknown>;
+  assert.equal(manifest.id, '/');
+  assert.equal(manifest.start_url, '/');
+  assert.equal(manifest.scope, '/');
+  assert.equal(manifest.display, 'standalone');
+  assert.equal(typeof manifest.short_name, 'string');
+  assert.ok((manifest.short_name as string).length <= 12);
+
+  const indexHtml = readFileSync(new URL('../../index.html', import.meta.url), 'utf8');
+  assert.match(
+    indexHtml,
+    /<link\s+[^>]*rel="manifest"[^>]*href="\/manifest\.webmanifest"[^>]*crossorigin="use-credentials"[^>]*\/?>/i
+  );
+});

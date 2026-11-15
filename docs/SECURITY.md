@@ -1,5 +1,7 @@
 # PROMO GEST — Security Architecture
 
+> **Canonical Reference Notice:** For the full verified 18-permission × 7-role matrix, `ProjectMember` resource scoping, and C2 audit/permission gaps, see [SECURITY-AND-PERMISSIONS.md](SECURITY-AND-PERMISSIONS.md) and [CURRENT-STATE-BASELINE.md](CURRENT-STATE-BASELINE.md).
+
 ## 1. Single System Administrator Enforcement & Recovery
 PROMO GEST enforces **at most one System Administrator per installation** at three layers:
 1. **PostgreSQL 18 database level**: Partial unique index `ux_users_single_system_admin` on `users (is_system_administrator) WHERE is_system_administrator = true`. Any attempt to insert a second System Administrator fails with PostgreSQL `23505` unique violation.

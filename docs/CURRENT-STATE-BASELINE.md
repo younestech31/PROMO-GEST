@@ -75,8 +75,8 @@ Remaining Phase 0 work is bounded:
 2. **P0-A04 logout acceptance:** verify logout revocation and that reopening a protected route does not restore access. Logout was not explicitly included in the latest owner confirmation and remains `NOT_RUN`.
 3. **Supplementary audit artifacts:** browser/version metadata and sanitized per-case screenshots or redacted API trace evidence were not attached; the owner attestation is recorded, and no unprovided artifacts are claimed.
 4. **Navigation decision:** D-009 records the bounded deferral of project-navigation proposal approval/implementation to the Phase 1 design review; do not start a broad UI redesign.
-4. **Preview separation:** keep the Vite-only in-memory simulator clearly separate from real API evidence; it intentionally lacks full parity.
-5. **Phase 1 boundary:** organization profile editing, structure authorization alignment, retirement of transitional Party mirrors, and the versioned 69-Wilaya / commune reference catalogue remain Phase 1 work. Later legal, collection, SCF, and tax modules retain their practitioner gates.
+5. **Preview separation:** keep the Vite-only in-memory simulator clearly separate from real API evidence; it intentionally lacks full parity.
+6. **Phase 1 boundary:** organization profile editing, structure authorization alignment, retirement of transitional Party mirrors, and the versioned 69-Wilaya / commune reference catalogue remain Phase 1 work. Later legal, collection, SCF, and tax modules retain their practitioner gates.
 
 ## 4. Preview Boundary (Do Not Confuse with Production)
 

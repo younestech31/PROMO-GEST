@@ -3,7 +3,7 @@
 **Document Role:** Single authoritative index & master entry point for the PROMO GEST local-first real estate developer ERP (*promoteur immobilier* — Algeria).  
 **Last Code-Changing Source Commit:** `6bbd97f70ed0fb63cf226a1117cf6e83c359d2be` (PR #44 merge).  
 **Main Commit Inspected at Audit Start:** `5415f0e668a55f902ac2802e1669af58ad7ec410` (PR #46).  
-**Latest Green CI:** GitHub Actions Run #531 / `43752672569` on current main; all three jobs passed.  
+**Latest Green CI at Audit Start:** GitHub Actions Run #531 / `43752672569` on current main; all three jobs passed.  
 **Governing Charter:** Local-first, on-premises per organization, PostgreSQL 18 single source of truth, single System Administrator (`SYSTEM_ADMIN`), HTTP-only `SameSite=Strict` cookie sessions (`promogest_session`) + CSRF, local filesystem storage with SHA-256 verification, Arabic RTL primary / French LTR secondary, Algerian DZD & legal context.
 
 ---

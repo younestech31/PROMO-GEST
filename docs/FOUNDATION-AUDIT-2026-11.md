@@ -3,7 +3,7 @@
 **Audit date:** 15 November 2026  
 **Audited baseline:** `main` at `a431b6a567a24eef9df97549c7f8f1f39051b1a9`  
 **Remediation branch:** `fix/foundation-project-scope-and-localization`  
-**Status:** source review and remediation in progress; remediation CI must pass before merge  
+**Status:** Gate A remediation merged in PR #25; branch CI and post-merge `main` CI passed. Follow-up gates remain open.  
 **Purpose:** establish a traceable engineering baseline before adding further ERP modules.
 
 > This is an engineering audit, not a security certification, statutory accounting opinion, legal opinion, or production acceptance sign-off. Repository source and CI evidence do not replace a real local-installation, backup and restore rehearsal.
@@ -75,14 +75,14 @@ These strengths should be extended, not replaced by a rewrite.
 
 | ID | Severity | Finding at baseline | Remediation / disposition |
 |---|---|---|---|
-| FND-001 | **High** | `projects.manage` and related organization-level permission codes were treated as project scope in parts of structure, customer, document, reservation and project-management services. | Remediation branch now requires explicit project membership plus action permission/capability. System Administrator remains a distinct technical override. |
-| FND-002 | **High** | A newly created project did not automatically create a membership for its non-admin creator, despite member-filtered project discovery. | Remediation branch assigns the creator as initial Project Manager; an integration test proves the creator can list/open the project. |
-| FND-003 | **High** | Some project-scoped service helpers loaded project details before checking membership, allowing a non-member to distinguish a known project (403) from an unknown identifier (404). | Remediation branch checks membership first for project structure, customer, document and reservation services and records denial without loading project details. Regression tests cover random unknown project IDs. |
-| FND-004 | **High** | The organization/project location validators and frontend catalogue stopped at Wilaya 58. | Remediation branch supports codes 01–69; official new names are added with tests and an ADR/reference-data note. Commune/authority remapping is deliberately not inferred. |
-| FND-005 | **Medium** | Project create/update status parsing could silently fall back to Planning or accept an undefined enum value in the domain path. | Remediation branch rejects unknown/undefined status values explicitly. |
-| FND-006 | **Medium** | The setup legal-form list did not match all backend-accepted codes; new `SPAS` and `OTHER` values also displayed raw codes. | Remediation branch aligns codes and provides Arabic/French labels for the two added choices. |
-| FND-007 | **Medium** | README verification instructions did not consistently describe the root npm lockfile and root CI/build entry points. | Remediation branch makes root commands canonical and distinguishes preview API from DB-backed API testing. |
-| FND-008 | **Medium** | Historical audit reports were stored under `public/assets/aistudio/`, a path included in the public SPA assets. They described older snapshots and were easy to mistake for current status. | Remediation branch moves the original report bodies under `docs/archive/audits/`, marks them historical and removes the public copies. |
+| FND-001 | **High** | `projects.manage` and related organization-level permission codes were treated as project scope in parts of structure, customer, document, reservation and project-management services. | Merged remediation in `main` now requires explicit project membership plus action permission/capability. System Administrator remains a distinct technical override. |
+| FND-002 | **High** | A newly created project did not automatically create a membership for its non-admin creator, despite member-filtered project discovery. | Merged remediation assigns the creator as initial Project Manager; PostgreSQL integration coverage proves the creator can list/open the project. |
+| FND-003 | **High** | Some project-scoped service helpers loaded project details before checking membership, allowing a non-member to distinguish a known project (403) from an unknown identifier (404). | Merged remediation checks membership before protected project data is loaded for project structure, customer, document and reservation routes; regression tests cover unknown and unassigned project IDs. |
+| FND-004 | **High** | The organization/project location validators and frontend catalogue stopped at Wilaya 58. | Merged remediation supports codes 01–69; official new names are added with tests and an ADR/reference-data note. Commune/authority remapping is deliberately not inferred. |
+| FND-005 | **Medium** | Project create/update status parsing could silently fall back to Planning or accept an undefined enum value in the domain path. | Merged remediation rejects unknown/undefined status values explicitly. |
+| FND-006 | **Medium** | The setup legal-form list did not match all backend-accepted codes; new `SPAS` and `OTHER` values also displayed raw codes. | Merged remediation aligns codes and provides Arabic/French labels for the two added choices. |
+| FND-007 | **Medium** | README verification instructions did not consistently describe the root npm lockfile and root CI/build entry points. | Merged remediation makes root commands canonical and distinguishes preview API from DB-backed API testing. |
+| FND-008 | **Medium** | Historical audit reports were stored under `public/assets/aistudio/`, a path included in the public SPA assets. They described older snapshots and were easy to mistake for current status. | Merged remediation moves the original report bodies under `docs/archive/audits/`, marks them historical and removes the public copies. |
 
 ### Authorization decision
 
@@ -96,9 +96,9 @@ An organization role grants a set of possible actions; it does not grant implici
 
 The new Wilaya codes and names are documented in [Algerian Reference Data](ALGERIAN-REFERENCE-DATA.md) and [ADR 0007](ADR/0007-69-wilaya-reference-data.md). The source is Official Journal No. 40, Decree 26-206, Article 1. Decree 26-208 sets transfer deadlines extending through 31 December 2026 for specified property/asset operations and the end of fiscal year 2026 for financial operations. Supporting new codes must not be confused with a completed commune/administrative-office transfer.
 
-## 5. Remediation branch contents — not yet merged
+## 5. Gate A remediation — merged and CI-verified
 
-The branch `fix/foundation-project-scope-and-localization` contains these code/test changes:
+The changes in branch `fix/foundation-project-scope-and-localization` were merged through [PR #25](https://github.com/younestech31/PROMO-GEST/pull/25) into `main` at commit [`1935ad182b28ac67ee0ed734ae14b3f108197c7c`](https://github.com/younestech31/PROMO-GEST/commit/1935ad182b28ac67ee0ed734ae14b3f108197c7c):
 
 1. Project detail updates, structure, customers, documents and reservations now require explicit membership for non-administrators.
 2. Organization-wide project permissions are no longer accepted as substitutes for project membership.
@@ -113,7 +113,7 @@ The branch `fix/foundation-project-scope-and-localization` contains these code/t
 
 **No schema migration is needed for the 69-Wilaya code-range change.** No existing database, Cloud SQL record or project record has been modified by this source branch.
 
-The branch must pass its CI workflow before it is considered verified. Until then, these are implemented source changes awaiting automated evidence, not merged production capabilities.
+The PR CI run [43656609523](https://github.com/younestech31/PROMO-GEST/actions/runs/43656609523) passed all three jobs. The post-merge `main` run [43656863873](https://github.com/younestech31/PROMO-GEST/actions/runs/43656863873) also passed all three jobs, including PostgreSQL 18 least-privilege integration/restore tests and Windows publishing/PowerShell validation. This verifies the CI path for the merged commit; it does not replace a real local installation acceptance or production authorization.
 
 ## 6. Important gaps that remain
 
@@ -204,12 +204,12 @@ The GitHub Actions run for baseline `main` commit `a431b6a567a24eef9df97549c7f8f
 
 Run: https://github.com/younestech31/PROMO-GEST/actions/runs/43652221573
 
-This is evidence about that audited baseline, not the newer remediation branch. The remediation branch requires its own successful checks before merge.
+This is evidence about the pre-remediation baseline. The remediation branch and post-merge `main` are separately verified by the runs recorded in Section 5.
 
 ## 8. Delivery sequence — foundation first
 
-1. **Gate A — Security and data integrity:** merge explicit project membership, 403 anti-enumeration, creator membership, manager continuity, 69-Wilaya validation and updated tests after CI passes.
-2. **Gate B — Optimistic concurrency:** project master-data stamp through API, UI and integration tests; review other mutable master records for stale writes.
+1. **Gate A — Security and data integrity: COMPLETED.** Explicit project membership, non-member denial, creator membership, manager continuity, 69-Wilaya validation and regression tests are merged in PR #25; branch and post-merge CI passed.
+2. **Gate B — Optimistic concurrency: NEXT.** Add the project master-data stamp through API, UI and integration tests; review other mutable master records for stale writes.
 3. **Gate C — Reference/master data:** canonical Party, Employee/User separation, Wilaya/commune reference ownership and document references; plan additive migrations and rollback.
 4. **Gate D — Navigation foundation:** URL route model, active project context, project switcher, recent/favorites and unsaved-work protection.
 5. **Gate E — Project operational model:** distinguish overall project status from project-specific workstreams and milestones.

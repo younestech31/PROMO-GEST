@@ -354,6 +354,23 @@ public sealed class ApplicationSecurityAndFoundationTests
         customer.AttachParty(party);
         store.Parties.Add(party);
         store.ProjectCustomers.Add(customer);
+        var relatedProjectCustomer = ProjectCustomer.Create(
+            Guid.NewGuid(),
+            CustomerType.Individual,
+            "Client Protected",
+            null,
+            "0550000003",
+            null,
+            null,
+            "fr",
+            CustomerSource.Referral,
+            null,
+            employee.Id,
+            clock.UtcNow,
+            party.Id);
+        relatedProjectCustomer.AttachParty(party);
+        store.ProjectCustomers.Add(relatedProjectCustomer);
+        var relatedCustomerStamp = relatedProjectCustomer.ConcurrencyStamp;
 
         var service = new ProjectCustomerService(store, store, store, store, store, store, clock);
         var createDenied = await Assert.ThrowsAsync<ForbiddenDomainException>(() =>
@@ -426,6 +443,10 @@ public sealed class ApplicationSecurityAndFoundationTests
                 party.ConcurrencyStamp),
             metadata);
         Assert.Equal(nameof(CustomerType.LegalEntity), authorizedUpdate.CustomerType);
+        Assert.Equal("SARL Client Updated", relatedProjectCustomer.DisplayName);
+        Assert.Equal("SARL CLIENT UPDATED", relatedProjectCustomer.NormalizedDisplayName);
+        Assert.Equal(CustomerType.LegalEntity, relatedProjectCustomer.CustomerType);
+        Assert.NotEqual(relatedCustomerStamp, relatedProjectCustomer.ConcurrencyStamp);
         var identityAudit = Assert.Single(store.AuditLogs.Where(entry => entry.EventType == "PARTY_IDENTITY_UPDATED"));
         Assert.Contains("\"previousKind\":\"Person\"", identityAudit.MetadataJson);
         Assert.Contains("\"newKind\":\"LegalEntity\"", identityAudit.MetadataJson);

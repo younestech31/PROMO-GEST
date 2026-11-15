@@ -1,7 +1,7 @@
 # PROMO GEST — Phase 0 Manual Browser & Real-API Acceptance
 
 **Document role:** Executable acceptance protocol for the remaining Phase 0 browser and real-API evidence.  
-**Execution update (15 November 2026):** The Product Owner explicitly confirmed successful completion of the bilingual desktop/mobile and real-workflow checks listed in the owner-attested record below. Those checks are recorded as `PASS` with the evidence source identified as owner attestation, not CI output or an independently collected browser artifact. `P0-A01` (fresh-database first-run setup and rejection of a second initialization) was not explicitly included in the confirmation and remains `NOT_RUN`.  
+**Execution update (15 November 2026):** The Product Owner explicitly confirmed successful completion of the bilingual desktop/mobile and real-workflow checks listed in the owner-attested record below. Those checks are recorded as `PASS` with the evidence source identified as owner attestation, not CI output or an independently collected browser artifact. `P0-A01` (fresh-database first-run setup and rejection of a second initialization) and `P0-A04` (logout/revocation) were not explicitly included in the confirmation and remain `NOT_RUN`.  
 **Main commit inspected at audit start:** `432e6f8ea76bb540dd5bc69d3314c0d658805ba7`.  
 **Automated baseline:** GitHub Actions Run #546 / `43768228052` passed all three jobs on that commit.  
 **Primary references:** [CURRENT-STATE-BASELINE.md](CURRENT-STATE-BASELINE.md), [QUALITY-AND-RELEASE-GATES.md](QUALITY-AND-RELEASE-GATES.md), [GOOGLE-AI-STUDIO-CLOUD-SQL.md](GOOGLE-AI-STUDIO-CLOUD-SQL.md), and [UI-IMPLEMENTATION-AND-GAP-MATRIX.md](UI-IMPLEMENTATION-AND-GAP-MATRIX.md).
@@ -171,9 +171,9 @@ A `ProjectSalesReservation` is an **internal unit hold only**. It is not a Law 1
 - Authorization, audit events, concurrency conflicts, and safe errors.
 - Persistence after page reload.
 
-**Register mapping:** the owner confirmation is recorded as `PASS` for P0-A02–A05 and P0-B through P0-G, across all four browser profiles. The owner explicitly confirmed persistence/reload and API-backed business behavior in the listed workflows. This is an owner-attested manual acceptance result; it is not represented as an automated test, CI assertion, or an artifact independently inspected by engineering.
+**Register mapping:** the owner confirmation is recorded as `PASS` for P0-A02, P0-A03, P0-A05, and P0-B through P0-G, across all four browser profiles. The owner explicitly confirmed persistence/reload and API-backed business behavior in the listed workflows. This is an owner-attested manual acceptance result; it is not represented as an automated test, CI assertion, or an artifact independently inspected by engineering.
 
-**Explicit boundary:** P0-A01 remains `NOT_RUN` because the confirmation did not specifically state that first-run initialization was exercised against a separate empty disposable database and that a second initialization was rejected. Do not infer this scenario from normal login/session testing.
+**Explicit boundary:** P0-A01 and P0-A04 remain `NOT_RUN`: the confirmation did not specifically state that first-run initialization was exercised against a separate empty disposable database with a second initialization rejected, or that logout was followed by a protected-route/session-revocation check. Do not infer this scenario from normal login/session testing.
 
 **Artifact limitation:** the Product Owner did not attach per-case timestamps, tester initials, browser name/version, sanitized screenshots/recordings, or redacted API response/trace records in the conversation. The attestation is retained as the source of the result; no such artifacts are claimed to exist in this repository.
 
@@ -194,7 +194,10 @@ Do not attach an unredacted HAR, browser storage dump, environment file, SQL con
 | Test ID range | Arabic desktop | French desktop | Arabic mobile | French mobile | API/persistence evidence | Overall |
 |---|---|---|---|---|---|---|
 | P0-A01 — First-run setup on empty disposable DB | NOT_RUN | NOT_RUN | NOT_RUN | NOT_RUN | NOT_RUN | NOT_RUN |
-| P0-A02–A05 — Login, session, logout, CSRF | PASS | PASS | PASS | PASS | PASS | PASS |
+| P0-A02 — Login | PASS | PASS | PASS | PASS | PASS | PASS |
+| P0-A03 — Session restoration after reload | PASS | PASS | PASS | PASS | PASS | PASS |
+| P0-A04 — Logout and session revocation | NOT_RUN | NOT_RUN | NOT_RUN | NOT_RUN | NOT_RUN | NOT_RUN |
+| P0-A05 — CSRF rejection for unsafe request | PASS | PASS | PASS | PASS | PASS | PASS |
 | P0-B — Overview and project directory | PASS | PASS | PASS | PASS | PASS | PASS |
 | P0-C — Project structure and units | PASS | PASS | PASS | PASS | PASS | PASS |
 | P0-D — Customers and CRM interactions | PASS | PASS | PASS | PASS | PASS | PASS |
@@ -202,7 +205,7 @@ Do not attach an unredacted HAR, browser storage dump, environment file, SQL con
 | P0-F — Project document integrity | PASS | PASS | PASS | PASS | PASS | PASS |
 | P0-G — Authorization, audit, concurrency, and safe errors | PASS | PASS | PASS | PASS | PASS | PASS |
 
-**Status provenance:** Every `PASS` in this register is based on the Product Owner's 15 November 2026 confirmation, not on a newly executed test or a CI run. The missing artifact metadata is stated in Section 6 above.
+**Status provenance:** Every `PASS` in this register is based on the Product Owner's 15 November 2026 confirmation, not on a newly executed test or a CI run. The status is recorded at the workflow-group level described by the owner; no claim is made that each negative/boundary subcase in every detailed test row has a separately attached timestamp or trace. The missing artifact metadata is stated in Section 6 above.
 
 ## 7. Phase 0 exit criteria
 

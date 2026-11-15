@@ -151,6 +151,7 @@ public interface IProjectCustomerRepository
         string normalizedPhone,
         Guid? excludeCustomerId = null,
         CancellationToken ct = default);
+    Task AddPartyAsync(Party party, CancellationToken ct = default);
     Task AddCustomerAsync(ProjectCustomer customer, CancellationToken ct = default);
     Task AddInteractionAsync(CustomerInteraction interaction, CancellationToken ct = default);
     Task SaveChangesAsync(CancellationToken ct = default);

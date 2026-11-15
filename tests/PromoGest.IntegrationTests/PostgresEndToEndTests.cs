@@ -167,6 +167,11 @@ public sealed class PostgreSql18IntegrationFixture : IAsyncLifetime
                 throw new InvalidOperationException(
                     "The ProjectSalesReservations migration was not discovered and applied.");
             }
+            if (!applied.Contains("20261115100000_OrganizationWidePartyFoundation"))
+            {
+                throw new InvalidOperationException(
+                    "The OrganizationWidePartyFoundation migration was not discovered and applied.");
+            }
         }
 
         // Apply the same post-migration grants used by the Google AI Studio Cloud SQL path.
@@ -978,7 +983,20 @@ public sealed class PostgresEndToEndTests : IClassFixture<PostgreSql18Integratio
             Assert.NotNull(createdCustomer.IdentityDocument);
             Assert.Equal("building-permit.pdf", createdCustomer.IdentityDocument!.OriginalFileName);
             Assert.Empty(createdCustomer.Interactions);
-            
+            Assert.Equal(createdCustomer.Id, createdCustomer.PartyId);
+
+            using (var partyScope = factory.Services.CreateScope())
+            {
+                var db = partyScope.ServiceProvider.GetRequiredService<AppDbContext>();
+                var persistedCustomer = await db.ProjectCustomers
+                    .Include(customer => customer.Party)
+                    .SingleAsync(customer => customer.Id == createdCustomer.Id);
+                Assert.Equal(persistedCustomer.Id, persistedCustomer.PartyId);
+                Assert.Equal(PartyKind.Person, persistedCustomer.Party.Kind);
+                Assert.Equal("ليلى بن عيسى", persistedCustomer.Party.DisplayName);
+                Assert.Equal("ليلى بن عيسى".ToUpperInvariant(), persistedCustomer.Party.NormalizedDisplayName);
+            }
+
             var customerListResponse = await adminClient.GetAsync(
                 $"/api/projects/{createdProject.Id}/customers");
             Assert.Equal(HttpStatusCode.OK, customerListResponse.StatusCode);
@@ -1048,7 +1066,7 @@ public sealed class PostgresEndToEndTests : IClassFixture<PostgreSql18Integratio
             var staleCustomerStamp = customerDetails.ConcurrencyStamp;
             var updateCustomerRequest = new UpdateProjectCustomerRequest(
                 customerDetails.CustomerType,
-                customerDetails.DisplayName,
+                "ليلى بن عيسى المحدثة",
                 customerDetails.ContactPerson,
                 customerDetails.Phone,
                 customerDetails.Email,
@@ -1065,7 +1083,17 @@ public sealed class PostgresEndToEndTests : IClassFixture<PostgreSql18Integratio
             var updatedCustomer = await updateCustomerResponse.Content.ReadFromJsonAsync<ProjectCustomerDto>();
             Assert.NotNull(updatedCustomer);
             Assert.Equal("Qualified", updatedCustomer!.Status);
+            Assert.Equal("ليلى بن عيسى المحدثة", updatedCustomer.DisplayName);
+            Assert.Equal(createdCustomer.PartyId, updatedCustomer.PartyId);
             Assert.NotEqual(staleCustomerStamp, updatedCustomer.ConcurrencyStamp);
+
+            using (var partyScope = factory.Services.CreateScope())
+            {
+                var db = partyScope.ServiceProvider.GetRequiredService<AppDbContext>();
+                var persistedParty = await db.Parties.SingleAsync(party => party.Id == updatedCustomer.PartyId);
+                Assert.Equal("ليلى بن عيسى المحدثة", persistedParty.DisplayName);
+                Assert.Equal(PartyKind.Person, persistedParty.Kind);
+            }
 
             var staleUpdateResponse = await adminClient.PutAsJsonAsync(
                 $"/api/projects/{createdProject.Id}/customers/{createdCustomer.Id}",

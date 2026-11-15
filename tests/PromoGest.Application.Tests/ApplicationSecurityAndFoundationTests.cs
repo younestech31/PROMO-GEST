@@ -269,8 +269,8 @@ public sealed class ApplicationSecurityAndFoundationTests
 
         Assert.Equal(nameof(PartyKind.LegalEntity), updated.Kind);
         var audit = Assert.Single(store.AuditLogs.Where(entry => entry.EventType == "PARTY_IDENTITY_UPDATED"));
-        Assert.Contains("\\\"previousKind\\\":\\\"Person\\\"", audit.MetadataJson);
-        Assert.Contains("\\\"newKind\\\":\\\"LegalEntity\\\"", audit.MetadataJson);
+        Assert.Contains("\"previousKind\":\"Person\"", audit.MetadataJson);
+        Assert.Contains("\"newKind\":\"LegalEntity\"", audit.MetadataJson);
     }
 
     [Fact]

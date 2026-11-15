@@ -2,8 +2,9 @@
 
 All 12 functional ERP domains required by PROMO GEST, mapped strictly using the 6-state taxonomy against actual inspected code, controllers, EF configurations, and tests.
 
-**Audited Source Baseline:** `6bbd97f70ed0fb63cf226a1117cf6e83c359d2be` (PR #44 merge).  
-**Latest Green CI:** Run **#526** / `43743107914` — frontend, .NET/PostgreSQL 18, and Windows jobs all passed.  
+**Last Code-Changing Source Baseline:** `6bbd97f70ed0fb63cf226a1117cf6e83c359d2be` (PR #44 merge).  
+**Current Main Documentation Snapshot:** `4d025ca19a7711df1d4df327b05ee4846cac3267` (PR #45).  
+**Latest Green CI:** Run **#529** / `43746793430` — frontend, .NET/PostgreSQL 18, and Windows jobs all passed.  
 **Live Preview Evidence:** On 15 November 2026, the product owner confirmed that the real Google AI Studio development server/API was operating and that the previously failing project customer/prospect and reservation pages no longer displayed the reported generic internal error after PR #44. This is a targeted page-level smoke check; it does not certify every CRUD path or the manual Arabic RTL/French LTR review.
 
 ---
@@ -30,6 +31,8 @@ All 12 functional ERP domains required by PROMO GEST, mapped strictly using the 
 ## 2. Detailed Module Specifications (A–L)
 
 ### A. Organization, Governance & Administration (`PARTIALLY_IMPLEMENTED`)
+- **Frontend surfaces:** `FirstRunSetupWizard.tsx`, `LoginScreen.tsx`, `UsersManagementView.tsx`, `AuditLogView.tsx`, `OrganizationProfileView.tsx`, and organization-level `OverviewView.tsx`.
+- **UI boundary:** organization profile remains read-only; technical administration links (users/audit) currently share the same shell/navigation as daily operations rather than a separate technical-admin workspace.
 - **Current Reality:**
   - *First-Run Wizard (`IMPLEMENTED_AND_VERIFIED`):* `GET /api/setup/status`, `POST /api/setup/initialize`.
   - *Session Auth & CSRF (`IMPLEMENTED_AND_VERIFIED`):* `GET /api/auth/csrf`, `POST /api/auth/login`, `POST /api/auth/logout`, `GET /api/auth/me` (cookie **`promogest_session`** + `X-CSRF-TOKEN`).
@@ -40,25 +43,29 @@ All 12 functional ERP domains required by PROMO GEST, mapped strictly using the 
 - **Target Scope (`PLANNED`):** Audited organization profile updates (`org.manage`, preserving immutable `singleton_guard`), active session revocation UI, and versioned Algerian Administrative Reference catalogue (`AdministrativeUnit`, 69 Wilayas + verified 1,541 communes per ADR-0010).
 
 ### B. Real Estate Projects (`IMPLEMENTED_AND_VERIFIED`)
+- **Frontend surface:** `ProjectsAccessView.tsx` lists accessible projects, supports project creation/update and team membership operations. It launches project sub-areas as modals from the directory; it is not yet the dedicated project switcher or active project workspace.
 - **Current Reality:** `GET/POST /api/projects`, `GET/PUT /api/projects/{projectId}`, `PUT /api/projects/{projectId}/members`, `DELETE /api/projects/{projectId}/members/{userId}`. Dynamic `actualBuildingsCount`/`actualUnitsCount`, `ExpectedConcurrencyStamp` CAS protection, last-PM guard, Wilaya `01–69`.
 - **Target Scope (`PLANNED`):** Structured land parcel references, subdivision/viability certificates, building permits, and VSP eligibility metadata linked to local verified files.
 
 ### C. Physical Structure & Property Units (`IMPLEMENTED_AND_VERIFIED` with documented gaps)
+- **Frontend surface:** `ProjectStructureModal.tsx` supports building/floor/unit create and update flows and property-unit status changes. Manual UI/API browser acceptance in both languages remains part of Phase 0.
 - **Current Reality:** `GET /api/projects/{id}/structure`, `POST/PUT .../buildings`, `POST/PUT .../buildings/{bId}/floors`, `POST/PUT .../floors/{fId}/units`, `PUT .../units/{uId}/status`. `UnitType` (`Apartment`, `Shop`, `ParkingSpace`, `Office`, `Storage`); `PropertyUnitStatus` (`Planned`, `UnderConstruction`, `AvailableForSale`, `Reserved`, `Sold`, `Delivered`, `Withdrawn`).
 - **Documented Reality Notes:** Neither `DELETE` endpoints nor `/bulk` HTTP endpoints exist in `ProjectStructureController`; `gross_area_square_meters`, `net_area_square_meters`, `rooms_count` exist on `property_units` (no `price_dzd` or `orientation` columns yet); `ProjectStructureService` checks `ProjectMember.CanManageConstruction || ProjectManager` instead of `projects.structure.manage`.
 - **Target Scope (`PLANNED`):** Controlled retirement (`Withdrawn`), base reference pricing/composition, and multi-dimensional unit status separating physical readiness, commercial availability, and legal contract ownership.
 
 ### D. Counterparties (Party), Customers & CRM (`PARTIALLY_IMPLEMENTED`)
+- **Frontend surface:** `ProjectCustomerRegistryModal.tsx` supports project customer registry, canonical Party search/selection, customer details, CRM interactions/follow-up fields, and linked identity-document download. A full lead pipeline, standalone Party directory, and broader contact/representative management are not present.
 - **Current Reality:**
   - *Project Customer Registry (C1):* `GET/POST /api/projects/{id}/customers`, `GET/PUT .../customers/{customerId}`, `POST .../customers/{customerId}/interactions`.
-  - *Party Directory (C2, PRs #35–#38):* `GET /api/parties`, `PUT /api/parties/{partyId}`; canonical `parties` identity remains authoritative. Unauthorized reads/identity changes are security-audited; `previousKind` is captured correctly; updates synchronize every linked `project_customers` identity mirror, advance relationship concurrency stamps, and reject duplicate name/phone collisions before mutation. Application and PostgreSQL 18 integration tests pass in CI #526. **The final retirement of redundant relationship identity columns remains Phase 1 migration work.**
+  - *Party Directory (C2, PRs #35–#38):* `GET /api/parties`, `PUT /api/parties/{partyId}`; canonical `parties` identity remains authoritative. Unauthorized reads/identity changes are security-audited; `previousKind` is captured correctly; updates synchronize every linked `project_customers` identity mirror, advance relationship concurrency stamps, and reject duplicate name/phone collisions before mutation. Application and PostgreSQL 18 integration tests pass in CI #529. **The final retirement of redundant relationship identity columns remains Phase 1 migration work.**
   - *Employee Master (`PLANNED`):* No `Employee` table yet (`ADR-0009`).
 - **Target Scope (`PLANNED`):** Resolve C2 defects; designate `parties` as sole name/kind master & retire redundant `project_customers` copies cleanly; add `PartyContactPoint`, protected `PartyIdentifier`, `PartyRepresentative`, human-approved manual `Party` merge workflow, Supplier/Subcontractor roles, and `Employee` detached from `User`.
 
 ### E. Commercial Operations & Internal Unit Holds (`IMPLEMENTED_NOT_VERIFIED`)
+- **Frontend surface:** `ProjectSalesReservationsModal.tsx` lists holds, creates them for an available unit and project customer with an expiry, and cancels with a reason. This is an internal hold only; it is not a statutory contract and does not collect money.
 - **Current Reality:** `GET /api/projects/{id}/reservations`, `GET .../reservations/{reservationId}`, `POST .../reservations`, `POST .../reservations/{reservationId}/cancel` (expiry runs automatically on due holds via service/worker; no `/expire` HTTP endpoint). Transitions unit `AvailableForSale -> Reserved` (enforced by partial unique index `ux_project_sales_reservations_active_unit`) and releases `Reserved -> AvailableForSale` on cancel/expiry.
 - **Explicit Legal Boundary:** `ProjectSalesReservation` is strictly an **Internal Unit Hold**, **NOT** a Law 11-04 statutory reservation contract, and collects **zero** promoter treasury cash today.
-- **Verification:** PostgreSQL 18 E2E covers create/read/list, active-hold uniqueness, cancellation and unit release, concurrent reservation race (one winner), and expiry processing. CI #526 executes the integration suite successfully. The Vite-only preview simulator still lacks `/reservations`; that is a development-preview limitation, not the production ASP.NET Core API.
+- **Verification:** PostgreSQL 18 E2E covers create/read/list, active-hold uniqueness, cancellation and unit release, concurrent reservation race (one winner), and expiry processing. CI #529 executes the integration suite successfully. The Vite-only preview simulator still lacks `/reservations`; that is a development-preview limitation, not the production ASP.NET Core API.
 
 ### F. Contracts, Commitments & Legal Deeds (`PLANNED`)
 **Prerequisite:** Phase 0 + Phase 1 + **K-Min** Document Capabilities + **Qualified Algerian Legal/Notarial Sign-Off**.
@@ -87,14 +94,16 @@ Promoter commitments must strictly distinguish **four separate record types** (n
 - **Scope:** SCF Classes 1–7 chart of accounts, double-entry balanced journals (`Debit == Credit` in DZD `numeric(18,2)`), fiscal periods & locks, non-destructive reversals (*extourne*), and separated `TaxEvent` tracking (TVA collection trigger per Finance Law 2025 Art. 59; 9% vs 19% rates per Finance Law 2026 Art. 53).
 
 ### K. Document Management & Archiving (`PARTIALLY_IMPLEMENTED` — Two-Stage Split)
+- **Frontend surface:** `ProjectDocumentsModal.tsx` supports project-file upload, category/description, list, and download. Metadata editing, soft archive, structured business-entity links, retention, and K-Full remain unimplemented.
 Resolves the former catalog vs roadmap dependency conflict by splitting Module K cleanly into **two explicit tiers**:
 1. **`K-Min` (Required Before Phase 2 — Contracts & Chantier):**
-   - **Current Reality (`IMPLEMENTED_NOT_VERIFIED` for full user-facing workflow):** `stored_files` (`GET/POST /api/projects/{id}/documents`, `GET .../download`), `LocalFileStorageService`, SHA-256 verification on upload/download, whitelist (`pdf`, images, Office docs, txt/csv, max 25 MB). PostgreSQL 18 E2E exercises upload, list, download, checksum and invalid file rejection in green CI #526; manual browser UX and metadata/archive/link extensions remain outstanding.
+   - **Current Reality (`IMPLEMENTED_NOT_VERIFIED` for full user-facing workflow):** `stored_files` (`GET/POST /api/projects/{id}/documents`, `GET .../download`), `LocalFileStorageService`, SHA-256 verification on upload/download, whitelist (`pdf`, images, Office docs, txt/csv, max 25 MB). PostgreSQL 18 E2E exercises upload, list, download, checksum and invalid file rejection in green CI #529; manual browser UX and metadata/archive/link extensions remain outstanding.
    - **Required Additions before Phase 2:** Add metadata update/soft-archive lifecycle + explicit structured attachment links (`DocumentLink` / FK references) binding SHA-256 `StoredFile` records to `ProjectSalesReservation`, Legal Contracts (`StatutoryReservation`, `VSP`, `FinalSaleDeed`), `ContractVersion`, `ConstructionMilestoneEvidence`, `PaymentReceipt`, and authorized `Party` KYC files with strict permission isolation.
 2. **`K-Full` (Scheduled in Phase 5):**
    - Full cross-enterprise attachment links across Procurement, Inventory, HR, and SCF vouchers; retention policies; legal hold tags; cold-storage reconciliation & bulk export bundles.
 
 ### L. Reporting, Dashboards & Control (`PARTIALLY_IMPLEMENTED`)
+- **Frontend surface:** `OverviewView.tsx` provides organization/system/readiness summaries and shortcuts; `AuditLogView.tsx` shows a bounded recent audit list. Executive, financial, arrears, construction-variance, supplier, and SCF reports remain planned.
 - **Current Reality:** Live building/unit counts per project (`ProjectsAccessView`), recent audit view (`AuditLogView`).
 - **Target Scope (`PLANNED`):** Inventory & commercial pipeline reports, arrears & collection aging, physical vs financial VSP variance, supplier liabilities, and SCF trial balances/general ledgers exported offline (PDF/CSV/XLSX).
 

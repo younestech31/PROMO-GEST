@@ -1,7 +1,7 @@
 # PROMO GEST — Organization-Wide Party & Master-Data Design
 
-**Status:** Gate C architecture baseline; the first Party-identity slice is implemented on `feat/gate-c-party-identity-foundation` and is awaiting CI/PR acceptance. Gate C as a whole is not complete.  
-**Baseline reviewed:** `main` at `e051f1b60b2babfc2dba91fe9a7d512cd8357b3a` (15 November 2026).  
+**Status:** initial C1 Party-identity foundation merged into `main` through PR #31; all CI jobs passed. Gate C as a whole remains open.  
+**Baseline reviewed:** `main` at `a33b2eec52d8ab430521699e79b7efa821d2ccad` (15 November 2026).  
 **Scope:** party identity, project relationships, CRM continuity, employee identity and login-account separation.
 
 ## 1. Purpose and non-negotiable constraints
@@ -32,7 +32,7 @@ The current feature branch introduces the first executable Party identity layer:
 
 This slice deliberately does **not** yet implement organization-wide Party search/selection, sharing one Party across multiple project relationships through the API, the full `ProjectPartyRole` model, general Party contact points/identifiers, Employee records, or reconciliation/merge tooling. The schema permits later expansion, but no cross-project Party attachment or data disclosure route is exposed. The application continues to create one Party for each newly created project-customer record until the next reviewed CRM workflow is delivered.
 
-The migration is additive and reversible only while Party remains in the documented one-to-one compatibility state; its `Down` path refuses rollback if Party relationships or identity values have advanced beyond that safe boundary. It has not been applied to Cloud SQL or any organization database.
+The migration is additive and reversible only while Party remains in the documented one-to-one compatibility state; its `Down` path refuses rollback if Party relationships or identity values have advanced beyond that safe boundary. PR #31 passed the repository CI suite, including PostgreSQL 18 least-privilege integration tests. This CI result is not a substitute for a separate representative legacy-backfill/backup/restore rehearsal. The migration has not been applied to Cloud SQL or any organization database.
 
 ## 3. Legacy project-scoped CRM baseline
 

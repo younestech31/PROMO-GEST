@@ -11,7 +11,7 @@ All 12 functional ERP domains required by PROMO GEST, mapped strictly using the 
 | **A** | Organization, Governance & Administration | `PARTIALLY_IMPLEMENTED` | None (Foundation) |
 | **B** | Real Estate Projects | `IMPLEMENTED_AND_VERIFIED` | Domain A |
 | **C** | Physical Structure & Property Units | `IMPLEMENTED_AND_VERIFIED` *(no DELETE/bulk; `projects.structure.manage` note)* | Domain B |
-| **D** | Counterparties (Party), Customers & CRM | `PARTIALLY_IMPLEMENTED` / `IMPLEMENTED_NOT_VERIFIED` *(C2 merged in PR #34, unverified)* | Domains A, B |
+| **D** | Counterparties (Party), Customers & CRM | `PARTIALLY_IMPLEMENTED` *(C1/C2 API flows verified; Phase 1 master-data completion remains)* | Domains A, B |
 | **E** | Commercial Operations & Internal Unit Holds | `IMPLEMENTED_NOT_VERIFIED` | Domains B, C, D |
 | **F** | Contracts, Commitments & Legal Deeds | `PLANNED` | Domains C, D, E, **K-Min** |
 | **G** | Installments, Collections & Treasury (DZD) | `PLANNED` | Domains D, F |
@@ -44,17 +44,17 @@ All 12 functional ERP domains required by PROMO GEST, mapped strictly using the 
 - **Documented Reality Notes:** Neither `DELETE` endpoints nor `/bulk` HTTP endpoints exist in `ProjectStructureController`; `gross_area_square_meters`, `net_area_square_meters`, `rooms_count` exist on `property_units` (no `price_dzd` or `orientation` columns yet); `ProjectStructureService` checks `ProjectMember.CanManageConstruction || ProjectManager` instead of `projects.structure.manage`.
 - **Target Scope (`PLANNED`):** Controlled retirement (`Withdrawn`), base reference pricing/composition, and multi-dimensional unit status separating physical readiness, commercial availability, and legal contract ownership.
 
-### D. Counterparties (Party), Customers & CRM (`PARTIALLY_IMPLEMENTED` / `IMPLEMENTED_NOT_VERIFIED`)
+### D. Counterparties (Party), Customers & CRM (`PARTIALLY_IMPLEMENTED`)
 - **Current Reality:**
   - *Project Customer Registry (C1):* `GET/POST /api/projects/{id}/customers`, `GET/PUT .../customers/{customerId}`, `POST .../customers/{customerId}/interactions`.
-  - *Party Directory (C2 merged in PR #34):* `GET /api/parties`, `PUT /api/parties/{partyId}` (`parties` table storing canonical `party_kind` & `display_name`, plus `ux_project_customers_project_party`). **Currently `IMPLEMENTED_NOT_VERIFIED`** due to `CS7036` test break in `PostgresEndToEndTests.cs:1072` plus 4 active defects in `PartyDirectoryService` / dual columns ([CURRENT-STATE-BASELINE.md](CURRENT-STATE-BASELINE.md)).
+  - *Party Directory (C2, PRs #35–#38):* `GET /api/parties`, `PUT /api/parties/{partyId}`; canonical `parties` identity remains authoritative. Unauthorized reads/identity changes are security-audited; `previousKind` is captured correctly; updates synchronize every linked `project_customers` identity mirror, advance relationship concurrency stamps, and reject duplicate name/phone collisions before mutation. Application and PostgreSQL 18 integration tests pass in CI #495. **The final retirement of redundant relationship identity columns remains Phase 1 migration work.**
   - *Employee Master (`PLANNED`):* No `Employee` table yet (`ADR-0009`).
 - **Target Scope (`PLANNED`):** Resolve C2 defects; designate `parties` as sole name/kind master & retire redundant `project_customers` copies cleanly; add `PartyContactPoint`, protected `PartyIdentifier`, `PartyRepresentative`, human-approved manual `Party` merge workflow, Supplier/Subcontractor roles, and `Employee` detached from `User`.
 
 ### E. Commercial Operations & Internal Unit Holds (`IMPLEMENTED_NOT_VERIFIED`)
 - **Current Reality:** `GET /api/projects/{id}/reservations`, `GET .../reservations/{reservationId}`, `POST .../reservations`, `POST .../reservations/{reservationId}/cancel` (expiry runs automatically on due holds via service/worker; no `/expire` HTTP endpoint). Transitions unit `AvailableForSale -> Reserved` (enforced by partial unique index `ux_project_sales_reservations_active_unit`) and releases `Reserved -> AvailableForSale` on cancel/expiry.
 - **Explicit Legal Boundary:** `ProjectSalesReservation` is strictly an **Internal Unit Hold**, **NOT** a Law 11-04 statutory reservation contract, and collects **zero** promoter treasury cash today.
-- **Documented Gap:** No dedicated `Domain.Tests`/`Application.Tests` suite; `PostgresEndToEndTests` blocked by `CS7036`; preview middleware lacks `/reservations`.
+- **Verification:** PostgreSQL 18 E2E covers create/read/list, active-hold uniqueness, cancellation and unit release, concurrent reservation race (one winner), and expiry processing. CI #495 executes the integration suite successfully. The Vite-only preview simulator still lacks `/reservations`; that is a development-preview limitation, not the production ASP.NET Core API.
 
 ### F. Contracts, Commitments & Legal Deeds (`PLANNED`)
 **Prerequisite:** Phase 0 + Phase 1 + **K-Min** Document Capabilities + **Qualified Algerian Legal/Notarial Sign-Off**.
@@ -85,7 +85,7 @@ Promoter commitments must strictly distinguish **four separate record types** (n
 ### K. Document Management & Archiving (`PARTIALLY_IMPLEMENTED` — Two-Stage Split)
 Resolves the former catalog vs roadmap dependency conflict by splitting Module K cleanly into **two explicit tiers**:
 1. **`K-Min` (Required Before Phase 2 — Contracts & Chantier):**
-   - **Current Reality (`IMPLEMENTED_NOT_VERIFIED`):** `stored_files` (`GET/POST /api/projects/{id}/documents`, `GET .../download`), `LocalFileStorageService`, SHA-256 verification on upload/download, whitelist (`pdf`, images, Office docs, txt/csv, max 25 MB).
+   - **Current Reality (`IMPLEMENTED_NOT_VERIFIED` for full user-facing workflow):** `stored_files` (`GET/POST /api/projects/{id}/documents`, `GET .../download`), `LocalFileStorageService`, SHA-256 verification on upload/download, whitelist (`pdf`, images, Office docs, txt/csv, max 25 MB). PostgreSQL 18 E2E exercises upload, list, download, checksum and invalid file rejection in green CI #495; manual browser UX and metadata/archive/link extensions remain outstanding.
    - **Required Additions before Phase 2:** Add metadata update/soft-archive lifecycle + explicit structured attachment links (`DocumentLink` / FK references) binding SHA-256 `StoredFile` records to `ProjectSalesReservation`, Legal Contracts (`StatutoryReservation`, `VSP`, `FinalSaleDeed`), `ContractVersion`, `ConstructionMilestoneEvidence`, `PaymentReceipt`, and authorized `Party` KYC files with strict permission isolation.
 2. **`K-Full` (Scheduled in Phase 5):**
    - Full cross-enterprise attachment links across Procurement, Inventory, HR, and SCF vouchers; retention policies; legal hold tags; cold-storage reconciliation & bulk export bundles.

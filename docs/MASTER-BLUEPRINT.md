@@ -1,9 +1,9 @@
 # PROMO GEST — Master Engineering Blueprint
 
 **Document Role:** Single authoritative index & master entry point for the PROMO GEST local-first real estate developer ERP (*promoteur immobilier* — Algeria).  
-**Source-Code Baseline Commit:** `2eee4771f2e5de23809e1b5fcf5a559c6ad48994` (PR #34 merge serves as historical context).  
-**Current Documentation Revision Commit:** `d34eba606e5e2473898deed5e31a73eef2e7374d`.  
-**Latest CI Verification Runs:** GitHub Actions Run `43710844749` & Run `43713215866` (frontend passed successfully; .NET/PostgreSQL & Windows solution builds failed due to `CS7036` at `PostgresEndToEndTests.cs:1072` caused by missing `PartyConcurrencyStamp` parameter, so integration tests did not execute).  
+**Source-Code Baseline Commit:** `c890ba05e83831fb965d855d1e7c2d7ab1d8a643` (PR #38 merge; PRs #35–#38 contain the verified C2 corrections).  
+**Previous Documentation Snapshot:** `d34eba606e5e2473898deed5e31a73eef2e7374d` (superseded by this baseline refresh).  
+**Latest Green CI:** GitHub Actions Run #495 / `43720679970` on the source baseline above.  
 **Governing Charter:** Local-first, on-premises per organization, PostgreSQL 18 single source of truth, single System Administrator (`SYSTEM_ADMIN`), HTTP-only `SameSite=Strict` cookie sessions (`promogest_session`) + CSRF, local filesystem storage with SHA-256 verification, Arabic RTL primary / French LTR secondary, Algerian DZD & legal context.
 
 ---
@@ -30,7 +30,7 @@ Every claim across this blueprint uses **strictly one** of the six evidence-back
 | # | Document | Purpose & Scope |
 |---|---|---|
 | 1 | [MASTER-BLUEPRINT.md](MASTER-BLUEPRINT.md) | This master index, executive product vision, product scope boundaries, completion scorecard, and navigation map. |
-| 2 | [CURRENT-STATE-BASELINE.md](CURRENT-STATE-BASELINE.md) | Honest baseline anchored at code commit `2eee4771f2e5de23809e1b5fcf5a559c6ad48994` / doc commit `d34eba606e5e2473898deed5e31a73eef2e7374d`, CI Runs `43710844749` & `43713215866`, 11 EF migrations, exact test/build results, active C2 defects, and preview drift. |
+| 2 | [CURRENT-STATE-BASELINE.md](CURRENT-STATE-BASELINE.md) | Evidence-backed status at source commit `c890ba05...`, CI #495, current test counts, merged C2 corrections, transitional Party mirrors, and explicit AI Studio preview boundaries. |
 | 3 | [SYSTEM-ARCHITECTURE.md](SYSTEM-ARCHITECTURE.md) | Clean/Layered dependency graph, modular monolith boundaries, HTTP middleware pipeline, and SPA hosting model. |
 | 4 | [DOMAIN-MODEL.md](DOMAIN-MODEL.md) | Authoritative schema matching `AppDbContextModelSnapshot.cs` & migrations, Party vs ProjectCustomer separation, concurrency, and planned contract/financial models. |
 | 5 | [MODULE-CATALOG.md](MODULE-CATALOG.md) | All 12 ERP domains (**A–L**) mapped from current implementation through target contracts, K-Min vs K-Full document split, Algerian contract types, and unified financial event flow. |
@@ -65,18 +65,18 @@ Every claim across this blueprint uses **strictly one** of the six evidence-back
 3. **Counterparties (Party), CRM & Holds:** Organization-wide `parties` identity (`id`, `party_kind`, `display_name`), project-scoped `project_customers` & `customer_interactions`, and internal lot/unit holds (`project_sales_reservations`), cleanly separated from future Statutory Reservation Contracts, VSP / *Acte Notarié* sales contracts, regulated payment milestones, and DZD collections.
 4. **Execution, Accounting & Statutory Compliance:** Works/construction tracking (lots, contractor situations, FGCMPI/legal compliance), suppliers/inventory, **Algerian SCF (Système Comptable Financier)** journal generation, VAT/IBS/TAP/IRG tax tracking (Finance Laws 2025/2026 gated on qualified accountant review), and local reporting.
 
-### High-Level Program Status Snapshot (Code Baseline: `2eee4771f2e5de23809e1b5fcf5a559c6ad48994`)
+### High-Level Program Status Snapshot (Code Baseline: `c890ba05e83831fb965d855d1e7c2d7ab1d8a643`, CI #495)
 
 | Layer / Domain | Current State | Verification Evidence |
 |---|---|---|
-| Domain Core (`PromoGest.Domain`) | `IMPLEMENTED_AND_VERIFIED` | Builds cleanly; **27/27** `PromoGest.Domain.Tests` pass locally |
-| Application Services (`PromoGest.Application` — Setup/Auth/Users/Audit/Projects/Structure) | `IMPLEMENTED_AND_VERIFIED` | Builds cleanly; **10/10** `PromoGest.Application.Tests` pass locally |
-| C2 Party & Customer Changes | `IMPLEMENTED_NOT_VERIFIED` | Committed in `2eee4771...` (`PartyDirectoryService` & updated `ProjectCustomerService` lack Application/PG18 coverage; active defects in [CURRENT-STATE-BASELINE.md](CURRENT-STATE-BASELINE.md)) |
-| PostgreSQL 18 Integration Suite (`PromoGest.IntegrationTests`) | `BLOCKED` | **Compile failure (`CS7036`)** at `PostgresEndToEndTests.cs:1072` (`PartyConcurrencyStamp`). In CI Runs `43710844749` & `43713215866`, PG18 service containers started cleanly, while `.NET/Postgres` and Windows jobs failed during build before integration tests executed |
-| Local React SPA (`apps/local-web`) | `IMPLEMENTED_AND_VERIFIED` (Frontend) | CI `frontend` job succeeded (`tsc --noEmit` 0 errors, **24/24** pure TS unit tests pass, `wwwroot` leak check clean); `dev-api-middleware.ts` lacks 6 permissions & Docs/Customers/Reservations/Parties handlers |
-| Organization Profile Edit (`PUT /api/organization`) | `PARTIALLY_IMPLEMENTED` | `OrganizationProfileView.tsx` is read-only; `org.manage` seeded but no update endpoint exists |
-| Modules F–J & L (Contracts, DZD Finance/Installments, Works/Chantier, Procurement/Stock, SCF Accounting, Reporting) | `PLANNED` | Design baselines documented; zero production tables, services, endpoints, or UI implemented |
-| Module K (Document Vault `stored_files`) | `PARTIALLY_IMPLEMENTED` | Project file upload/list/download + SHA-256 verification implemented (`IMPLEMENTED_NOT_VERIFIED`); update/archive endpoints and entity-level linking not yet implemented |
+| Domain Core (`PromoGest.Domain`) | `IMPLEMENTED_AND_VERIFIED` | CI #495: **27/27** Domain tests passed |
+| Application Services (`PromoGest.Application`) | `IMPLEMENTED_AND_VERIFIED` | CI #495: **14/14** Application tests passed |
+| C2 Party / Customer identity foundation | `IMPLEMENTED_AND_VERIFIED` | PRs #35–#38 merged; audit denials, concurrency, cross-project reuse, identity-collision rejection, and linked mirror synchronization are covered by Application and PostgreSQL 18 tests |
+| PostgreSQL 18 Integration Suite (`PromoGest.IntegrationTests`) | `IMPLEMENTED_AND_VERIFIED` | CI #495: **9/9** PostgreSQL 18 integration tests passed; former `CS7036` is resolved |
+| Local React SPA (`apps/local-web`) | `PARTIALLY_IMPLEMENTED` | CI #495: strict TypeScript check, **24/24** pure tests, production build and `wwwroot` checks pass; manual RTL/LTR browser review and full parity of the Vite-only simulator remain outstanding |
+| Organization Profile Edit (`PUT /api/organization`) | `PARTIALLY_IMPLEMENTED` | `OrganizationProfileView.tsx` is read-only; `org.manage` is seeded but no update endpoint exists |
+| Modules F–J & L (Contracts, DZD Finance/Installments, Works/Chantier, Procurement/Stock, SCF Accounting, Reporting) | `PLANNED` | Design baselines documented; no production business modules implemented |
+| Module K (Document Vault `stored_files`) | `PARTIALLY_IMPLEMENTED` | K-Min upload/list/download and SHA-256 API path pass PostgreSQL 18 E2E; metadata lifecycle, structured links and K-Full archival remain unimplemented |
 
 ---
 
@@ -87,7 +87,7 @@ PROMO GEST refuses scope creep driven by generic SaaS ERP conventions. All devel
 | Scope Tier | Included Capabilities | Governing Rule |
 |---|---|---|
 | **Core Product Scope** | Single-organization on-premises ASP.NET Core 10 + PostgreSQL 18 + local storage + bilingual RTL/LTR SPA; single `SYSTEM_ADMIN`; explicit project membership; DZD financials; Algerian legal/tax compliance. | Non-negotiable per Constitution & ADRs `0001–0005`. |
-| **Required for First Production Release *(Minimum Viable On-Premises Operations — Pending PO Sign-Off)*** | **Must pass:** Phase 0 (`CS7036`, C2 audit/sync fixes, PG18 green CI) + Phase 1 (`PUT /api/organization`, structure authz alignment, Party/ProjectCustomer resolution, versioned 69-Wilaya/commune catalogue) + verified Linux/Windows service packaging, DPAPI/PKCS#12 keys, and backup/restore round-trip drill. *(Wait for Product Owner approval on whether First Production Release includes Projects+Inventory+CRM+Holds only OR also Phase 2/3A VSP Contracts & Collections.)* | No customer installation without verified backup/restore & green `G1–G10`. |
+| **Required for First Production Release *(Minimum Viable On-Premises Operations — Pending PO Sign-Off)*** | **Must pass:** Phase 0 (keep CI green; verify the real ASP.NET Core / Cloud SQL development-preview path and manual Arabic RTL / French LTR workflows) + Phase 1 (`PUT /api/organization`, structure authorization alignment, final Party mirror-retirement migration, versioned 69-Wilaya / commune catalogue) + verified Linux/Windows service packaging, DPAPI/PKCS#12 keys, and backup/restore round-trip drill. *(Wait for Product Owner approval on whether First Production Release includes Projects+Inventory+CRM+Holds only OR also Phase 2/3A VSP Contracts & Collections.)* | No customer installation without verified backup/restore & green `G1–G10`. |
 | **Later Enhancements (`PLANNED`)** | Phase 2 (Statutory Reservation, VSP & *Acte Notarié* Contracts + K-Min links), Phase 3A (DZD Installments, Collections & Treasury), Phase 3B/3C (Chantier Lots/Situations, Procurement/Stock), Phase 4 (SCF Ledger & Tax Engine), Phase 5 (Full K-Full Archival & Executive Reporting). | Strictly sequenced via [MASTER-ROADMAP.md](MASTER-ROADMAP.md) & legal/CPA gates. |
 | **Explicitly Out of Scope** | Multi-tenant SaaS hosting; public internet exposure of local ERP; cloud DBs (`Cloud SQL`, Firestore, etc.) holding real customer/company data; buyer self-service portals sharing the ERP process/DB (`ADR-0005`); native mobile apps; auto-merging Parties by fuzzy name/phone; hardcoded unapproved tax/SCF posting rules. | Rejected automatically unless governed by an approved ADR. |
 | **Decisions Awaiting Product Owner / Practitioner Approval** | (1) Exact commercial release cut-off (Foundation+CRM+Holds vs full VSP Contracts+Collections); (2) Business role assignment for `parties.identity.manage`; (3) Law 11-04 / Decree 13-431 VSP & FGCMPI legal sign-off; (4) Finance Law 2025/2026 VAT & SCF posting rules CPA sign-off; (5) Verified official 1,541-commune dataset (`ADR-0010`). | Documented in [DECISION-LOG.md](DECISION-LOG.md) Section 3. |

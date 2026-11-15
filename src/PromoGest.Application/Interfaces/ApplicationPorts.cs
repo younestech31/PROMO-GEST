@@ -141,6 +141,13 @@ public interface IProjectFileStorage
 }
 
  
+public interface IPartyRepository
+{
+    Task<Party?> GetByIdAsync(Guid partyId, CancellationToken ct = default);
+    Task<IReadOnlyList<Party>> SearchDirectoryAsync(string normalizedPrefix, int limit, CancellationToken ct = default);
+    Task AddAsync(Party party, CancellationToken ct = default);
+}
+
 public interface IProjectCustomerRepository
 {
     Task<IReadOnlyList<ProjectCustomer>> ListByProjectAsync(Guid projectId, CancellationToken ct = default);
@@ -151,7 +158,11 @@ public interface IProjectCustomerRepository
         string normalizedPhone,
         Guid? excludeCustomerId = null,
         CancellationToken ct = default);
-    Task AddPartyAsync(Party party, CancellationToken ct = default);
+    Task<bool> ExistsPartyInProjectAsync(
+        Guid projectId,
+        Guid partyId,
+        Guid? excludeCustomerId = null,
+        CancellationToken ct = default);
     Task AddCustomerAsync(ProjectCustomer customer, CancellationToken ct = default);
     Task AddInteractionAsync(CustomerInteraction interaction, CancellationToken ct = default);
     Task SaveChangesAsync(CancellationToken ct = default);

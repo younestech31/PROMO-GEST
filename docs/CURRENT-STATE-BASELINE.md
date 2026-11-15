@@ -1,9 +1,9 @@
 # PROMO GEST — Current State Baseline
 
 **Document Role:** Evidence-backed snapshot of the repository, not a product roadmap.  
-**Audited Source Baseline:** `6bbd97f70ed0fb63cf226a1117cf6e83c359d2be` (PR #44 merge).  
-**Previous Canonical Documentation Snapshot:** `fd72c6b872e584829657505cc0c1d4dfe38d3020` (PR #43; superseded by this alignment refresh).  
-**Latest Green CI:** GitHub Actions Run **#526** / `43743107914`, on the audited source commit above; all three jobs passed.  
+**Last Code-Changing Source Baseline:** `6bbd97f70ed0fb63cf226a1117cf6e83c359d2be` (PR #44 merge; no application-code changes in PR #45).  
+**Current Main Documentation Snapshot:** `4d025ca19a7711df1d4df327b05ee4846cac3267` (PR #45; documentation-only alignment).  
+**Latest Green CI:** GitHub Actions Run **#529** / `43746793430`, on current main (`4d025ca19a7711df1d4df327b05ee4846cac3267`); all three jobs passed.  
 **Governing Rule:** A feature is `IMPLEMENTED_AND_VERIFIED` only when its code and applicable automated verification pass in the audited baseline. A green pipeline does not certify untested browser UX, preview parity, production installation, or legal/accounting correctness.
 
 ---
@@ -12,10 +12,10 @@
 
 | Layer / Subsystem | Status | Current Evidence | Remaining Boundary |
 |---|---|---|---|
-| Domain Core (`PromoGest.Domain`) | `IMPLEMENTED_AND_VERIFIED` | CI #526: **27/27** Domain tests passed. | Additional coverage is added with each domain change. |
-| Application Services (`PromoGest.Application`) | `IMPLEMENTED_AND_VERIFIED` | CI #526: **14/14** Application tests passed, including Party denial auditing and identity-mirror synchronization coverage. | Browser-level workflows are outside this test suite. |
-| PostgreSQL 18 Integration (`PromoGest.IntegrationTests`) | `IMPLEMENTED_AND_VERIFIED` | CI #526: solution build succeeded and **9/9** integration tests passed against PostgreSQL 18. | CI evidence is not a substitute for a customer-site installation drill. |
-| Local React SPA (`apps/local-web`) | `PARTIALLY_IMPLEMENTED` | CI #526: TypeScript strict check, **38/38** pure TypeScript tests, production build, ASP.NET Core static-hosting output, and preview-leak checks passed. | Manual Arabic RTL / French LTR browser review remains outstanding. The Vite fallback simulator is intentionally not the production API and remains incomplete. |
+| Domain Core (`PromoGest.Domain`) | `IMPLEMENTED_AND_VERIFIED` | CI #529: **27/27** Domain tests passed. | Additional coverage is added with each domain change. |
+| Application Services (`PromoGest.Application`) | `IMPLEMENTED_AND_VERIFIED` | CI #529: **14/14** Application tests passed, including Party denial auditing and identity-mirror synchronization coverage. | Browser-level workflows are outside this test suite. |
+| PostgreSQL 18 Integration (`PromoGest.IntegrationTests`) | `IMPLEMENTED_AND_VERIFIED` | CI #529: solution build succeeded and **9/9** integration tests passed against PostgreSQL 18. | CI evidence is not a substitute for a customer-site installation drill. |
+| Local React SPA (`apps/local-web`) | `PARTIALLY_IMPLEMENTED` | CI #529: TypeScript strict check, **38/38** pure TypeScript tests, production build, ASP.NET Core static-hosting output, and preview-leak checks passed. | Manual Arabic RTL / French LTR browser review remains outstanding. The Vite fallback simulator is intentionally not the production API and remains incomplete. |
 | C2 Party / Customer identity foundation | `IMPLEMENTED_AND_VERIFIED` | PRs #35–#38 merged; Application and PostgreSQL 18 tests cover concurrency stamps, denial audit, cross-project Party reuse, identity-collision rejection, and synchronization of linked customer mirrors. | Duplicate identity columns remain transitional mirrors until the Phase 1 migration retires them. |
 | Organization profile editing | `PARTIALLY_IMPLEMENTED` | Organization profile view is read-only; `org.manage` is seeded. | `PUT /api/organization` is not implemented. |
 | Modules F–J (Contracts through SCF/Tax) | `PLANNED` | Architecture and legal/accounting prerequisites are documented. | No production business implementation; practitioner sign-off remains mandatory. |
@@ -23,13 +23,13 @@
 
 ## 2. Verified CI Evidence
 
-### GitHub Actions Run #526 — 15 November 2026
+### GitHub Actions Run #529 — 15 November 2026
 - **Frontend job:** passed. `npm run lint` (`tsc --noEmit`), `npm test` (**38/38**), SPA build, ASP.NET Core `wwwroot` build, static-hosting checks, and preview-leak checks all completed successfully.
 - **.NET 10 / PostgreSQL 18 job:** passed. Solution build with warnings as errors succeeded; Domain **27/27**, Application **14/14**, and PostgreSQL 18 Integration **9/9** tests passed.
 - **Windows publish job:** passed. Windows x64 publish, machine-scoped Data Protection recovery verification, and PowerShell validation all succeeded.
 - **Overall result:** all three CI jobs completed with `success` on commit `6bbd97f70ed0fb63cf226a1117cf6e83c359d2be`.
 
-[Open CI Run #526](https://github.com/younestech31/PROMO-GEST/actions/runs/43743107914)
+[Open CI Run #529](https://github.com/younestech31/PROMO-GEST/actions/runs/43746793430)
 
 ### C2 Party / Customer changes merged and verified
 - **PR #35:** fixed `CS7036` by passing the actual `PartyConcurrencyStamp` returned by the customer-details response. No synthetic token or weakened concurrency check was introduced.
@@ -39,9 +39,13 @@
 
 The former `CS7036` compilation blocker is **resolved**, not an active blocker. Earlier failing CI runs remain historical records only.
 
+### Current UI implementation snapshot
+
+The screen-by-screen source inventory is maintained in [UI-IMPLEMENTATION-AND-GAP-MATRIX.md](UI-IMPLEMENTATION-AND-GAP-MATRIX.md). The current React shell exposes five route states: overview, projects, users, audit, and organization. The project directory contains working project, structure, customer, internal-hold, and document operations, but those project operations are opened from the directory as modals. A dedicated project switcher and active project workspace are not implemented. The matrix separates source/API presence from manual browser acceptance; it does not claim Arabic RTL or French LTR browser review has passed.
+
 ## 3. Phase 0 — Remaining Work
 
-Phase 0 remains `IN_PROGRESS`. The latest main CI is green, and the product owner confirmed that the real Google AI Studio development server/API and PostgreSQL development connection are working. The previously reported generic internal errors on the project customer/prospect and reservation pages were confirmed resolved after PR #44. This is targeted smoke evidence, not full end-to-end acceptance.
+Phase 0 remains `IN_PROGRESS`. The latest main CI (#529) is green, and the product owner confirmed that the real Google AI Studio development server/API and PostgreSQL development connection are working. The previously reported generic internal errors on the project customer/prospect and reservation pages were confirmed resolved after PR #44. This is targeted smoke evidence, not full end-to-end acceptance.
 
 Remaining Phase 0 work is bounded:
 
@@ -76,7 +80,7 @@ The later AI Studio log at **17:09:56** identified the next prerequisite exactly
 
 PR #42 adds the shared `scripts/ensure-dotnet10.sh` bootstrap to both `npm run dev` and `npm run dev:cloudsql`. It checks for a compatible SDK, downloads Microsoft's official `dotnet-install.sh` over HTTPS only when needed, installs the .NET 10 SDK in `$HOME/.dotnet` without root permissions, and verifies the selected version before proceeding. A newly recreated preview container may need to download the SDK again. The first startup requires outbound HTTPS access to `dot.net` and sufficient free disk space.
 
-CI #526 verifies the default Cloud SQL migration/grant startup sequence, .NET 10 bootstrap regression, frontend checks, PostgreSQL 18 integration, and Windows release checks. These automated tests verify the launcher contract; they do not replace live-preview checks, which the product owner has now smoke-tested successfully in Google AI Studio.
+CI #529 verifies the default Cloud SQL migration/grant startup sequence, .NET 10 bootstrap regression, frontend checks, PostgreSQL 18 integration, and Windows release checks. These automated tests verify the launcher contract; they do not replace live-preview checks, which the product owner has now smoke-tested successfully in Google AI Studio.
 
 ## 6. AI Studio Runtime Incident — 15 November 2026
 
@@ -102,4 +106,4 @@ The owner subsequently confirmed that the preview server is working and the proj
 
 - `OrganizationProfileView.tsx` remains read-only; `PUT /api/organization` is not present.
 - The screenshot `public/assets/aistudio/Screenshot_2026-11-15-12-54-54-202-edit_com.android.chrome_743cf16d.jpg` is a development-debugging artifact added before this baseline. It should be removed in a separately scoped asset-cleanup PR after confirming no product reference uses it; it was not changed in the C2 fixes.
-- No Cloud SQL production-data migration or customer deployment is implied by CI #526. The Cloud SQL environment remains a non-production development integration.
+- No Cloud SQL production-data migration or customer deployment is implied by CI #529. The Cloud SQL environment remains a non-production development integration.

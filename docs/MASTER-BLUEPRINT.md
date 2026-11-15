@@ -2,7 +2,7 @@
 
 **Document Role:** Single authoritative index & master entry point for the PROMO GEST local-first real estate developer ERP (*promoteur immobilier* — Algeria).  
 **Last Code-Changing Source Commit:** `6bbd97f70ed0fb63cf226a1117cf6e83c359d2be` (PR #44 merge).  
-**Current Main Documentation Snapshot:** `5415f0e668a55f902ac2802e1669af58ad7ec410` (PR #46).  
+**Main Commit Inspected at Audit Start:** `5415f0e668a55f902ac2802e1669af58ad7ec410` (PR #46).  
 **Latest Green CI:** GitHub Actions Run #531 / `43752672569` on current main; all three jobs passed.  
 **Governing Charter:** Local-first, on-premises per organization, PostgreSQL 18 single source of truth, single System Administrator (`SYSTEM_ADMIN`), HTTP-only `SameSite=Strict` cookie sessions (`promogest_session`) + CSRF, local filesystem storage with SHA-256 verification, Arabic RTL primary / French LTR secondary, Algerian DZD & legal context.
 
@@ -42,6 +42,7 @@ Every claim across this blueprint uses **strictly one** of the six evidence-back
 | 11 | [DEVELOPMENT-WORKFLOW.md](DEVELOPMENT-WORKFLOW.md) | Mandatory pre-work, in-development, post-development, and Definition-of-Done governance preventing architectural drift. |
 | 12 | [REQUIREMENT-TRACEABILITY.md](REQUIREMENT-TRACEABILITY.md) | Complete traceability matrix linking functional requirements across Domains **A–L** to code, endpoints, permissions, views, tests, and gates. |
 | 13 | [UI-IMPLEMENTATION-AND-GAP-MATRIX.md](UI-IMPLEMENTATION-AND-GAP-MATRIX.md) | Source-audited inventory of current React screens, API-backed actions, module status, navigation gaps, and Phase 0/1 UI boundaries. |
+| 14 | [PHASE-0-MANUAL-ACCEPTANCE.md](PHASE-0-MANUAL-ACCEPTANCE.md) | Executable browser/real-API acceptance protocol for Phase 0; explicitly distinguishes unrun manual checks from CI evidence. |
 
 ---
 

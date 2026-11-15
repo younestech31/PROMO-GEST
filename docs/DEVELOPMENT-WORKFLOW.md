@@ -14,7 +14,7 @@ The product interaction model should separate:
 2. **Project selection/switching** — explicit selection of authorized projects.
 3. **Active project workspace** — project-scoped modules with persistent project identity.
 
-Technical administration (health, database readiness, backups, security audit, and user/role administration) must be available in the appropriate administrative area without becoming the primary daily-work interface. Use `PROJECT-NAVIGATION-UX.md` as a proposal to review against the business workflows and implementation; do not launch an unbounded redesign or claim the proposal is implemented.
+Technical administration (health, database readiness, backups, security audit, and user/role administration) must be available in the appropriate administrative area without becoming the primary daily-work interface. Use `PROJECT-NAVIGATION-UX.md` as a proposal to review against the business workflows and implementation, and `UI-IMPLEMENTATION-AND-GAP-MATRIX.md` as the source-audited current-state inventory; do not launch an unbounded redesign or claim the proposal is implemented.
 
 A UI screen or technical component is not a business deliverable by itself. Map every changed screen/API to its actual business requirement, domain module, permission, data owner, and downstream workflow.
 
@@ -24,9 +24,10 @@ Every contributor or engineering session **must** complete these 5 preparation s
 
 1. **Read the Canonical Engineering Suite:**
    - [MASTER-BLUEPRINT.md](MASTER-BLUEPRINT.md) (status taxonomy & scope boundaries)
-   - [CURRENT-STATE-BASELINE.md](CURRENT-STATE-BASELINE.md) (audited source baseline `6bbd97f70ed0fb63cf226a1117cf6e83c359d2be`, CI #526 evidence, user-confirmed AI Studio preview smoke check, and remaining Phase 0 gates)
+   - [CURRENT-STATE-BASELINE.md](CURRENT-STATE-BASELINE.md) (current main SHA, last code-changing source SHA, latest CI evidence, preview boundaries, and remaining Phase 0 gates)
    - [DOMAIN-MODEL.md](DOMAIN-MODEL.md) (literal schema, concurrency, Party vs ProjectCustomer rules)
-   - [SECURITY-AND-PERMISSIONS.md](SECURITY-AND-PERMISSIONS.md) (hashing, cookies, CSRF, 18 permissions, resource scoping)
+   - [SECURITY-AND-PERMISSIONS.md](SECURITY-AND-PERMISSIONS.md) (hashing, cookies, CSRF, permissions, resource scoping)
+   - [UI-IMPLEMENTATION-AND-GAP-MATRIX.md](UI-IMPLEMENTATION-AND-GAP-MATRIX.md) (current screens, module ownership, and verified UI boundaries)
    - [MASTER-ROADMAP.md](MASTER-ROADMAP.md) (dependencies & phase sequencing)
    - Applicable ADRs in `docs/ADR/` (`0001–0010`) and [DECISION-LOG.md](DECISION-LOG.md).
 2. **Verify Prerequisite Dependencies:**

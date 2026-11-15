@@ -6,11 +6,11 @@
 
 ## Context
 
-PROMO GEST currently stores customer identity and contact details in the project-scoped \`project_customers\` table. A unique index prevents duplicates only within one project. Reservations and customer interactions retain foreign keys to those project-customer IDs.
+PROMO GEST currently stores customer identity and contact details in the project-scoped `project_customers` table. A unique index prevents duplicates only within one project. Reservations and customer interactions retain foreign keys to those project-customer IDs.
 
-The current \`users\` table is an authentication principal with security fields and profile fields. There is no Employee master entity. The target ERP requires organization-wide customers, prospects, suppliers, contractors and employee profiles without losing project scope or exposing data across projects.
+The current `users` table is an authentication principal with security fields and profile fields. There is no Employee master entity. The target ERP requires organization-wide customers, prospects, suppliers, contractors and employee profiles without losing project scope or exposing data across projects.
 
-A direct rename of \`project_customers\`, global merge by name/phone, or reuse of \`users\` as an Employee table would risk data loss, broken reservations and authorization regressions.
+A direct rename of `project_customers`, global merge by name/phone, or reuse of `users` as an Employee table would risk data loss, broken reservations and authorization regressions.
 
 ## Decision
 

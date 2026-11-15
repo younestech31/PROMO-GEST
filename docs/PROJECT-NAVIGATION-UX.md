@@ -6,7 +6,7 @@
 
 ## Current repository implementation check — 15 November 2026
 
-Source inspected: last code-changing commit `6bbd97f70ed0fb63cf226a1117cf6e83c359d2be`; current main documentation snapshot `4d025ca19a7711df1d4df327b05ee4846cac3267`.
+Source inspected: last code-changing commit `6bbd97f70ed0fb63cf226a1117cf6e83c359d2be`; current main documentation snapshot `5415f0e668a55f902ac2802e1669af58ad7ec410`.
 
 The current React application has five top-level in-memory route states: `overview`, `projects`, `users`, `audit`, and `organization`. The authenticated shell keeps organization identity visible and exposes a project directory. `ProjectsAccessView.tsx` opens structure, customer registry, internal-hold, and document workflows in project-specific modals from each directory row. The modal headers show project code and name.
 

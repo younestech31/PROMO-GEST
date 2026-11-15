@@ -5,7 +5,6 @@ import {
   LayoutDashboard,
   LogOut,
   Menu,
-  ServerOff,
   Settings2,
   ShieldAlert,
   Users,
@@ -15,7 +14,6 @@ import type { AppLanguage, SessionResponse } from '../types/erp';
 import { getTranslations } from '../localization/translations';
 import { canManageUsers, canViewAuditLogs } from '../utils/permissions';
 import { LanguageSwitcher } from '../components/LanguageSwitcher';
-import { ConnectionIndicator, type ServerConnectionState } from '../components/ConnectionIndicator';
 
 export type ErpRoute = 'overview' | 'projects' | 'users' | 'audit' | 'organization';
 
@@ -23,10 +21,8 @@ interface ErpShellLayoutProps {
   session: SessionResponse;
   language: AppLanguage;
   activeRoute: ErpRoute;
-  connectionState: ServerConnectionState;
   onNavigate: (route: ErpRoute) => void;
   onLanguageChange: (lang: AppLanguage) => void;
-  onRetryConnection: () => void;
   onLogout: () => void;
   children: ReactNode;
 }
@@ -35,10 +31,8 @@ export function ErpShellLayout({
   session,
   language,
   activeRoute,
-  connectionState,
   onNavigate,
   onLanguageChange,
-  onRetryConnection,
   onLogout,
   children,
 }: ErpShellLayoutProps) {
@@ -205,39 +199,11 @@ export function ErpShellLayout({
             </div>
 
             <div className="flex items-center gap-4 shrink-0">
-              <div className="hidden sm:block">
-                <ConnectionIndicator
-                  state={connectionState}
-                  language={language}
-                  onRetry={onRetryConnection}
-                />
-              </div>
               <LanguageSwitcher language={language} onChange={onLanguageChange} />
             </div>
           </div>
         </header>
 
-        {connectionState === 'disconnected' && (
-          <div
-            role="alert"
-            className="bg-red-50 border-b border-red-200 px-4 sm:px-6 py-3 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3"
-          >
-            <div className="flex items-start gap-2.5 text-red-900">
-              <ServerOff className="w-4 h-4 mt-0.5 shrink-0 text-red-700" aria-hidden="true" />
-              <div>
-                <p className="text-xs font-bold">{t.serverDisconnectedBannerTitle}</p>
-                <p className="text-xs text-red-800 mt-0.5">{t.serverDisconnectedBannerBody}</p>
-              </div>
-            </div>
-            <button
-              type="button"
-              onClick={onRetryConnection}
-              className="px-3 py-1.5 text-xs font-semibold rounded border border-red-300 bg-white text-red-800 hover:bg-red-100 whitespace-nowrap shrink-0"
-            >
-              {t.retryConnection}
-            </button>
-          </div>
-        )}
 
         <main className="flex-1 p-4 sm:p-6 lg:p-8 max-w-7xl w-full mx-auto">{children}</main>
       </div>

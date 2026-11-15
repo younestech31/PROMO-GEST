@@ -5,7 +5,6 @@ import { getTranslations, translateApiError } from '../../localization/translati
 import { validateLoginRequest, type ValidationErrors } from '../../utils/validation';
 import { apiClient, ApiConnectionError, ApiError } from '../../services/apiClient';
 import { LanguageSwitcher } from '../../components/LanguageSwitcher';
-import { ConnectionIndicator, type ServerConnectionState } from '../../components/ConnectionIndicator';
 import { FormField, inputBaseClass } from '../../components/FormField';
 import { PreviewAccessButton } from './PreviewAccessButton';
 
@@ -13,8 +12,6 @@ interface LoginScreenProps {
   language: AppLanguage;
   onLanguageChange: (lang: AppLanguage) => void;
   organizationName: string | null;
-  connectionState: ServerConnectionState;
-  onRetryConnection: () => void;
   onLoggedIn: (session: SessionResponse) => void;
   isPreviewMode: boolean;
   onPreviewLogin: () => Promise<void>;
@@ -24,8 +21,6 @@ export function LoginScreen({
   language,
   onLanguageChange,
   organizationName,
-  connectionState,
-  onRetryConnection,
   onLoggedIn,
   isPreviewMode,
   onPreviewLogin,
@@ -51,7 +46,7 @@ export function LoginScreen({
       onLoggedIn(session);
     } catch (err) {
       if (err instanceof ApiConnectionError) {
-        setAuthError(t.serverDisconnectedBannerTitle);
+        setAuthError(t.operationTemporarilyUnavailable);
       } else if (err instanceof ApiError) {
         setAuthError(translateApiError(err.code, err.message, language));
       } else {
@@ -76,11 +71,6 @@ export function LoginScreen({
           </div>
 
           <div className="flex flex-wrap items-center gap-2 sm:gap-4">
-            <ConnectionIndicator
-              state={connectionState}
-              language={language}
-              onRetry={onRetryConnection}
-            />
             <LanguageSwitcher language={language} onChange={onLanguageChange} />
           </div>
         </div>
@@ -138,7 +128,7 @@ export function LoginScreen({
 
             <button
               type="submit"
-              disabled={isSubmitting || connectionState === 'disconnected'}
+              disabled={isSubmitting}
               className="w-full inline-flex items-center justify-center gap-2 rounded-md bg-teal-800 px-4 py-2.5 text-sm font-semibold text-white hover:bg-teal-900 transition-colors disabled:opacity-60 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-teal-800"
             >
               <Lock className="w-4 h-4" aria-hidden="true" />

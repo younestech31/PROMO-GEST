@@ -5,12 +5,8 @@ export interface TranslationBundle {
   appSubtitle: string;
   languageArabic: string;
   languageFrench: string;
-  serverConnected: string;
-  serverDisconnected: string;
-  serverChecking: string;
-  serverDisconnectedBannerTitle: string;
-  serverDisconnectedBannerBody: string;
-  retryConnection: string;
+  operationTemporarilyUnavailable: string;
+  operationTemporarilyUnavailable: string;
   setup: {
     eyebrow: string;
     title: string;
@@ -216,13 +212,7 @@ const AR: TranslationBundle = {
   appSubtitle: 'نظام تسيير الترقية العقارية — خادم محلي مستقل',
   languageArabic: 'العربية',
   languageFrench: 'Français',
-  serverConnected: 'متصل بالخادم المحلي',
-  serverDisconnected: 'انقطاع الاتصال بالخادم المحلي',
-  serverChecking: 'فحص الاتصال المحلي...',
-  serverDisconnectedBannerTitle: 'تعذر الوصول إلى الخادم المحلي للمؤسسة',
-  serverDisconnectedBannerBody:
-    'توقفت العمليات التجارية مؤقتاً لأن الخادم المحلي غير متاح. تبقى قاعدة بيانات PostgreSQL المصدر المرجعي الوحيد ولا يمكن إجراء معاملات دون اتصال بالخادم.',
-  retryConnection: 'إعادة المحاولة',
+  operationTemporarilyUnavailable: 'تعذّر إتمام العملية حالياً. يرجى المحاولة مجدداً.',
   setup: {
     eyebrow: 'التثبيت الأولي للنظام المحلي',
     title: 'تهيئة مؤسسة الترقية العقارية',
@@ -430,13 +420,7 @@ const FR: TranslationBundle = {
   appSubtitle: 'ERP Promotion Immobilière — Serveur Local Autonome',
   languageArabic: 'العربية',
   languageFrench: 'Français',
-  serverConnected: 'Connecté au serveur local',
-  serverDisconnected: 'Serveur local inaccessible',
-  serverChecking: 'Vérification du serveur local...',
-  serverDisconnectedBannerTitle: 'Connexion perdue avec le serveur local',
-  serverDisconnectedBannerBody:
-    'Les opérations métier sont suspendues car le serveur local est indisponible. PostgreSQL reste la source unique de vérité : aucune transaction ne peut continuer hors serveur.',
-  retryConnection: 'Réessayer',
+  operationTemporarilyUnavailable: "Opération impossible pour le moment. Veuillez réessayer.",
   setup: {
     eyebrow: 'Installation initiale locale',
     title: 'Initialisation de l\'entreprise immobilière',

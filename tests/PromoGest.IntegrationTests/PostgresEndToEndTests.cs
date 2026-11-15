@@ -1069,6 +1069,9 @@ public sealed class PostgresEndToEndTests : IClassFixture<PostgreSql18Integratio
             Assert.False(string.IsNullOrWhiteSpace(customerDetails.Interactions[0].CreatedByFullName));
 
             var staleCustomerStamp = customerDetails.ConcurrencyStamp;
+            var partyConcurrencyStamp = customerDetails.PartyConcurrencyStamp;
+            Assert.NotEqual(Guid.Empty, partyConcurrencyStamp);
+
             var updateCustomerRequest = new UpdateProjectCustomerRequest(
                 customerDetails.CustomerType,
                 "ليلى بن عيسى المحدثة",
@@ -1080,7 +1083,8 @@ public sealed class PostgresEndToEndTests : IClassFixture<PostgreSql18Integratio
                 customerDetails.Source,
                 "Qualified",
                 customerDetails.IdentityDocument?.Id,
-                staleCustomerStamp);
+                staleCustomerStamp,
+                partyConcurrencyStamp);
             var updateCustomerResponse = await adminClient.PutAsJsonAsync(
                 $"/api/projects/{createdProject.Id}/customers/{createdCustomer.Id}",
                 updateCustomerRequest);

@@ -172,6 +172,11 @@ public sealed class PostgreSql18IntegrationFixture : IAsyncLifetime
                 throw new InvalidOperationException(
                     "The OrganizationWidePartyFoundation migration was not discovered and applied.");
             }
+            if (!applied.Contains("20261115120000_UniqueProjectPartyCustomerLink"))
+            {
+                throw new InvalidOperationException(
+                    "The UniqueProjectPartyCustomerLink migration was not discovered and applied.");
+            }
         }
 
         // Apply the same post-migration grants used by the Google AI Studio Cloud SQL path.

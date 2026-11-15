@@ -58,7 +58,13 @@ public sealed record CreateProjectCustomerRequest(
     string? Address,
     string PreferredLanguage,
     string Source,
-    Guid? IdentityDocumentStoredFileId);
+    Guid? IdentityDocumentStoredFileId,
+    Guid? PartyId = null);
+
+public sealed record PartyDirectoryItemDto(
+    Guid Id,
+    string Kind,
+    string DisplayName);
 
 public sealed record UpdateProjectCustomerRequest(
     string CustomerType,

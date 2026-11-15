@@ -1233,6 +1233,9 @@ public sealed class PostgresEndToEndTests : IClassFixture<PostgreSql18Integratio
                 "fr",
                 new[] { Role.ProjectDirectorCode }));
             Assert.Equal(HttpStatusCode.Created, directorCreateResp.StatusCode);
+            var directorCreatedUser = await directorCreateResp.Content.ReadFromJsonAsync<UserDto>();
+            Assert.NotNull(directorCreatedUser);
+            var directorCreatedUserId = directorCreatedUser!.Id;
 
             using var directorClient = factory.CreateClient(new WebApplicationFactoryClientOptions { HandleCookies = true });
             await AttachCsrfTokenAsync(directorClient);
@@ -1247,11 +1250,101 @@ public sealed class PostgresEndToEndTests : IClassFixture<PostgreSql18Integratio
                 NameAr = "إقامة الأطلس - تحديث مدير المشاريع",
                 NameFr = "Résidence Atlas - Mise à jour du directeur"
             };
-            var directorUpdateResp = await directorClient.PutAsJsonAsync(
+
+            // A global Project Director role grants the action permission, not access to an unassigned project.
+            var unassignedProjectRead = await directorClient.GetAsync($"/api/projects/{createdProject.Id}");
+            Assert.Equal(HttpStatusCode.Forbidden, unassignedProjectRead.StatusCode);
+            var unassignedProjectUpdate = await directorClient.PutAsJsonAsync(
                 $"/api/projects/{createdProject.Id}",
                 directorUpdate);
-            Assert.Equal(HttpStatusCode.OK, directorUpdateResp.StatusCode);
-            var directorUpdatedProject = await directorUpdateResp.Content.ReadFromJsonAsync<ProjectDto>();
+            Assert.Equal(HttpStatusCode.Forbidden, unassignedProjectUpdate.StatusCode);
+            var unassignedStructureRead = await directorClient.GetAsync(structureUrl);
+            Assert.Equal(HttpStatusCode.Forbidden, unassignedStructureRead.StatusCode);
+            var unassignedStructureCreate = await directorClient.PostAsJsonAsync(
+                $"{structureUrl}/buildings",
+                new CreateBuildingRequest("B", "غير مصرح", "Non autorisé", "Planned"));
+            Assert.Equal(HttpStatusCode.Forbidden, unassignedStructureCreate.StatusCode);
+            var directorProjectsBeforeAssignment = await directorClient.GetFromJsonAsync<List<ProjectDto>>("/api/projects");
+            Assert.NotNull(directorProjectsBeforeAssignment);
+            Assert.DoesNotContain(directorProjectsBeforeAssignment!, item => item.Id == createdProject.Id);
+
+            // Unknown and existing-but-unassigned project IDs must be indistinguishable to a non-member.
+            var unknownProjectId = Guid.NewGuid();
+            Assert.Equal(HttpStatusCode.Forbidden, (await directorClient.GetAsync($"/api/projects/{unknownProjectId}")).StatusCode);
+            Assert.Equal(HttpStatusCode.Forbidden, (await directorClient.GetAsync($"/api/projects/{unknownProjectId}/structure")).StatusCode);
+            Assert.Equal(HttpStatusCode.Forbidden, (await directorClient.GetAsync($"/api/projects/{unknownProjectId}/customers")).StatusCode);
+            Assert.Equal(HttpStatusCode.Forbidden, (await directorClient.GetAsync($"/api/projects/{unknownProjectId}/documents")).StatusCode);
+            Assert.Equal(HttpStatusCode.Forbidden, (await directorClient.GetAsync($"/api/projects/{unknownProjectId}/reservations")).StatusCode);
+            var unknownProjectUpdate = await directorClient.PutAsJsonAsync(
+                $"/api/projects/{unknownProjectId}",
+                directorUpdate);
+            Assert.Equal(HttpStatusCode.Forbidden, unknownProjectUpdate.StatusCode);
+
+            // A non-administrator who creates a project is explicitly assigned as its initial Project Manager.
+            var directorCreateProjectResponse = await directorClient.PostAsJsonAsync(
+                "/api/projects",
+                new CreateProjectRequest(
+                    "PRJ-31-010",
+                    "إقامة مدير المشاريع",
+                    "Résidence du Directeur",
+                    "31",
+                    "Oran",
+                    "Bir El Djir",
+                    null,
+                    null,
+                    null,
+                    null,
+                    "Planning",
+                    125_000_000m,
+                    2,
+                    24));
+            Assert.Equal(HttpStatusCode.Created, directorCreateProjectResponse.StatusCode);
+            var directorOwnedProject = await directorCreateProjectResponse.Content.ReadFromJsonAsync<ProjectDto>();
+            Assert.NotNull(directorOwnedProject);
+            var creatorMembership = Assert.Single(directorOwnedProject!.Members);
+            Assert.Equal(directorCreatedUserId, creatorMembership.UserId);
+            Assert.Equal("ProjectManager", creatorMembership.RoleInProject);
+            Assert.True(creatorMembership.CanViewFinancials);
+            Assert.True(creatorMembership.CanManageSales);
+            Assert.True(creatorMembership.CanManageConstruction);
+            Assert.True(creatorMembership.CanManageDocuments);
+            var directorOwnedProjectDetail = await directorClient.GetAsync($"/api/projects/{directorOwnedProject.Id}");
+            Assert.Equal(HttpStatusCode.OK, directorOwnedProjectDetail.StatusCode);
+
+            var directorOwnedProjectList = await directorClient.GetFromJsonAsync<List<ProjectDto>>("/api/projects");
+            Assert.NotNull(directorOwnedProjectList);
+            Assert.Contains(directorOwnedProjectList!, item => item.Id == directorOwnedProject.Id);
+            Assert.DoesNotContain(directorOwnedProjectList!, item => item.Id == createdProject.Id);
+
+            var directorOwnUpdate = projectUpdate with
+            {
+                NameAr = "إقامة مدير المشاريع - تحديث",
+                NameFr = "Résidence du Directeur - Mise à Jour",
+                WilayaCode = "31",
+                WilayaName = "Oran",
+                Municipality = "Bir El Djir"
+            };
+            var directorOwnUpdateResponse = await directorClient.PutAsJsonAsync(
+                $"/api/projects/{directorOwnedProject.Id}",
+                directorOwnUpdate);
+            Assert.Equal(HttpStatusCode.OK, directorOwnUpdateResponse.StatusCode);
+
+            var directorOwnStructureResponse = await directorClient.PostAsJsonAsync(
+                $"/api/projects/{directorOwnedProject.Id}/structure/buildings",
+                new CreateBuildingRequest("A", "العمارة أ", "Bâtiment A", "Planned"));
+            Assert.Equal(HttpStatusCode.OK, directorOwnStructureResponse.StatusCode);
+
+            // An explicit team assignment grants project scope; the same global role alone did not.
+            var directorProjectAssignment = await adminClient.PutAsJsonAsync(
+                $"/api/projects/{createdProject.Id}/members",
+                new AssignProjectMemberRequest(directorCreatedUserId, "ProjectManager", true, true, true, true));
+            Assert.Equal(HttpStatusCode.OK, directorProjectAssignment.StatusCode);
+
+            var directorAssignedUpdate = await directorClient.PutAsJsonAsync(
+                $"/api/projects/{createdProject.Id}",
+                directorUpdate);
+            Assert.Equal(HttpStatusCode.OK, directorAssignedUpdate.StatusCode);
+            var directorUpdatedProject = await directorAssignedUpdate.Content.ReadFromJsonAsync<ProjectDto>();
             Assert.NotNull(directorUpdatedProject);
             Assert.Equal(directorUpdate.NameAr, directorUpdatedProject!.NameAr);
 
@@ -1259,6 +1352,15 @@ public sealed class PostgresEndToEndTests : IClassFixture<PostgreSql18Integratio
                 $"{structureUrl}/buildings",
                 new CreateBuildingRequest("B", "العمارة ب", "Bâtiment B", "Planned"));
             Assert.Equal(HttpStatusCode.OK, directorBuildingResponse.StatusCode);
+
+            // A project must retain at least one Project Manager.
+            var demoteLastManager = await adminClient.PutAsJsonAsync(
+                $"/api/projects/{createdProject.Id}/members",
+                new AssignProjectMemberRequest(directorCreatedUserId, "CommercialAgent", false, true, false, true));
+            Assert.Equal(HttpStatusCode.Conflict, demoteLastManager.StatusCode);
+            var removeLastManager = await adminClient.DeleteAsync(
+                $"/api/projects/{createdProject.Id}/members/{directorCreatedUserId}");
+            Assert.Equal(HttpStatusCode.Conflict, removeLastManager.StatusCode);
 
             // 8. Authenticate as employee -> test CSRF check, IDOR rejection, role escalation rejection, membership grant & revoke, deactivation session invalidation
             using var employeeClient = factory.CreateClient(new WebApplicationFactoryClientOptions { HandleCookies = true });

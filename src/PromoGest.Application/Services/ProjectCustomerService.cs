@@ -336,6 +336,26 @@ public sealed class ProjectCustomerService
         if (!actor.IsActive)
             throw new ForbiddenDomainException("AUTH_ACCOUNT_INACTIVE", "Account is inactive.");
 
+        if (!actor.IsSystemAdministrator)
+        {
+            var accessMembership = await _projectRepository.GetMemberAsync(projectId, actorUserId, ct);
+            if (accessMembership is null)
+            {
+                await RecordAuditAsync(
+                    actor,
+                    "ACCESS_DENIED",
+                    "Project",
+                    projectId.ToString(),
+                    "Unauthorized project-customer access attempt.",
+                    new { projectId, operation = canWrite ? "write" : "read" },
+                    metadata,
+                    ct);
+                throw new ForbiddenDomainException(
+                    canWrite ? "FORBIDDEN_PROJECT_CUSTOMER_WRITE" : "PROJECT_CUSTOMER_ACCESS_DENIED",
+                    "You do not have permission to access customers for this project.");
+            }
+        }
+
         var project = await _projectRepository.GetByIdWithMembersAsync(projectId, ct)
             ?? throw new NotFoundDomainException("PROJECT_NOT_FOUND", "Project not found.");
 
@@ -344,18 +364,17 @@ public sealed class ProjectCustomerService
             ? Array.Empty<string>()
             : await _userRepository.GetEffectivePermissionsAsync(actorUserId, ct);
 
-        var hasGlobalProjectScope = permissions.Contains("projects.manage", StringComparer.OrdinalIgnoreCase);
-        var hasProjectScope = actor.IsSystemAdministrator || membership is not null || hasGlobalProjectScope;
+        var hasProjectMembership = membership is not null;
         var hasReadPermission = actor.IsSystemAdministrator ||
             permissions.Contains("customers.read", StringComparer.OrdinalIgnoreCase);
         var hasManagePermission = actor.IsSystemAdministrator ||
             permissions.Contains("customers.manage", StringComparer.OrdinalIgnoreCase);
-        var isProjectSalesManager = membership?.CanManageSales == true ||
-            membership?.RoleInProject == ProjectRole.ProjectManager;
+        var isProjectSalesManager = membership is not null &&
+            (membership.CanManageSales || membership.RoleInProject == ProjectRole.ProjectManager);
 
-        var allowed = hasProjectScope && hasReadPermission &&
+        var allowed = (actor.IsSystemAdministrator || hasProjectMembership) && hasReadPermission &&
             (!canWrite || (hasManagePermission &&
-                (actor.IsSystemAdministrator || hasGlobalProjectScope || isProjectSalesManager)));
+                (actor.IsSystemAdministrator || isProjectSalesManager)));
 
         if (!allowed)
         {

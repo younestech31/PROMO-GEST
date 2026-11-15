@@ -11,9 +11,25 @@ This is the working delivery sequence for the local-first Algerian real-estate p
 - No external hosting/deployment or production database change is implied by completing a development milestone.
 - The target is a modular ERP with organization-wide business modules and a contextual project workspace, not a project-only application. See [ERP Module Architecture](ERP-MODULE-ARCHITECTURE.md) for the accepted target structure, shared master-data ownership, navigation, security model and workflow boundaries.
 
+## Foundation hardening gate — before expanding the module surface
+
+**Status: in progress on `fix/foundation-project-scope-and-localization`; merge is gated on the remediation CI run.**
+
+The November 2026 source review identified and is correcting project-scope authorization bypasses, missing creator membership, project-ID existence disclosure on project-scoped routes, and the outdated Wilaya code range. See [Foundation Audit](FOUNDATION-AUDIT-2026-11.md) and the linked security/localization ADRs.
+
+This gate is a prerequisite across the existing milestones, not a new business module. It includes:
+- Explicit project membership plus action permission for every project-owned API operation.
+- Same authorization semantics in ASP.NET Core and the in-memory development preview.
+- Creator membership and protection against removing/demoting the last Project Manager.
+- Consistent non-member denial before loading protected project details.
+- Official Algeria Wilaya codes 01–69, bilingual labels, and regression tests.
+- A verified baseline CI run on the remediation branch.
+
+Do not proceed to CRM master-data migration, cross-project navigation or additional business modules until the authorization and localization checks are merged and green.
+
 ## Milestone 1 — Secure local platform foundation
 
-**Status: implemented; production acceptance remains separate.**
+**Status: core platform implementation delivered; foundation hardening is under review; production acceptance remains separate.**
 
 Delivered foundation includes first-run organization setup, a single System Administrator, password hashing and lockout, opaque sessions, CSRF protection, role/permission seeding, project-scoped access, immutable audit records, local PostgreSQL persistence, local filesystem storage primitives, explicit owner-only migrations, installation scripts, and database/storage/Data Protection backup and restore workflows.
 

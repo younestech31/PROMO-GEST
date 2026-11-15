@@ -446,6 +446,14 @@ test('devPreviewProjectStore enforces uniqueness, area bounds, concurrency stamp
   assert.equal(canUserAccessProjectStructure({ id: 'emp-read', isSystemAdministrator: false, permissions: ['projects.read'] }, project, false), true);
   assert.equal(canUserAccessProjectStructure({ id: 'emp-read', isSystemAdministrator: false, permissions: ['projects.read'] }, project, true), false);
   assert.equal(canUserAccessProjectStructure({ id: 'emp-site', isSystemAdministrator: false, permissions: ['projects.read'] }, project, true), true);
+  assert.equal(
+    canUserAccessProjectStructure(
+      { id: 'emp-outsider', isSystemAdministrator: false, permissions: ['projects.read', 'projects.manage', 'projects.structure.manage'] },
+      project,
+      false
+    ),
+    false
+  );
 
   const updatedProject = updateProjectInStore(project, {
     nameAr: 'إقامة الرمال الذهبية المحينة',

@@ -1,3 +1,12 @@
+> **Historical audit archive — not the current project status.**
+>
+> This report was written against an earlier uploaded source archive, not the current `main` or the current review branch. Findings must be re-verified against the current commit before treating them as open. Several findings were subsequently remediated; the current baseline report records what remains.
+>
+> Original source path: `public/assets/aistudio/PROMO-GEST-Final-Release-Gate-Audit_63a68481.md`
+> Original blob SHA: `f657748fdae5c9cfd42d21cffefcd900f6373243`
+
+---
+
 # PROMO GEST — Final Milestone 1 Release-Gate Audit
 
 **Archive reviewed:** `promo-gest (2).zip`  

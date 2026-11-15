@@ -42,8 +42,8 @@ export function validateSetupRequest(
   if (!req.legalForm.trim()) {
     errors.legalForm = t('الشكل القانوني مطلوب.', 'La forme juridique est obligatoire.');
   }
-  if (!/^([0][1-9]|[1-4]\d|5[0-8])$/.test(req.wilayaCode.trim())) {
-    errors.wilayaCode = t('يرجى اختيار ولاية جزائرية صالحة (01 إلى 58).', 'Veuillez sélectionner une wilaya valide (01 à 58).');
+  if (!/^([0][1-9]|[1-5]\d|6[0-9])$/.test(req.wilayaCode.trim())) {
+    errors.wilayaCode = t('يرجى اختيار ولاية جزائرية صالحة (01 إلى 69).', 'Veuillez sélectionner une wilaya valide (01 à 69).');
   }
   if (!req.address.trim()) {
     errors.address = t('عنوان المقر الاجتماعي مطلوب.', 'L\'adresse du siège social est obligatoire.');
@@ -128,8 +128,8 @@ export function validateCreateProject(req: CreateProjectRequest, lang: AppLangua
   if (!req.nameAr.trim() && !req.nameFr.trim()) {
     errors.nameAr = t('اسم المشروع بالعربية أو الفرنسية مطلوب.', 'Le nom du projet (AR ou FR) est obligatoire.');
   }
-  if (!/^([0][1-9]|[1-4]\d|5[0-8])$/.test(req.wilayaCode.trim())) {
-    errors.wilayaCode = t('يرجى اختيار ولاية جزائرية صالحة (01 إلى 58).', 'Veuillez sélectionner une wilaya valide (01 à 58).');
+  if (!/^([0][1-9]|[1-5]\d|6[0-9])$/.test(req.wilayaCode.trim())) {
+    errors.wilayaCode = t('يرجى اختيار ولاية جزائرية صالحة (01 إلى 69).', 'Veuillez sélectionner une wilaya valide (01 à 69).');
   }
   if (!req.municipality.trim()) {
     errors.municipality = t('اسم البلدية مطلوب.', 'La commune est obligatoire.');

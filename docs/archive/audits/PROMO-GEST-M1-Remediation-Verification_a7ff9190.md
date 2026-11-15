@@ -1,3 +1,12 @@
+> **Historical audit archive — not the current project status.**
+>
+> This report was written against an earlier uploaded source archive, not the current `main` or the current review branch. Findings must be re-verified against the current commit before treating them as open. Several findings were subsequently remediated; the current baseline report records what remains.
+>
+> Original source path: `public/assets/aistudio/PROMO-GEST-M1-Remediation-Verification_a7ff9190.md`
+> Original blob SHA: `2d4d0c03d2622c8615a228d5b6caf156f83adcbf`
+
+---
+
 # PROMO GEST — Milestone 1 Remediation Verification
 
 **Review basis:** independent inspection of the uploaded `promo-gest (1).zip` archive (201 files, extracted for read-only review).

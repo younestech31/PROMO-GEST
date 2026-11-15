@@ -1,3 +1,12 @@
+> **Historical audit archive — not the current project status.**
+>
+> This report was written against an earlier uploaded source archive, not the current `main` or the current review branch. Findings must be re-verified against the current commit before treating them as open. Several findings were subsequently remediated; the current baseline report records what remains.
+>
+> Original source path: `public/assets/aistudio/PROMO-GEST-M1-Independent-Audit_fadb8217.md`
+> Original blob SHA: `682816c3cf9ec9bad01606e21788db97a65ae1f4`
+
+---
+
 # PROMO GEST — Independent Milestone 1 Source Audit
 
 **Audit date:** 13 November 2026  

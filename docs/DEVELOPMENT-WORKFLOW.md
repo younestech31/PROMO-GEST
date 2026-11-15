@@ -1,7 +1,7 @@
 # PROMO GEST — Development Workflow & Engineering Governance
 
 **Document Role:** Mandatory operational procedure before, during, and after every change in PROMO GEST. Designed to enforce local-first data sovereignty, Clean Architecture boundaries, database integrity, and evidence-backed status tracking.  
-**Related References:** [MASTER-BLUEPRINT.md](MASTER-BLUEPRINT.md) · [CURRENT-STATE-BASELINE.md](CURRENT-STATE-BASELINE.md) · [MASTER-ROADMAP.md](MASTER-ROADMAP.md) · [QUALITY-AND-RELEASE-GATES.md](QUALITY-AND-RELEASE-GATES.md) · [REQUIREMENT-TRACEABILITY.md](REQUIREMENT-TRACEABILITY.md) · [DECISION-LOG.md](DECISION-LOG.md)
+**Related References:** [MASTER-BLUEPRINT.md](MASTER-BLUEPRINT.md) · [CURRENT-STATE-BASELINE.md](CURRENT-STATE-BASELINE.md) · [MASTER-ROADMAP.md](MASTER-ROADMAP.md) · [QUALITY-AND-RELEASE-GATES.md](QUALITY-AND-RELEASE-GATES.md) · [REQUIREMENT-TRACEABILITY.md](REQUIREMENT-TRACEABILITY.md) · [DECISION-LOG.md](DECISION-LOG.md) · [PHASE-0-MANUAL-ACCEPTANCE.md](PHASE-0-MANUAL-ACCEPTANCE.md)
 
 ---
 
@@ -28,6 +28,7 @@ Every contributor or engineering session **must** complete these 5 preparation s
    - [DOMAIN-MODEL.md](DOMAIN-MODEL.md) (literal schema, concurrency, Party vs ProjectCustomer rules)
    - [SECURITY-AND-PERMISSIONS.md](SECURITY-AND-PERMISSIONS.md) (hashing, cookies, CSRF, permissions, resource scoping)
    - [UI-IMPLEMENTATION-AND-GAP-MATRIX.md](UI-IMPLEMENTATION-AND-GAP-MATRIX.md) (current screens, module ownership, and verified UI boundaries)
+   - [PHASE-0-MANUAL-ACCEPTANCE.md](PHASE-0-MANUAL-ACCEPTANCE.md) (manual browser/real-API test protocol; never claim unrun cases as passed)
    - [MASTER-ROADMAP.md](MASTER-ROADMAP.md) (dependencies & phase sequencing)
    - Applicable ADRs in `docs/ADR/` (`0001–0010`) and [DECISION-LOG.md](DECISION-LOG.md).
 2. **Verify Prerequisite Dependencies:**
@@ -39,7 +40,7 @@ Every contributor or engineering session **must** complete these 5 preparation s
    - **Risks:** Security, concurrency, migration rollback, data integrity, or offline/LAN failure modes.
    - **Affected Files & Layers:** `Domain`, `Contracts`, `Application`, `Infrastructure`, `Api`, `apps/local-web`, `tests/`.
    - **Explicit Non-Goals:** What will *not* be touched in this change.
-   - **Acceptance Criteria:** Exact tests, permission checks, UI direction checks (`ar` RTL + `fr` LTR), and gates (`G1–G10`) that prove completion.
+   - **Acceptance Criteria:** Exact tests, permission checks, UI direction checks (`ar` RTL + `fr` LTR), and gates (`G1–G10`) that prove completion. For Phase 0, use the result register and evidence rules in `PHASE-0-MANUAL-ACCEPTANCE.md`.
 4. **Enforce Constitutional Guardrails Upfront:**
    - Reject any design introducing multi-tenant SaaS, cloud DB dependencies in runtime, public internet exposure, bearer tokens in browser storage, primary business data in IndexedDB/localStorage, or weakening single `SYSTEM_ADMIN`.
 5. **Confirm Dependency Direction:**

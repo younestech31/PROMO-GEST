@@ -204,6 +204,8 @@ public sealed class ApplicationSecurityAndFoundationTests
         public Task AddPropertyUnitAsync(PropertyUnit unit, CancellationToken ct = default) { Units.Add(unit); return Task.CompletedTask; }
         public Task<IReadOnlyList<ProjectCustomer>> ListByProjectAsync(Guid projectId, CancellationToken ct = default)
             => Task.FromResult<IReadOnlyList<ProjectCustomer>>(ProjectCustomers.Where(customer => customer.ProjectId == projectId).ToList());
+        public Task<IReadOnlyList<ProjectCustomer>> ListByPartyAsync(Guid partyId, CancellationToken ct = default)
+            => Task.FromResult<IReadOnlyList<ProjectCustomer>>(ProjectCustomers.Where(customer => customer.PartyId == partyId).ToList());
         public Task<ProjectCustomer?> GetByProjectAsync(Guid projectId, Guid customerId, CancellationToken ct = default)
             => Task.FromResult(ProjectCustomers.FirstOrDefault(customer => customer.ProjectId == projectId && customer.Id == customerId));
         public Task<bool> ExistsDuplicateAsync(
@@ -439,8 +441,21 @@ public sealed class ApplicationSecurityAndFoundationTests
         var init = await setup.InitializeAsync(ValidInitRequest(), metadata);
         var party = Party.Create(Guid.NewGuid(), PartyKind.Person, "Client Original", clock.UtcNow);
         store.Parties.Add(party);
+        var linkedCustomers = new[]
+        {
+            ProjectCustomer.Create(Guid.NewGuid(), CustomerType.Individual, "Client Original", null, "0555000001",
+                null, null, "ar", CustomerSource.WalkIn, null, init.SystemAdminUserId, clock.UtcNow, party.Id),
+            ProjectCustomer.Create(Guid.NewGuid(), CustomerType.Individual, "Client Original", null, "0555000002",
+                null, null, "fr", CustomerSource.Referral, null, init.SystemAdminUserId, clock.UtcNow, party.Id)
+        };
+        foreach (var linkedCustomer in linkedCustomers)
+        {
+            linkedCustomer.AttachParty(party);
+            store.ProjectCustomers.Add(linkedCustomer);
+        }
+        var originalCustomerStamps = linkedCustomers.Select(customer => customer.ConcurrencyStamp).ToArray();
 
-        var service = new PartyDirectoryService(store, store, store, clock);
+        var service = new PartyDirectoryService(store, store, store, store, clock);
         var updated = await service.UpdateIdentityAsync(
             init.SystemAdminUserId,
             party.Id,
@@ -451,6 +466,15 @@ public sealed class ApplicationSecurityAndFoundationTests
         var audit = Assert.Single(store.AuditLogs.Where(entry => entry.EventType == "PARTY_IDENTITY_UPDATED"));
         Assert.Contains("\"previousKind\":\"Person\"", audit.MetadataJson);
         Assert.Contains("\"newKind\":\"LegalEntity\"", audit.MetadataJson);
+        Assert.Equal(2, store.ProjectCustomers.Count);
+        Assert.All(linkedCustomers, customer =>
+        {
+            Assert.Equal("Client Updated", customer.DisplayName);
+            Assert.Equal("CLIENT UPDATED", customer.NormalizedDisplayName);
+            Assert.Equal(CustomerType.LegalEntity, customer.CustomerType);
+        });
+        Assert.All(Enumerable.Range(0, linkedCustomers.Length),
+            index => Assert.NotEqual(originalCustomerStamps[index], linkedCustomers[index].ConcurrencyStamp));
     }
 
     [Fact]
@@ -476,7 +500,7 @@ public sealed class ApplicationSecurityAndFoundationTests
             metadata);
         var party = Party.Create(Guid.NewGuid(), PartyKind.Person, "Client Protected", clock.UtcNow);
         store.Parties.Add(party);
-        var service = new PartyDirectoryService(store, store, store, clock);
+        var service = new PartyDirectoryService(store, store, store, store, clock);
 
         var readDenied = await Assert.ThrowsAsync<ForbiddenDomainException>(() =>
             service.SearchAsync(employee.Id, "Client", metadata));

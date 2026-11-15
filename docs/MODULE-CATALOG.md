@@ -3,7 +3,7 @@
 All 12 functional ERP domains required by PROMO GEST, mapped strictly using the 6-state taxonomy against actual inspected code, controllers, EF configurations, and tests.
 
 **Last Code-Changing Source Baseline:** `6bbd97f70ed0fb63cf226a1117cf6e83c359d2be` (PR #44 merge).  
-**Current Main Documentation Snapshot:** `5415f0e668a55f902ac2802e1669af58ad7ec410` (PR #46).  
+**Main Commit Inspected at Audit Start:** `5415f0e668a55f902ac2802e1669af58ad7ec410` (PR #46).  
 **Latest Green CI:** Run **#531** / `43752672569` — frontend, .NET/PostgreSQL 18, and Windows jobs all passed.  
 **Live Preview Evidence:** On 15 November 2026, the product owner confirmed that the real Google AI Studio development server/API was operating and that the previously failing project customer/prospect and reservation pages no longer displayed the reported generic internal error after PR #44. This is a targeted page-level smoke check; it does not certify every CRUD path or the manual Arabic RTL/French LTR review.
 

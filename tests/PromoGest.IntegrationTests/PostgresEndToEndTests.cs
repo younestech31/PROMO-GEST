@@ -424,6 +424,7 @@ public sealed class PostgresEndToEndTests : IClassFixture<PostgreSql18Integratio
     {
         var resp = await client.GetAsync("/api/auth/csrf");
         resp.EnsureSuccessStatusCode();
+        Assert.Equal("no-store", resp.Headers.CacheControl?.ToString());
         var payload = await resp.Content.ReadFromJsonAsync<CsrfTokenResponse>();
         Assert.NotNull(payload);
         client.DefaultRequestHeaders.Remove(payload!.HeaderName);

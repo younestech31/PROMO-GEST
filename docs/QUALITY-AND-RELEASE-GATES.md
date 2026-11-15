@@ -21,13 +21,13 @@
 
 ---
 
-## 2. Current Gate Status Against Baseline (Source Commit `727fddf59a293cb888549afce10c2d7328a4d484`)
+## 2. Current Gate Status Against Baseline (Last Code-Changing Source Commit `6bbd97f70ed0fb63cf226a1117cf6e83c359d2be`; current main `4d025ca19a7711df1d4df327b05ee4846cac3267`)
 
-### GitHub Actions Run #520 — 15 November 2026
-- **Frontend job — passed:** `npm run lint` (`tsc --noEmit`), `npm test` (**36/36**), SPA build, ASP.NET Core `wwwroot` build, static-hosting checks, and dev-preview leakage checks.
+### GitHub Actions Run #529 — 15 November 2026
+- **Frontend job — passed:** `npm run lint` (`tsc --noEmit`), `npm test` (**38/38**), SPA build, ASP.NET Core `wwwroot` build, static-hosting checks, and dev-preview leakage checks.
 - **.NET 10 / PostgreSQL 18 job — passed:** solution build with warnings as errors; Domain **27/27**, Application **14/14**, and PostgreSQL 18 Integration **9/9** tests passed.
 - **Windows publish job — passed:** Windows x64 publish, machine-scoped Data Protection recovery verification, and PowerShell validation passed.
-- **Overall:** all three required CI jobs completed with `success` on commit `727fddf59a293cb888549afce10c2d7328a4d484`. [Run #520](https://github.com/younestech31/PROMO-GEST/actions/runs/43734734647).
+- **Overall:** all three required CI jobs completed with `success` on commit `4d025ca19a7711df1d4df327b05ee4846cac3267`. [Run #529](https://github.com/younestech31/PROMO-GEST/actions/runs/43746793430).
 
 ### Phase 0 Defect Disposition
 - **Resolved — PR #35:** `CS7036` in `PostgresEndToEndTests.cs` fixed by passing the real `PartyConcurrencyStamp` from loaded customer details.
@@ -38,11 +38,11 @@
 - **Resolved — PR #42:** both AI Studio real-API launchers bootstrap .NET 10 per-user through Microsoft's official installer if missing. The SDK version is checked before API build/start; a mocked clean-container bootstrap regression test is included.
 
 ### Gate Interpretation
-- **G1–G7 and G9:** automated build, domain/application suites, CSRF/auth/authorization paths, concurrency checks, audit protections, and PostgreSQL 18 integration execution passed in Run #520 for the tested requirements.
-- **G8:** automated TypeScript, 36 pure frontend tests, production build, static-hosting and leakage checks passed. **Manual browser verification of Arabic RTL / French LTR and the live AI Studio Cloud SQL proxy path remains outstanding. The launcher has automated startup-readiness regression coverage; CI cannot prove that a particular preview runtime has its Cloud SQL credentials and socket available.** The Vite fallback simulator is not full API parity and must not be used as evidence of production behavior. CI also verifies the .NET 10 bootstrap when no SDK is installed; the live AI Studio preview still needs manual confirmation of outbound installer access, Cloud SQL socket availability, and the real cookie/CSRF flow.
+- **G1–G7 and G9:** automated build, domain/application suites, CSRF/auth/authorization paths, concurrency checks, audit protections, and PostgreSQL 18 integration execution passed in Run #529 for the tested requirements.
+- **G8:** the automated portion passed: strict TypeScript check, **38/38** frontend tests, SPA build, ASP.NET Core static-hosting output, and preview-leak checks. The product owner previously confirmed a targeted real Google AI Studio server/API/PostgreSQL development smoke check and that the customer/prospect and reservation pages no longer showed the reported generic error after PR #44. That smoke check is not full CRUD/persistence/authorization acceptance. Manual Arabic RTL / French LTR browser verification across desktop and mobile, real cookie/CSRF interaction, and the named business workflows remain outstanding. The Vite-only fallback simulator is not full API parity and must never be treated as production/API evidence.
 - **G10:** Windows x64 publish, DPAPI recovery and PowerShell validation passed. Customer-site installation and a restore drill remain separate release-acceptance activities.
 
-**Release Implication:** The previous `CS7036` blocker is closed and current main CI is green. Phase 0 remains `IN_PROGRESS` until the real development-preview path and manual bilingual browser workflows are checked. Phase 1 and statutory/practitioner sign-offs remain prerequisites for production release and downstream legal/financial modules.
+**Release Implication:** The previous `CS7036` blocker is closed and current main CI (#529) is green. Phase 0 remains `IN_PROGRESS` until manual bilingual browser workflows and focused real-API CRUD/persistence/authorization acceptance are evidenced. Phase 1 and statutory/practitioner sign-offs remain prerequisites for production release and downstream legal/financial modules.
 
 ---
 

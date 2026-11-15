@@ -53,6 +53,23 @@ test('Vite-only mode explicitly bypasses any inherited ASPNETCORE_URL proxy targ
   }
 });
 
+test('the default AI Studio dev launcher migrates Cloud SQL and refreshes runtime grants before API readiness', () => {
+  const cloudSqlDetection = launcher.indexOf('for variable in SQL_HOST SQL_DB_NAME SQL_USER SQL_PASSWORD SQL_ADMIN_USER SQL_ADMIN_PASSWORD;');
+  const migrationCommand = launcher.indexOf('dotnet run --project "$API_PROJECT" --configuration Debug --no-launch-profile -- --migrate');
+  const readinessCheck = launcher.indexOf('if api_is_ready; then');
+  const apiStart = launcher.indexOf('dotnet "$API_DLL"');
+  assert.ok(cloudSqlDetection >= 0, 'Cloud SQL setup must require both runtime and migration identities');
+  assert.ok(migrationCommand > cloudSqlDetection, 'Cloud SQL migrations must run after all required variables are checked');
+  assert.ok(readinessCheck > migrationCommand, 'the API readiness check must happen after migrations and runtime grants');
+  assert.ok(apiStart > readinessCheck, 'the API process must start only after the database preparation step');
+  assert.match(launcher, /ASPNETCORE_ENVIRONMENT=Development/);
+  assert.match(launcher, /PROMOGEST_CLOUDSQL_MIGRATIONS_APPLIED/);
+});
+
+test('the dedicated Cloud SQL runner marks its completed migration pass before starting the default launcher', () => {
+  assert.match(cloudSqlRunner, /PROMOGEST_CLOUDSQL_MIGRATIONS_APPLIED=1 npm run dev/);
+});
+
 test('the .NET bootstrap and both API launchers have valid Bash syntax', () => {
   const paths = [
     bootstrapPath,

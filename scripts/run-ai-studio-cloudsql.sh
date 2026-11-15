@@ -87,4 +87,6 @@ fi
 
 echo "[4/4] Starting the React UI; Vite proxies /api and /health to $API_URL."
 echo "Cloud SQL credentials are not printed. Use fictional test data only."
-npm run dev
+# The standard dev launcher also prepares Cloud SQL. Mark this child run as
+# already migrated so it does not perform the same migration/grant pass twice.
+PROMOGEST_CLOUDSQL_MIGRATIONS_APPLIED=1 npm run dev

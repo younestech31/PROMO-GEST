@@ -66,7 +66,7 @@ if [[ ! "$API_STARTUP_WAIT_SECONDS" =~ ^[1-9][0-9]*$ ]] || [[ ! "$SQL_SOCKET_WAI
 fi
 
 SQL_ENV_PRESENT=false
-for variable in SQL_HOST SQL_DB_NAME SQL_USER SQL_PASSWORD; do
+for variable in SQL_HOST SQL_DB_NAME SQL_USER SQL_PASSWORD SQL_ADMIN_USER SQL_ADMIN_PASSWORD; do
   if [[ -n "${!variable:-}" ]]; then
     SQL_ENV_PRESENT=true
   fi
@@ -81,20 +81,23 @@ elif [[ -n "$CONFIGURED_API_URL" || "$SQL_ENV_PRESENT" == true ]]; then
   API_URL="${CONFIGURED_API_URL:-http://127.0.0.1:$API_PORT}"
   API_URL="${API_URL%/}"
 
-  if api_is_ready; then
-    echo "ASP.NET Core API is already ready at the configured target."
-  elif is_loopback_api_url "$API_URL"; then
-    # A loopback proxy target must be backed by a live API process started by
-    # this launcher. Never start Vite in proxy mode while that process is absent.
-    if [[ "$SQL_ENV_PRESENT" == true ]]; then
+  # The default AI Studio command is `npm run dev`. When it targets the local
+  # ASP.NET Core API with Cloud SQL configured, prepare the database here too:
+  # apply pending migrations with the separate admin identity and re-apply the
+  # restricted runtime grants before the API can report ready.
+  if [[ "$SQL_ENV_PRESENT" == true ]] && is_loopback_api_url "$API_URL"; then
+    if [[ "${PROMOGEST_CLOUDSQL_MIGRATIONS_APPLIED:-}" == "1" ]]; then
+      echo "Cloud SQL migrations and runtime grants were already applied by the dedicated runner."
+    else
       missing_sql_vars=()
-      for variable in SQL_HOST SQL_DB_NAME SQL_USER SQL_PASSWORD; do
+      for variable in SQL_HOST SQL_DB_NAME SQL_USER SQL_PASSWORD SQL_ADMIN_USER SQL_ADMIN_PASSWORD; do
         if [[ -z "${!variable:-}" ]]; then
           missing_sql_vars+=("$variable")
         fi
       done
       if [[ "${#missing_sql_vars[@]}" -gt 0 ]]; then
         echo "ERROR: Cloud SQL development configuration is incomplete. Missing: ${missing_sql_vars[*]}." >&2
+        echo "The real API requires both the runtime identity and the separate migration identity." >&2
         exit 1
       fi
 
@@ -109,12 +112,28 @@ elif [[ -n "$CONFIGURED_API_URL" || "$SQL_ENV_PRESENT" == true ]]; then
           sleep 1
         done
         if [[ "$socket_ready" != true ]]; then
-          echo "ERROR: Cloud SQL socket did not become available. Vite was not started, so it cannot proxy to an absent API." >&2
+          echo "ERROR: Cloud SQL socket did not become available. Vite was not started." >&2
           exit 1
         fi
       fi
-    fi
 
+      source "$ROOT_DIR/scripts/ensure-dotnet10.sh"
+      promogest_ensure_dotnet10
+
+      echo "Applying pending Cloud SQL migrations and least-privilege runtime grants..."
+      ASPNETCORE_ENVIRONMENT=Development \
+      DOTNET_ENVIRONMENT=Development \
+        dotnet run --project "$API_PROJECT" --configuration Debug --no-launch-profile -- --migrate
+      export PROMOGEST_CLOUDSQL_MIGRATIONS_APPLIED=1
+      echo "Cloud SQL schema and runtime grants are ready."
+    fi
+  fi
+
+  if api_is_ready; then
+    echo "ASP.NET Core API is already ready at the configured target."
+  elif is_loopback_api_url "$API_URL"; then
+    # A loopback proxy target must be backed by a live API process started by
+    # this launcher. Never start Vite in proxy mode while that process is absent.
     if ! api_is_live; then
       source "$ROOT_DIR/scripts/ensure-dotnet10.sh"
       promogest_ensure_dotnet10

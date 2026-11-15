@@ -44,6 +44,7 @@ function buildSampleProject(overrides?: Partial<ProjectDto>): ProjectDto {
     actualBuildingsCount: 0,
     actualUnitsCount: 0,
     createdAtUtc: '2026-11-14T00:00:00Z',
+    concurrencyStamp: 'project-version-1',
     members: [],
     ...overrides,
   };
@@ -455,7 +456,9 @@ test('devPreviewProjectStore enforces uniqueness, area bounds, concurrency stamp
     false
   );
 
+  const originalConcurrencyStamp = project.concurrencyStamp;
   const updatedProject = updateProjectInStore(project, {
+    expectedConcurrencyStamp: originalConcurrencyStamp,
     nameAr: 'إقامة الرمال الذهبية المحينة',
     nameFr: "Résidence Les Sables d'Or Mise à Jour",
     wilayaCode: '16',
@@ -472,6 +475,28 @@ test('devPreviewProjectStore enforces uniqueness, area bounds, concurrency stamp
   });
   assert.equal(updatedProject.code, 'DEMO-16-001');
   assert.equal(updatedProject.status, 'Commercialization');
+  assert.notEqual(updatedProject.concurrencyStamp, originalConcurrencyStamp);
+
+  const currentName = updatedProject.nameAr;
+  assert.throws(
+    () => updateProjectInStore(updatedProject, {
+      expectedConcurrencyStamp: originalConcurrencyStamp,
+      nameAr: 'تعديل متقادم',
+      nameFr: 'Mise à jour obsolète',
+      wilayaCode: '16',
+      wilayaName: 'الجزائر / Alger',
+      municipality: 'Hydra',
+      status: 'Planning',
+      estimatedBudgetDzd: 1,
+      plannedBlocksCount: 1,
+      plannedUnitsCount: 1,
+    }),
+    (error: unknown) =>
+      error instanceof DevPreviewStoreError &&
+      error.status === 409 &&
+      error.code === 'PROJECT_CONCURRENCY_CONFLICT'
+  );
+  assert.equal(updatedProject.nameAr, currentName);
 });
 
 test('Dev API middleware exposes Les Sables d Or with 3 buildings & 72 units and supports full HTTP structure CRUD', async () => {

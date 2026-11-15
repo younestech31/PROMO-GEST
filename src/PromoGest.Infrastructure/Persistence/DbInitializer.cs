@@ -26,7 +26,9 @@ public static class DbInitializer
             Permission.Create(Guid.Parse("10000000-0000-0000-0000-000000000013"), "customers.read", "Customers", "الاطلاع على سجل الزبائن والمهتمين", "Consulter les clients et prospects", seedTime),
             Permission.Create(Guid.Parse("10000000-0000-0000-0000-000000000014"), "customers.manage", "Customers", "إدارة بيانات الزبائن والمهتمين", "Gérer les clients et prospects", seedTime),
             Permission.Create(Guid.Parse("10000000-0000-0000-0000-000000000015"), "sales.reservations.read", "Sales", "الاطلاع على الحجوزات التجارية", "Consulter les réservations commerciales", seedTime),
-            Permission.Create(Guid.Parse("10000000-0000-0000-0000-000000000016"), "sales.reservations.manage", "Sales", "إدارة حجوزات الوحدات العقارية", "Gérer les réservations des unités immobilières", seedTime)
+            Permission.Create(Guid.Parse("10000000-0000-0000-0000-000000000016"), "sales.reservations.manage", "Sales", "إدارة حجوزات الوحدات العقارية", "Gérer les réservations des unités immobilières", seedTime),
+            Permission.Create(Guid.Parse("10000000-0000-0000-0000-000000000017"), "parties.directory.read", "Master Data", "البحث في دليل الأطراف المؤسسي", "Rechercher dans le répertoire central des tiers", seedTime),
+            Permission.Create(Guid.Parse("10000000-0000-0000-0000-000000000018"), "parties.identity.manage", "Master Data", "إدارة الهوية القانونية المركزية للأطراف", "Gérer l'identité centrale des tiers", seedTime)
         };
 
         var existingPermCodes = await dbContext.Permissions.Select(p => p.Code).ToListAsync(ct);
@@ -80,8 +82,8 @@ public static class DbInitializer
         }
 
         Link(Role.SystemAdminCode, permMap.Keys.ToArray());
-        Link(Role.ProjectDirectorCode, "org.read", "projects.read", "projects.create", "projects.manage", "projects.access.manage", "projects.structure.manage", "files.read", "files.write", "customers.read", "customers.manage", "sales.reservations.read", "sales.reservations.manage");
-        Link(Role.CommercialManagerCode, "org.read", "projects.read", "files.read", "files.write", "customers.read", "customers.manage", "sales.reservations.read", "sales.reservations.manage");
+        Link(Role.ProjectDirectorCode, "org.read", "projects.read", "projects.create", "projects.manage", "projects.access.manage", "projects.structure.manage", "files.read", "files.write", "customers.read", "customers.manage", "sales.reservations.read", "sales.reservations.manage", "parties.directory.read");
+        Link(Role.CommercialManagerCode, "org.read", "projects.read", "files.read", "files.write", "customers.read", "customers.manage", "sales.reservations.read", "sales.reservations.manage", "parties.directory.read");
         Link(Role.FinanceOfficerCode, "org.read", "projects.read", "files.read", "files.write");
         Link(Role.SiteEngineerCode, "org.read", "projects.read", "files.read", "files.write");
         Link(Role.LegalOfficerCode, "org.read", "projects.read", "files.read", "files.write", "customers.read");

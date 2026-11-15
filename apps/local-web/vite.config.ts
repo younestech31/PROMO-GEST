@@ -5,7 +5,8 @@ import { defineConfig, loadEnv } from 'vite';
 
 export default defineConfig(async ({ command, mode }) => {
   const env = loadEnv(mode, path.resolve(__dirname, '../..'), '');
-  const aspNetCoreUrl = process.env.ASPNETCORE_URL || env.ASPNETCORE_URL;
+  const viteOnlyPreview = (process.env.PROMOGEST_VITE_ONLY ?? env.PROMOGEST_VITE_ONLY) === '1';
+  const aspNetCoreUrl = viteOnlyPreview ? undefined : (process.env.ASPNETCORE_URL || env.ASPNETCORE_URL);
   const plugins: any[] = [react(), tailwindcss()];
 
   if (command === 'serve' && !aspNetCoreUrl) {

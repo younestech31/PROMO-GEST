@@ -1,9 +1,9 @@
 # PROMO GEST — Phase 0 Manual Browser & Real-API Acceptance
 
 **Document role:** Executable acceptance protocol for the remaining Phase 0 browser and real-API evidence.  
-**Status at preparation:** `NOT_RUN`. This document defines tests; it does not claim that any manual test passed.  
-**Main commit inspected at audit start:** `c26194dce5124d5d5e8d67fc5a04708346b1d5e4`.  
-**Automated baseline:** GitHub Actions Run #544 / `43767110822` passed on that commit.  
+**Execution update (15 November 2026):** The Product Owner explicitly confirmed successful completion of the bilingual desktop/mobile and real-workflow checks listed in the owner-attested record below. Those checks are recorded as `PASS` with the evidence source identified as owner attestation, not CI output or an independently collected browser artifact. `P0-A01` (fresh-database first-run setup and rejection of a second initialization) was not explicitly included in the confirmation and remains `NOT_RUN`.  
+**Main commit inspected at audit start:** `432e6f8ea76bb540dd5bc69d3314c0d658805ba7`.  
+**Automated baseline:** GitHub Actions Run #546 / `43768228052` passed all three jobs on that commit.  
 **Primary references:** [CURRENT-STATE-BASELINE.md](CURRENT-STATE-BASELINE.md), [QUALITY-AND-RELEASE-GATES.md](QUALITY-AND-RELEASE-GATES.md), [GOOGLE-AI-STUDIO-CLOUD-SQL.md](GOOGLE-AI-STUDIO-CLOUD-SQL.md), and [UI-IMPLEMENTATION-AND-GAP-MATRIX.md](UI-IMPLEMENTATION-AND-GAP-MATRIX.md).
 
 ---
@@ -158,7 +158,26 @@ A `ProjectSalesReservation` is an **internal unit hold only**. It is not a Law 1
 | P0-G04 | Trigger a controlled validation or file error. | The UI shows a safe operation-level error; no stack trace, secret, token, or internal connection string is exposed. |
 | P0-G05 | After any ambiguous create/update response (especially a 500), inspect the list/detail endpoint before retrying the mutation. | The tester verifies whether the first request persisted. No duplicate is created by blind retry. Record the trace ID, never credentials or request cookies. |
 
-## 6. Evidence recording
+## 6. Owner-attested execution record — 15 November 2026
+
+**Evidence source:** explicit Product Owner confirmation in the PROMO GEST project conversation on 15 November 2026. The Product Owner stated that the following workflows were exercised and work correctly:
+
+- Arabic RTL and French LTR on desktop and mobile.
+- Login, session handling, and CSRF.
+- Projects and project structure.
+- Customers and customer interactions.
+- Internal hold creation, cancellation, and expiry.
+- Document upload/download and SHA-256 integrity comparison.
+- Authorization, audit events, concurrency conflicts, and safe errors.
+- Persistence after page reload.
+
+**Register mapping:** the owner confirmation is recorded as `PASS` for P0-A02–A05 and P0-B through P0-G, across all four browser profiles. The owner explicitly confirmed persistence/reload and API-backed business behavior in the listed workflows. This is an owner-attested manual acceptance result; it is not represented as an automated test, CI assertion, or an artifact independently inspected by engineering.
+
+**Explicit boundary:** P0-A01 remains `NOT_RUN` because the confirmation did not specifically state that first-run initialization was exercised against a separate empty disposable database and that a second initialization was rejected. Do not infer this scenario from normal login/session testing.
+
+**Artifact limitation:** the Product Owner did not attach per-case timestamps, tester initials, browser name/version, sanitized screenshots/recordings, or redacted API response/trace records in the conversation. The attestation is retained as the source of the result; no such artifacts are claimed to exist in this repository.
+
+## 7. Evidence recording
 
 For each case, capture:
 - Test ID and status (`PASS`, `FAIL`, `BLOCKED`, `NOT_RUN`).
@@ -174,13 +193,16 @@ Do not attach an unredacted HAR, browser storage dump, environment file, SQL con
 
 | Test ID range | Arabic desktop | French desktop | Arabic mobile | French mobile | API/persistence evidence | Overall |
 |---|---|---|---|---|---|---|
-| P0-A — Installation/Auth | NOT_RUN | NOT_RUN | NOT_RUN | NOT_RUN | NOT_RUN | NOT_RUN |
-| P0-B — Overview/Projects | NOT_RUN | NOT_RUN | NOT_RUN | NOT_RUN | NOT_RUN | NOT_RUN |
-| P0-C — Structure | NOT_RUN | NOT_RUN | NOT_RUN | NOT_RUN | NOT_RUN | NOT_RUN |
-| P0-D — Customers/CRM | NOT_RUN | NOT_RUN | NOT_RUN | NOT_RUN | NOT_RUN | NOT_RUN |
-| P0-E — Internal Holds | NOT_RUN | NOT_RUN | NOT_RUN | NOT_RUN | NOT_RUN | NOT_RUN |
-| P0-F — Documents | NOT_RUN | NOT_RUN | NOT_RUN | NOT_RUN | NOT_RUN | NOT_RUN |
-| P0-G — Audit/Errors | NOT_RUN | NOT_RUN | NOT_RUN | NOT_RUN | NOT_RUN | NOT_RUN |
+| P0-A01 — First-run setup on empty disposable DB | NOT_RUN | NOT_RUN | NOT_RUN | NOT_RUN | NOT_RUN | NOT_RUN |
+| P0-A02–A05 — Login, session, logout, CSRF | PASS | PASS | PASS | PASS | PASS | PASS |
+| P0-B — Overview and project directory | PASS | PASS | PASS | PASS | PASS | PASS |
+| P0-C — Project structure and units | PASS | PASS | PASS | PASS | PASS | PASS |
+| P0-D — Customers and CRM interactions | PASS | PASS | PASS | PASS | PASS | PASS |
+| P0-E — Internal unit holds | PASS | PASS | PASS | PASS | PASS | PASS |
+| P0-F — Project document integrity | PASS | PASS | PASS | PASS | PASS | PASS |
+| P0-G — Authorization, audit, concurrency, and safe errors | PASS | PASS | PASS | PASS | PASS | PASS |
+
+**Status provenance:** Every `PASS` in this register is based on the Product Owner's 15 November 2026 confirmation, not on a newly executed test or a CI run. The missing artifact metadata is stated in Section 6 above.
 
 ## 7. Phase 0 exit criteria
 

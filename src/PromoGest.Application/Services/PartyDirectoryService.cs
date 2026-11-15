@@ -99,6 +99,16 @@ public sealed class PartyDirectoryService
 
         if (hasChanged)
         {
+            if (await _projectCustomerRepository.HasProjectCustomerIdentityCollisionAsync(
+                    party.Id,
+                    normalizedDisplayName.ToUpperInvariant(),
+                    ct))
+            {
+                throw new ConflictDomainException(
+                    "PARTY_IDENTITY_CONFLICT",
+                    "This identity update would duplicate a customer name and phone combination in one or more linked projects.");
+            }
+
             var previousKind = party.Kind;
             party.UpdateIdentity(kind, normalizedDisplayName, nowUtc);
 

@@ -71,6 +71,25 @@ public sealed class EfProjectCustomerRepository : IProjectCustomerRepository
             .ThenBy(customer => customer.Id)
             .ToListAsync(ct);
 
+    public Task<bool> HasProjectCustomerIdentityCollisionAsync(
+        Guid partyId,
+        string normalizedDisplayName,
+        CancellationToken ct = default)
+    {
+        var collisions =
+            from linked in _dbContext.ProjectCustomers
+            where linked.PartyId == partyId
+            from other in _dbContext.ProjectCustomers
+            where other.ProjectId == linked.ProjectId &&
+                  other.PartyId != partyId &&
+                  other.NormalizedPhone == linked.NormalizedPhone &&
+                  (other.NormalizedDisplayName == normalizedDisplayName ||
+                   other.Party.NormalizedDisplayName == normalizedDisplayName)
+            select other.Id;
+
+        return collisions.AnyAsync(ct);
+    }
+
     public Task AddCustomerAsync(ProjectCustomer customer, CancellationToken ct = default)
     {
         _dbContext.ProjectCustomers.Add(customer);

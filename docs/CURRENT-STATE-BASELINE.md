@@ -23,13 +23,13 @@
 
 ## 2. Verified CI Evidence
 
-### GitHub Actions Run #499 — 15 November 2026
+### GitHub Actions Run #504 — 15 November 2026
 - **Frontend job:** passed. `npm run lint` (`tsc --noEmit`), `npm test` (**27/27**), SPA build, ASP.NET Core `wwwroot` build, static-hosting checks, and preview-leak checks all completed successfully.
 - **.NET 10 / PostgreSQL 18 job:** passed. Solution build with warnings as errors succeeded; Domain **27/27**, Application **14/14**, and PostgreSQL 18 Integration **9/9** tests passed.
 - **Windows publish job:** passed. Windows x64 publish, machine-scoped Data Protection recovery verification, and PowerShell validation all succeeded.
-- **Overall result:** all three CI jobs completed with `success` on commit `7d770e851cbae745863713594490fdf1e79210ec`.
+- **Overall result:** all three CI jobs completed with `success` on commit `143e6edcaa97ed44cc4d7343809dfc427117e978`.
 
-[Open CI Run #499](https://github.com/younestech31/PROMO-GEST/actions/runs/43730899454)
+[Open CI Run #504](https://github.com/younestech31/PROMO-GEST/actions/runs/43730899454)
 
 ### C2 Party / Customer changes merged and verified
 - **PR #35:** fixed `CS7036` by passing the actual `PartyConcurrencyStamp` returned by the customer-details response. No synthetic token or weakened concurrency check was introduced.

@@ -1,9 +1,9 @@
 # PROMO GEST — UI Implementation & Gap Matrix
 
 **Document role:** Source-audited inventory of the current React user interface, its API-backed actions, module ownership, and the gap between today's interface and the product interaction model. This is a current-state record, not a redesign specification or browser-acceptance certificate.  
-**Main commit inspected at audit start:** 14428830eb0b81beedecc2136ba65fdf68a23266.  
+**Main commit inspected at audit start:** c26194dce5124d5d5e8d67fc5a04708346b1d5e4.  
 **Last code-changing source commit:** 23f019de7c787c0f93b5b7f0b5cec69992ff087a (PR #48).  
-**Latest green CI at audit start:** Run #541 / 43764687600; all three jobs passed on 15 November 2026.
+**Latest green CI at audit start:** Run #544 / 43767110822; all three jobs passed on 15 November 2026.
 
 ## 1. Reading this matrix correctly
 
@@ -67,8 +67,8 @@ The project directory displays actions for Structure, Customers/Prospects, Reser
 
 Latest repository evidence at the time of this audit:
 
-- Main commit inspected at audit start is 14428830eb0b81beedecc2136ba65fdf68a23266; last application-code change is 23f019de7c787c0f93b5b7f0b5cec69992ff087a.
-- GitHub Actions Run #541 / [43764687600](https://github.com/younestech31/PROMO-GEST/actions/runs/43764687600) passed all three jobs: Frontend, .NET 10 + PostgreSQL 18, and Windows publish.
+- Main commit inspected at audit start is c26194dce5124d5d5e8d67fc5a04708346b1d5e4; last application-code change is 23f019de7c787c0f93b5b7f0b5cec69992ff087a.
+- GitHub Actions Run #544 / [43767110822](https://github.com/younestech31/PROMO-GEST/actions/runs/43767110822) passed all three jobs: Frontend, .NET 10 + PostgreSQL 18, and Windows publish.
 - Frontend strict TypeScript check, **38/38** frontend tests, production SPA build, ASP.NET Core static-host build, and preview-leak checks passed.
 - Domain tests **27/27**, Application tests **14/14**, and PostgreSQL 18 integration tests **9/9** passed. Linux publish/shell validation and the database, storage, and Data Protection restore drill passed. Windows x64 publish, DPAPI key-ring recovery, and PowerShell validation passed.
 - The product owner previously confirmed a targeted real Google AI Studio development server/API and PostgreSQL connection smoke check and that the previously failing customer/prospect and reservation pages no longer showed the generic internal error after PR #44. This does not certify the full user-facing workflows.

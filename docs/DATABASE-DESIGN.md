@@ -35,7 +35,8 @@ All primary keys use UUIDs. Foreign keys, unique indexes, check constraints, and
 | `audit_logs` | Append-only security, authentication, administration, project, and structure event history |
 | `system_settings` | Local installation settings |
 | `stored_files` | Local document metadata including category, optional description, scope, project/uploader references, byte length, and SHA-256 checksum; file contents remain on local disk |
-| `project_customers` | Project-scoped individual and legal-entity customer/prospect records, normalized contact keys, lifecycle status, and optional reference to a local project document |
+| `parties` | Organization-level identity (person/legal entity), canonical display name and normalized name; contact channels and commercial/project roles are not stored here yet |
+| `project_customers` | Project-scoped customer relationship linked to one canonical Party through `party_id`; project-specific contact details, status, source, language, document reference and project lifecycle remain here |
 | `customer_interactions` | Customer communication and follow-up history with author and occurrence/follow-up timestamps |
 | `project_sales_reservations` | Project-scoped reservation lifecycle linked to a registered property unit and customer, including expiry/cancellation, creator/closer, and concurrency token |
 
@@ -55,6 +56,8 @@ All primary keys use UUIDs. Foreign keys, unique indexes, check constraints, and
 - The `stored_files.category` migration backfills existing metadata rows as `Other`, then removes the temporary column default so all new records must provide a valid category. No existing file bytes or metadata rows are deleted.
 - Customer records are partitioned by project. Within one project, the same normalized display name and normalized phone cannot be registered twice; PostgreSQL enforces the composite uniqueness rule.
 - Customer and customer-interaction creator foreign keys are indexed for efficient audit attribution and user-related maintenance queries; these indexes are added by `20261114195931_CustomerModelSnapshotReconciliation`.
+- Each `project_customers` row has a required `party_id` FK to `parties.id`. The initial backfill is deterministic one-to-one and reuses the legacy customer UUID as the first Party UUID. No global unique constraint exists on Party name; similar identities require human review, not automatic merging.
+- Party currently owns only person/legal-entity kind and display name. Contact channels, relationship status/source and document permissions remain project-scoped; do not treat the first Party slice as complete organization-wide CRM or employee master data.
 - Customer and interaction enum values, phone normalization, and follow-up date ordering are enforced by database constraints as well as domain validation.
 - Customer identity-document references must resolve to a document in the same project through the application service; users without `files.read` cannot inspect linked document metadata or change the link.
 - Customer data and communication summaries are excluded from audit metadata; audit records identify the project and record IDs without copying names, phone numbers, email addresses, or interaction text.
@@ -89,6 +92,7 @@ The EF Core migration history currently includes:
 7. `20261114190000_ProjectCustomerRegistry`
 8. `20261114195931_CustomerModelSnapshotReconciliation`
 9. `20261114220000_ProjectSalesReservations`
+10. `20261115100000_OrganizationWidePartyFoundation`
 
 The model snapshot is maintained alongside the migrations and must remain synchronized with `AppDbContext`.
 

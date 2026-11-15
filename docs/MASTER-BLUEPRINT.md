@@ -43,7 +43,7 @@ Every claim across this blueprint uses **strictly one** of the six evidence-back
 | 11 | [DEVELOPMENT-WORKFLOW.md](DEVELOPMENT-WORKFLOW.md) | Mandatory pre-work, in-development, post-development, and Definition-of-Done governance preventing architectural drift. |
 | 12 | [REQUIREMENT-TRACEABILITY.md](REQUIREMENT-TRACEABILITY.md) | Complete traceability matrix linking functional requirements across Domains **A–L** to code, endpoints, permissions, views, tests, and gates. |
 | 13 | [UI-IMPLEMENTATION-AND-GAP-MATRIX.md](UI-IMPLEMENTATION-AND-GAP-MATRIX.md) | Source-audited inventory of current React screens, API-backed actions, module status, navigation gaps, and Phase 0/1 UI boundaries. |
-| 14 | [PHASE-0-MANUAL-ACCEPTANCE.md](PHASE-0-MANUAL-ACCEPTANCE.md) | Executable browser/real-API acceptance protocol for Phase 0; records Product Owner-attested PASS groups separately from CI and unconfirmed P0-A01. |
+| 14 | [PHASE-0-MANUAL-ACCEPTANCE.md](PHASE-0-MANUAL-ACCEPTANCE.md) | Executable browser/real-API acceptance protocol for Phase 0; records Product Owner-attested PASS groups separately from CI and unconfirmed P0-A01/P0-A04. |
 
 ---
 

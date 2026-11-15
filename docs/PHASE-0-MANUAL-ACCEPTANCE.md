@@ -2,8 +2,8 @@
 
 **Document role:** Executable acceptance protocol for the remaining Phase 0 browser and real-API evidence.  
 **Status at preparation:** `NOT_RUN`. This document defines tests; it does not claim that any manual test passed.  
-**Main commit inspected at audit start:** `5415f0e668a55f902ac2802e1669af58ad7ec410`.  
-**Automated baseline:** GitHub Actions Run #531 / `43752672569` passed on that commit.  
+**Main commit inspected at audit start:** `14428830eb0b81beedecc2136ba65fdf68a23266`.  
+**Automated baseline:** GitHub Actions Run #541 / `43764687600` passed on that commit.  
 **Primary references:** [CURRENT-STATE-BASELINE.md](CURRENT-STATE-BASELINE.md), [QUALITY-AND-RELEASE-GATES.md](QUALITY-AND-RELEASE-GATES.md), [GOOGLE-AI-STUDIO-CLOUD-SQL.md](GOOGLE-AI-STUDIO-CLOUD-SQL.md), and [UI-IMPLEMENTATION-AND-GAP-MATRIX.md](UI-IMPLEMENTATION-AND-GAP-MATRIX.md).
 
 ---

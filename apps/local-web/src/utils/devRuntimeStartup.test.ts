@@ -89,7 +89,9 @@ test('the shared bootstrap can provision .NET 10 when the preview has no SDK', (
   const mockBin = join(home, 'mock-bin');
   mkdirSync(mockBin, { recursive: true });
   const dotnetPath = join(mockBin, 'dotnet');
-  writeFileSync(dotnetPath, '#!/usr/bin/env bash\\necho "9.0.0"\\n');
+  writeFileSync(dotnetPath, `#!/usr/bin/env bash
+echo "9.0.0"
+`);
   chmodSync(dotnetPath, 0o755);
 
   const curlPath = join(mockBin, 'curl');

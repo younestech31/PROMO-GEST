@@ -11,7 +11,7 @@ Every contributor or engineering session **must** complete these 5 preparation s
 
 1. **Read the Canonical Engineering Suite:**
    - [MASTER-BLUEPRINT.md](MASTER-BLUEPRINT.md) (status taxonomy & scope boundaries)
-   - [CURRENT-STATE-BASELINE.md](CURRENT-STATE-BASELINE.md) (audited source baseline `c890ba05...`, CI #495 evidence, active Phase 0 boundaries)
+   - [CURRENT-STATE-BASELINE.md](CURRENT-STATE-BASELINE.md) (audited source baseline `143e6edc...`, CI #504 evidence, active Phase 0 boundaries)
    - [DOMAIN-MODEL.md](DOMAIN-MODEL.md) (literal schema, concurrency, Party vs ProjectCustomer rules)
    - [SECURITY-AND-PERMISSIONS.md](SECURITY-AND-PERMISSIONS.md) (hashing, cookies, CSRF, 18 permissions, resource scoping)
    - [MASTER-ROADMAP.md](MASTER-ROADMAP.md) (dependencies & phase sequencing)

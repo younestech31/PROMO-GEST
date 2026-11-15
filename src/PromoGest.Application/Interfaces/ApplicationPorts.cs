@@ -164,6 +164,11 @@ public interface IProjectCustomerRepository
         Guid partyId,
         Guid? excludeCustomerId = null,
         CancellationToken ct = default);
+    Task<IReadOnlyList<ProjectCustomer>> ListByPartyAsync(Guid partyId, CancellationToken ct = default);
+    Task<bool> HasProjectCustomerIdentityCollisionAsync(
+        Guid partyId,
+        string normalizedDisplayName,
+        CancellationToken ct = default);
     Task AddCustomerAsync(ProjectCustomer customer, CancellationToken ct = default);
     Task AddInteractionAsync(CustomerInteraction interaction, CancellationToken ct = default);
     Task SaveChangesAsync(CancellationToken ct = default);

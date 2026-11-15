@@ -1045,6 +1045,32 @@ public sealed class PostgresEndToEndTests : IClassFixture<PostgreSql18Integratio
             var foreignProjectDocumentError = await foreignProjectCustomerResponse.Content.ReadFromJsonAsync<ApiErrorResponse>();
             Assert.Equal("CUSTOMER_IDENTITY_DOCUMENT_NOT_FOUND", foreignProjectDocumentError!.Code);
 
+            var sharedPartyCustomerResponse = await adminClient.PostAsJsonAsync(
+                $"/api/projects/{otherProject.Id}/customers",
+                customerRequest with
+                {
+                    Phone = "0550 987 654",
+                    IdentityDocumentStoredFileId = null,
+                    PartyId = createdCustomer.PartyId
+                });
+            Assert.Equal(HttpStatusCode.Created, sharedPartyCustomerResponse.StatusCode);
+            var sharedPartyCustomer = await sharedPartyCustomerResponse.Content.ReadFromJsonAsync<ProjectCustomerDto>();
+            Assert.NotNull(sharedPartyCustomer);
+            Assert.Equal(createdCustomer.PartyId, sharedPartyCustomer!.PartyId);
+            var sharedPartyCustomerInitialStamp = sharedPartyCustomer.ConcurrencyStamp;
+            var conflictingCustomerResponse = await adminClient.PostAsJsonAsync(
+                $"/api/projects/{otherProject.Id}/customers",
+                customerRequest with
+                {
+                    DisplayName = "Collision Name",
+                    Phone = "0550 987 654",
+                    IdentityDocumentStoredFileId = null
+                });
+            Assert.Equal(HttpStatusCode.Created, conflictingCustomerResponse.StatusCode);
+            var conflictingCustomer = await conflictingCustomerResponse.Content.ReadFromJsonAsync<ProjectCustomerDto>();
+            Assert.NotNull(conflictingCustomer);
+            Assert.NotEqual(sharedPartyCustomer.PartyId, conflictingCustomer!.PartyId);
+
             var addInteractionResponse = await adminClient.PostAsJsonAsync(
                 $"/api/projects/{createdProject.Id}/customers/{createdCustomer.Id}/interactions",
                 new AddCustomerInteractionRequest(
@@ -1073,8 +1099,8 @@ public sealed class PostgresEndToEndTests : IClassFixture<PostgreSql18Integratio
             Assert.NotEqual(Guid.Empty, partyConcurrencyStamp);
 
             var updateCustomerRequest = new UpdateProjectCustomerRequest(
-                customerDetails.CustomerType,
-                "ليلى بن عيسى المحدثة",
+                "LegalEntity",
+                "SARL ليلى بن عيسى المحدثة",
                 customerDetails.ContactPerson,
                 customerDetails.Phone,
                 customerDetails.Email,
@@ -1085,6 +1111,27 @@ public sealed class PostgresEndToEndTests : IClassFixture<PostgreSql18Integratio
                 customerDetails.IdentityDocument?.Id,
                 staleCustomerStamp,
                 partyConcurrencyStamp);
+
+            var customerIdentityCollisionResponse = await adminClient.PutAsJsonAsync(
+                $"/api/projects/{createdProject.Id}/customers/{createdCustomer.Id}",
+                updateCustomerRequest with { DisplayName = "Collision Name" });
+            Assert.Equal(HttpStatusCode.Conflict, customerIdentityCollisionResponse.StatusCode);
+            var customerIdentityCollisionError = await customerIdentityCollisionResponse.Content.ReadFromJsonAsync<ApiErrorResponse>();
+            Assert.Equal("PARTY_IDENTITY_CONFLICT", customerIdentityCollisionError!.Code);
+
+            using (var partyScope = factory.Services.CreateScope())
+            {
+                var db = partyScope.ServiceProvider.GetRequiredService<AppDbContext>();
+                var unchangedParty = await db.Parties.SingleAsync(party => party.Id == createdCustomer.PartyId);
+                Assert.Equal("ليلى بن عيسى", unchangedParty.DisplayName);
+                var unchangedLinkedCustomers = await db.ProjectCustomers
+                    .Where(customer => customer.PartyId == createdCustomer.PartyId)
+                    .ToListAsync();
+                Assert.Equal(2, unchangedLinkedCustomers.Count);
+                Assert.All(unchangedLinkedCustomers, customer =>
+                    Assert.Equal("ليلى بن عيسى", customer.DisplayName));
+            }
+
             var updateCustomerResponse = await adminClient.PutAsJsonAsync(
                 $"/api/projects/{createdProject.Id}/customers/{createdCustomer.Id}",
                 updateCustomerRequest);
@@ -1092,7 +1139,8 @@ public sealed class PostgresEndToEndTests : IClassFixture<PostgreSql18Integratio
             var updatedCustomer = await updateCustomerResponse.Content.ReadFromJsonAsync<ProjectCustomerDto>();
             Assert.NotNull(updatedCustomer);
             Assert.Equal("Qualified", updatedCustomer!.Status);
-            Assert.Equal("ليلى بن عيسى المحدثة", updatedCustomer.DisplayName);
+            Assert.Equal("SARL ليلى بن عيسى المحدثة", updatedCustomer.DisplayName);
+            Assert.Equal("LegalEntity", updatedCustomer.CustomerType);
             Assert.Equal(createdCustomer.PartyId, updatedCustomer.PartyId);
             Assert.NotEqual(staleCustomerStamp, updatedCustomer.ConcurrencyStamp);
 
@@ -1100,14 +1148,102 @@ public sealed class PostgresEndToEndTests : IClassFixture<PostgreSql18Integratio
             {
                 var db = partyScope.ServiceProvider.GetRequiredService<AppDbContext>();
                 var persistedParty = await db.Parties.SingleAsync(party => party.Id == updatedCustomer.PartyId);
-                Assert.Equal("ليلى بن عيسى المحدثة", persistedParty.DisplayName);
-                Assert.Equal(PartyKind.Person, persistedParty.Kind);
+                Assert.Equal("SARL ليلى بن عيسى المحدثة", persistedParty.DisplayName);
+                Assert.Equal(PartyKind.LegalEntity, persistedParty.Kind);
+                var linkedCustomers = await db.ProjectCustomers
+                    .Where(customer => customer.PartyId == updatedCustomer.PartyId)
+                    .OrderBy(customer => customer.ProjectId)
+                    .ToListAsync();
+                Assert.Equal(2, linkedCustomers.Count);
+                Assert.All(linkedCustomers, customer =>
+                {
+                    Assert.Equal("SARL ليلى بن عيسى المحدثة", customer.DisplayName);
+                    Assert.Equal("SARL ليلى بن عيسى المحدثة".ToUpperInvariant(), customer.NormalizedDisplayName);
+                    Assert.Equal(CustomerType.LegalEntity, customer.CustomerType);
+                });
+                Assert.NotEqual(
+                    sharedPartyCustomerInitialStamp,
+                    linkedCustomers.Single(customer => customer.Id == sharedPartyCustomer.Id).ConcurrencyStamp);
             }
 
             var staleUpdateResponse = await adminClient.PutAsJsonAsync(
                 $"/api/projects/{createdProject.Id}/customers/{createdCustomer.Id}",
                 updateCustomerRequest);
             Assert.Equal(HttpStatusCode.Conflict, staleUpdateResponse.StatusCode);
+
+            Guid customerStampBeforeDirectoryUpdate;
+            Guid sharedCustomerStampBeforeDirectoryUpdate;
+            using (var partyScope = factory.Services.CreateScope())
+            {
+                var db = partyScope.ServiceProvider.GetRequiredService<AppDbContext>();
+                customerStampBeforeDirectoryUpdate = await db.ProjectCustomers
+                    .Where(customer => customer.Id == createdCustomer.Id)
+                    .Select(customer => customer.ConcurrencyStamp)
+                    .SingleAsync();
+                sharedCustomerStampBeforeDirectoryUpdate = await db.ProjectCustomers
+                    .Where(customer => customer.Id == sharedPartyCustomer.Id)
+                    .Select(customer => customer.ConcurrencyStamp)
+                    .SingleAsync();
+            }
+
+            var partyDirectoryCollisionResponse = await adminClient.PutAsJsonAsync(
+                $"/api/parties/{updatedCustomer.PartyId}",
+                new UpdatePartyIdentityRequest(
+                    "LegalEntity",
+                    "Collision Name",
+                    updatedCustomer.PartyConcurrencyStamp));
+            Assert.Equal(HttpStatusCode.Conflict, partyDirectoryCollisionResponse.StatusCode);
+            var partyDirectoryCollisionError = await partyDirectoryCollisionResponse.Content.ReadFromJsonAsync<ApiErrorResponse>();
+            Assert.Equal("PARTY_IDENTITY_CONFLICT", partyDirectoryCollisionError!.Code);
+
+            var partyDirectoryUpdateResponse = await adminClient.PutAsJsonAsync(
+                $"/api/parties/{updatedCustomer.PartyId}",
+                new UpdatePartyIdentityRequest(
+                    "LegalEntity",
+                    "SARL ليلى بن عيسى — الهوية المركزية",
+                    updatedCustomer.PartyConcurrencyStamp));
+            Assert.Equal(HttpStatusCode.OK, partyDirectoryUpdateResponse.StatusCode);
+            var updatedPartyDirectoryItem = await partyDirectoryUpdateResponse.Content.ReadFromJsonAsync<PartyDirectoryItemDto>();
+            Assert.NotNull(updatedPartyDirectoryItem);
+            Assert.Equal("SARL ليلى بن عيسى — الهوية المركزية", updatedPartyDirectoryItem!.DisplayName);
+
+            using (var partyScope = factory.Services.CreateScope())
+            {
+                var db = partyScope.ServiceProvider.GetRequiredService<AppDbContext>();
+                var persistedParty = await db.Parties.SingleAsync(party => party.Id == updatedCustomer.PartyId);
+                Assert.Equal("SARL ليلى بن عيسى — الهوية المركزية", persistedParty.DisplayName);
+                var linkedCustomers = await db.ProjectCustomers
+                    .Where(customer => customer.PartyId == updatedCustomer.PartyId)
+                    .ToListAsync();
+                Assert.Equal(2, linkedCustomers.Count);
+                Assert.All(linkedCustomers, customer =>
+                {
+                    Assert.Equal("SARL ليلى بن عيسى — الهوية المركزية", customer.DisplayName);
+                    Assert.Equal("SARL ليلى بن عيسى — الهوية المركزية".ToUpperInvariant(), customer.NormalizedDisplayName);
+                    Assert.Equal(CustomerType.LegalEntity, customer.CustomerType);
+                });
+                Assert.NotEqual(customerStampBeforeDirectoryUpdate,
+                    linkedCustomers.Single(customer => customer.Id == createdCustomer.Id).ConcurrencyStamp);
+                Assert.NotEqual(sharedCustomerStampBeforeDirectoryUpdate,
+                    linkedCustomers.Single(customer => customer.Id == sharedPartyCustomer.Id).ConcurrencyStamp);
+            }
+
+            var staleAfterDirectoryUpdate = await adminClient.PutAsJsonAsync(
+                $"/api/projects/{createdProject.Id}/customers/{createdCustomer.Id}",
+                new UpdateProjectCustomerRequest(
+                    updatedCustomer.CustomerType,
+                    updatedCustomer.DisplayName,
+                    updatedCustomer.ContactPerson,
+                    updatedCustomer.Phone,
+                    updatedCustomer.Email,
+                    updatedCustomer.Address,
+                    updatedCustomer.PreferredLanguage,
+                    updatedCustomer.Source,
+                    updatedCustomer.Status,
+                    updatedCustomer.IdentityDocument?.Id,
+                    updatedCustomer.ConcurrencyStamp,
+                    updatedCustomer.PartyConcurrencyStamp));
+            Assert.Equal(HttpStatusCode.Conflict, staleAfterDirectoryUpdate.StatusCode);
 
             // Reservations must use the sales workflow, not the structure status endpoint.
             var reservationUnitResponse = await adminClient.PostAsJsonAsync(

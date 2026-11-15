@@ -316,7 +316,26 @@ public sealed class ProjectCustomerService
                     "Changing a shared Party name or legal type requires the organization-wide identity-management permission.");
             }
 
-            customer.Party.UpdateIdentity(requestedPartyKind, normalizedName.DisplayName, _clock.UtcNow);
+            if (await _customerRepository.HasProjectCustomerIdentityCollisionAsync(
+                    customer.PartyId,
+                    normalizedName.NormalizedDisplayName,
+                    ct))
+            {
+                throw new ConflictDomainException(
+                    "PARTY_IDENTITY_CONFLICT",
+                    "This identity update would duplicate a customer name and phone combination in one or more linked projects.");
+            }
+
+            var identityChangedAtUtc = _clock.UtcNow;
+            customer.Party.UpdateIdentity(requestedPartyKind, normalizedName.DisplayName, identityChangedAtUtc);
+
+            var linkedCustomers = await _customerRepository.ListByPartyAsync(customer.PartyId, ct);
+            foreach (var linkedCustomer in linkedCustomers)
+            {
+                if (linkedCustomer.Id != customer.Id)
+                    linkedCustomer.SynchronizePartyIdentity(customer.Party, identityChangedAtUtc);
+            }
+
             await RecordAuditAsync(
                 actor,
                 "PARTY_IDENTITY_UPDATED",

@@ -162,6 +162,7 @@ export interface ProjectDto {
   actualBuildingsCount: number;
   actualUnitsCount: number;
   createdAtUtc: string;
+  concurrencyStamp: string;
   members: ProjectMemberDto[];
 }
 
@@ -301,7 +302,9 @@ export interface CreateProjectRequest {
   plannedUnitsCount: number;
 }
 
-export type UpdateProjectRequest = Omit<CreateProjectRequest, 'code'>;
+export type UpdateProjectRequest = Omit<CreateProjectRequest, 'code'> & {
+  expectedConcurrencyStamp: string;
+};
 
 export interface PropertyUnitDto {
   id: string;

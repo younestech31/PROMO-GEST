@@ -551,6 +551,7 @@ test('Dev API middleware exposes Les Sables d Or with 3 buildings & 72 units and
         wilayaCode: lesSables.wilayaCode,
         wilayaName: lesSables.wilayaName,
         municipality: 'اسطاوالي / Staouéli',
+        expectedConcurrencyStamp: lesSables.concurrencyStamp,
         address: lesSables.address,
         landTitleReference: lesSables.landTitleReference,
         buildingPermitNumber: lesSables.buildingPermitNumber,
@@ -563,8 +564,31 @@ test('Dev API middleware exposes Les Sables d Or with 3 buildings & 72 units and
     });
     assert.equal(updateProjectRes.status, 200);
     assert.equal(updateProjectRes.json.municipality, 'اسطاوالي / Staouéli');
+    assert.notEqual(updateProjectRes.json.concurrencyStamp, lesSables.concurrencyStamp);
     assert.equal(updateProjectRes.json.actualBuildingsCount, 3);
     assert.equal(updateProjectRes.json.actualUnitsCount, 72);
+
+    const stalePreviewUpdate = await adminClient.request(`/api/projects/${lesSables.id}`, {
+      method: 'PUT',
+      body: JSON.stringify({
+        nameAr: lesSables.nameAr,
+        nameFr: lesSables.nameFr,
+        wilayaCode: lesSables.wilayaCode,
+        wilayaName: lesSables.wilayaName,
+        municipality: 'بيانات قديمة',
+        address: lesSables.address,
+        landTitleReference: lesSables.landTitleReference,
+        buildingPermitNumber: lesSables.buildingPermitNumber,
+        buildingPermitDate: lesSables.buildingPermitDate,
+        status: 'Planning',
+        estimatedBudgetDzd: 1,
+        plannedBlocksCount: 1,
+        plannedUnitsCount: 1,
+        expectedConcurrencyStamp: lesSables.concurrencyStamp,
+      }),
+    });
+    assert.equal(stalePreviewUpdate.status, 409);
+    assert.equal(stalePreviewUpdate.json.code, 'PROJECT_CONCURRENCY_CONFLICT');
 
     // 6. Create building, update building, create floor, update floor, create unit, update unit, change unit status
     const createBuildingRes = await adminClient.request(`/api/projects/${lesSables.id}/structure/buildings`, {

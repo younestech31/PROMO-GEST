@@ -6,7 +6,6 @@ export interface TranslationBundle {
   languageArabic: string;
   languageFrench: string;
   operationTemporarilyUnavailable: string;
-  operationTemporarilyUnavailable: string;
   setup: {
     eyebrow: string;
     title: string;

@@ -1,9 +1,9 @@
 # PROMO GEST — Current State Baseline
 
 **Document Role:** Evidence-backed snapshot of the repository, not a product roadmap.  
-**Audited Source Baseline:** `7d770e851cbae745863713594490fdf1e79210ec` (PR #38 merge).  
+**Audited Source Baseline:** `7d770e851cbae745863713594490fdf1e79210ec` (PR #39 merge; source-code baseline inherited from PR #38).  
 **Previous Canonical Documentation Snapshot:** `d34eba606e5e2473898deed5e31a73eef2e7374d` (superseded by this evidence refresh).  
-**Latest Green CI:** GitHub Actions Run **#495** / `43723681352`, on the audited source commit above.  
+**Latest Green CI:** GitHub Actions Run **#499** / `43723681352`, on the audited source commit above.  
 **Governing Rule:** A feature is `IMPLEMENTED_AND_VERIFIED` only when its code and applicable automated verification pass in the audited baseline. A green pipeline does not certify untested browser UX, preview parity, production installation, or legal/accounting correctness.
 
 ---

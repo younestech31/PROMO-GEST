@@ -17,7 +17,7 @@ test('the global local-server disconnect message is absent from every main scree
 
   for (const source of screens) {
     assert.doesNotMatch(source, /ConnectionIndicator|serverDisconnectedBannerTitle|serverDisconnectedBannerBody/);
-    assert.doesNotMatch(source, /serverDisconnected\\b|serverConnected\\b/);
+    assert.doesNotMatch(source, /\bserverDisconnected\b|\bserverConnected\b/);
   }
 
   assert.doesNotMatch(translations, /serverDisconnected|serverConnected|serverChecking|retryConnection/);
@@ -25,8 +25,8 @@ test('the global local-server disconnect message is absent from every main scree
 });
 
 test('failed login and setup network calls show a neutral operation-level message', () => {
-  assert.match(login, /setAuthError\\(t\\.operationTemporarilyUnavailable\\)/);
-  assert.match(setup, /setSubmitError\\(t\\.operationTemporarilyUnavailable\\)/);
+  assert.match(login, /setAuthError\(t\.operationTemporarilyUnavailable\)/);
+  assert.match(setup, /setSubmitError\(t\.operationTemporarilyUnavailable\)/);
   assert.match(translations, /تعذّر إتمام العملية حالياً/);
   assert.match(translations, /Opération impossible pour le moment/);
 });
@@ -34,7 +34,7 @@ test('failed login and setup network calls show a neutral operation-level messag
 test('background diagnostics do not create a global disconnected state or overlap requests', () => {
   assert.doesNotMatch(app, /ServerConnectionState|connectionState|setConnectionState/);
   assert.match(app, /requestInFlight/);
-  assert.match(app, /document\\.visibilityState !== 'visible'/);
+  assert.match(app, /document\.visibilityState !== 'visible'/);
   assert.match(app, /60_000/);
-  assert.match(login, /disabled=\\{isSubmitting\\}/);
+  assert.match(login, /disabled=\{isSubmitting\}/);
 });

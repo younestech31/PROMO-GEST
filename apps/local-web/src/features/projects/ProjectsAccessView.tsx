@@ -896,6 +896,8 @@ export function ProjectsAccessView({
           project={customersProject}
           language={language}
           canManage={canManageProjectCustomers(currentUser, customersProject)}
+          canReadPartyDirectory={currentUser.isSystemAdministrator || currentUser.permissions.includes('parties.directory.read')}
+          canManagePartyIdentity={currentUser.isSystemAdministrator || currentUser.permissions.includes('parties.identity.manage')}
           onClose={() => setCustomersProject(null)}
         />
       )}

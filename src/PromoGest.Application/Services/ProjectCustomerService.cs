@@ -110,9 +110,20 @@ public sealed class ProjectCustomerService
             var canReadPartyDirectory = actor.IsSystemAdministrator ||
                 permissions.Contains("parties.directory.read", StringComparer.OrdinalIgnoreCase);
             if (!canReadPartyDirectory)
+            {
+                await RecordAuditAsync(
+                    actor,
+                    "ACCESS_DENIED",
+                    "Party",
+                    request.PartyId.Value.ToString(),
+                    "Denied reuse of an organization-wide Party identity.",
+                    new { projectId, partyId = request.PartyId.Value, requiredPermission = "parties.directory.read" },
+                    metadata,
+                    ct);
                 throw new ForbiddenDomainException(
                     "PARTY_DIRECTORY_ACCESS_DENIED",
                     "You need organization-wide Party directory permission to reuse an existing identity.");
+            }
 
             existingParty = await _partyRepository.GetByIdAsync(request.PartyId.Value, ct)
                 ?? throw new NotFoundDomainException("PARTY_NOT_FOUND", "Party identity was not found.");
@@ -280,10 +291,26 @@ public sealed class ProjectCustomerService
 
         if (partyIdentityChanged)
         {
+            var previousPartyKind = customer.Party.Kind;
             var canManagePartyIdentity = actor.IsSystemAdministrator ||
                 permissions.Contains("parties.identity.manage", StringComparer.OrdinalIgnoreCase);
             if (!canManagePartyIdentity)
             {
+                await RecordAuditAsync(
+                    actor,
+                    "ACCESS_DENIED",
+                    "Party",
+                    customer.PartyId.ToString(),
+                    "Denied a canonical Party identity change from a project customer workflow.",
+                    new
+                    {
+                        partyId = customer.PartyId,
+                        projectId,
+                        customerId,
+                        requiredPermission = "parties.identity.manage"
+                    },
+                    metadata,
+                    ct);
                 throw new ForbiddenDomainException(
                     "PARTY_IDENTITY_MANAGE_REQUIRED",
                     "Changing a shared Party name or legal type requires the organization-wide identity-management permission.");
@@ -296,7 +323,14 @@ public sealed class ProjectCustomerService
                 "Party",
                 customer.PartyId.ToString(),
                 "Updated a canonical Party identity from a project customer workflow.",
-                new { partyId = customer.PartyId, projectId, customerId, newKind = requestedPartyKind.ToString() },
+                new
+                {
+                    partyId = customer.PartyId,
+                    projectId,
+                    customerId,
+                    previousKind = previousPartyKind.ToString(),
+                    newKind = requestedPartyKind.ToString()
+                },
                 metadata,
                 ct,
                 saveChanges: false);

@@ -27,7 +27,7 @@
 - **Frontend job — passed:** `npm run lint` (`tsc --noEmit`), `npm test` (**38/38**), SPA build, ASP.NET Core `wwwroot` build, static-hosting checks, and dev-preview leakage checks.
 - **.NET 10 / PostgreSQL 18 job — passed:** solution build with warnings as errors; Domain **27/27**, Application **14/14**, PostgreSQL 18 integration tests (including `SecurityHeadersMiddlewareTests`) and the database/storage/Data Protection restore drill all passed.
 - **Windows publish job — passed:** Windows x64 publish, machine-scoped Data Protection recovery verification, and PowerShell validation passed.
-- **Overall:** all three required CI jobs completed with `success` on main commit `14428830eb0b81beedecc2136ba65fdf68a23266`. [Run #544](https://github.com/younestech31/PROMO-GEST/actions/runs/43767110822).
+- **Overall:** all three required CI jobs completed with `success` on main commit `c26194dce5124d5d5e8d67fc5a04708346b1d5e4`. [Run #544](https://github.com/younestech31/PROMO-GEST/actions/runs/43767110822).
 
 ### Phase 0 Defect Disposition
 - **Resolved — PR #35:** `CS7036` in `PostgresEndToEndTests.cs` fixed by passing the real `PartyConcurrencyStamp` from loaded customer details.

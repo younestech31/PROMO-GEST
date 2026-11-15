@@ -2,9 +2,9 @@
 
 All 12 functional ERP domains required by PROMO GEST, mapped strictly using the 6-state taxonomy against actual inspected code, controllers, EF configurations, and tests.
 
-**Last Code-Changing Source Baseline:** `6bbd97f70ed0fb63cf226a1117cf6e83c359d2be` (PR #44 merge).  
-**Main Commit Inspected at Audit Start:** `5415f0e668a55f902ac2802e1669af58ad7ec410` (PR #46).  
-**Latest Green CI at Audit Start:** Run **#531** / `43752672569` — frontend, .NET/PostgreSQL 18, and Windows jobs all passed.  
+**Last Code-Changing Source Baseline:** `23f019de7c787c0f93b5b7f0b5cec69992ff087a` (PR #48 merge; API/health no-store policy).  
+**Main Commit Inspected at Audit Start:** `14428830eb0b81beedecc2136ba65fdf68a23266` (PR #49 documentation-only).  
+**Latest Green CI at Audit Start:** Run **#541** / `43764687600` — frontend, .NET/PostgreSQL 18, and Windows jobs all passed.  
 **Live Preview Evidence:** On 15 November 2026, the product owner confirmed that the real Google AI Studio development server/API was operating and that the previously failing project customer/prospect and reservation pages no longer displayed the reported generic internal error after PR #44. This is a targeted page-level smoke check; it does not certify every CRUD path or the manual Arabic RTL/French LTR review.
 
 ---
@@ -57,7 +57,7 @@ All 12 functional ERP domains required by PROMO GEST, mapped strictly using the 
 - **Frontend surface:** `ProjectCustomerRegistryModal.tsx` supports project customer registry, canonical Party search/selection, customer details, CRM interactions/follow-up fields, and linked identity-document download. A full lead pipeline, standalone Party directory, and broader contact/representative management are not present.
 - **Current Reality:**
   - *Project Customer Registry (C1):* `GET/POST /api/projects/{id}/customers`, `GET/PUT .../customers/{customerId}`, `POST .../customers/{customerId}/interactions`.
-  - *Party Directory (C2, PRs #35–#38):* `GET /api/parties`, `PUT /api/parties/{partyId}`; canonical `parties` identity remains authoritative. Unauthorized reads/identity changes are security-audited; `previousKind` is captured correctly; updates synchronize every linked `project_customers` identity mirror, advance relationship concurrency stamps, and reject duplicate name/phone collisions before mutation. Application and PostgreSQL 18 integration tests pass in CI #531. **The final retirement of redundant relationship identity columns remains Phase 1 migration work.**
+  - *Party Directory (C2, PRs #35–#38):* `GET /api/parties`, `PUT /api/parties/{partyId}`; canonical `parties` identity remains authoritative. Unauthorized reads/identity changes are security-audited; `previousKind` is captured correctly; updates synchronize every linked `project_customers` identity mirror, advance relationship concurrency stamps, and reject duplicate name/phone collisions before mutation. Application and PostgreSQL 18 integration tests pass in CI #541. **The final retirement of redundant relationship identity columns remains Phase 1 migration work.**
   - *Employee Master (`PLANNED`):* No `Employee` table yet (`ADR-0009`).
 - **Target Scope (`PLANNED`):** Resolve C2 defects; designate `parties` as sole name/kind master & retire redundant `project_customers` copies cleanly; add `PartyContactPoint`, protected `PartyIdentifier`, `PartyRepresentative`, human-approved manual `Party` merge workflow, Supplier/Subcontractor roles, and `Employee` detached from `User`.
 

@@ -72,10 +72,10 @@ Every claim across this blueprint uses **strictly one** of the six evidence-back
 | Layer / Domain | Current State | Verification Evidence |
 |---|---|---|
 | Domain Core (`PromoGest.Domain`) | `IMPLEMENTED_AND_VERIFIED` | CI #541: **27/27** Domain tests passed |
-| Application Services (`PromoGest.Application`) | `IMPLEMENTED_AND_VERIFIED` | CI #531: **14/14** Application tests passed |
+| Application Services (`PromoGest.Application`) | `IMPLEMENTED_AND_VERIFIED` | CI #541: **14/14** Application tests passed |
 | C2 Party / Customer identity foundation | `IMPLEMENTED_AND_VERIFIED` | PRs #35–#38 merged; audit denials, concurrency, cross-project reuse, identity-collision rejection, and linked mirror synchronization are covered by Application and PostgreSQL 18 tests |
-| PostgreSQL 18 Integration Suite (`PromoGest.IntegrationTests`) | `IMPLEMENTED_AND_VERIFIED` | CI #531: **9/9** PostgreSQL 18 integration tests, including API/health response-cache regression checks, passed; former `CS7036` is resolved |
-| Local React SPA (`apps/local-web`) | `PARTIALLY_IMPLEMENTED` | CI #531: strict TypeScript check, **38/38** pure tests, production build and `wwwroot` checks pass; manual RTL/LTR browser review and full parity of the Vite-only simulator remain outstanding |
+| PostgreSQL 18 Integration Suite (`PromoGest.IntegrationTests`) | `IMPLEMENTED_AND_VERIFIED` | CI #541: **9/9** PostgreSQL 18 integration tests, including API/health response-cache regression checks, passed; former `CS7036` is resolved |
+| Local React SPA (`apps/local-web`) | `PARTIALLY_IMPLEMENTED` | CI #541: strict TypeScript check, **38/38** pure tests, production build and `wwwroot` checks pass; manual RTL/LTR browser review and full parity of the Vite-only simulator remain outstanding |
 | Organization Profile Edit (`PUT /api/organization`) | `PARTIALLY_IMPLEMENTED` | `OrganizationProfileView.tsx` is read-only; `org.manage` is seeded but no update endpoint exists |
 | Modules F–J & L (Contracts, DZD Finance/Installments, Works/Chantier, Procurement/Stock, SCF Accounting, Reporting) | `PLANNED` | Design baselines documented; no production business modules implemented |
 | Module K (Document Vault `stored_files`) | `PARTIALLY_IMPLEMENTED` | K-Min upload/list/download and SHA-256 API path pass PostgreSQL 18 E2E; metadata lifecycle, structured links and K-Full archival remain unimplemented |

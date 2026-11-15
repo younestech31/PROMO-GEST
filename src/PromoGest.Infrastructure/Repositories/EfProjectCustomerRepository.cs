@@ -51,11 +51,16 @@ public sealed class EfProjectCustomerRepository : IProjectCustomerRepository
             (!excludeCustomerId.HasValue || customer.Id != excludeCustomerId.Value),
             ct);
 
-    public Task AddPartyAsync(Party party, CancellationToken ct = default)
-    {
-        _dbContext.Parties.Add(party);
-        return Task.CompletedTask;
-    }
+    public Task<bool> ExistsPartyInProjectAsync(
+        Guid projectId,
+        Guid partyId,
+        Guid? excludeCustomerId = null,
+        CancellationToken ct = default)
+        => _dbContext.ProjectCustomers.AnyAsync(customer =>
+            customer.ProjectId == projectId &&
+            customer.PartyId == partyId &&
+            (!excludeCustomerId.HasValue || customer.Id != excludeCustomerId.Value),
+            ct);
 
     public Task AddCustomerAsync(ProjectCustomer customer, CancellationToken ct = default)
     {

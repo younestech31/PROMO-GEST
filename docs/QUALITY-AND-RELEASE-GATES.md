@@ -21,23 +21,25 @@
 
 ---
 
-## 2. Current Gate Status Against Baseline (Source Commit `143e6edcaa97ed44cc4d7343809dfc427117e978`)
+## 2. Current Gate Status Against Baseline (Source Commit `727fddf59a293cb888549afce10c2d7328a4d484`)
 
-### GitHub Actions Run #504 — 15 November 2026
-- **Frontend job — passed:** `npm run lint` (`tsc --noEmit`), `npm test` (**27/27**), SPA build, ASP.NET Core `wwwroot` build, static-hosting checks, and dev-preview leakage checks.
+### GitHub Actions Run #520 — 15 November 2026
+- **Frontend job — passed:** `npm run lint` (`tsc --noEmit`), `npm test` (**36/36**), SPA build, ASP.NET Core `wwwroot` build, static-hosting checks, and dev-preview leakage checks.
 - **.NET 10 / PostgreSQL 18 job — passed:** solution build with warnings as errors; Domain **27/27**, Application **14/14**, and PostgreSQL 18 Integration **9/9** tests passed.
 - **Windows publish job — passed:** Windows x64 publish, machine-scoped Data Protection recovery verification, and PowerShell validation passed.
-- **Overall:** all three required CI jobs completed with `success` on commit `143e6edcaa97ed44cc4d7343809dfc427117e978`. [Run #504](https://github.com/younestech31/PROMO-GEST/actions/runs/43730899454).
+- **Overall:** all three required CI jobs completed with `success` on commit `727fddf59a293cb888549afce10c2d7328a4d484`. [Run #520](https://github.com/younestech31/PROMO-GEST/actions/runs/43734734647).
 
 ### Phase 0 Defect Disposition
 - **Resolved — PR #35:** `CS7036` in `PostgresEndToEndTests.cs` fixed by passing the real `PartyConcurrencyStamp` from loaded customer details.
 - **Resolved — PR #36:** Party Directory records `ACCESS_DENIED` as a Security audit event and captures `previousKind` before canonical identity mutation.
 - **Resolved — PR #37:** project-customer Party reuse and identity-change denials are security-audited; authorized identity changes record previous and new kinds.
 - **Resolved — PR #38:** canonical Party identity updates synchronize every linked project-customer transitional mirror, advance relationship concurrency stamps, and reject cross-project name/phone collisions before mutation. PostgreSQL 18 E2E exercises shared Party linkage, collision rejection, both update routes, mirror synchronization and stale-token rejection.
+- **Resolved — PR #41:** the AI Studio development launcher verifies API readiness before starting Vite and stops Vite if its owned API process exits; this prevents serving an interface with a dead loopback proxy.
+- **Resolved — PR #42:** both AI Studio real-API launchers bootstrap .NET 10 per-user through Microsoft's official installer if missing. The SDK version is checked before API build/start; a mocked clean-container bootstrap regression test is included.
 
 ### Gate Interpretation
-- **G1–G7 and G9:** automated build, domain/application suites, CSRF/auth/authorization paths, concurrency checks, audit protections, and PostgreSQL 18 integration execution passed in Run #504 for the tested requirements.
-- **G8:** automated TypeScript, 27 pure frontend tests, production build, static-hosting and leakage checks passed. **Manual browser verification of Arabic RTL / French LTR and the live AI Studio Cloud SQL proxy path remains outstanding. The launcher has automated startup-readiness regression coverage; CI cannot prove that a particular preview runtime has its Cloud SQL credentials and socket available.** The Vite fallback simulator is not full API parity and must not be used as evidence of production behavior.
+- **G1–G7 and G9:** automated build, domain/application suites, CSRF/auth/authorization paths, concurrency checks, audit protections, and PostgreSQL 18 integration execution passed in Run #520 for the tested requirements.
+- **G8:** automated TypeScript, 36 pure frontend tests, production build, static-hosting and leakage checks passed. **Manual browser verification of Arabic RTL / French LTR and the live AI Studio Cloud SQL proxy path remains outstanding. The launcher has automated startup-readiness regression coverage; CI cannot prove that a particular preview runtime has its Cloud SQL credentials and socket available.** The Vite fallback simulator is not full API parity and must not be used as evidence of production behavior. CI also verifies the .NET 10 bootstrap when no SDK is installed; the live AI Studio preview still needs manual confirmation of outbound installer access, Cloud SQL socket availability, and the real cookie/CSRF flow.
 - **G10:** Windows x64 publish, DPAPI recovery and PowerShell validation passed. Customer-site installation and a restore drill remain separate release-acceptance activities.
 
 **Release Implication:** The previous `CS7036` blocker is closed and current main CI is green. Phase 0 remains `IN_PROGRESS` until the real development-preview path and manual bilingual browser workflows are checked. Phase 1 and statutory/practitioner sign-offs remain prerequisites for production release and downstream legal/financial modules.

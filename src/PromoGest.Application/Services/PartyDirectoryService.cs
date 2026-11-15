@@ -40,7 +40,9 @@ public sealed class PartyDirectoryService
         CancellationToken ct = default)
     {
         var (actor, permissions) = await GetActorAsync(actorUserId, metadata, ct);
-        EnsurePermission(actor, permissions, DirectoryReadPermission, "PARTY_DIRECTORY_ACCESS_DENIED");
+        await EnsurePermissionAsync(
+            actor, permissions, DirectoryReadPermission, "PARTY_DIRECTORY_ACCESS_DENIED",
+            "PartyDirectory", null, metadata, ct);
 
         var normalizedQuery = NormalizeSearchQuery(query);
         var parties = await _partyRepository.SearchDirectoryAsync(
@@ -69,7 +71,9 @@ public sealed class PartyDirectoryService
         CancellationToken ct = default)
     {
         var (actor, permissions) = await GetActorAsync(actorUserId, metadata, ct);
-        EnsurePermission(actor, permissions, IdentityManagePermission, "PARTY_IDENTITY_MANAGE_REQUIRED");
+        await EnsurePermissionAsync(
+            actor, permissions, IdentityManagePermission, "PARTY_IDENTITY_MANAGE_REQUIRED",
+            "Party", partyId.ToString(), metadata, ct);
 
         var party = await _partyRepository.GetByIdAsync(partyId, ct)
             ?? throw new NotFoundDomainException("PARTY_NOT_FOUND", "Party identity was not found.");
@@ -92,6 +96,7 @@ public sealed class PartyDirectoryService
 
         if (hasChanged)
         {
+            var previousKind = party.Kind;
             party.UpdateIdentity(kind, normalizedDisplayName, nowUtc);
             await WriteAuditAsync(
                 actor,
@@ -99,7 +104,7 @@ public sealed class PartyDirectoryService
                 "Party",
                 party.Id.ToString(),
                 "Updated a canonical Party identity.",
-                new { partyId = party.Id, previousKind = party.Kind.ToString(), newKind = kind.ToString() },
+                new { partyId = party.Id, previousKind = previousKind.ToString(), newKind = kind.ToString() },
                 metadata,
                 ct);
         }
@@ -125,17 +130,31 @@ public sealed class PartyDirectoryService
         return (actor, permissions);
     }
 
-    private void EnsurePermission(
+    private async Task EnsurePermissionAsync(
         User actor,
         IReadOnlyList<string> permissions,
         string requiredPermission,
-        string errorCode)
+        string errorCode,
+        string targetEntityType,
+        string? targetEntityId,
+        RequestMetadata metadata,
+        CancellationToken ct)
     {
         if (actor.IsSystemAdministrator ||
             permissions.Contains(requiredPermission, StringComparer.OrdinalIgnoreCase))
         {
             return;
         }
+
+        await WriteAuditAsync(
+            actor,
+            "ACCESS_DENIED",
+            targetEntityType,
+            targetEntityId,
+            $"Denied Party directory operation; required permission '{requiredPermission}'.",
+            new { requiredPermission, errorCode },
+            metadata,
+            ct);
 
         throw new ForbiddenDomainException(
             errorCode,
@@ -158,7 +177,7 @@ public sealed class PartyDirectoryService
                 actor.Id,
                 actor.Username,
                 eventType,
-                AuditSeverity.Info,
+                eventType == "ACCESS_DENIED" ? AuditSeverity.Security : AuditSeverity.Info,
                 targetEntityType,
                 targetEntityId,
                 summary,

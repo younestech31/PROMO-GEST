@@ -29,6 +29,7 @@ public sealed class ApplicationSecurityAndFoundationTests
     private sealed class InMemoryStore :
         IInstallationRepository,
         IUserRepository,
+        IPartyRepository,
         IProjectRepository,
         IProjectStructureRepository,
         IAuditWriter,
@@ -46,6 +47,7 @@ public sealed class ApplicationSecurityAndFoundationTests
         public List<BuildingFloor> Floors { get; } = new();
         public List<PropertyUnit> Units { get; } = new();
         public List<AuditLog> AuditLogs { get; } = new();
+        public List<Party> Parties { get; } = new();
 
         public InMemoryStore()
         {
@@ -192,6 +194,14 @@ public sealed class ApplicationSecurityAndFoundationTests
         public Task AddBuildingAsync(Building building, CancellationToken ct = default) { Buildings.Add(building); return Task.CompletedTask; }
         public Task AddFloorAsync(BuildingFloor floor, CancellationToken ct = default) { Floors.Add(floor); return Task.CompletedTask; }
         public Task AddPropertyUnitAsync(PropertyUnit unit, CancellationToken ct = default) { Units.Add(unit); return Task.CompletedTask; }
+        public Task<Party?> GetByIdAsync(Guid partyId, CancellationToken ct = default)
+            => Task.FromResult(Parties.FirstOrDefault(party => party.Id == partyId));
+        public Task<IReadOnlyList<Party>> SearchDirectoryAsync(string normalizedPrefix, int limit, CancellationToken ct = default)
+            => Task.FromResult<IReadOnlyList<Party>>(Parties
+                .Where(party => party.NormalizedDisplayName.StartsWith(normalizedPrefix, StringComparison.Ordinal))
+                .Take(limit)
+                .ToList());
+        public Task AddAsync(Party party, CancellationToken ct = default) { Parties.Add(party); return Task.CompletedTask; }
         public Task WriteAsync(AuditLog entry, CancellationToken ct = default) { AuditLogs.Add(entry); return Task.CompletedTask; }
         public Task<IReadOnlyList<AuditLog>> ListRecentAsync(int limit, CancellationToken ct = default)
             => Task.FromResult<IReadOnlyList<AuditLog>>(AuditLogs.OrderByDescending(a => a.OccurredAtUtc).Take(limit).ToList());
@@ -237,6 +247,78 @@ public sealed class ApplicationSecurityAndFoundationTests
 
         var ex = await Assert.ThrowsAsync<ConflictDomainException>(() => setup.InitializeAsync(ValidInitRequest(), meta));
         Assert.Equal("SETUP_ALREADY_INITIALIZED", ex.Code);
+    }
+
+    [Fact]
+    public async Task PartyDirectory_UpdateIdentityAudit_UsesOriginalKindBeforeMutation()
+    {
+        var store = new InMemoryStore();
+        var clock = new FakeClock();
+        var setup = new SetupService(store, new Pbkdf2PasswordHasher(), store, clock);
+        var metadata = new RequestMetadata("127.0.0.1", "xUnit");
+        var init = await setup.InitializeAsync(ValidInitRequest(), metadata);
+        var party = Party.Create(Guid.NewGuid(), PartyKind.Person, "Client Original", clock.UtcNow);
+        store.Parties.Add(party);
+
+        var service = new PartyDirectoryService(store, store, store, clock);
+        var updated = await service.UpdateIdentityAsync(
+            init.SystemAdminUserId,
+            party.Id,
+            new UpdatePartyIdentityRequest(nameof(PartyKind.LegalEntity), "Client Updated", party.ConcurrencyStamp),
+            metadata);
+
+        Assert.Equal(nameof(PartyKind.LegalEntity), updated.Kind);
+        var audit = Assert.Single(store.AuditLogs.Where(entry => entry.EventType == "PARTY_IDENTITY_UPDATED"));
+        Assert.Contains("\\\"previousKind\\\":\\\"Person\\\"", audit.MetadataJson);
+        Assert.Contains("\\\"newKind\\\":\\\"LegalEntity\\\"", audit.MetadataJson);
+    }
+
+    [Fact]
+    public async Task PartyDirectory_DeniedPermissionsAreSecurityAuditedBeforeRejecting()
+    {
+        var store = new InMemoryStore();
+        var clock = new FakeClock();
+        var hasher = new Pbkdf2PasswordHasher();
+        var setup = new SetupService(store, hasher, store, clock);
+        var users = new UserManagementService(store, store, hasher, store, clock);
+        var metadata = new RequestMetadata("127.0.0.1", "xUnit");
+        var init = await setup.InitializeAsync(ValidInitRequest(), metadata);
+        var employee = await users.CreateEmployeeAsync(
+            init.SystemAdminUserId,
+            new CreateEmployeeRequest(
+                "party.viewer",
+                "Party Viewer",
+                "party.viewer@elbahdja.dz",
+                null,
+                "StrongPass123",
+                "ar",
+                new[] { Role.CommercialManagerCode }),
+            metadata);
+        var party = Party.Create(Guid.NewGuid(), PartyKind.Person, "Client Protected", clock.UtcNow);
+        store.Parties.Add(party);
+        var service = new PartyDirectoryService(store, store, store, clock);
+
+        var readDenied = await Assert.ThrowsAsync<ForbiddenDomainException>(() =>
+            service.SearchAsync(employee.Id, "Client", metadata));
+        Assert.Equal("PARTY_DIRECTORY_ACCESS_DENIED", readDenied.Code);
+
+        var updateDenied = await Assert.ThrowsAsync<ForbiddenDomainException>(() =>
+            service.UpdateIdentityAsync(
+                employee.Id,
+                party.Id,
+                new UpdatePartyIdentityRequest(nameof(PartyKind.LegalEntity), "Changed Client", party.ConcurrencyStamp),
+                metadata));
+        Assert.Equal("PARTY_IDENTITY_MANAGE_REQUIRED", updateDenied.Code);
+
+        var denials = store.AuditLogs.Where(entry => entry.EventType == "ACCESS_DENIED").ToList();
+        Assert.Equal(2, denials.Count);
+        Assert.All(denials, entry => Assert.Equal(AuditSeverity.Security, entry.Severity));
+        Assert.Contains(denials, entry => entry.TargetEntityType == "PartyDirectory" && entry.MetadataJson!.Contains("parties.directory.read", StringComparison.Ordinal));
+        Assert.Contains(denials, entry => entry.TargetEntityType == "Party" &&
+            entry.TargetEntityId == party.Id.ToString() &&
+            entry.MetadataJson!.Contains("parties.identity.manage", StringComparison.Ordinal));
+        Assert.Equal("Client Protected", party.DisplayName);
+        Assert.Equal(PartyKind.Person, party.Kind);
     }
 
     [Fact]

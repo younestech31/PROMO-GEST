@@ -212,6 +212,14 @@ public sealed class ProjectCustomerService
                 "CONCURRENCY_CONFLICT",
                 "The customer record changed after it was loaded. Reload it before saving.");
 
+        if (request.PartyConcurrencyStamp == Guid.Empty ||
+            request.PartyConcurrencyStamp != customer.Party.ConcurrencyStamp)
+        {
+            throw new ConflictDomainException(
+                "PARTY_CONCURRENCY_CONFLICT",
+                "The shared Party identity changed after it was loaded. Reload the customer before saving.");
+        }
+
         var customerType = ParseEnum<CustomerType>(request.CustomerType, "CUSTOMER_TYPE_INVALID");
         var source = ParseEnum<CustomerSource>(request.Source, "CUSTOMER_SOURCE_INVALID");
         var status = ParseEnum<ProjectCustomerStatus>(request.Status, "CUSTOMER_STATUS_INVALID");
@@ -262,9 +270,41 @@ public sealed class ProjectCustomerService
                 "A different customer with the same normalized name and phone number already exists in this project.");
         }
 
+        var requestedPartyKind = ToPartyKind(customerType);
+        var partyIdentityChanged =
+            customer.Party.Kind != requestedPartyKind ||
+            !string.Equals(
+                customer.Party.NormalizedDisplayName,
+                normalizedName.NormalizedDisplayName,
+                StringComparison.Ordinal);
+
+        if (partyIdentityChanged)
+        {
+            var canManagePartyIdentity = actor.IsSystemAdministrator ||
+                permissions.Contains("parties.identity.manage", StringComparer.OrdinalIgnoreCase);
+            if (!canManagePartyIdentity)
+            {
+                throw new ForbiddenDomainException(
+                    "PARTY_IDENTITY_MANAGE_REQUIRED",
+                    "Changing a shared Party name or legal type requires the organization-wide identity-management permission.");
+            }
+
+            customer.Party.UpdateIdentity(requestedPartyKind, normalizedName.DisplayName, _clock.UtcNow);
+            await RecordAuditAsync(
+                actor,
+                "PARTY_IDENTITY_UPDATED",
+                "Party",
+                customer.PartyId.ToString(),
+                "Updated a canonical Party identity from a project customer workflow.",
+                new { partyId = customer.PartyId, projectId, customerId, newKind = requestedPartyKind.ToString() },
+                metadata,
+                ct,
+                saveChanges: false);
+        }
+
         customer.UpdateDetails(
             customerType,
-            request.DisplayName,
+            normalizedName.DisplayName,
             request.ContactPerson,
             request.Phone,
             request.Email,
@@ -273,10 +313,6 @@ public sealed class ProjectCustomerService
             source,
             status,
             requestedIdentityDocumentId,
-            _clock.UtcNow);
-        customer.Party.UpdateIdentity(
-            ToPartyKind(customerType),
-            customer.DisplayName,
             _clock.UtcNow);
 
         await RecordAuditAsync(
@@ -533,6 +569,7 @@ public sealed class ProjectCustomerService
         => new(
             customer.Id,
             customer.PartyId,
+            customer.Party.ConcurrencyStamp,
             customer.ProjectId,
             customer.Party.Kind == PartyKind.Person ? CustomerType.Individual.ToString() : CustomerType.LegalEntity.ToString(),
             customer.Party.DisplayName,

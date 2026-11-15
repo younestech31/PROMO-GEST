@@ -3,8 +3,8 @@
 **Document Role:** Single authoritative index & master entry point for the PROMO GEST local-first real estate developer ERP (*promoteur immobilier* — Algeria).  
 **Last Application Runtime Source Commit:** `23f019de7c787c0f93b5b7f0b5cec69992ff087a` (PR #48 merge; API/health no-store policy).  
 **Latest Test-Source Commit:** `c26194dce5124d5d5e8d67fc5a04708346b1d5e4` (PR #50; real HTTP-pipeline cache-policy assertions).  
-**Main Commit Inspected at Audit Start:** `c26194dce5124d5d5e8d67fc5a04708346b1d5e4` (PR #50 integration-test-only source change).  
-**Latest Green CI at Audit Start:** GitHub Actions Run #544 / `43767110822` on current main; all three jobs passed.  
+**Main Commit Inspected at Audit Start:** `432e6f8ea76bb540dd5bc69d3314c0d658805ba7` (PR #51 documentation merge).  
+**Latest Green CI at Audit Start:** GitHub Actions Run #546 / `43768228052` on current main; all three jobs passed.  
 **Governing Charter:** Local-first, on-premises per organization, PostgreSQL 18 single source of truth, single System Administrator (`SYSTEM_ADMIN`), HTTP-only `SameSite=Strict` cookie sessions (`promogest_session`) + CSRF, local filesystem storage with SHA-256 verification, Arabic RTL primary / French LTR secondary, Algerian DZD & legal context.
 
 ---
@@ -31,7 +31,7 @@ Every claim across this blueprint uses **strictly one** of the six evidence-back
 | # | Document | Purpose & Scope |
 |---|---|---|
 | 1 | [MASTER-BLUEPRINT.md](MASTER-BLUEPRINT.md) | This master index, executive product vision, product scope boundaries, completion scorecard, and navigation map. |
-| 2 | [CURRENT-STATE-BASELINE.md](CURRENT-STATE-BASELINE.md) | Evidence-backed status at source commit `23f019de...`, CI #544, current test counts, merged C2 corrections, transitional Party mirrors, and explicit AI Studio preview boundaries. |
+| 2 | [CURRENT-STATE-BASELINE.md](CURRENT-STATE-BASELINE.md) | Evidence-backed application/test source baselines, current main/CI anchor, merged C2 corrections, owner-attested Phase 0 workflows, transitional Party mirrors, and AI Studio preview boundaries. |
 | 3 | [SYSTEM-ARCHITECTURE.md](SYSTEM-ARCHITECTURE.md) | Clean/Layered dependency graph, modular monolith boundaries, HTTP middleware pipeline, and SPA hosting model. |
 | 4 | [DOMAIN-MODEL.md](DOMAIN-MODEL.md) | Authoritative schema matching `AppDbContextModelSnapshot.cs` & migrations, Party vs ProjectCustomer separation, concurrency, and planned contract/financial models. |
 | 5 | [MODULE-CATALOG.md](MODULE-CATALOG.md) | All 12 ERP domains (**A–L**) mapped from current implementation through target contracts, K-Min vs K-Full document split, Algerian contract types, and unified financial event flow. |
@@ -43,7 +43,7 @@ Every claim across this blueprint uses **strictly one** of the six evidence-back
 | 11 | [DEVELOPMENT-WORKFLOW.md](DEVELOPMENT-WORKFLOW.md) | Mandatory pre-work, in-development, post-development, and Definition-of-Done governance preventing architectural drift. |
 | 12 | [REQUIREMENT-TRACEABILITY.md](REQUIREMENT-TRACEABILITY.md) | Complete traceability matrix linking functional requirements across Domains **A–L** to code, endpoints, permissions, views, tests, and gates. |
 | 13 | [UI-IMPLEMENTATION-AND-GAP-MATRIX.md](UI-IMPLEMENTATION-AND-GAP-MATRIX.md) | Source-audited inventory of current React screens, API-backed actions, module status, navigation gaps, and Phase 0/1 UI boundaries. |
-| 14 | [PHASE-0-MANUAL-ACCEPTANCE.md](PHASE-0-MANUAL-ACCEPTANCE.md) | Executable browser/real-API acceptance protocol for Phase 0; explicitly distinguishes unrun manual checks from CI evidence. |
+| 14 | [PHASE-0-MANUAL-ACCEPTANCE.md](PHASE-0-MANUAL-ACCEPTANCE.md) | Executable browser/real-API acceptance protocol for Phase 0; records Product Owner-attested PASS groups separately from CI and unconfirmed P0-A01. |
 
 ---
 
@@ -68,7 +68,7 @@ Every claim across this blueprint uses **strictly one** of the six evidence-back
 3. **Counterparties (Party), CRM & Holds:** Organization-wide `parties` identity (`id`, `party_kind`, `display_name`), project-scoped `project_customers` & `customer_interactions`, and internal lot/unit holds (`project_sales_reservations`), cleanly separated from future Statutory Reservation Contracts, VSP / *Acte Notarié* sales contracts, regulated payment milestones, and DZD collections.
 4. **Execution, Accounting & Statutory Compliance:** Works/construction tracking (lots, contractor situations, FGCMPI/legal compliance), suppliers/inventory, **Algerian SCF (Système Comptable Financier)** journal generation, VAT/IBS/TAP/IRG tax tracking (Finance Laws 2025/2026 gated on qualified accountant review), and local reporting.
 
-### High-Level Program Status Snapshot (Code Baseline: `23f019de7c787c0f93b5b7f0b5cec69992ff087a`, CI #544)
+### High-Level Program Status Snapshot (Application Runtime Baseline: `23f019de7c787c0f93b5b7f0b5cec69992ff087a`; latest test source `c26194dce5124d5d5e8d67fc5a04708346b1d5e4`; current main CI #546)
 
 | Layer / Domain | Current State | Verification Evidence |
 |---|---|---|
@@ -76,7 +76,7 @@ Every claim across this blueprint uses **strictly one** of the six evidence-back
 | Application Services (`PromoGest.Application`) | `IMPLEMENTED_AND_VERIFIED` | CI #544: **14/14** Application tests passed |
 | C2 Party / Customer identity foundation | `IMPLEMENTED_AND_VERIFIED` | PRs #35–#38 merged; audit denials, concurrency, cross-project reuse, identity-collision rejection, and linked mirror synchronization are covered by Application and PostgreSQL 18 tests |
 | PostgreSQL 18 Integration Suite (`PromoGest.IntegrationTests`) | `IMPLEMENTED_AND_VERIFIED` | CI #544: **24/24** PostgreSQL 18 integration tests, including real API/health response-cache integration assertions, passed; former `CS7036` is resolved |
-| Local React SPA (`apps/local-web`) | `PARTIALLY_IMPLEMENTED` | CI #544: strict TypeScript check, **38/38** pure tests, production build and `wwwroot` checks pass; manual RTL/LTR browser review and full parity of the Vite-only simulator remain outstanding |
+| Local React SPA (`apps/local-web`) | `PARTIALLY_IMPLEMENTED` | CI #546: strict TypeScript check, **38/38** pure tests, production build and `wwwroot` checks pass; Product Owner owner-attested RTL/LTR desktop/mobile acceptance for the listed workflows; P0-A01 remains unconfirmed and Vite-only simulator parity is intentionally incomplete |
 | Organization Profile Edit (`PUT /api/organization`) | `PARTIALLY_IMPLEMENTED` | `OrganizationProfileView.tsx` is read-only; `org.manage` is seeded but no update endpoint exists |
 | Modules F–J & L (Contracts, DZD Finance/Installments, Works/Chantier, Procurement/Stock, SCF Accounting, Reporting) | `PLANNED` | Design baselines documented; no production business modules implemented |
 | Module K (Document Vault `stored_files`) | `PARTIALLY_IMPLEMENTED` | K-Min upload/list/download and SHA-256 API path pass PostgreSQL 18 E2E; metadata lifecycle, structured links and K-Full archival remain unimplemented |
@@ -95,7 +95,7 @@ Technical administration (server health, database readiness, backup/restore, sec
 
 [PROJECT-NAVIGATION-UX.md](PROJECT-NAVIGATION-UX.md) is the detailed design proposal. Review it against the current code, business workflows, and this roadmap before implementation; it is a design reference, not evidence that the navigation model is already implemented. The exact screen-by-screen implementation and gap inventory is recorded in [UI-IMPLEMENTATION-AND-GAP-MATRIX.md](UI-IMPLEMENTATION-AND-GAP-MATRIX.md).
 
-**Live preview evidence:** On 15 November 2026, the product owner confirmed that the Google AI Studio development server was running and that the previously failing project customer/prospect and reservation pages no longer displayed the reported generic internal error after PR #44. This is a user-confirmed targeted smoke check, not a claim that all workflows, bilingual screens, or production installation are complete.
+**Live preview and manual acceptance evidence:** On 15 November 2026, the Product Owner confirmed that the Google AI Studio development server/API and PostgreSQL development connection operate, and separately attested successful Arabic RTL / French LTR desktop/mobile checks for login/session/CSRF, projects, structure, customers/interactions, internal holds, documents/SHA-256, authorization, audit, concurrency, safe errors, and persistence after reload. The attestation is recorded in `PHASE-0-MANUAL-ACCEPTANCE.md`; browser-version metadata and sanitized screenshot/API artifacts were not attached. P0-A01 fresh-database initialization and second-initialization rejection remain unconfirmed.
 
 ## 5. Product Scope & Release Boundaries (Governance Guardrail)
 

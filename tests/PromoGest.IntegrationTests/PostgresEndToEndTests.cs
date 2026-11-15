@@ -646,6 +646,31 @@ public sealed class PostgresEndToEndTests : IClassFixture<PostgreSql18Integratio
             Assert.Equal(updatedProject.NameAr, projectAfterStaleAttempt!.NameAr);
             Assert.Equal(updatedProject.ConcurrencyStamp, projectAfterStaleAttempt.ConcurrencyStamp);
 
+            // Two requests based on the same version must produce one winner and one conflict.
+            var raceUpdateA = projectUpdate with
+            {
+                NameAr = "تحديث متزامن أ",
+                NameFr = "Mise à jour concurrente A",
+                ExpectedConcurrencyStamp = projectAfterStaleAttempt.ConcurrencyStamp
+            };
+            var raceUpdateB = projectUpdate with
+            {
+                NameAr = "تحديث متزامن ب",
+                NameFr = "Mise à jour concurrente B",
+                ExpectedConcurrencyStamp = projectAfterStaleAttempt.ConcurrencyStamp
+            };
+            var raceResponses = await Task.WhenAll(
+                adminClient.PutAsJsonAsync($"/api/projects/{createdProject.Id}", raceUpdateA),
+                adminClient.PutAsJsonAsync($"/api/projects/{createdProject.Id}", raceUpdateB));
+            Assert.Equal(1, raceResponses.Count(response => response.StatusCode == HttpStatusCode.OK));
+            Assert.Equal(1, raceResponses.Count(response => response.StatusCode == HttpStatusCode.Conflict));
+            updatedProject = await adminClient.GetFromJsonAsync<ProjectDto>(
+                $"/api/projects/{createdProject.Id}");
+            Assert.NotNull(updatedProject);
+            Assert.Contains(updatedProject!.NameAr, new[] { raceUpdateA.NameAr, raceUpdateB.NameAr });
+            Assert.Equal(updatedProject.ConcurrencyStamp, (await adminClient.GetFromJsonAsync<ProjectDto>(
+                $"/api/projects/{createdProject.Id}"))!.ConcurrencyStamp);
+
             using (var scope = factory.Services.CreateScope())
             {
                 var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();

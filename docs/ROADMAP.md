@@ -25,7 +25,23 @@ This gate is a prerequisite across the existing milestones, not a new business m
 - Official Algeria Wilaya codes 01–69, bilingual labels, and regression tests.
 - A verified baseline CI run on the remediation branch.
 
-Gates A and B are green and closed. Proceed to Gate C (canonical reference/master data and shared Party/Employee ownership) before CRM master-data migration, cross-project navigation or additional business modules.
+Gates A and B are green and closed. Gate C is now the next implementation gate. Its design baseline is documented in [Party & Master-Data Design](PARTY-MASTER-DATA.md), [Administrative Reference-Data Governance](REFERENCE-DATA-GOVERNANCE.md), and [Algerian Real-Estate Legal Domain](ALGERIAN-REAL-ESTATE-LEGAL-DOMAIN.md). These documents do not mark Gate C implementation complete.
+
+## Gate C — Canonical master data and reference data
+
+**Status: design baseline recorded; schema, migration and UI implementation not started.**
+
+Gate C is split into controlled deliverables:
+
+1. **C1 — Party identity and project roles:** introduce one organization-wide Party identity for each person/legal entity; model Prospect, Customer, Supplier, Contractor and other roles through explicit relationships; keep project status/interactions project-scoped; separate Employee from User login accounts.
+2. **C2 — Compatibility and safe CRM migration:** preserve every existing ProjectCustomer, CustomerInteraction and reservation UUID; add explicit mappings; backfill one Party per legacy customer row initially; generate duplicate candidates for human reconciliation; never auto-merge by name/phone.
+3. **C3 — Administrative reference data:** introduce a versioned, server-owned, bilingual Wilaya/commune catalogue only after the complete 69-Wilaya/1,541-commune source dataset is checked and reviewed; add effective dates and preserve historic location snapshots.
+4. **C4 — Documents and identity evidence:** review the existing project-scoped StoredFile permissions before any identity document is made organization-wide; do not copy files or broaden access silently.
+5. **C5 — Acceptance:** additive migrations, PostgreSQL 18 backfill/restore tests, project-isolation tests, concurrency checks, reconciliation reports and local installation rehearsal.
+
+No schema migration, destructive data transformation, Cloud SQL mutation or hosted deployment is included in this documentation baseline. The first Gate C code change must carry its own migration and restore rehearsal.
+
+Before implementing M5b/M5c, use [Algerian Real-Estate Legal Domain](ALGERIAN-REAL-ESTATE-LEGAL-DOMAIN.md) to model statutory reservation separately from VSP, stage-linked instalments, notarial evidence and the distinction between VAT taxable event and VAT rate. Professional legal, tax and accounting review remains mandatory.
 
 ## Milestone 1 — Secure local platform foundation
 
@@ -94,6 +110,8 @@ Target evolution: introduce one canonical organization-wide Party/Customer/Prosp
 
 **Status: implemented on main through PR #22; PR CI passed; real local-installation acceptance remains separate.**
 
+**Scope boundary:** the current M5a record is an internal, project-scoped unit-availability hold. It is not the statutory reservation contract under Law 11-04 Article 27 and must not be presented as an executed notarial contract. See [Algerian Real-Estate Legal Domain](ALGERIAN-REAL-ESTATE-LEGAL-DOMAIN.md).
+
 Delivered scope:
 - Project-scoped reservation records link an available property unit to a non-archived customer registered in the same project.
 - Reservation creation persists the reservation, `Reserved` unit state, and audit event together; PostgreSQL's partial unique index prevents two active reservations for the same unit.
@@ -105,23 +123,23 @@ Delivered scope:
 
 ### M5b — Contract lifecycle
 
-Build controlled contract drafts, review and approval, version history, project/unit/customer references, numbering policy, and execution/cancellation/supersession states. Define who may prepare, review, approve and execute. Legal clauses, required disclosures, form and execution rules must be reviewed against current Algerian law by qualified professionals before the application treats a document as a legally valid contract.
+Build separate workflows for the internal unit hold, statutory reservation contract, VSP contract and completed-property sale deed. Model authenticated/notarized evidence, versioned terms, amendments, approval, statutory cancellation/notice evidence, promotion-guarantee prerequisites, possession and delivery. VSP instalments must be linked to the legally specified construction stages, not only calendar dates. Enforce VSP signature/payment prerequisites and certificate-of-conformity evidence as reviewed legal gates. See [Algerian Real-Estate Legal Domain](ALGERIAN-REAL-ESTATE-LEGAL-DOMAIN.md). Legal clauses, model forms and execution rules require qualified Algerian notarial/legal review before any generated or stored document is treated as legally valid.
 
 A reservation or draft contract must never mark a unit as sold.
 
 ### M5c — Payment schedules and collections
 
-Define installment schedules, due dates, receipts, allocations, overdue balances, payment channels, refunds, reversals and collection actions. Clarify which documents are operational acknowledgements versus legally/fiscally valid receipts. Finance integration and accounting posting rules must be specified before enabling postings.
+Define contractual instalments, stage-triggered VSP due events, escrow/FGCMPI custody, actual promoter receipts, allocations, overdue balances, refunds, cancellation retention, reversals and collections as separate records. Keep VAT taxable-event timing separate from VAT-rate eligibility. Do not recognize escrow-held advances as unrestricted promoter cash or trigger tax/accounting postings without a reviewed rule. Validate the complete flow with an Algerian tax practitioner and accountant before implementation.
 
 ## Milestone 6 — Finance, treasury and Algerian SCF accounting
 
 Build controlled financial workflows after the business events in Milestone 5 have stable definitions. Scope includes cash/bank, receivables/payables, budgets, cost centers, project cost control, journals, chart of accounts, fiscal periods and general ledger.
 
-Validate chart of accounts, journals, posting rules, VAT/tax treatment, invoice/receipt formats, fiscal periods, corrections/reversals and export requirements with a qualified Algerian accounting practitioner using current applicable sources. No automatic accounting entries should be enabled on assumptions alone. Enforce maker-checker approval and period controls where required.
+Validate chart of accounts, journals, posting rules, VAT/tax treatment, invoice/receipt formats, fiscal periods, corrections/reversals and export requirements with a qualified Algerian accounting practitioner using current applicable sources. The Finance Law 2025 collection-based VAT taxable event and Finance Law 2026 reduced-rate scope must be represented as separate, effective-dated rules. No automatic accounting entries should be enabled on assumptions alone. Enforce maker-checker approval and period controls where required.
 
 ## Milestone 7 — Construction and site execution
 
-Add work breakdown structures, work packages, baseline schedules, contractors' work, progress measurements, site diaries, quality/inspection records, change orders, variations, handover readiness and budget variance controls. Link evidence to project documents. Define how measured progress and commitments feed cost control without double-counting financial transactions.
+Add work breakdown structures, work packages, baseline schedules, contractors' work, progress measurements, site diaries, quality/inspection records, change orders, variations, handover readiness and budget variance controls. Link evidence to project documents. VSP-linked milestones require formal submission, review, evidence and acceptance history; accepted milestones feed contractual due events, while possession remains gated by the required certificate of conformity. Define how measured progress and commitments feed cost control without double-counting financial transactions.
 
 ## Milestone 8 — Procurement, suppliers and inventory
 

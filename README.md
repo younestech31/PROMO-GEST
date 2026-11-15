@@ -20,6 +20,9 @@ Read these documents before making architectural or data-model changes:
 5. [Database design and trust boundaries](docs/DATABASE-DESIGN.md)
 6. [Product milestones and delivery gates](docs/ROADMAP.md)
 7. [Current repository foundation audit](docs/FOUNDATION-AUDIT-2026-11.md)
+8. [Organization-wide Party and master-data design](docs/PARTY-MASTER-DATA.md)
+9. [Algerian administrative reference-data governance](docs/REFERENCE-DATA-GOVERNANCE.md)
+10. [Algerian real-estate legal domain baseline](docs/ALGERIAN-REAL-ESTATE-LEGAL-DOMAIN.md)
 
 ## Technology stack
 

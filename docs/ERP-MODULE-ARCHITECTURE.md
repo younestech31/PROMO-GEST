@@ -97,6 +97,10 @@ The system must avoid duplicate master records and repeated data entry.
 
 ### Customer registry evolution
 
+The target Party model, Employee/User boundary and safe migration sequence are specified in [Party & Master-Data Design](PARTY-MASTER-DATA.md) and [ADR 0009](ADR/0009-organization-wide-party-and-employee-separation.md). The existing project-scoped customer rows and their IDs remain compatibility references until an additive migration and all dependent reservation/interaction paths have been verified.
+
+
+
 The current implementation has a project-scoped customer registry. The target model is a canonical organization-wide party/customer record with explicit project relationships, leads/opportunities, and project-specific interactions or roles where needed.
 
 This is a staged evolution, not permission to rewrite or discard existing records. Before migration, define duplicate detection, human-assisted merge/reconciliation, stable ID preservation, foreign-key updates, audit preservation, rollback, and backup/restore tests. Existing project data must remain readable throughout the transition.

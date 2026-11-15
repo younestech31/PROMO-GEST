@@ -1,6 +1,6 @@
 # ADR 0007 — Support the 69-Wilaya Algerian territorial baseline
 
-- **Status:** Proposed for acceptance with foundation remediation PR
+- **Status:** Accepted and implemented in PR #25 (merged to `main` on 15 November 2026)
 - **Date:** 15 November 2026
 - **Scope:** organization and project location codes
 

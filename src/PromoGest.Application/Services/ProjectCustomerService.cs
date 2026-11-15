@@ -123,6 +123,14 @@ public sealed class ProjectCustomerService
                 "A customer with the same normalized name and phone number already exists in this project.");
         }
 
+        var party = Party.Create(
+            customer.PartyId,
+            ToPartyKind(customer.CustomerType),
+            customer.DisplayName,
+            _clock.UtcNow);
+        customer.AttachParty(party);
+
+        await _customerRepository.AddPartyAsync(party, ct);
         await _customerRepository.AddCustomerAsync(customer, ct);
         await RecordAuditAsync(
             actor,
@@ -230,6 +238,10 @@ public sealed class ProjectCustomerService
             source,
             status,
             requestedIdentityDocumentId,
+            _clock.UtcNow);
+        customer.Party.UpdateIdentity(
+            ToPartyKind(customerType),
+            customer.DisplayName,
             _clock.UtcNow);
 
         await RecordAuditAsync(
@@ -451,6 +463,14 @@ public sealed class ProjectCustomerService
             await _customerRepository.SaveChangesAsync(ct);
     }
 
+    private static PartyKind ToPartyKind(CustomerType customerType)
+        => customerType switch
+        {
+            CustomerType.Individual => PartyKind.Person,
+            CustomerType.LegalEntity => PartyKind.LegalEntity,
+            _ => throw new DomainException("PARTY_KIND_INVALID", "Select a person or legal entity.")
+        };
+
     private static T ParseEnum<T>(string? value, string errorCode) where T : struct, Enum
     {
         if (!Enum.TryParse<T>(value, ignoreCase: true, out var parsed) || !Enum.IsDefined(parsed))
@@ -461,8 +481,8 @@ public sealed class ProjectCustomerService
     private static ProjectCustomerListItemDto MapListItem(ProjectCustomer customer, bool canReadDocuments)
         => new(
             customer.Id,
-            customer.CustomerType.ToString(),
-            customer.DisplayName,
+            customer.Party.Kind == PartyKind.Person ? CustomerType.Individual.ToString() : CustomerType.LegalEntity.ToString(),
+            customer.Party.DisplayName,
             customer.ContactPerson,
             customer.Phone,
             customer.Email,
@@ -476,9 +496,10 @@ public sealed class ProjectCustomerService
     private static ProjectCustomerDto MapDetails(ProjectCustomer customer, bool canReadDocuments)
         => new(
             customer.Id,
+            customer.PartyId,
             customer.ProjectId,
-            customer.CustomerType.ToString(),
-            customer.DisplayName,
+            customer.Party.Kind == PartyKind.Person ? CustomerType.Individual.ToString() : CustomerType.LegalEntity.ToString(),
+            customer.Party.DisplayName,
             customer.ContactPerson,
             customer.Phone,
             customer.Email,

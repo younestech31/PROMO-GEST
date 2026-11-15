@@ -11,6 +11,7 @@ namespace PromoGest.Application.Services;
 public sealed class ProjectCustomerService
 {
     private readonly IProjectCustomerRepository _customerRepository;
+    private readonly IPartyRepository _partyRepository;
     private readonly IProjectRepository _projectRepository;
     private readonly IUserRepository _userRepository;
     private readonly IProjectDocumentRepository _documentRepository;
@@ -19,6 +20,7 @@ public sealed class ProjectCustomerService
 
     public ProjectCustomerService(
         IProjectCustomerRepository customerRepository,
+        IPartyRepository partyRepository,
         IProjectRepository projectRepository,
         IUserRepository userRepository,
         IProjectDocumentRepository documentRepository,
@@ -26,6 +28,7 @@ public sealed class ProjectCustomerService
         IClock clock)
     {
         _customerRepository = customerRepository;
+        _partyRepository = partyRepository;
         _projectRepository = projectRepository;
         _userRepository = userRepository;
         _documentRepository = documentRepository;
@@ -101,6 +104,20 @@ public sealed class ProjectCustomerService
         await ValidateIdentityDocumentAsync(
             project.Id, request.IdentityDocumentStoredFileId, actor, permissions, ct);
 
+        Party? existingParty = null;
+        if (request.PartyId.HasValue)
+        {
+            var canReadPartyDirectory = actor.IsSystemAdministrator ||
+                permissions.Contains("parties.directory.read", StringComparer.OrdinalIgnoreCase);
+            if (!canReadPartyDirectory)
+                throw new ForbiddenDomainException(
+                    "PARTY_DIRECTORY_ACCESS_DENIED",
+                    "You need organization-wide Party directory permission to reuse an existing identity.");
+
+            existingParty = await _partyRepository.GetByIdAsync(request.PartyId.Value, ct)
+                ?? throw new NotFoundDomainException("PARTY_NOT_FOUND", "Party identity was not found.");
+        }
+
         var customer = ProjectCustomer.Create(
             project.Id,
             customerType,
@@ -113,7 +130,29 @@ public sealed class ProjectCustomerService
             source,
             request.IdentityDocumentStoredFileId,
             actor.Id,
+            _clock.UtcNow,
+            request.PartyId);
+
+        var party = existingParty ?? Party.Create(
+            customer.PartyId,
+            ToPartyKind(customer.CustomerType),
+            customer.DisplayName,
             _clock.UtcNow);
+
+        if (party.Kind != ToPartyKind(customerType) ||
+            !string.Equals(party.NormalizedDisplayName, customer.NormalizedDisplayName, StringComparison.Ordinal))
+        {
+            throw new ConflictDomainException(
+                "PARTY_IDENTITY_MISMATCH",
+                "The selected Party identity does not match the name and type supplied for this project relationship.");
+        }
+
+        if (await _customerRepository.ExistsPartyInProjectAsync(project.Id, party.Id, ct: ct))
+        {
+            throw new ConflictDomainException(
+                "CUSTOMER_PARTY_ALREADY_LINKED",
+                "This Party is already registered as a customer in this project.");
+        }
 
         if (await _customerRepository.ExistsDuplicateAsync(
             project.Id, customer.NormalizedDisplayName, customer.NormalizedPhone, ct: ct))
@@ -123,14 +162,10 @@ public sealed class ProjectCustomerService
                 "A customer with the same normalized name and phone number already exists in this project.");
         }
 
-        var party = Party.Create(
-            customer.PartyId,
-            ToPartyKind(customer.CustomerType),
-            customer.DisplayName,
-            _clock.UtcNow);
         customer.AttachParty(party);
+        if (!request.PartyId.HasValue)
+            await _partyRepository.AddAsync(party, ct);
 
-        await _customerRepository.AddPartyAsync(party, ct);
         await _customerRepository.AddCustomerAsync(customer, ct);
         await RecordAuditAsync(
             actor,

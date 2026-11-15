@@ -384,6 +384,7 @@ export function createPromoGestDevApiPlugin(): Plugin {
         actualBuildingsCount: lesSablesCounts.actualBuildingsCount,
         actualUnitsCount: lesSablesCounts.actualUnitsCount,
         createdAtUtc: nowIso,
+        concurrencyStamp: crypto.randomUUID(),
         members: [],
       },
       {
@@ -405,6 +406,7 @@ export function createPromoGestDevApiPlugin(): Plugin {
         actualBuildingsCount: 0,
         actualUnitsCount: 0,
         createdAtUtc: nowIso,
+        concurrencyStamp: crypto.randomUUID(),
         members: [],
       }
     );
@@ -937,6 +939,7 @@ export function createPromoGestDevApiPlugin(): Plugin {
             actualBuildingsCount: 0,
             actualUnitsCount: 0,
             createdAtUtc: new Date().toISOString(),
+            concurrencyStamp: crypto.randomUUID(),
             members: currentUser.isSystemAdministrator ? [] : [{
               id: crypto.randomUUID(),
               userId: currentUser.id,

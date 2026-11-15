@@ -1,9 +1,9 @@
 # PROMO GEST — Repository Foundation Audit
 
 **Audit date:** 15 November 2026  
-**Audited baseline:** `main` at `a431b6a567a24eef9df97549c7f8f1f39051b1a9`  
-**Remediation branch:** `fix/foundation-project-scope-and-localization`  
-**Status:** Gate A remediation merged in PR #25; branch CI and post-merge `main` CI passed. Follow-up gates remain open.  
+**Original audited baseline:** `main` at `a431b6a567a24eef9df97549c7f8f1f39051b1a9`  
+**Latest merged foundation state:** `main` at `57a4e5a3c1521b9173898d4009fb8c05991237e4`  
+**Status:** Gates A and B are merged and CI-verified through PRs #25 and #27. Canonical reference data, CRM master-data design, navigation and production acceptance remain open.  
 **Purpose:** establish a traceable engineering baseline before adding further ERP modules.
 
 > This is an engineering audit, not a security certification, statutory accounting opinion, legal opinion, or production acceptance sign-off. Repository source and CI evidence do not replace a real local-installation, backup and restore rehearsal.
@@ -115,20 +115,24 @@ The changes in branch `fix/foundation-project-scope-and-localization` were merge
 
 The PR CI run [43656609523](https://github.com/younestech31/PROMO-GEST/actions/runs/43656609523) passed all three jobs. The post-merge `main` run [43656863873](https://github.com/younestech31/PROMO-GEST/actions/runs/43656863873) also passed all three jobs, including PostgreSQL 18 least-privilege integration/restore tests and Windows publishing/PowerShell validation. This verifies the CI path for the merged commit; it does not replace a real local installation acceptance or production authorization.
 
+### Gate B — Project master-data optimistic concurrency (merged and CI-verified)
+
+Implemented through [PR #27](https://github.com/younestech31/PROMO-GEST/pull/27), merged to `main` at [commit `57a4e5a`](https://github.com/younestech31/PROMO-GEST/commit/57a4e5a3c1521b9173898d4009fb8c05991237e4):
+
+1. `ProjectDto` returns the current `ConcurrencyStamp`; `UpdateProjectRequest` requires `ExpectedConcurrencyStamp`.
+2. The application rejects a stale version before applying submitted fields with HTTP 409 and code `PROJECT_CONCURRENCY_CONFLICT`.
+3. EF Core's database concurrency-token check remains active for the race where two requests load the same version before either commits; the losing write returns HTTP 409 rather than overwriting the winner.
+4. The Arabic/French edit form sends the version it loaded and explains a conflict without automatic retry or silent replacement of the user's unsaved values.
+5. The Vite in-memory preview follows the same contract and rotates the version on successful project edits and project membership add/remove.
+6. Application, PostgreSQL end-to-end and preview tests cover stale submissions, two simultaneous updates (one winner/one conflict), and no lost update.
+
+CI evidence: PR run [43692616371](https://github.com/younestech31/PROMO-GEST/actions/runs/43692616371) and branch run [43692610919](https://github.com/younestech31/PROMO-GEST/actions/runs/43692610919) each passed all three jobs, including PostgreSQL 18 integration/restore and Windows publishing/PowerShell validation.
+
+**No schema migration was required.** The `projects.concurrency_stamp` column and EF concurrency-token mapping already existed. No Cloud SQL, organization records or business data were modified.
+
 ## 6. Important gaps that remain
 
 These are not silently included in the remediation branch. Each needs a separate scoped change and test plan.
-
-### P1 — Project master-data optimistic concurrency
-
-The Project entity and EF mapping have a concurrency stamp, but the current `ProjectDto` and `UpdateProjectRequest` do not expose an expected client stamp. A stale project edit can therefore load the latest row on the server and overwrite fields from an older form without detecting that the user edited stale data.
-
-Required follow-up:
-- Add the current stamp to `ProjectDto`.
-- Require `ExpectedConcurrencyStamp` in `UpdateProjectRequest`.
-- Compare the expected value before applying changes and retain EF's database concurrency-token protection for concurrent commits.
-- Return a deterministic 409 conflict code and show a reload/compare message in the UI.
-- Add integration coverage for stale update, simultaneous updates and no lost update.
 
 ### P1 — Canonical Algerian administrative reference data
 
@@ -209,7 +213,7 @@ This is evidence about the pre-remediation baseline. The remediation branch and 
 ## 8. Delivery sequence — foundation first
 
 1. **Gate A — Security and data integrity: COMPLETED.** Explicit project membership, non-member denial, creator membership, manager continuity, 69-Wilaya validation and regression tests are merged in PR #25; branch and post-merge CI passed.
-2. **Gate B — Optimistic concurrency: NEXT.** Add the project master-data stamp through API, UI and integration tests; review other mutable master records for stale writes.
+2. **Gate B — Optimistic concurrency: COMPLETED.** PR #27 exposes the project version through API/UI, rejects stale updates with 409, and verifies both stale and simultaneous writes in PostgreSQL and preview tests. Branch and PR CI passed all three jobs.
 3. **Gate C — Reference/master data:** canonical Party, Employee/User separation, Wilaya/commune reference ownership and document references; plan additive migrations and rollback.
 4. **Gate D — Navigation foundation:** URL route model, active project context, project switcher, recent/favorites and unsaved-work protection.
 5. **Gate E — Project operational model:** distinguish overall project status from project-specific workstreams and milestones.

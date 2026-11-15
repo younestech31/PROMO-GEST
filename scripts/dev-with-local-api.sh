@@ -116,16 +116,8 @@ elif [[ -n "$CONFIGURED_API_URL" || "$SQL_ENV_PRESENT" == true ]]; then
     fi
 
     if ! api_is_live; then
-      if ! command -v dotnet >/dev/null 2>&1; then
-        echo "ERROR: ASPNETCORE_URL targets a local API, but the .NET 10 SDK is unavailable. Install the .NET 10 SDK or explicitly select PROMOGEST_VITE_ONLY=1 for UI-only work." >&2
-        exit 1
-      fi
-
-      DOTNET_SDK_VERSION="$(dotnet --version)"
-      if [[ "$DOTNET_SDK_VERSION" != 10.* ]]; then
-        echo "ERROR: PROMO GEST requires the .NET 10 SDK; detected $DOTNET_SDK_VERSION." >&2
-        exit 1
-      fi
+      source "$ROOT_DIR/scripts/ensure-dotnet10.sh"
+      promogest_ensure_dotnet10
 
       if [[ ! -s "$API_DLL" ]]; then
         echo "Building the ASP.NET Core API..."

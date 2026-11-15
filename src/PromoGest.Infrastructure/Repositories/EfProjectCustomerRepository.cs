@@ -62,6 +62,15 @@ public sealed class EfProjectCustomerRepository : IProjectCustomerRepository
             (!excludeCustomerId.HasValue || customer.Id != excludeCustomerId.Value),
             ct);
 
+    public async Task<IReadOnlyList<ProjectCustomer>> ListByPartyAsync(
+        Guid partyId,
+        CancellationToken ct = default)
+        => await _dbContext.ProjectCustomers
+            .Where(customer => customer.PartyId == partyId)
+            .OrderBy(customer => customer.ProjectId)
+            .ThenBy(customer => customer.Id)
+            .ToListAsync(ct);
+
     public Task AddCustomerAsync(ProjectCustomer customer, CancellationToken ct = default)
     {
         _dbContext.ProjectCustomers.Add(customer);

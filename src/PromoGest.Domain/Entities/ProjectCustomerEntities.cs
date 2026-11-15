@@ -90,6 +90,36 @@ public sealed class ProjectCustomer : BaseEntity
         Party = party;
     }
 
+    /// <summary>
+    /// Synchronizes the transitional identity mirror with the canonical organization-wide Party.
+    /// Project-scoped contact, status, source, and document data remain unchanged.
+    /// </summary>
+    public void SynchronizePartyIdentity(Party party, DateTimeOffset nowUtc)
+    {
+        ArgumentNullException.ThrowIfNull(party);
+        if (party.Id != PartyId)
+            throw new DomainException("CUSTOMER_PARTY_REFERENCE_INVALID", "The Party identity does not match this customer relationship.");
+
+        var customerType = party.Kind switch
+        {
+            PartyKind.Person => CustomerType.Individual,
+            PartyKind.LegalEntity => CustomerType.LegalEntity,
+            _ => throw new DomainException("PARTY_KIND_INVALID", "Select a person or legal entity.")
+        };
+
+        if (CustomerType == customerType &&
+            string.Equals(DisplayName, party.DisplayName, StringComparison.Ordinal) &&
+            string.Equals(NormalizedDisplayName, party.NormalizedDisplayName, StringComparison.Ordinal))
+        {
+            return;
+        }
+
+        CustomerType = customerType;
+        DisplayName = party.DisplayName;
+        NormalizedDisplayName = party.NormalizedDisplayName;
+        Touch(nowUtc);
+    }
+
     public void UpdateDetails(
         CustomerType customerType,
         string displayName,

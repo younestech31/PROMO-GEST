@@ -17,17 +17,20 @@ public sealed class PartyDirectoryService
     private const int MaximumSearchResults = 25;
 
     private readonly IPartyRepository _partyRepository;
+    private readonly IProjectCustomerRepository _projectCustomerRepository;
     private readonly IUserRepository _userRepository;
     private readonly IAuditWriter _auditWriter;
     private readonly IClock _clock;
 
     public PartyDirectoryService(
         IPartyRepository partyRepository,
+        IProjectCustomerRepository projectCustomerRepository,
         IUserRepository userRepository,
         IAuditWriter auditWriter,
         IClock clock)
     {
         _partyRepository = partyRepository;
+        _projectCustomerRepository = projectCustomerRepository;
         _userRepository = userRepository;
         _auditWriter = auditWriter;
         _clock = clock;
@@ -98,13 +101,24 @@ public sealed class PartyDirectoryService
         {
             var previousKind = party.Kind;
             party.UpdateIdentity(kind, normalizedDisplayName, nowUtc);
+
+            var linkedCustomers = await _projectCustomerRepository.ListByPartyAsync(party.Id, ct);
+            foreach (var linkedCustomer in linkedCustomers)
+                linkedCustomer.SynchronizePartyIdentity(party, nowUtc);
+
             await WriteAuditAsync(
                 actor,
                 "PARTY_IDENTITY_UPDATED",
                 "Party",
                 party.Id.ToString(),
-                "Updated a canonical Party identity.",
-                new { partyId = party.Id, previousKind = previousKind.ToString(), newKind = kind.ToString() },
+                "Updated a canonical Party identity and synchronized all project-customer identity mirrors.",
+                new
+                {
+                    partyId = party.Id,
+                    previousKind = previousKind.ToString(),
+                    newKind = kind.ToString(),
+                    synchronizedProjectCustomerCount = linkedCustomers.Count
+                },
                 metadata,
                 ct);
         }

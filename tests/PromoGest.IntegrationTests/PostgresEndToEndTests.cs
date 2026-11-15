@@ -424,7 +424,7 @@ public sealed class PostgresEndToEndTests : IClassFixture<PostgreSql18Integratio
     {
         var resp = await client.GetAsync("/api/auth/csrf");
         resp.EnsureSuccessStatusCode();
-        Assert.Equal("no-store", resp.Headers.CacheControl?.ToString());
+        Assert.True(resp.Headers.CacheControl?.NoStore == true);
         var payload = await resp.Content.ReadFromJsonAsync<CsrfTokenResponse>();
         Assert.NotNull(payload);
         client.DefaultRequestHeaders.Remove(payload!.HeaderName);
@@ -472,21 +472,21 @@ public sealed class PostgresEndToEndTests : IClassFixture<PostgreSql18Integratio
             // 1. Health & SPA fallback isolation (unknown /api & /health must return 404 JSON, never index.html)
             var liveResp = await adminClient.GetAsync("/health/live");
             Assert.Equal(HttpStatusCode.OK, liveResp.StatusCode);
-            Assert.Equal("no-store", liveResp.Headers.CacheControl?.ToString());
+            Assert.True(liveResp.Headers.CacheControl?.NoStore == true);
 
             var apiNotFound = await adminClient.GetAsync("/api/nonexistent-endpoint");
             Assert.Equal(HttpStatusCode.NotFound, apiNotFound.StatusCode);
-            Assert.Equal("no-store", apiNotFound.Headers.CacheControl?.ToString());
+            Assert.True(apiNotFound.Headers.CacheControl?.NoStore == true);
             var notFoundErr = await apiNotFound.Content.ReadFromJsonAsync<ApiErrorResponse>();
             Assert.Equal("ENDPOINT_NOT_FOUND", notFoundErr!.Code);
 
             var healthNotFound = await adminClient.GetAsync("/health/nonexistent");
             Assert.Equal(HttpStatusCode.NotFound, healthNotFound.StatusCode);
-            Assert.Equal("no-store", healthNotFound.Headers.CacheControl?.ToString());
+            Assert.True(healthNotFound.Headers.CacheControl?.NoStore == true);
 
             var readyResponse = await adminClient.GetAsync("/health/ready");
             Assert.Equal(HttpStatusCode.OK, readyResponse.StatusCode);
-            Assert.Equal("no-store", readyResponse.Headers.CacheControl?.ToString());
+            Assert.True(readyResponse.Headers.CacheControl?.NoStore == true);
             var readyResp = await readyResponse.Content.ReadFromJsonAsync<HealthStatusResponse>();
             Assert.NotNull(readyResp);
             Assert.True(readyResp!.DatabaseConnected);
@@ -495,7 +495,7 @@ public sealed class PostgresEndToEndTests : IClassFixture<PostgreSql18Integratio
             // 2. CSRF protection blocks state-changing requests lacking X-CSRF-TOKEN
             var missingCsrfInit = await adminClient.PostAsJsonAsync("/api/setup/initialize", ValidInitRequest());
             Assert.Equal(HttpStatusCode.Forbidden, missingCsrfInit.StatusCode);
-            Assert.Equal("no-store", missingCsrfInit.Headers.CacheControl?.ToString());
+            Assert.True(missingCsrfInit.Headers.CacheControl?.NoStore == true);
             var csrfErr = await missingCsrfInit.Content.ReadFromJsonAsync<ApiErrorResponse>();
             Assert.Equal("CSRF_TOKEN_INVALID", csrfErr!.Code);
 

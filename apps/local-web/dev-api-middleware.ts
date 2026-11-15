@@ -970,13 +970,11 @@ export function createPromoGestDevApiPlugin(): Plugin {
         if (method === 'PUT' && projectDetailMatch) {
           const projectId = decodeURIComponent(projectDetailMatch[1]);
           const project = projects.find((p) => p.id === projectId);
-          if (!project) {
-            return sendJson(res, 404, { code: 'PROJECT_NOT_FOUND', message: 'Project not found.' });
-          }
           const permissions = getPermissions(currentUser);
-          const membership = project.members.find((member) => member.userId === currentUser.id);
+          const membership = project?.members.find((member) => member.userId === currentUser.id);
           const canManageProject = currentUser.isSystemAdministrator ||
-            (permissions.includes('projects.manage') && membership?.roleInProject === 'ProjectManager');
+            (Boolean(project) && permissions.includes('projects.manage') &&
+             membership?.roleInProject === 'ProjectManager');
           if (!canManageProject) {
             addAudit(
               'ACCESS_DENIED',
@@ -990,6 +988,9 @@ export function createPromoGestDevApiPlugin(): Plugin {
               code: 'FORBIDDEN_PROJECT_UPDATE',
               message: "You must be an explicitly assigned Project Manager to update this project's master data.",
             });
+          }
+          if (!project) {
+            return sendJson(res, 404, { code: 'PROJECT_NOT_FOUND', message: 'Project not found.' });
           }
           try {
             const body = await readJsonBody<UpdateProjectRequest>(req);
@@ -1276,15 +1277,17 @@ export function createPromoGestDevApiPlugin(): Plugin {
 
         const projectMembersMatch = pathname.match(/^\/api\/projects\/([^/]+)\/members$/);
         if (method === 'PUT' && projectMembersMatch) {
-          const project = projects.find((p) => p.id === decodeURIComponent(projectMembersMatch[1]));
-          if (!project) return sendJson(res, 404, { code: 'PROJECT_NOT_FOUND', message: 'Project not found.' });
-          const actorMembership = project.members.find((member) => member.userId === currentUser.id);
-          if (!currentUser.isSystemAdministrator &&
-              (!getPermissions(currentUser).includes('projects.access.manage') ||
-               actorMembership?.roleInProject !== 'ProjectManager')) {
-            addAudit('ACCESS_DENIED', 'Security', `User '${currentUser.username}' attempted unauthorized project membership assignment.`, currentUser, 'Project', projectMembersMatch[1]);
+          const projectId = decodeURIComponent(projectMembersMatch[1]);
+          const project = projects.find((p) => p.id === projectId);
+          const actorMembership = project?.members.find((member) => member.userId === currentUser.id);
+          const canManageTeam = currentUser.isSystemAdministrator ||
+            (Boolean(project) && getPermissions(currentUser).includes('projects.access.manage') &&
+             actorMembership?.roleInProject === 'ProjectManager');
+          if (!canManageTeam) {
+            addAudit('ACCESS_DENIED', 'Security', `User '${currentUser.username}' attempted unauthorized project membership assignment.`, currentUser, 'Project', projectId);
             return sendJson(res, 403, { code: 'FORBIDDEN_PROJECT_ACCESS_ADMIN', message: "Only an assigned Project Manager may manage this project's team." });
           }
+          if (!project) return sendJson(res, 404, { code: 'PROJECT_NOT_FOUND', message: 'Project not found.' });
           const body = await readJsonBody<{
             userId: string;
             roleInProject: string;
@@ -1327,15 +1330,17 @@ export function createPromoGestDevApiPlugin(): Plugin {
 
         const removeMemberMatch = pathname.match(/^\/api\/projects\/([^/]+)\/members\/([^/]+)$/);
         if (method === 'DELETE' && removeMemberMatch) {
-          const project = projects.find((p) => p.id === decodeURIComponent(removeMemberMatch[1]));
-          if (!project) return sendJson(res, 404, { code: 'PROJECT_NOT_FOUND', message: 'Project not found.' });
-          const actorMembership = project.members.find((member) => member.userId === currentUser.id);
-          if (!currentUser.isSystemAdministrator &&
-              (!getPermissions(currentUser).includes('projects.access.manage') ||
-               actorMembership?.roleInProject !== 'ProjectManager')) {
-            addAudit('ACCESS_DENIED', 'Security', `User '${currentUser.username}' attempted unauthorized project membership revocation.`, currentUser, 'Project', removeMemberMatch[1]);
+          const projectId = decodeURIComponent(removeMemberMatch[1]);
+          const project = projects.find((p) => p.id === projectId);
+          const actorMembership = project?.members.find((member) => member.userId === currentUser.id);
+          const canManageTeam = currentUser.isSystemAdministrator ||
+            (Boolean(project) && getPermissions(currentUser).includes('projects.access.manage') &&
+             actorMembership?.roleInProject === 'ProjectManager');
+          if (!canManageTeam) {
+            addAudit('ACCESS_DENIED', 'Security', `User '${currentUser.username}' attempted unauthorized project membership revocation.`, currentUser, 'Project', projectId);
             return sendJson(res, 403, { code: 'FORBIDDEN_PROJECT_ACCESS_ADMIN', message: "Only an assigned Project Manager may manage this project's team." });
           }
+          if (!project) return sendJson(res, 404, { code: 'PROJECT_NOT_FOUND', message: 'Project not found.' });
           const targetUserId = decodeURIComponent(removeMemberMatch[2]);
           const targetMembership = project.members.find((m) => m.userId === targetUserId);
           if (targetMembership?.roleInProject === 'ProjectManager' &&

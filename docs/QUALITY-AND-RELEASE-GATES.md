@@ -21,13 +21,18 @@
 
 ---
 
-## 2. Current Gate Status Against Baseline (Last Code-Changing Source Commit `23f019de7c787c0f93b5b7f0b5cec69992ff087a`; latest test-source commit and main commit inspected at audit start `c26194dce5124d5d5e8d67fc5a04708346b1d5e4`)
+## 2. Current Gate Status Against Baseline (Last Code-Changing Source Commit `23f019de7c787c0f93b5b7f0b5cec69992ff087a`; latest test-source commit `c26194dce5124d5d5e8d67fc5a04708346b1d5e4`; main commit inspected at audit start `432e6f8ea76bb540dd5bc69d3314c0d658805ba7`)
 
 ### GitHub Actions Run #544 — 15 November 2026
 - **Frontend job — passed:** `npm run lint` (`tsc --noEmit`), `npm test` (**38/38**), SPA build, ASP.NET Core `wwwroot` build, static-hosting checks, and dev-preview leakage checks.
 - **.NET 10 / PostgreSQL 18 job — passed:** solution build with warnings as errors; Domain **27/27**, Application **14/14**, PostgreSQL 18 Integration **24/24** (including `SecurityHeadersMiddlewareTests` and real HTTP-pipeline assertions in `PostgresEndToEndTests`); the database/storage/Data Protection restore drill also passed.
 - **Windows publish job — passed:** Windows x64 publish, machine-scoped Data Protection recovery verification, and PowerShell validation passed.
 - **Overall:** all three required CI jobs completed with `success` on main commit `c26194dce5124d5d5e8d67fc5a04708346b1d5e4`. [Run #544](https://github.com/younestech31/PROMO-GEST/actions/runs/43767110822).
+
+### Current main CI — Run #546 (15 November 2026)
+- Main SHA `432e6f8ea76bb540dd5bc69d3314c0d658805ba7`; all three required jobs passed.
+- This was a documentation-only main commit and CI reran the existing automated frontend, .NET/PostgreSQL 18, and Windows publish checks. It does not itself prove manual browser acceptance.
+- [Run #546](https://github.com/younestech31/PROMO-GEST/actions/runs/43768228052).
 
 ### Phase 0 Defect Disposition
 - **Resolved — PR #35:** `CS7036` in `PostgresEndToEndTests.cs` fixed by passing the real `PartyConcurrencyStamp` from loaded customer details.
@@ -41,10 +46,10 @@
 
 ### Gate Interpretation
 - **G1–G7 and G9:** automated build, domain/application suites, CSRF/auth/authorization paths, concurrency checks, audit protections, PostgreSQL 18 integration execution, and actual HTTP-pipeline API/health response-cache assertions passed in Run #544 for the tested requirements.
-- **G8:** the automated portion passed: strict TypeScript check, **38/38** frontend tests, SPA build, ASP.NET Core static-hosting output, and preview-leak checks. The product owner previously confirmed a targeted real Google AI Studio server/API/PostgreSQL development smoke check and that the customer/prospect and reservation pages no longer showed the reported generic error after PR #44. That smoke check is not full CRUD/persistence/authorization acceptance. Manual Arabic RTL / French LTR browser verification across desktop and mobile, real cookie/CSRF interaction, and the named business workflows remain outstanding. Execute and record them using [PHASE-0-MANUAL-ACCEPTANCE.md](PHASE-0-MANUAL-ACCEPTANCE.md); that protocol is prepared but its test cases are not executed or passed by this CI run. The Vite-only fallback simulator is not full API parity and must never be treated as production/API evidence.
+- **G8:** the automated portion passed: strict TypeScript check, **38/38** frontend tests, SPA build, ASP.NET Core static-hosting output, and preview-leak checks. Separately, the Product Owner explicitly confirmed on 15 November 2026 that Arabic RTL / French LTR desktop/mobile review and the listed real workflows (login/session/CSRF, projects, structure, customers/interactions, internal holds, documents/SHA-256, authorization/audit/concurrency/safe errors, and persistence after reload) passed. These results are recorded as owner-attested `PASS` in [PHASE-0-MANUAL-ACCEPTANCE.md](PHASE-0-MANUAL-ACCEPTANCE.md), not as CI evidence. Browser/version details and sanitized per-case artifacts were not attached. `P0-A01` fresh-database first-run/second-initialization remains `NOT_RUN`. The Vite-only fallback simulator is not full API parity and must never be treated as production/API evidence.
 - **G10:** Windows x64 publish, DPAPI recovery, PowerShell validation, and CI database/storage/Data Protection restore drill passed. Customer-site installation remains a separate release-acceptance activity.
 
-**Release Implication:** PR #48 implements the HTTP response-cache policy; PR #50 verifies it through the real HTTP pipeline; main CI #544 is green. Phase 0 remains `IN_PROGRESS` until manual bilingual browser workflows and focused real-API CRUD/persistence/authorization acceptance are evidenced. Phase 1 and statutory/practitioner sign-offs remain prerequisites for production release and downstream legal/financial modules.
+**Release Implication:** PR #48 implements the HTTP response-cache policy; PR #50 verifies it through the real HTTP pipeline; main CI #546 is green. The Product Owner has now attested the named bilingual browser and real-workflow acceptance groups. Phase 0 remains `IN_PROGRESS` pending the specific P0-A01 fresh-database setup scenario and closure of the bounded navigation decision. Phase 1 and statutory/practitioner sign-offs remain prerequisites for production release and downstream legal/financial modules.
 
 ---
 

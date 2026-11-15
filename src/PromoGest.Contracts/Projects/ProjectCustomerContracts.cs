@@ -2,6 +2,7 @@ namespace PromoGest.Contracts.Projects;
 
 public sealed record ProjectCustomerListItemDto(
     Guid Id,
+    Guid PartyId,
     string CustomerType,
     string DisplayName,
     string? ContactPerson,
@@ -31,6 +32,7 @@ public sealed record CustomerInteractionDto(
 
 public sealed record ProjectCustomerDto(
     Guid Id,
+    Guid PartyId,
     Guid ProjectId,
     string CustomerType,
     string DisplayName,

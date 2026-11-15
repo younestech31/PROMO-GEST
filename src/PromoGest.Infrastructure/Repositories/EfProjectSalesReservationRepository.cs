@@ -25,12 +25,14 @@ public sealed class EfProjectSalesReservationRepository : IProjectSalesReservati
                 on reservation.PropertyUnitId equals unit.Id
             join customer in _dbContext.ProjectCustomers.AsNoTracking()
                 on reservation.ProjectCustomerId equals customer.Id
+            join party in _dbContext.Parties.AsNoTracking()
+                on customer.PartyId equals party.Id
             where reservation.ProjectId == projectId
             orderby reservation.CreatedAtUtc descending
             select new ProjectSalesReservationListItem(
                 reservation,
                 unit.UnitNumber,
-                customer.DisplayName))
+                party.DisplayName))
             .ToListAsync(ct);
 
     public Task<ProjectSalesReservation?> GetByProjectAsync(

@@ -1,58 +1,62 @@
 # PROMO GEST — Current State Baseline
 
-**Document Role:** Honest, evidence-backed evaluation of the repository state.  
-**Latest Source-Code Baseline Commit:** `2eee4771f2e5de23809e1b5fcf5a559c6ad48994` (PR #34 merge remains historical context).  
-**Current Documentation Revision Commit:** `d34eba606e5e2473898deed5e31a73eef2e7374d`.  
-**Latest CI Verification Runs:** GitHub Actions Run `43710844749` & Run `43713215866`.  
-**Governing Rule:** A feature is never reported as `IMPLEMENTED_AND_VERIFIED` unless code exists **and** automated tests execute successfully in the audited baseline.
+**Document Role:** Evidence-backed snapshot of the repository, not a product roadmap.  
+**Audited Source Baseline:** `c890ba05e83831fb965d855d1e7c2d7ab1d8a643` (PR #38 merge).  
+**Previous Canonical Documentation Snapshot:** `d34eba606e5e2473898deed5e31a73eef2e7374d` (superseded by this evidence refresh).  
+**Latest Green CI:** GitHub Actions Run **#495** / `43720679970`, on the audited source commit above.  
+**Governing Rule:** A feature is `IMPLEMENTED_AND_VERIFIED` only when its code and applicable automated verification pass in the audited baseline. A green pipeline does not certify untested browser UX, preview parity, production installation, or legal/accounting correctness.
 
 ---
 
-## 1. Executive Status Summary Across Layers
+## 1. Executive Status
 
-| Layer / Subsystem | Status | Concrete Evidence & Test Results | Active Blockers / Notes |
+| Layer / Subsystem | Status | Current Evidence | Remaining Boundary |
 |---|---|---|---|
-| **Domain Core (`PromoGest.Domain`)** | `IMPLEMENTED_AND_VERIFIED` | 27/27 unit tests pass cleanly (`DomainInvariantTests`, `PartyDomainTests`, `ProjectCustomerDomainTests`). | None. |
-| **Application Services (`PromoGest.Application`)** | `IMPLEMENTED_AND_VERIFIED` | 10/10 application tests pass cleanly (`ApplicationSecurityAndFoundationTests`). | None. |
-| **PostgreSQL 18 Integration Suite (`PromoGest.IntegrationTests`)** | `BLOCKED` | **Compile failure (`CS7036`)** at `PostgresEndToEndTests.cs:1072` (`PartyConcurrencyStamp` missing parameter). | **Blocks full E2E verification.** In CI Runs `43710844749` & `43713215866`, PostgreSQL 18 service containers started cleanly, but solution build failed before tests ran. |
-| **Local React SPA (`apps/local-web`)** | `IMPLEMENTED_AND_VERIFIED` (Frontend) | CI `frontend` job succeeded (`tsc --noEmit` 0 errors, 24/24 pure TS unit tests pass, production bundle and leak check clean). | `dev-api-middleware.ts` simulator lacks 6 permissions and endpoints for Docs/Customers/Reservations/Parties. |
-| **C2 Party & Customer Foundation** | `IMPLEMENTED_NOT_VERIFIED` | Committed in `2eee4771...` (`PartiesController`, `PartyDirectoryService`, migrations #10 & #11). | Lacks dedicated Application and PG18 test coverage due to `CS7036` compilation block. |
+| Domain Core (`PromoGest.Domain`) | `IMPLEMENTED_AND_VERIFIED` | CI #495: **27/27** Domain tests passed. | Additional coverage is added with each domain change. |
+| Application Services (`PromoGest.Application`) | `IMPLEMENTED_AND_VERIFIED` | CI #495: **14/14** Application tests passed, including Party denial auditing and identity-mirror synchronization coverage. | Browser-level workflows are outside this test suite. |
+| PostgreSQL 18 Integration (`PromoGest.IntegrationTests`) | `IMPLEMENTED_AND_VERIFIED` | CI #495: solution build succeeded and **9/9** integration tests passed against PostgreSQL 18. | CI evidence is not a substitute for a customer-site installation drill. |
+| Local React SPA (`apps/local-web`) | `PARTIALLY_IMPLEMENTED` | CI #495: TypeScript strict check, **24/24** pure TypeScript tests, production build, ASP.NET Core static-hosting output, and preview-leak checks passed. | Manual Arabic RTL / French LTR browser review remains outstanding. The Vite fallback simulator is intentionally not the production API and remains incomplete. |
+| C2 Party / Customer identity foundation | `IMPLEMENTED_AND_VERIFIED` | PRs #35–#38 merged; Application and PostgreSQL 18 tests cover concurrency stamps, denial audit, cross-project Party reuse, identity-collision rejection, and synchronization of linked customer mirrors. | Duplicate identity columns remain transitional mirrors until the Phase 1 migration retires them. |
+| Organization profile editing | `PARTIALLY_IMPLEMENTED` | Organization profile view is read-only; `org.manage` is seeded. | `PUT /api/organization` is not implemented. |
+| Modules F–J (Contracts through SCF/Tax) | `PLANNED` | Architecture and legal/accounting prerequisites are documented. | No production business implementation; practitioner sign-off remains mandatory. |
+| Module K | `PARTIALLY_IMPLEMENTED` | K-Min local upload/list/download and SHA-256 checks are implemented and exercised by PostgreSQL 18 E2E. | Metadata lifecycle, structured links, and K-Full archival remain future work. |
 
----
+## 2. Verified CI Evidence
 
-## 2. Detailed Verification Evidence (CI & Local Baseline)
+### GitHub Actions Run #495 — 15 November 2026
+- **Frontend job:** passed. `npm run lint` (`tsc --noEmit`), `npm test` (**24/24**), SPA build, ASP.NET Core `wwwroot` build, static-hosting checks, and preview-leak checks all completed successfully.
+- **.NET 10 / PostgreSQL 18 job:** passed. Solution build with warnings as errors succeeded; Domain **27/27**, Application **14/14**, and PostgreSQL 18 Integration **9/9** tests passed.
+- **Windows publish job:** passed. Windows x64 publish, machine-scoped Data Protection recovery verification, and PowerShell validation all succeeded.
+- **Overall result:** all three CI jobs completed with `success` on commit `c890ba05e83831fb965d855d1e7c2d7ab1d8a643`.
 
-### GitHub Actions CI Runs (`43710844749` & `43713215866`)
-- **`frontend` Job:** Passed successfully. Compiled React SPA, ran `npm test` (**24/24** pure TypeScript unit tests passed), ran TypeScript type check (`tsc --noEmit` with 0 errors), built static bundle, and verified zero dev-preview leakage into `wwwroot`.
-- **`postgres:18-alpine` Service Container:** Started cleanly and passed health checks in CI.
-- **`backend-and-postgres` & `windows-publish-and-powershell` Jobs:** Failed during solution build (`dotnet build`) because of **`CS7036`** in `tests/PromoGest.IntegrationTests/PostgresEndToEndTests.cs:1072` (`PartyConcurrencyStamp` missing argument). Consequently, `PromoGest.IntegrationTests` did **not** execute.
+[Open CI Run #495](https://github.com/younestech31/PROMO-GEST/actions/runs/43720679970)
 
-### Local Test Suite Snapshot (Commit `2eee4771...`)
-- `PromoGest.Domain.Tests`: **27/27** passed.
-- `PromoGest.Application.Tests`: **10/10** passed.
-- `npm --prefix apps/local-web test`: **24/24** passed.
-- `npm --prefix apps/local-web run lint`: `0` errors.
+### C2 Party / Customer changes merged and verified
+- **PR #35:** fixed `CS7036` by passing the actual `PartyConcurrencyStamp` returned by the customer-details response. No synthetic token or weakened concurrency check was introduced.
+- **PR #36:** captures `previousKind` before Party mutation and writes `ACCESS_DENIED` security audit events for unauthorized Party directory reads/identity changes.
+- **PR #37:** applies the same denial-audit and previous-identity guarantees in project-customer workflows.
+- **PR #38:** synchronizes canonical Party name/kind changes into every linked `project_customers` transitional mirror; rejects cross-project identity collisions before mutation; updates concurrency stamps; verifies these behaviors in PostgreSQL 18 integration tests.
 
----
+The former `CS7036` compilation blocker is **resolved**, not an active blocker. Earlier failing CI runs remain historical records only.
 
-## 3. Active Technical & Architecture Defects (Phase 0 Stabilization Backlog)
+## 3. Phase 0 — Remaining Work
 
-1. **Integration Test Compilation (`CS7036`):**
-   - *File:* `tests/PromoGest.IntegrationTests/PostgresEndToEndTests.cs:1072`.
-   - *Cause:* Recent C2 Party entity constructor/factory updates added a required `concurrencyStamp` or property parameter, leaving test code out of sync.
-   - *Impact:* Blocks PostgreSQL 18 integration test execution in CI and local test runner.
-2. **C2 Party Directory Service Gaps:**
-   - `PartyDirectoryService` contains a `previousKind` audit bug and lacks an `ACCESS_DENIED` audit log entry when unauthorized actors attempt edits.
-3. **Dual Party / ProjectCustomer Name Storage:**
-   - `project_customers` retains redundant name/phone columns alongside the new organization-wide `parties` table (`ADR-0009`). Scheduled for Phase 1 cleanup via tested migration.
-4. **Organization Profile Update Endpoint:**
-   - `OrganizationProfileView.tsx` is read-only; `org.manage` is seeded but no `PUT /api/organization` controller endpoint exists.
-5. **Preview Middleware Drift:**
-   - `apps/local-web/dev-api-middleware.ts` does not implement handlers for Parties, Project Documents, Sales Reservations, or Customer Registry, nor does it enforce the full 18 permissions.
+Phase 0 remains `IN_PROGRESS`, but its main-code CI and C2 synchronization gates are green. Remaining work is bounded:
 
----
+1. **Real preview/API path:** verify that AI Studio is actually proxying to the ASP.NET Core API when `ASPNETCORE_URL` is configured, rather than silently exercising the Vite-only in-memory simulator. Validate the Cloud SQL development connection and cookie/CSRF flow in that real API path.
+2. **Manual bilingual browser review:** inspect the principal workflows in Arabic RTL and French LTR; automated TypeScript tests do not prove visual/browser correctness.
+3. **Transitional Party mirrors:** `Party` is canonical. `project_customers` identity columns are synchronized and collision-checked while retained for compatibility. Retiring those columns is Phase 1 work and requires a reviewed migration plus backfill/rollback tests.
+4. **Scope boundary:** organization profile editing and the 69-Wilaya / commune reference-data integration remain Phase 1 items. Legal contracts, collections, SCF and tax modules remain gated by practitioner review.
 
-## 4. Public Asset Review Finding
+## 4. Preview Boundary (Do Not Confuse with Production)
 
-- **File:** `/public/assets/aistudio/Screenshot_2026-11-15-12-54-54-202-edit_com.android.chrome_743cf16d.jpg` (added in commit `2eee4771f2e5de23809e1b5fcf5a559c6ad48994`).
-- **Nature & Disposition:** This is a mobile browser screenshot uploaded by a tester during UI debugging in AI Studio (showing a mobile login screen error toast). It is an ephemeral testing artifact and **not** an intentional product asset. In accordance with the documentation-only instruction, it is reported here as an unpolished testing asset left in the workspace and should be excluded or cleaned up in future asset curation sweeps, without modifying source files in this documentation turn.
+- `apps/local-web/dev-api-middleware.ts` is loaded only by the Vite development server when `ASPNETCORE_URL` is **not** configured. It is an in-memory development simulator, not a full implementation of the ASP.NET Core API.
+- When `ASPNETCORE_URL` is configured, Vite proxies `/api` and `/health` to that ASP.NET Core host. The development launcher starts the API only when the required SQL socket/connection environment is available.
+- The Vite-only simulator still lacks parity for Party, Customers, Reservations and Documents, does not model all 18 permissions, and retains a setup Wilaya validation range of 01–58. These are preview limitations; they must not be mistaken for production API behavior.
+- Production builds serve the static React bundle from ASP.NET Core and do not bundle the Vite development middleware.
+
+## 5. Other Recorded Findings
+
+- `OrganizationProfileView.tsx` remains read-only; `PUT /api/organization` is not present.
+- The screenshot `public/assets/aistudio/Screenshot_2026-11-15-12-54-54-202-edit_com.android.chrome_743cf16d.jpg` is a development-debugging artifact added before this baseline. It should be removed in a separately scoped asset-cleanup PR after confirming no product reference uses it; it was not changed in the C2 fixes.
+- No Cloud SQL production-data migration or customer deployment is implied by CI #495. The Cloud SQL environment remains a non-production development integration.

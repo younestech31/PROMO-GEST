@@ -1,7 +1,7 @@
 # PROMO GEST — Product Milestones & Delivery Roadmap
 
 **Document Role:** Dependency-ordered delivery roadmap for PROMO GEST.  
-**Baseline Anchor:** Source code commit `2eee4771f2e5de23809e1b5fcf5a559c6ad48994`, CI Runs `43710844749` & `43713215866`.
+**Baseline Anchor:** Source code commit `c890ba05e83831fb965d855d1e7c2d7ab1d8a643`, GitHub Actions CI #495 / `43720679970` (all three jobs successful).
 
 ---
 
@@ -9,7 +9,7 @@
 
 | Phase | Module Scope | Status | Primary Gate Requirements |
 |---|---|---|---|
-| **Phase 0** | Stabilization & Baseline Correction | `IN_PROGRESS` *(Blocked by CS7036)* | Fix `CS7036` in `PostgresEndToEndTests.cs:1072`, resolve C2 audit/sync gaps, achieve 100% green CI across all jobs (`frontend`, `backend-and-postgres`, `windows-publish-and-powershell`). |
+| **Phase 0** | Stabilization & Baseline Correction | `IN_PROGRESS` *(main CI and C2 fixes verified; preview/manual UX validation remains)* | Keep all CI jobs green; verify the actual ASP.NET Core API path in AI Studio with configured `ASPNETCORE_URL` / development database; inspect Arabic RTL and French LTR workflows; keep the Vite-only simulator separate from production API claims. The former `CS7036` and C2 audit/sync defects are resolved in PRs #35–#38. |
 | **Phase 1** | Foundation Completion & Master Data | `PLANNED` | Implement `PUT /api/organization`, align structure authorization, complete `Party` vs `ProjectCustomer` migration & separation, versioned 69-Wilaya / commune catalogue (`ADR-0010`). |
 | **Phase 2** | Contracts, Legal Deeds & **K-Min** | `PLANNED` | Law 11-04 Statutory Reservation & VSP Contracts, `ContractVersion`, `K-Min` structured `DocumentLink` attachments, **Qualified Algerian Legal/Notarial Sign-Off**. |
 | **Phase 3A** | DZD Installments, Collections & Treasury | `PLANNED` | Versioned `PaymentObligation`, confirmed receipts (cashbox/bank/check separate from FGCMPI escrow), allocations, refunds/reversals. |

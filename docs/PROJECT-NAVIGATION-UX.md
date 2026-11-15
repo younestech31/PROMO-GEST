@@ -4,6 +4,16 @@
 **Scope:** Project selection, switching, multi-project work, and project-specific navigation  
 **Applies to:** The local-first organization-wide ERP shell and project workspace
 
+## Current repository implementation check — 15 November 2026
+
+Source inspected: last code-changing commit `6bbd97f70ed0fb63cf226a1117cf6e83c359d2be`; current main documentation snapshot `4d025ca19a7711df1d4df327b05ee4846cac3267`.
+
+The current React application has five top-level in-memory route states: `overview`, `projects`, `users`, `audit`, and `organization`. The authenticated shell keeps organization identity visible and exposes a project directory. `ProjectsAccessView.tsx` opens structure, customer registry, internal-hold, and document workflows in project-specific modals from each directory row. The modal headers show project code and name.
+
+The source does **not** yet implement a dedicated persistent project switcher, a route-addressable active project workspace, or a persistent project identity strip across project pages. User/role management, audit viewing, and system-health diagnostics are currently reachable in the same application shell/overview as operational project work; a distinct technical-administration workspace is not present. Organization profile view is read-only.
+
+This is a source-code inspection, not manual browser acceptance. For the exact screen/API/module mapping and implementation boundaries, see [UI-IMPLEMENTATION-AND-GAP-MATRIX.md](UI-IMPLEMENTATION-AND-GAP-MATRIX.md). This proposal remains **proposed**, not approved or implemented. The current gap does not authorize a broad navigation rewrite before Phase 0 acceptance and Phase 1 dependencies.
+
 ## 1. Product decision
 
 PROMO GEST must support companies that operate several developments at once, where each development may have a different operational history, team, permissions, and stage.

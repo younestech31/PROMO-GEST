@@ -657,11 +657,11 @@ public sealed class PostgresEndToEndTests : IClassFixture<PostgreSql18Integratio
                 NameAr = "تحديث متزامن ب",
                 ExpectedConcurrencyStamp = projectAfterStaleAttempt.ConcurrencyStamp
             };
-            var raceResponses = await Task.WhenAll(
+            var projectUpdateRaceResponses = await Task.WhenAll(
                 adminClient.PutAsJsonAsync($"/api/projects/{createdProject.Id}", raceUpdateA),
                 adminClient.PutAsJsonAsync($"/api/projects/{createdProject.Id}", raceUpdateB));
-            Assert.Equal(1, raceResponses.Count(response => response.StatusCode == HttpStatusCode.OK));
-            Assert.Equal(1, raceResponses.Count(response => response.StatusCode == HttpStatusCode.Conflict));
+            Assert.Equal(1, projectUpdateRaceResponses.Count(response => response.StatusCode == HttpStatusCode.OK));
+            Assert.Equal(1, projectUpdateRaceResponses.Count(response => response.StatusCode == HttpStatusCode.Conflict));
             updatedProject = await adminClient.GetFromJsonAsync<ProjectDto>(
                 $"/api/projects/{createdProject.Id}");
             Assert.NotNull(updatedProject);
@@ -1164,12 +1164,12 @@ public sealed class PostgresEndToEndTests : IClassFixture<PostgreSql18Integratio
                 raceUnit.Id,
                 createdCustomer.Id,
                 DateTimeOffset.UtcNow.AddDays(3));
-            var raceResponses = await Task.WhenAll(
+            var projectUpdateRaceResponses = await Task.WhenAll(
                 adminClient.PostAsJsonAsync($"/api/projects/{createdProject.Id}/reservations", raceRequest),
                 adminClient.PostAsJsonAsync($"/api/projects/{createdProject.Id}/reservations", raceRequest));
-            Assert.Equal(1, raceResponses.Count(response => response.StatusCode == HttpStatusCode.Created));
-            Assert.Equal(1, raceResponses.Count(response => response.StatusCode == HttpStatusCode.Conflict));
-            var winningResponse = raceResponses.Single(response => response.StatusCode == HttpStatusCode.Created);
+            Assert.Equal(1, projectUpdateRaceResponses.Count(response => response.StatusCode == HttpStatusCode.Created));
+            Assert.Equal(1, projectUpdateRaceResponses.Count(response => response.StatusCode == HttpStatusCode.Conflict));
+            var winningResponse = projectUpdateRaceResponses.Single(response => response.StatusCode == HttpStatusCode.Created);
             var winningReservation = await winningResponse.Content.ReadFromJsonAsync<ProjectSalesReservationDto>();
             Assert.NotNull(winningReservation);
             var raceReservationCount = await adminClient.GetFromJsonAsync<List<ProjectSalesReservationDto>>(

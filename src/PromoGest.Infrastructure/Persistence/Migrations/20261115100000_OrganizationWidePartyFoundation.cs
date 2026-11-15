@@ -78,7 +78,8 @@ namespace PromoGest.Infrastructure.Persistence.Migrations
                 "GROUP BY p.id, p.display_name, p.normalized_display_name " +
                 "HAVING COUNT(pc.id) <> 1 OR " +
                 "MAX(pc.display_name) IS DISTINCT FROM p.display_name OR " +
-                "MAX(pc.normalized_display_name) IS DISTINCT FROM p.normalized_display_name) " +
+                "MAX(pc.normalized_display_name) IS DISTINCT FROM p.normalized_display_name OR " +
+                "MAX(CASE pc.customer_type WHEN 'Individual' THEN 'Person' ELSE 'LegalEntity' END) IS DISTINCT FROM p.party_kind) " +
                 "THEN RAISE EXCEPTION 'Party data has advanced beyond the reversible one-to-one customer compatibility state; reconcile before rollback'; " +
                 "END IF; END $$;");
 

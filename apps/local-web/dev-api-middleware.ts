@@ -1341,7 +1341,10 @@ export function createPromoGestDevApiPlugin(): Plugin {
             assignedAtUtc: new Date().toISOString(),
           };
           if (existingIdx >= 0) project.members[existingIdx] = memberRecord;
-          else project.members.push(memberRecord);
+          else {
+            project.members.push(memberRecord);
+            project.concurrencyStamp = crypto.randomUUID();
+          }
           addAudit('PROJECT_MEMBER_ASSIGNED', 'Security', `Assigned '${target.username}' to '${project.code}' (${body.roleInProject}).`, currentUser, 'Project', project.id);
           return sendJson(res, 200, withComputedStructureCounts(project, projectStructures));
         }
@@ -1366,6 +1369,7 @@ export function createPromoGestDevApiPlugin(): Plugin {
             return sendJson(res, 409, { code: 'PROJECT_LAST_MANAGER_REQUIRED', message: 'Assign another Project Manager before removing the last Project Manager.' });
           }
           project.members = project.members.filter((m) => m.userId !== targetUserId);
+          project.concurrencyStamp = crypto.randomUUID();
           addAudit('PROJECT_MEMBER_REVOKED', 'Security', `Revoked access on '${project.code}' for user '${targetUserId}'.`, currentUser, 'Project', project.id);
           return sendJson(res, 200, withComputedStructureCounts(project, projectStructures));
         }

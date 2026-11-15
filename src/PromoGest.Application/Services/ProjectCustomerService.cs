@@ -481,6 +481,7 @@ public sealed class ProjectCustomerService
     private static ProjectCustomerListItemDto MapListItem(ProjectCustomer customer, bool canReadDocuments)
         => new(
             customer.Id,
+            customer.PartyId,
             customer.Party.Kind == PartyKind.Person ? CustomerType.Individual.ToString() : CustomerType.LegalEntity.ToString(),
             customer.Party.DisplayName,
             customer.ContactPerson,

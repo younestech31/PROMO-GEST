@@ -81,6 +81,10 @@ The frontend is served by Vite in AI Studio, but when `ASPNETCORE_URL` is config
 
 Do not fix this failure by disabling CSRF, weakening authentication, exposing the API publicly, or granting broad database privileges. Identify the server exception first.
 
+## Phase 0 browser and real-API acceptance
+
+Use [PHASE-0-MANUAL-ACCEPTANCE.md](PHASE-0-MANUAL-ACCEPTANCE.md) to run the bilingual desktop/mobile workflows against this real ASP.NET Core API and the dedicated non-production Cloud SQL development database. Keep synthetic test data only. The checklist distinguishes a page-level smoke check from full CRUD, persistence/reload, CSRF, authorization, document-integrity, and audit acceptance; do not record a case as passed until its evidence is captured.
+
 ## Production boundary
 
 - Production keeps the organization's local PostgreSQL 18 connection string.

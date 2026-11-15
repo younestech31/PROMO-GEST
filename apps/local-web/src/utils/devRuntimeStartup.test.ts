@@ -88,6 +88,10 @@ test('the shared bootstrap can provision .NET 10 when the preview has no SDK', (
 
   const mockBin = join(home, 'mock-bin');
   mkdirSync(mockBin, { recursive: true });
+  const dotnetPath = join(mockBin, 'dotnet');
+  writeFileSync(dotnetPath, '#!/usr/bin/env bash\\necho "9.0.0"\\n');
+  chmodSync(dotnetPath, 0o755);
+
   const curlPath = join(mockBin, 'curl');
   writeFileSync(curlPath, `#!/usr/bin/env bash
 set -euo pipefail
@@ -105,11 +109,11 @@ set -euo pipefail
 mkdir -p "$HOME/.dotnet"
 cat > "$HOME/.dotnet/dotnet" <<'DOTNET'
 #!/usr/bin/env bash
-if [[ "${1:-}" == "--version" ]]; then
+if [[ "\${1:-}" == "--version" ]]; then
   echo "10.0.100"
   exit 0
 fi
-if [[ "${1:-}" == "--list-sdks" ]]; then
+if [[ "\${1:-}" == "--list-sdks" ]]; then
   echo "10.0.100 [mock-sdk-path]"
   exit 0
 fi

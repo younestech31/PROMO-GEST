@@ -46,7 +46,9 @@ The runner:
 5. Sets default privileges for future tables and sequences created by the migration identity.
 6. Starts the API using `SQL_USER`, checks `/health/ready`, then starts Vite on port 3000 with its existing `/api` and `/health` proxy.
 
-The Vite proxy is implemented in both `vite.config.ts` and `apps/local-web/vite.config.ts`. The `npm run dev` launcher now verifies the configured API's `/health/ready` endpoint before starting Vite. For a loopback target, it ensures .NET 10 is available through the shared per-user bootstrap, starts or waits for the local ASP.NET Core process, and if Cloud SQL prerequisites are missing or the API does not become ready it exits instead of starting a broken Vite proxy.
+The Vite proxy is implemented in both `vite.config.ts` and `apps/local-web/vite.config.ts`. The standard `npm run dev` launcher now verifies the configured API's `/health/ready` endpoint before starting Vite. For a loopback API target with Cloud SQL environment variables, it also requires both the runtime and migration identities, waits for the Cloud SQL socket, applies pending EF Core migrations through the separate admin identity, and reapplies least-privilege runtime grants before it starts or accepts the API. This is necessary because `/health/ready` confirms database connectivity and organization initialization, but does not by itself prove every feature table and grant exists. If Cloud SQL prerequisites or the migration step fail, Vite is not started.
+
+The explicit `npm run dev:cloudsql` runner performs the same migration/grant step before starting the API, then marks the nested standard dev invocation as already migrated so it does not repeat that operation.
 
 For frontend-only work with the in-memory simulator, select it explicitly with `PROMOGEST_VITE_ONLY=1 npm run dev`. This flag takes precedence over an inherited `ASPNETCORE_URL` so the simulator cannot accidentally proxy to an absent local API. Do not use Vite-only mode to validate PostgreSQL persistence, real authentication, or customer workflows.
 

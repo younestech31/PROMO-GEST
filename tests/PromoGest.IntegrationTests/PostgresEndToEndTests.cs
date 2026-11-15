@@ -471,16 +471,22 @@ public sealed class PostgresEndToEndTests : IClassFixture<PostgreSql18Integratio
             // 1. Health & SPA fallback isolation (unknown /api & /health must return 404 JSON, never index.html)
             var liveResp = await adminClient.GetAsync("/health/live");
             Assert.Equal(HttpStatusCode.OK, liveResp.StatusCode);
+            Assert.Equal("no-store", liveResp.Headers.CacheControl?.ToString());
 
             var apiNotFound = await adminClient.GetAsync("/api/nonexistent-endpoint");
             Assert.Equal(HttpStatusCode.NotFound, apiNotFound.StatusCode);
+            Assert.Equal("no-store", apiNotFound.Headers.CacheControl?.ToString());
             var notFoundErr = await apiNotFound.Content.ReadFromJsonAsync<ApiErrorResponse>();
             Assert.Equal("ENDPOINT_NOT_FOUND", notFoundErr!.Code);
 
             var healthNotFound = await adminClient.GetAsync("/health/nonexistent");
             Assert.Equal(HttpStatusCode.NotFound, healthNotFound.StatusCode);
+            Assert.Equal("no-store", healthNotFound.Headers.CacheControl?.ToString());
 
-            var readyResp = await adminClient.GetFromJsonAsync<HealthStatusResponse>("/health/ready");
+            var readyResponse = await adminClient.GetAsync("/health/ready");
+            Assert.Equal(HttpStatusCode.OK, readyResponse.StatusCode);
+            Assert.Equal("no-store", readyResponse.Headers.CacheControl?.ToString());
+            var readyResp = await readyResponse.Content.ReadFromJsonAsync<HealthStatusResponse>();
             Assert.NotNull(readyResp);
             Assert.True(readyResp!.DatabaseConnected);
             Assert.False(readyResp.IsInitialized);
@@ -488,6 +494,7 @@ public sealed class PostgresEndToEndTests : IClassFixture<PostgreSql18Integratio
             // 2. CSRF protection blocks state-changing requests lacking X-CSRF-TOKEN
             var missingCsrfInit = await adminClient.PostAsJsonAsync("/api/setup/initialize", ValidInitRequest());
             Assert.Equal(HttpStatusCode.Forbidden, missingCsrfInit.StatusCode);
+            Assert.Equal("no-store", missingCsrfInit.Headers.CacheControl?.ToString());
             var csrfErr = await missingCsrfInit.Content.ReadFromJsonAsync<ApiErrorResponse>();
             Assert.Equal("CSRF_TOKEN_INVALID", csrfErr!.Code);
 

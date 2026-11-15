@@ -46,7 +46,8 @@ public sealed class EfProjectCustomerRepository : IProjectCustomerRepository
         CancellationToken ct = default)
         => _dbContext.ProjectCustomers.AnyAsync(customer =>
             customer.ProjectId == projectId &&
-            customer.Party.NormalizedDisplayName == normalizedDisplayName &&
+            (customer.NormalizedDisplayName == normalizedDisplayName ||
+             customer.Party.NormalizedDisplayName == normalizedDisplayName) &&
             customer.NormalizedPhone == normalizedPhone &&
             (!excludeCustomerId.HasValue || customer.Id != excludeCustomerId.Value),
             ct);

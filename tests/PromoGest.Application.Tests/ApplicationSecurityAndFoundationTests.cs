@@ -230,7 +230,8 @@ public sealed class ApplicationSecurityAndFoundationTests
             CancellationToken ct = default)
             => Task.FromResult(ProjectCustomers.Any(customer =>
                 customer.ProjectId == projectId &&
-                customer.NormalizedDisplayName == normalizedDisplayName &&
+                (customer.NormalizedDisplayName == normalizedDisplayName ||
+                 customer.Party.NormalizedDisplayName == normalizedDisplayName) &&
                 customer.NormalizedPhone == normalizedPhone &&
                 (!excludeCustomerId.HasValue || customer.Id != excludeCustomerId.Value)));
         public Task<bool> ExistsPartyInProjectAsync(

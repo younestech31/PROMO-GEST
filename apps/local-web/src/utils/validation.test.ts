@@ -142,6 +142,7 @@ test('Permission helpers enforce System Admin and project-level roles', () => {
     actualBuildingsCount: 0,
     actualUnitsCount: 0,
     createdAtUtc: '2026-11-13T00:00:00Z',
+    concurrencyStamp: 'project-version-1',
     members: [],
   };
 

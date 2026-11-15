@@ -1,5 +1,7 @@
 import type {
   ApiErrorResponse,
+  PartyDirectoryItemDto,
+  UpdatePartyIdentityRequest,
   ProjectDocumentDto,
   ProjectCustomerDto,
   ProjectSalesReservationDto,

@@ -1,7 +1,7 @@
 # PROMO GEST — Consolidated Decision Log & Architecture Decision Records (ADRs)
 
 **Document Role:** Single repository of architectural, design, and governance decisions for PROMO GEST.  
-**Current Audit Evidence Anchor:** Latest application runtime source change PR #48 / `23f019de7c787c0f93b5b7f0b5cec69992ff087a`; latest test-source change PR #50 / `c26194dce5124d5d5e8d67fc5a04708346b1d5e4`; latest green main CI Run #544 / `43767110822` (all three jobs passed). D-004 through D-006 remain historical evidence records.
+**Current Audit Evidence Anchor:** Latest application runtime source change PR #48 / `23f019de7c787c0f93b5b7f0b5cec69992ff087a`; latest test-source change PR #50 / `c26194dce5124d5d5e8d67fc5a04708346b1d5e4`; main inspected at audit start `432e6f8ea76bb540dd5bc69d3314c0d658805ba7`; latest green main CI Run #546 / `43768228052` (all three jobs passed). D-004 through D-007 are retained as historical/current evidence records.
 
 ---
 
@@ -22,7 +22,7 @@
 
 ---
 
-## 2. Key Architectural Decisions (`D-001` to `D-006`)
+## 2. Key Architectural Decisions and Evidence Records (`D-001` to `D-009`)
 
 ### `D-001`: Party vs ProjectCustomer Separation & Resolution
 - **Decision:** The organization-wide `parties` table is the canonical source of truth for counterparty identity (`id`, `party_kind`, `display_name`). Project-scoped `project_customers` maintain relationship-specific contact, status, source and document data linked to a Party. Until the Phase 1 retirement migration is applied, the duplicated display-name/type fields are transitional mirrors: every canonical identity change synchronizes all linked customer mirrors and advances their concurrency stamps. Duplicate detection considers both canonical and legacy mirror names; a change is rejected if it would collide with a different Party in any linked project. Retire the mirrors only through a reviewed EF migration with backfill, uniqueness checks and rollback tests. Fuzzy auto-merging remains rejected in favor of human-approved manual Party merge workflows.
@@ -56,6 +56,18 @@
 - **Verification:** PR #50 head `90faecbf3d218e2d3d21f721e026636e09e42969` passed PR CI #543 (`43766827253`) across all three jobs, including PostgreSQL 18 Integration **24/24**. Squash merge `c26194dce5124d5d5e8d67fc5a04708346b1d5e4` passed post-merge main CI #544 (`43767110822`) across all three jobs.
 
 ---
+
+### `D-008`: Owner-Attested Phase 0 Manual Acceptance (15 November 2026)
+- **Record:** The Product Owner explicitly confirmed successful execution of the principal bilingual desktop/mobile workflows: Arabic RTL and French LTR; login/session/CSRF; project directory and structure; customers/interactions; internal hold creation/cancellation/expiry; document upload/download with SHA-256 comparison; authorization, audit, concurrency conflicts, safe errors; and persistence after reload.
+- **Status mapping:** `PHASE-0-MANUAL-ACCEPTANCE.md` records P0-A02, P0-A03, P0-A05 and P0-B–G as `PASS` with the source clearly marked as Product Owner attestation. This is not a CI test result or a claim that engineering independently operated the Product Owner's browser.
+- **Boundary:** P0-A01 (first-run initialization on a separate empty disposable database and safe rejection of a second initialization) and P0-A04 (logout followed by protected-route/session-revocation check) were not explicitly included in the confirmation and remain `NOT_RUN`. Browser/version metadata, per-case timestamps, sanitized screenshots/recordings, and redacted API trace artifacts were not attached.
+- **Effect:** Manual bilingual business-flow acceptance is no longer listed as wholly unrun. Phase 0 remains `IN_PROGRESS` until P0-A01 and P0-A04 are evidenced; D-009 records the bounded navigation-proposal deferral.
+
+### `D-009`: Defer Project-Navigation Proposal Approval to Phase 1 Design Review
+- **Decision:** Do not launch a navigation redesign during Phase 0. Keep the current application shell and project modals unchanged. Defer approval and implementation of the proposed organization workspace / explicit project switcher / active project workspace model to a bounded Phase 1 design review against the actual workflows and current source.
+- **Rationale:** The current three-level proposal is a product design reference, not implemented functionality. Phase 0 is focused on stabilization and evidenced workflow acceptance; Phase 1 owns foundation completion and product navigation alignment.
+- **Constraints:** This deferral does not authorize broad redesign, automatic project context, client-side-only project filtering, changes to project authorization, or any weakening of server-side membership enforcement. Any Phase 1 implementation must be a separately scoped vertical slice with acceptance criteria and required gates.
+- **Status:** Bounded deferral recorded under the Product Owner's explicit delegation to continue project work; no navigation UI implementation is claimed.
 
 ## 3. Practitioner Sign-Off Register (`PLANNED`)
 - **Legal (Law 11-04 & Decree 13-431):** Awaiting formal practitioner review of reservation contracts, VSP tranches, FGCMPI escrow separation, and 15% cancellation retention.

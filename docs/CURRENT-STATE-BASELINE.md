@@ -3,8 +3,8 @@
 **Document Role:** Evidence-backed snapshot of the repository, not a product roadmap.  
 **Last Application Runtime Source Commit:** `23f019de7c787c0f93b5b7f0b5cec69992ff087a` (PR #48 merge; central HTTP no-store policy for API/health responses).  
 **Latest Source/Test Commit:** `c26194dce5124d5d5e8d67fc5a04708346b1d5e4` (PR #50 added real HTTP-pipeline cache-policy integration assertions; no runtime, schema, or business-data changes).  
-**Main Commit Inspected at Audit Start:** `c26194dce5124d5d5e8d67fc5a04708346b1d5e4` (PR #50 squash merge).  
-**Latest Green CI at Audit Start:** GitHub Actions Run **#544** / `43767110822`, on main SHA `c26194dce5124d5d5e8d67fc5a04708346b1d5e4`; all three jobs passed.  
+**Main Commit Inspected at Audit Start:** `432e6f8ea76bb540dd5bc69d3314c0d658805ba7` (PR #51 documentation merge).  
+**Latest Green CI at Audit Start:** GitHub Actions Run **#546** / `43768228052`, on main SHA `432e6f8ea76bb540dd5bc69d3314c0d658805ba7`; all three jobs passed.  
 **Governing Rule:** A feature is `IMPLEMENTED_AND_VERIFIED` only when its code and applicable automated verification pass in the audited baseline. A green pipeline does not certify untested browser UX, preview parity, production installation, or legal/accounting correctness.
 
 ---
@@ -16,7 +16,7 @@
 | Domain Core (`PromoGest.Domain`) | `IMPLEMENTED_AND_VERIFIED` | CI #544: **27/27** Domain tests passed. | Additional coverage is added with each domain change. |
 | Application Services (`PromoGest.Application`) | `IMPLEMENTED_AND_VERIFIED` | CI #544: **14/14** Application tests passed, including Party denial auditing and identity-mirror synchronization coverage. | Browser-level workflows are outside this test suite. |
 | PostgreSQL 18 Integration (`PromoGest.IntegrationTests`) | `IMPLEMENTED_AND_VERIFIED` | CI #544: solution build and PostgreSQL 18 integration suite passed (**24/24**), including real WebApplicationFactory assertions for no-store on successful health/API, fallback 404, and CSRF 403 responses; the database, storage, and Data Protection restore drill passed. | CI evidence is not a substitute for a customer-site installation drill or manual browser acceptance. |
-| Local React SPA (`apps/local-web`) | `PARTIALLY_IMPLEMENTED` | CI #544: TypeScript strict check, **38/38** pure TypeScript tests, production build, ASP.NET Core static-hosting output, and preview-leak checks passed. | Manual Arabic RTL / French LTR browser review remains outstanding. The Vite fallback simulator is intentionally not the production API and remains incomplete. |
+| Local React SPA (`apps/local-web`) | `PARTIALLY_IMPLEMENTED` | CI #546 re-ran all three required jobs successfully; frontend checks remain green (TypeScript strict check, **38/38** pure tests, production/static-host builds, and preview-leak checks). The Product Owner has owner-attested Arabic RTL / French LTR acceptance across desktop/mobile and the listed real workflows. | `P0-A01` first-run setup and `P0-A04` logout/revocation remain unconfirmed; browser/version and per-case sanitized artifacts were not attached. The Vite fallback simulator is intentionally not the production API and remains incomplete. |
 | C2 Party / Customer identity foundation | `IMPLEMENTED_AND_VERIFIED` | PRs #35–#38 merged; Application and PostgreSQL 18 tests cover concurrency stamps, denial audit, cross-project Party reuse, identity-collision rejection, and synchronization of linked customer mirrors. | Duplicate identity columns remain transitional mirrors until the Phase 1 migration retires them. |
 | Organization profile editing | `PARTIALLY_IMPLEMENTED` | Organization profile view is read-only; `org.manage` is seeded. | `PUT /api/organization` is not implemented. |
 | Modules F–J (Contracts through SCF/Tax) | `PLANNED` | Architecture and legal/accounting prerequisites are documented. | No production business implementation; practitioner sign-off remains mandatory. |
@@ -31,6 +31,15 @@
 - **Overall result:** all three CI jobs completed with `success` on main commit `c26194dce5124d5d5e8d67fc5a04708346b1d5e4`.
 
 [Open CI Run #544](https://github.com/younestech31/PROMO-GEST/actions/runs/43767110822)
+
+### GitHub Actions Run #546 — 15 November 2026 (current main audit anchor)
+- **Commit:** `432e6f8ea76bb540dd5bc69d3314c0d658805ba7` (documentation-only refresh after PR #50).
+- **Frontend job:** passed.
+- **.NET 10 / PostgreSQL 18 job:** passed.
+- **Windows publish job:** passed.
+- **Overall:** all three jobs completed with `success`. This run revalidated the unchanged application/test source baseline; it did not execute manual browser tests.
+
+[Open CI Run #546](https://github.com/younestech31/PROMO-GEST/actions/runs/43768228052)
 
 ### C2 Party / Customer changes merged and verified
 - **PR #35:** fixed `CS7036` by passing the actual `PartyConcurrencyStamp` returned by the customer-details response. No synthetic token or weakened concurrency check was introduced.
@@ -54,18 +63,20 @@ The former `CS7036` compilation blocker is **resolved**, not an active blocker. 
 
 ### Current UI implementation snapshot
 
-The screen-by-screen source inventory is maintained in [UI-IMPLEMENTATION-AND-GAP-MATRIX.md](UI-IMPLEMENTATION-AND-GAP-MATRIX.md), and the execution steps/evidence rules for the outstanding manual checks are in [PHASE-0-MANUAL-ACCEPTANCE.md](PHASE-0-MANUAL-ACCEPTANCE.md). The current React shell exposes five route states: overview, projects, users, audit, and organization. The project directory contains working project, structure, customer, internal-hold, and document operations, but those project operations are opened from the directory as modals. A dedicated project switcher and active project workspace are not implemented. The matrix separates source/API presence from manual browser acceptance; it does not claim Arabic RTL or French LTR browser review has passed.
+The screen-by-screen source inventory is maintained in [UI-IMPLEMENTATION-AND-GAP-MATRIX.md](UI-IMPLEMENTATION-AND-GAP-MATRIX.md), and the execution steps/evidence rules for the outstanding manual checks are in [PHASE-0-MANUAL-ACCEPTANCE.md](PHASE-0-MANUAL-ACCEPTANCE.md). The current React shell exposes five route states: overview, projects, users, audit, and organization. The project directory contains working project, structure, customer, internal-hold, and document operations, but those project operations are opened from the directory as modals. A dedicated project switcher and active project workspace are not implemented. The matrix separates source/API presence from manual browser acceptance. The Product Owner has now owner-attested the principal Arabic RTL / French LTR desktop/mobile workflows; the detailed mapping and remaining unconfirmed first-run/logout cases are recorded in `PHASE-0-MANUAL-ACCEPTANCE.md`.
 
 ## 3. Phase 0 — Remaining Work
 
-Phase 0 remains `IN_PROGRESS`. Main CI #544 is green, and the product owner confirmed that the real Google AI Studio development server/API and PostgreSQL development connection are working. The previously reported generic internal errors on the project customer/prospect and reservation pages were confirmed resolved after PR #44. This is targeted smoke evidence, not full end-to-end acceptance.
+Phase 0 remains `IN_PROGRESS`. Main CI #546 is green. In addition to the earlier targeted AI Studio smoke confirmation, the Product Owner explicitly attested on 15 November 2026 that the principal bilingual desktop/mobile workflows listed in [PHASE-0-MANUAL-ACCEPTANCE.md](PHASE-0-MANUAL-ACCEPTANCE.md) passed: login/session/CSRF, projects, structure, customers/interactions, internal holds, documents/SHA-256, authorization/audit/concurrency/safe errors, and persistence after reload. The result register records those groups as owner-attested `PASS`, not CI-verified browser evidence.
 
 Remaining Phase 0 work is bounded:
 
-1. **Manual bilingual browser review:** execute [PHASE-0-MANUAL-ACCEPTANCE.md](PHASE-0-MANUAL-ACCEPTANCE.md) across Arabic RTL and French LTR on desktop and mobile. All current checklist entries remain `NOT_RUN` until evidence is captured; automated TypeScript tests do not prove visual or browser correctness.
-2. **Business-workflow verification:** complete the read/create/update/cancel, authorization, persistence/reload, CSRF, document-integrity, and safe-error cases in [PHASE-0-MANUAL-ACCEPTANCE.md](PHASE-0-MANUAL-ACCEPTANCE.md) against the real API using fictional development records. Page loading alone does not prove every operation is complete.
-3. **Preview separation:** keep the Vite-only in-memory simulator clearly separate from real API evidence; it intentionally lacks full parity.
-4. **Phase 1 boundary:** organization profile editing, structure authorization alignment, retirement of transitional Party mirrors, and the versioned 69-Wilaya / commune reference catalogue remain Phase 1 work. Later legal, collection, SCF, and tax modules retain their practitioner gates.
+1. **P0-A01 first-run acceptance:** execute first-run initialization against a separate empty disposable database and verify that a second initialization is rejected. This was not explicitly included in the latest owner confirmation and remains `NOT_RUN`.
+2. **P0-A04 logout acceptance:** verify logout revocation and that reopening a protected route does not restore access. Logout was not explicitly included in the latest owner confirmation and remains `NOT_RUN`.
+3. **Supplementary audit artifacts:** browser/version metadata and sanitized per-case screenshots or redacted API trace evidence were not attached; the owner attestation is recorded, and no unprovided artifacts are claimed.
+4. **Navigation decision:** D-009 records the bounded deferral of project-navigation proposal approval/implementation to the Phase 1 design review; do not start a broad UI redesign.
+5. **Preview separation:** keep the Vite-only in-memory simulator clearly separate from real API evidence; it intentionally lacks full parity.
+6. **Phase 1 boundary:** organization profile editing, structure authorization alignment, retirement of transitional Party mirrors, and the versioned 69-Wilaya / commune reference catalogue remain Phase 1 work. Later legal, collection, SCF, and tax modules retain their practitioner gates.
 
 ## 4. Preview Boundary (Do Not Confuse with Production)
 

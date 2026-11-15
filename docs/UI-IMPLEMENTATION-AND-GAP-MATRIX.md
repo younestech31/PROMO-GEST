@@ -1,9 +1,10 @@
 # PROMO GEST — UI Implementation & Gap Matrix
 
 **Document role:** Source-audited inventory of the current React user interface, its API-backed actions, module ownership, and the gap between today's interface and the product interaction model. This is a current-state record, not a redesign specification or browser-acceptance certificate.  
-**Main commit inspected at audit start:** c26194dce5124d5d5e8d67fc5a04708346b1d5e4.  
-**Last code-changing source commit:** 23f019de7c787c0f93b5b7f0b5cec69992ff087a (PR #48).  
-**Latest green CI at audit start:** Run #544 / 43767110822; all three jobs passed on 15 November 2026.
+**Main commit inspected at audit start:** 432e6f8ea76bb540dd5bc69d3314c0d658805ba7.  
+**Last application runtime source commit:** 23f019de7c787c0f93b5b7f0b5cec69992ff087a (PR #48).  
+**Latest test-source commit:** c26194dce5124d5d5e8d67fc5a04708346b1d5e4 (PR #50).  
+**Latest green CI at audit start:** Run #546 / 43768228052; all three jobs passed on 15 November 2026.
 
 ## 1. Reading this matrix correctly
 
@@ -11,7 +12,7 @@ The matrix distinguishes three things that must not be conflated:
 
 1. **Source presence:** a screen/component and its corresponding API call are present in the current repository.
 2. **Automated verification:** the relevant code is covered by successful TypeScript, Domain, Application, or PostgreSQL 18 tests in CI. Module status follows the six-state taxonomy in MASTER-BLUEPRINT.md and MODULE-CATALOG.md.
-3. **Manual user acceptance:** Arabic RTL / French LTR layout, real browser navigation, forms, errors, cookie/CSRF behavior, persistence/reload, and authorization must still be inspected in the real API development preview. CI and source inspection do not prove these.
+3. **Manual user acceptance:** Arabic RTL / French LTR layout, real browser navigation, forms, errors, cookie/CSRF behavior, persistence/reload, and authorization require manual browser evidence separate from CI. On 15 November 2026, the Product Owner owner-attested successful execution of the principal desktop/mobile workflows listed in `PHASE-0-MANUAL-ACCEPTANCE.md`; the attestation is not a substitute for independently attached sanitized artifacts. P0-A01 first-run setup and P0-A04 logout/session-revocation remain unconfirmed.
 
 This matrix was prepared from App.tsx, ErpShellLayout.tsx, the listed feature components, apiClient.ts, API controllers, application services, permission helpers, and the current canonical module/security documentation.
 
@@ -36,8 +37,8 @@ The current shell has five in-memory route values: overview, projects, users, au
 | **B — Real Estate Projects** | ProjectsAccessView.tsx | List projects visible to the current user; create/update project; assign/remove project members. Uses GET /api/projects, POST /api/projects, PUT /api/projects/{id}, PUT /api/projects/{id}/members, and DELETE /api/projects/{id}/members/{userId}. Table shows code, name, location, status, estimated DZD budget, and member count. | IMPLEMENTED_AND_VERIFIED (module catalog). | Directory is the primary place to access project tools. There is no dedicated project switcher, recent/favorite access, project landing page, or route-addressable active project workspace. |
 | **C — Physical Structure & Units** | ProjectStructureModal.tsx | Read structure; create/update buildings and floors; create/update property units; change unit status. Uses GET /api/projects/{id}/structure and POST/PUT project structure routes. | IMPLEMENTED_AND_VERIFIED with documented gaps. | No delete/bulk generation, unit base price/orientation, or unified property file connecting legal, sales, finance, and construction records. Authorization alignment for projects.structure.manage remains a Phase 1 issue recorded in security docs. |
 | **D — Customers & CRM** | ProjectCustomerRegistryModal.tsx | Project customer list/details/create/update; canonical Party search and selection; customer interaction/follow-up entry; linked identity-document download. Uses /api/parties, /api/projects/{id}/customers, /interactions, and authorized document download. | PARTIALLY_IMPLEMENTED. | No standalone organization-wide Party workspace, full sales pipeline, lead assignment/qualification funnel, campaigns, representative/contact-point management, or complete post-sale service workflow. Transitional identity mirror columns remain scheduled for Phase 1 retirement. |
-| **E — Internal Unit Holds** | ProjectSalesReservationsModal.tsx | List/create/cancel project holds; choose a currently available unit and project customer; set expiry; enter cancellation reason. Uses GET/POST /api/projects/{id}/reservations and POST .../{reservationId}/cancel. Expiry is handled by backend service/worker. | IMPLEMENTED_NOT_VERIFIED (automated PostgreSQL 18 E2E exists; full user-facing browser acceptance is not recorded). | Strictly an internal hold. It is not a statutory reservation contract, does not collect promoter cash, and does not generate installments or tax events. Legal conversion belongs to Phase 2 after K-Min and practitioner sign-off. |
-| **K — Project Documents / K-Min base** | ProjectDocumentsModal.tsx | Upload a project file with category/description, list files, and download files. Uses GET/POST /api/projects/{id}/documents and GET .../{fileId}/download. | PARTIALLY_IMPLEMENTED. | Metadata update, soft-archive, structured DocumentLink references to business records, retention/legal holds, and K-Full are not implemented. Full user-facing browser review remains outstanding. |
+| **E — Internal Unit Holds** | ProjectSalesReservationsModal.tsx | List/create/cancel project holds; choose a currently available unit and project customer; set expiry; enter cancellation reason. Uses GET/POST /api/projects/{id}/reservations and POST .../{reservationId}/cancel. Expiry is handled by backend service/worker. | IMPLEMENTED_AND_VERIFIED (PostgreSQL 18 E2E plus Product Owner-attested real UI workflow). | Strictly an internal hold. It is not a statutory reservation contract, does not collect promoter cash, and does not generate installments or tax events. Legal conversion belongs to Phase 2 after K-Min and practitioner sign-off. |
+| **K — Project Documents / K-Min base** | ProjectDocumentsModal.tsx | Upload a project file with category/description, list files, and download files. Uses GET/POST /api/projects/{id}/documents and GET .../{fileId}/download. | PARTIALLY_IMPLEMENTED overall; existing upload/list/download/SHA-256 slice is owner-attested verified. | Metadata update, soft-archive, structured DocumentLink references to business records, retention/legal holds, and K-Full are not implemented. |
 
 ### Project context behavior today
 
@@ -67,18 +68,20 @@ The project directory displays actions for Structure, Customers/Prospects, Reser
 
 Latest repository evidence at the time of this audit:
 
-- Main commit inspected at audit start is c26194dce5124d5d5e8d67fc5a04708346b1d5e4; last application-code change is 23f019de7c787c0f93b5b7f0b5cec69992ff087a.
-- GitHub Actions Run #544 / [43767110822](https://github.com/younestech31/PROMO-GEST/actions/runs/43767110822) passed all three jobs: Frontend, .NET 10 + PostgreSQL 18, and Windows publish.
+- Main commit inspected at audit start is 432e6f8ea76bb540dd5bc69d3314c0d658805ba7; last application-code change is 23f019de7c787c0f93b5b7f0b5cec69992ff087a; latest test-source commit is c26194dce5124d5d5e8d67fc5a04708346b1d5e4.
+- GitHub Actions Run #546 / [43768228052](https://github.com/younestech31/PROMO-GEST/actions/runs/43768228052) passed all three jobs: Frontend, .NET 10 + PostgreSQL 18, and Windows publish.
 - Frontend strict TypeScript check, **38/38** frontend tests, production SPA build, ASP.NET Core static-host build, and preview-leak checks passed.
-- Domain tests **27/27**, Application tests **14/14**, and PostgreSQL 18 integration tests **9/9** passed. Linux publish/shell validation and the database, storage, and Data Protection restore drill passed. Windows x64 publish, DPAPI key-ring recovery, and PowerShell validation passed.
-- The product owner previously confirmed a targeted real Google AI Studio development server/API and PostgreSQL connection smoke check and that the previously failing customer/prospect and reservation pages no longer showed the generic internal error after PR #44. This does not certify the full user-facing workflows.
+- Domain tests **27/27**, Application tests **14/14**, and PostgreSQL 18 integration tests **24/24** passed. Linux publish/shell validation and the database, storage, and Data Protection restore drill passed. Windows x64 publish, DPAPI key-ring recovery, and PowerShell validation passed.
+- The Product Owner has owner-attested successful Arabic RTL / French LTR desktop/mobile execution of the principal real-API workflows listed in `PHASE-0-MANUAL-ACCEPTANCE.md`. This supplements the earlier targeted preview smoke confirmation; it is explicitly owner-attested, not a CI test result. P0-A01 and P0-A04 remain unconfirmed.
 
-**Still not evidenced:** Manual Arabic RTL / French LTR review on desktop and mobile; full read/create/update/cancel workflow execution in the real API; persistence/reload checks for all operations; browser cookie/CSRF review; authorization boundary review through the browser; and product-owner approval of the navigation proposal.
+**Owner-attested as passed:** Arabic RTL / French LTR desktop/mobile review for the listed real workflows; login/session/CSRF; projects and structure; customers/interactions; internal holds including cancellation/expiry; document upload/download/SHA-256; authorization/audit/concurrency/safe errors; and persistence after reload. See the owner-attested result register in `PHASE-0-MANUAL-ACCEPTANCE.md`.
+
+**Still not evidenced:** P0-A01 first-run setup against a separate empty disposable database and rejection of a second initialization; and P0-A04 logout followed by protected-route/session-revocation verification. Browser/version metadata and sanitized per-case artifacts were not attached. Navigation proposal approval is explicitly deferred to a bounded Phase 1 design review.
 
 ## 7. Next work by dependency order
 
-1. **Phase 0:** complete manual bilingual browser and real-API workflow acceptance using fictional development records only. Do not use Vite-only simulator results as API or persistence evidence.
-2. **Phase 0:** review and approve (or return for revision) the proposed three-level navigation model in PROJECT-NAVIGATION-UX.md. Keep this bounded to organization workspace, explicit project switching, active project workspace, and separate technical administration.
+1. **Phase 0:** run the unconfirmed P0-A01 first-run setup scenario against a separate empty disposable database and P0-A04 logout/session-revocation scenario. Retain the Product Owner-attested `PASS` record for the other named workflows; do not use Vite-only simulator results as API or persistence evidence.
+2. **Phase 1 design review:** revisit the bounded three-level navigation proposal in `PROJECT-NAVIGATION-UX.md`; no broad redesign is authorized by the deferral record alone.
 3. **Phase 1, only after Phase 0 gates pass:** organization profile editing; structure authorization alignment; reviewed Party/ProjectCustomer transitional mirror retirement migration/backfill/rollback; and versioned official Wilaya/commune reference data under ADR-0010.
 4. **Later phases:** proceed strictly through Phase 2–5, with K-Min and qualified Algerian legal/accounting review before legal/financial/statutory code.
 

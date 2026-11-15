@@ -1,7 +1,7 @@
 # PROMO GEST — Consolidated Decision Log & Architecture Decision Records (ADRs)
 
 **Document Role:** Single repository of architectural, design, and governance decisions for PROMO GEST.  
-**Current Audit Evidence Anchor:** Latest application runtime source change PR #48; source commit `23f019de7c787c0f93b5b7f0b5cec69992ff087a`; main snapshot `14428830eb0b81beedecc2136ba65fdf68a23266` (PR #49 documentation-only); latest green main CI Run #541 / `43764687600` (all three jobs passed). D-004 and D-005 remain historical evidence records.
+**Current Audit Evidence Anchor:** Latest application runtime source change PR #48 / `23f019de7c787c0f93b5b7f0b5cec69992ff087a`; latest test-source change PR #50 / `c26194dce5124d5d5e8d67fc5a04708346b1d5e4`; latest green main CI Run #544 / `43767110822` (all three jobs passed). D-004 through D-006 remain historical evidence records.
 
 ---
 
@@ -48,6 +48,12 @@
 - **Rationale:** Authenticated API responses may contain session, customer, project, or operational data. A Service Worker bypass does not control the browser's ordinary HTTP cache, and selective frontend fetch options do not reliably cover all API calls.
 - **Regression coverage:** `SecurityHeadersMiddlewareTests.cs` covers API/health paths including unknown endpoints, uppercase prefixes, static shell/assets, and near-miss routes (`/apiary`, `/healthcare`). The policy does not alter cookies, CSRF, permissions, persistence, database schema, migrations, or cloud/local deployment boundaries.
 - **Verification:** PR #48 (`73b3afbe748619c73489dc6f7f736a70d3607567`) passed all three PR CI jobs in Run #538 (`43763596953`). Squash merge `23f019de7c787c0f93b5b7f0b5cec69992ff087a` was verified by post-merge Run #539 (`43763807711`), with all three jobs successful.
+
+### `D-007`: Verify HTTP Response Privacy Through the Real ASP.NET Core Pipeline (PR #50 / Run #544)
+- **Decision:** Keep the centralized `Cache-Control: no-store` policy for `/api` and `/health` responses introduced by PR #48. Verify it at two levels: direct middleware path-boundary tests and real `WebApplicationFactory` HTTP integration assertions against PostgreSQL 18.
+- **Coverage:** Successful `GET /api/auth/csrf`, `GET /health/live`, and `GET /health/ready`; API and health fallback 404 responses; and an unsafe setup request rejected with CSRF 403. Integration tests require the parsed `Cache-Control` `NoStore` directive and intentionally allow additional directives such as `no-cache`.
+- **Non-goals:** No runtime middleware, response semantics, session, CSRF, authorization, schema, migration, business-data, or cloud/local deployment behavior changed by PR #50.
+- **Verification:** PR #50 head `90faecbf3d218e2d3d21f721e026636e09e42969` passed PR CI #543 (`43766827253`) across all three jobs, including PostgreSQL 18 Integration **24/24**. Squash merge `c26194dce5124d5d5e8d67fc5a04708346b1d5e4` passed post-merge main CI #544 (`43767110822`) across all three jobs.
 
 ---
 

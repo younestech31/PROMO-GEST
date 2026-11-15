@@ -32,6 +32,8 @@ public sealed class ApplicationSecurityAndFoundationTests
         IPartyRepository,
         IProjectRepository,
         IProjectStructureRepository,
+        IProjectCustomerRepository,
+        IProjectDocumentRepository,
         IAuditWriter,
         IAuditQueryRepository
     {
@@ -48,6 +50,8 @@ public sealed class ApplicationSecurityAndFoundationTests
         public List<PropertyUnit> Units { get; } = new();
         public List<AuditLog> AuditLogs { get; } = new();
         public List<Party> Parties { get; } = new();
+        public List<ProjectCustomer> ProjectCustomers { get; } = new();
+        public List<CustomerInteraction> CustomerInteractions { get; } = new();
 
         public InMemoryStore()
         {
@@ -60,12 +64,16 @@ public sealed class ApplicationSecurityAndFoundationTests
             var pRead = Permission.Create(Guid.NewGuid(), "projects.read", "Projects", "قراءة", "Lire", t);
             var pUsers = Permission.Create(Guid.NewGuid(), "users.manage", "Admin", "مستخدمين", "Utilisateurs", t);
             var pAudit = Permission.Create(Guid.NewGuid(), "audit.read", "Security", "تدقيق", "Audit", t);
-            Permissions.AddRange(new[] { pRead, pUsers, pAudit });
+            var pCustomersRead = Permission.Create(Guid.NewGuid(), "customers.read", "Customers", "قراءة العملاء", "Lire clients", t);
+            var pCustomersManage = Permission.Create(Guid.NewGuid(), "customers.manage", "Customers", "إدارة العملاء", "Gérer clients", t);
+            Permissions.AddRange(new[] { pRead, pUsers, pAudit, pCustomersRead, pCustomersManage });
 
             RolePermissions.Add(RolePermission.Create(adminRole.Id, pRead.Id));
             RolePermissions.Add(RolePermission.Create(adminRole.Id, pUsers.Id));
             RolePermissions.Add(RolePermission.Create(adminRole.Id, pAudit.Id));
             RolePermissions.Add(RolePermission.Create(commRole.Id, pRead.Id));
+            RolePermissions.Add(RolePermission.Create(commRole.Id, pCustomersRead.Id));
+            RolePermissions.Add(RolePermission.Create(commRole.Id, pCustomersManage.Id));
             RolePermissions.Add(RolePermission.Create(siteEngineerRole.Id, pRead.Id));
         }
 
@@ -194,6 +202,37 @@ public sealed class ApplicationSecurityAndFoundationTests
         public Task AddBuildingAsync(Building building, CancellationToken ct = default) { Buildings.Add(building); return Task.CompletedTask; }
         public Task AddFloorAsync(BuildingFloor floor, CancellationToken ct = default) { Floors.Add(floor); return Task.CompletedTask; }
         public Task AddPropertyUnitAsync(PropertyUnit unit, CancellationToken ct = default) { Units.Add(unit); return Task.CompletedTask; }
+        public Task<IReadOnlyList<ProjectCustomer>> ListByProjectAsync(Guid projectId, CancellationToken ct = default)
+            => Task.FromResult<IReadOnlyList<ProjectCustomer>>(ProjectCustomers.Where(customer => customer.ProjectId == projectId).ToList());
+        public Task<ProjectCustomer?> GetByProjectAsync(Guid projectId, Guid customerId, CancellationToken ct = default)
+            => Task.FromResult(ProjectCustomers.FirstOrDefault(customer => customer.ProjectId == projectId && customer.Id == customerId));
+        public Task<bool> ExistsDuplicateAsync(
+            Guid projectId,
+            string normalizedDisplayName,
+            string normalizedPhone,
+            Guid? excludeCustomerId = null,
+            CancellationToken ct = default)
+            => Task.FromResult(ProjectCustomers.Any(customer =>
+                customer.ProjectId == projectId &&
+                customer.NormalizedDisplayName == normalizedDisplayName &&
+                customer.NormalizedPhone == normalizedPhone &&
+                (!excludeCustomerId.HasValue || customer.Id != excludeCustomerId.Value)));
+        public Task<bool> ExistsPartyInProjectAsync(
+            Guid projectId,
+            Guid partyId,
+            Guid? excludeCustomerId = null,
+            CancellationToken ct = default)
+            => Task.FromResult(ProjectCustomers.Any(customer =>
+                customer.ProjectId == projectId &&
+                customer.PartyId == partyId &&
+                (!excludeCustomerId.HasValue || customer.Id != excludeCustomerId.Value)));
+        public Task AddCustomerAsync(ProjectCustomer customer, CancellationToken ct = default) { ProjectCustomers.Add(customer); return Task.CompletedTask; }
+        public Task AddInteractionAsync(CustomerInteraction interaction, CancellationToken ct = default) { CustomerInteractions.Add(interaction); return Task.CompletedTask; }
+        public Task<IReadOnlyList<ProjectDocumentListItem>> ListProjectDocumentsAsync(Guid projectId, CancellationToken ct = default)
+            => Task.FromResult<IReadOnlyList<ProjectDocumentListItem>>(Array.Empty<ProjectDocumentListItem>());
+        public Task<StoredFile?> GetProjectDocumentAsync(Guid projectId, Guid fileId, CancellationToken ct = default)
+            => Task.FromResult<StoredFile?>(null);
+        public Task AddAsync(StoredFile file, CancellationToken ct = default) => Task.CompletedTask;
         public Task<Party?> GetByIdAsync(Guid partyId, CancellationToken ct = default)
             => Task.FromResult(Parties.FirstOrDefault(party => party.Id == partyId));
         public Task<IReadOnlyList<Party>> SearchDirectoryAsync(string normalizedPrefix, int limit, CancellationToken ct = default)
@@ -247,6 +286,147 @@ public sealed class ApplicationSecurityAndFoundationTests
 
         var ex = await Assert.ThrowsAsync<ConflictDomainException>(() => setup.InitializeAsync(ValidInitRequest(), meta));
         Assert.Equal("SETUP_ALREADY_INITIALIZED", ex.Code);
+    }
+
+    [Fact]
+    public async Task ProjectCustomer_PartyPermissionDenialsAreSecurityAudited_AndAuthorizedUpdatesCapturePreviousKind()
+    {
+        var store = new InMemoryStore();
+        var clock = new FakeClock();
+        var hasher = new Pbkdf2PasswordHasher();
+        var setup = new SetupService(store, hasher, store, clock);
+        var users = new UserManagementService(store, store, hasher, store, clock);
+        var projects = new ProjectService(store, store, store, clock);
+        var metadata = new RequestMetadata("127.0.0.1", "xUnit");
+        var init = await setup.InitializeAsync(ValidInitRequest(), metadata);
+        var employee = await users.CreateEmployeeAsync(
+            init.SystemAdminUserId,
+            new CreateEmployeeRequest(
+                "party.customer.manager",
+                "Customer Manager",
+                "customer.manager@elbahdja.dz",
+                null,
+                "StrongPass123",
+                "ar",
+                new[] { Role.CommercialManagerCode }),
+            metadata);
+        var project = await projects.CreateProjectAsync(
+            init.SystemAdminUserId,
+            new CreateProjectRequest(
+                "PRJ-16-C2-AUDIT",
+                "إقامة الاختبار",
+                "Résidence Test",
+                "16",
+                "Alger",
+                "Cheraga",
+                null,
+                null,
+                null,
+                null,
+                "Commercialization",
+                150_000_000m,
+                2,
+                32),
+            metadata);
+        await projects.AssignMemberAsync(
+            init.SystemAdminUserId,
+            project.Id,
+            new AssignProjectMemberRequest(employee.Id, nameof(ProjectRole.CommercialAgent), false, true, false, true),
+            metadata);
+
+        var party = Party.Create(Guid.NewGuid(), PartyKind.Person, "Client Protected", clock.UtcNow);
+        var customer = ProjectCustomer.Create(
+            project.Id,
+            CustomerType.Individual,
+            "Client Protected",
+            null,
+            "0550000001",
+            null,
+            null,
+            "ar",
+            CustomerSource.WalkIn,
+            null,
+            employee.Id,
+            clock.UtcNow,
+            party.Id);
+        customer.AttachParty(party);
+        store.Parties.Add(party);
+        store.ProjectCustomers.Add(customer);
+
+        var service = new ProjectCustomerService(store, store, store, store, store, store, clock);
+        var createDenied = await Assert.ThrowsAsync<ForbiddenDomainException>(() =>
+            service.CreateAsync(
+                employee.Id,
+                project.Id,
+                new CreateProjectCustomerRequest(
+                    nameof(CustomerType.Individual),
+                    "Client Protected",
+                    null,
+                    "0550000002",
+                    null,
+                    null,
+                    "ar",
+                    nameof(CustomerSource.WalkIn),
+                    null,
+                    party.Id),
+                metadata));
+        Assert.Equal("PARTY_DIRECTORY_ACCESS_DENIED", createDenied.Code);
+
+        var updateDenied = await Assert.ThrowsAsync<ForbiddenDomainException>(() =>
+            service.UpdateAsync(
+                employee.Id,
+                project.Id,
+                customer.Id,
+                new UpdateProjectCustomerRequest(
+                    nameof(CustomerType.Individual),
+                    "Client Renamed",
+                    null,
+                    "0550000001",
+                    null,
+                    null,
+                    "ar",
+                    nameof(CustomerSource.WalkIn),
+                    nameof(ProjectCustomerStatus.Prospect),
+                    null,
+                    customer.ConcurrencyStamp,
+                    party.ConcurrencyStamp),
+                metadata));
+        Assert.Equal("PARTY_IDENTITY_MANAGE_REQUIRED", updateDenied.Code);
+
+        var denials = store.AuditLogs.Where(entry => entry.EventType == "ACCESS_DENIED").ToList();
+        Assert.Equal(2, denials.Count);
+        Assert.All(denials, entry => Assert.Equal(AuditSeverity.Security, entry.Severity));
+        Assert.Contains(denials, entry => entry.TargetEntityType == "Party" &&
+            entry.TargetEntityId == party.Id.ToString() &&
+            entry.MetadataJson!.Contains("parties.directory.read", StringComparison.Ordinal));
+        Assert.Contains(denials, entry => entry.TargetEntityType == "Party" &&
+            entry.TargetEntityId == party.Id.ToString() &&
+            entry.MetadataJson!.Contains("parties.identity.manage", StringComparison.Ordinal));
+        Assert.Equal("Client Protected", party.DisplayName);
+        Assert.Equal("Client Protected", customer.DisplayName);
+
+        var authorizedUpdate = await service.UpdateAsync(
+            init.SystemAdminUserId,
+            project.Id,
+            customer.Id,
+            new UpdateProjectCustomerRequest(
+                nameof(CustomerType.LegalEntity),
+                "SARL Client Updated",
+                null,
+                "0550000001",
+                null,
+                null,
+                "ar",
+                nameof(CustomerSource.WalkIn),
+                nameof(ProjectCustomerStatus.Customer),
+                null,
+                customer.ConcurrencyStamp,
+                party.ConcurrencyStamp),
+            metadata);
+        Assert.Equal(nameof(CustomerType.LegalEntity), authorizedUpdate.CustomerType);
+        var identityAudit = Assert.Single(store.AuditLogs.Where(entry => entry.EventType == "PARTY_IDENTITY_UPDATED"));
+        Assert.Contains("\"previousKind\":\"Person\"", identityAudit.MetadataJson);
+        Assert.Contains("\"newKind\":\"LegalEntity\"", identityAudit.MetadataJson);
     }
 
     [Fact]

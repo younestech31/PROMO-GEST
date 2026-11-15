@@ -20,3 +20,27 @@ export function isStateChangingMethod(method?: string): boolean {
   const normalized = (method ?? 'GET').trim().toUpperCase();
   return normalized === 'POST' || normalized === 'PUT' || normalized === 'PATCH' || normalized === 'DELETE';
 }
+
+export function requiresFreshCsrfToken(url: string): boolean {
+  const path = url.split('?')[0];
+  return path === '/api/auth/login' || path === '/api/setup/initialize';
+}
+
+export interface CsrfRetryCheckInput {
+  status: number;
+  isMutating: boolean;
+  isRetry: boolean;
+  isJson: boolean;
+  errorCode?: string;
+}
+
+export function shouldRetryCsrfError(input: CsrfRetryCheckInput): boolean {
+  if (!input.isMutating || input.isRetry || input.status !== 403) {
+    return false;
+  }
+  if (!input.isJson) {
+    return true;
+  }
+  return input.errorCode === 'CSRF_TOKEN_INVALID';
+}
+

@@ -36,7 +36,12 @@ import type {
   UpdateProjectRequest,
   UserDto,
 } from '../types/erp';
-import { isStateChangingMethod, parseCookieValue } from '../utils/csrf';
+import {
+  isStateChangingMethod,
+  parseCookieValue,
+  requiresFreshCsrfToken,
+  shouldRetryCsrfError,
+} from '../utils/csrf';
 
 export class ApiError extends Error {
   public readonly status: number;
@@ -62,16 +67,20 @@ export class ApiConnectionError extends Error {
 let cachedCsrfToken: string | null = null;
 let previewSessionToken: string | null = null;
 
-async function ensureCsrfToken(): Promise<string> {
-  const fromCookie = typeof document !== 'undefined'
-    ? parseCookieValue(document.cookie, 'promogest_csrf')
-    : null;
-  if (fromCookie) {
-    cachedCsrfToken = fromCookie;
-    return fromCookie;
-  }
-  if (cachedCsrfToken) {
-    return cachedCsrfToken;
+async function ensureCsrfToken(forceRefresh = false): Promise<string> {
+  if (!forceRefresh) {
+    const fromCookie = typeof document !== 'undefined'
+      ? parseCookieValue(document.cookie, 'promogest_csrf')
+      : null;
+    if (fromCookie) {
+      cachedCsrfToken = fromCookie;
+      return fromCookie;
+    }
+    if (cachedCsrfToken) {
+      return cachedCsrfToken;
+    }
+  } else {
+    cachedCsrfToken = null;
   }
 
   let response: Response;
@@ -79,6 +88,7 @@ async function ensureCsrfToken(): Promise<string> {
     response = await fetch('/api/auth/csrf', {
       method: 'GET',
       credentials: 'include',
+      cache: 'no-store',
     });
   } catch (err) {
     throw new ApiConnectionError(err instanceof Error ? err.message : 'Local server unreachable');
@@ -118,13 +128,14 @@ function syncCsrfCacheFromResponse(response: Response, resetIfMissing: boolean) 
   }
 }
 
-async function requestJson<T>(url: string, init?: RequestInit): Promise<T> {
+async function requestJson<T>(url: string, init?: RequestInit, isRetry = false): Promise<T> {
   const method = init?.method ?? 'GET';
   const mutating = isStateChangingMethod(method);
   const csrfHeaders: Record<string, string> = {};
 
   if (mutating) {
-    csrfHeaders['X-CSRF-TOKEN'] = await ensureCsrfToken();
+    const forceFresh = isRetry || requiresFreshCsrfToken(url);
+    csrfHeaders['X-CSRF-TOKEN'] = await ensureCsrfToken(forceFresh);
   }
 
   let response: Response;
@@ -173,12 +184,21 @@ async function requestJson<T>(url: string, init?: RequestInit): Promise<T> {
   if (!response.ok) {
     if (isJson) {
       const payload = (await response.json()) as ApiErrorResponse;
+      const code = payload.code ?? `HTTP_${response.status}`;
+      if (shouldRetryCsrfError({ status: response.status, isMutating: mutating, isRetry, isJson: true, errorCode: code })) {
+        await ensureCsrfToken(true);
+        return requestJson<T>(url, init, true);
+      }
       throw new ApiError(
         response.status,
-        payload.code ?? `HTTP_${response.status}`,
+        code,
         payload.message ?? `Request failed with status ${response.status}`,
         payload.validationErrors
       );
+    }
+    if (shouldRetryCsrfError({ status: response.status, isMutating: mutating, isRetry, isJson: false })) {
+      await ensureCsrfToken(true);
+      return requestJson<T>(url, init, true);
     }
     if (response.status === 403) {
       throw new ApiError(

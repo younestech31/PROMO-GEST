@@ -294,6 +294,15 @@ app.UseRateLimiter();
 app.UseDefaultFiles();
 app.UseStaticFiles();
 
+if (app.Environment.IsDevelopment())
+{
+    app.UseCookiePolicy(new CookiePolicyOptions
+    {
+        OnAppendCookie = ctx => DevelopmentPreviewCookiePolicy.ApplyCookieOptions(ctx.Context, ctx.CookieOptions),
+        OnDeleteCookie = ctx => DevelopmentPreviewCookiePolicy.ApplyCookieOptions(ctx.Context, ctx.CookieOptions)
+    });
+}
+
 app.UseAuthentication();
 app.UseMiddleware<CsrfValidationMiddleware>();
 app.UseAuthorization();

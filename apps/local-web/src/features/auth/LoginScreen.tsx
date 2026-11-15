@@ -64,8 +64,8 @@ export function LoginScreen({
 
   return (
     <div className="min-h-screen bg-slate-50 text-slate-900 flex flex-col">
-      <header className="bg-white border-b border-slate-200 px-6 py-4">
-        <div className="max-w-5xl mx-auto flex items-center justify-between gap-6">
+      <header className="bg-white border-b border-slate-200 px-4 sm:px-6 py-3 sm:py-4">
+        <div className="max-w-5xl mx-auto flex flex-wrap items-center justify-between gap-3 sm:gap-6">
           <div className="flex items-center gap-3">
             <div className="w-8 h-8 rounded-md bg-slate-900 text-white flex items-center justify-center shrink-0">
               <Building2 className="w-4 h-4" aria-hidden="true" />
@@ -75,7 +75,7 @@ export function LoginScreen({
             </span>
           </div>
 
-          <div className="flex items-center gap-4">
+          <div className="flex flex-wrap items-center gap-2 sm:gap-4">
             <ConnectionIndicator
               state={connectionState}
               language={language}
@@ -86,8 +86,8 @@ export function LoginScreen({
         </div>
       </header>
 
-      <main className="flex-1 flex items-center justify-center px-6 py-12">
-        <div className="w-full max-w-md bg-white border border-slate-200 rounded-lg p-8">
+      <main className="flex-1 flex items-center justify-center px-4 sm:px-6 py-8 sm:py-12">
+        <div className="w-full max-w-md bg-white border border-slate-200 rounded-lg p-6 sm:p-8">
           <div className="mb-6">
             {organizationName && (
               <p className="text-xs font-semibold text-teal-800 mb-1">{organizationName}</p>

@@ -1,9 +1,9 @@
 # PROMO GEST — Organization-Wide Party & Master-Data Design
 
-> **Canonical Reference Notice:** Subsequent unverified C2 Party endpoints (`PartiesController`, `PartyDirectoryService`, migration #11) exist in the workspace alongside a `CS7036` test compilation error and sync/audit defects; see [CURRENT-STATE-BASELINE.md](CURRENT-STATE-BASELINE.md) and [DECISION-LOG.md](DECISION-LOG.md).
+> **Current Implementation Status (16 November 2026):** Party directory, canonical Party identity, project-customer Party association, identity-mirror retirement, and the PostgreSQL project/name/phone duplicate guard are implemented in `main` (PRs #35–#38, #55–#57; main CI #573). This document retains the broader target design; it does not claim Employee, Party contact-point/identifier/representative, or human-approved merge workflows are implemented.
 
-**Status:** initial C1 Party-identity foundation merged into `main` through PR #31; all CI jobs passed. Gate C as a whole remains open.  
-**Baseline reviewed:** `main` at `a33b2eec52d8ab430521699e79b7efa821d2ccad` (15 November 2026).  
+**Status:** C1/C2 Party identity and the Phase 1 identity-mirror retirement are implemented and verified; Gate C remains open for broader master-data capabilities and representative installation migration/restore evidence.  
+**Baseline reviewed:** `main` at `065d54cff4e08ed868e676d4cf3d04c715898782` (16 November 2026).  
 **Scope:** party identity, project relationships, CRM continuity, employee identity and login-account separation.
 
 ## 1. Purpose and non-negotiable constraints
@@ -22,32 +22,32 @@ The design must:
 
 This is a design decision, not authorization to migrate a live organization database. No Cloud SQL or customer data is to be changed by this design work.
 
-## 2. Initial C1 implementation slice
+## 2. Implemented Party / ProjectCustomer slice (source verified 16 November 2026)
 
-The current feature branch introduces the first executable Party identity layer:
+- `Party` stores canonical party kind (person/legal entity), display name, normalized display name, timestamps, and an optimistic-concurrency stamp.
+- `project_customers.party_id` is required and references `parties.id`. The initial deterministic backfill reused each legacy ProjectCustomer UUID as its initial Party UUID; no fuzzy matching or automatic merge was performed.
+- `ProjectCustomer` retains its own project-relationship UUID. For newly created records after the Party split, `ProjectCustomer.Id` and `PartyId` are separate IDs. Reservations and interactions continue to reference the project-scoped ProjectCustomer ID.
+- Party directory search and identity updates are implemented. Reusing an existing Party in a project is permission-gated and remains separate from permission to read that project's interactions, reservations, or files.
+- Phone, email, address, contact person, preferred language, source, status, identity-document reference, and interactions remain project-relationship data; these were not promoted into global Party contact points.
+- Migration #12 (`20261116100000_RetireProjectCustomerIdentityMirrors`) removed `project_customers.customer_type`, `display_name`, and `normalized_display_name`. `parties` is now the sole kind/name source.
+- Migration #13 (`20261116120000_EnforceProjectCustomerIdentityUniqueness`) enforces the project duplicate-prevention invariant through deferred PostgreSQL constraint triggers. It protects customer relationship writes and Party identity updates, uses transaction-scoped advisory locks, and maps the named conflict to `CUSTOMER_DUPLICATE`.
+- PR #57 adds direct PostgreSQL 18 coverage for the Down path, fail-closed preflight, data preservation, and successful reapplication after test-data reconciliation. Main CI #573 passed all three jobs with PostgreSQL Integration **29/29**.
+- No production organization database or Cloud SQL data was migrated by these PRs. CI used disposable PostgreSQL 18 databases with separate provisioning, migration-owner, and runtime identities.
 
-- `Party` stores canonical party kind (person/legal entity), display name, normalized name, timestamps and an optimistic-concurrency stamp.
-- `project_customers.party_id` is required and references `parties.id`. Existing rows are backfilled one-to-one, reusing each existing `project_customers.id` as its initial Party ID. This preserves legacy customer UUIDs and does not merge similar names or phone numbers.
-- Customer create/update workflows create and update Party identity in the same database unit of work. Customer API responses expose `partyId`; customer display names and types are read from Party.
-- Phone, email, address, contact person, preferred language, source, status, identity-document reference and interactions remain project-relationship data. They are not promoted to organization-wide contact points in this slice.
-- Reservation summaries resolve the customer display name through Party while reservation IDs and customer foreign keys remain unchanged.
+The current slice does **not** yet implement the full `ProjectPartyRole` model, global contact-point records, protected Party identifiers, Party representatives, Employee records, Supplier/Subcontractor role lifecycles, or human-reviewed merge/recovery tooling. Gate C therefore remains open.
 
-This slice deliberately does **not** yet implement organization-wide Party search/selection, sharing one Party across multiple project relationships through the API, the full `ProjectPartyRole` model, general Party contact points/identifiers, Employee records, or reconciliation/merge tooling. The schema permits later expansion, but no cross-project Party attachment or data disclosure route is exposed. The application continues to create one Party for each newly created project-customer record until the next reviewed CRM workflow is delivered.
+## 3. Historical pre-Party project-scoped CRM baseline
 
-The migration is additive and reversible only while Party remains in the documented one-to-one compatibility state; its `Down` path refuses rollback if Party relationships or identity values have advanced beyond that safe boundary. PR #31 passed the repository CI suite, including PostgreSQL 18 least-privilege integration tests. This CI result is not a substitute for a separate representative legacy-backfill/backup/restore rehearsal. The migration has not been applied to Cloud SQL or any organization database.
-
-## 3. Legacy project-scoped CRM baseline
-
-The current relational model contains:
+The following describes the **historical pre-Party schema**, not the current database schema:
 - `project_customers`, keyed by its own UUID and required to reference one `project_id`;
 - customer type, display name and normalized name, a required phone and normalized phone, optional contact person, email, address, preferred language, source, status and optional identity-document file reference;
-- a unique index on `(project_id, normalized_display_name, normalized_phone)`, which prevents a duplicate only within the same project;
+- at that historical baseline, a unique index on `(project_id, normalized_display_name, normalized_phone)` prevented duplicates only within one project. Migration #12 removed the legacy identity columns/index; Migration #13 now enforces this business rule against canonical `Party.normalized_display_name` plus relationship `normalized_phone` using deferred PostgreSQL triggers;
 - `customer_interactions`, each linked to a project customer and a creator user;
 - reservations linked to a project customer and a property unit;
 - `users`, which currently combines login credentials, security state, username, full name and account contact/profile fields;
 - project membership and role assignments which are separate from the customer record.
 
-There is no organization-wide Party entity and no Employee master entity at this baseline. The existing project customer ID is therefore a business reference in use, not a disposable CRM row.
+At that historical baseline, no organization-wide Party entity existed. Party is now implemented; no Employee master entity exists yet. The ProjectCustomer ID remains a business relationship reference, not a disposable CRM row.
 
 ## 3. Target logical model
 
@@ -129,19 +129,16 @@ Uniqueness must be role- and lifecycle-aware. Do not impose a blanket uniqueness
 
 ### 3.6 Customer compatibility profile
 
-The current `ProjectCustomer` record must remain addressable while reservations and interactions depend on it.
+The project-scoped `ProjectCustomer` record remains addressable because reservations, interactions, and customer workflows depend on its UUID.
 
-Recommended transition:
-1. introduce canonical Party identity and a project relationship;
-2. add an explicit one-to-one or mapping association from each existing ProjectCustomer UUID to its Party and project relationship;
-3. retain ProjectCustomer UUIDs and reservation foreign keys during the compatibility period;
-4. move canonical identity/contact ownership to Party through reviewed API contracts;
-5. keep customer lifecycle/source and project-specific sales history in the project relationship;
-6. retire duplicate legacy columns and old routes only in a later, separately tested migration after all consumers have moved.
+**Implemented transition state:**
+1. `Party` is the canonical person/legal-entity identity; `ProjectCustomer` is the project-scoped commercial relationship.
+2. Existing ProjectCustomer UUIDs and reservation/interaction references remain intact. The initial Party backfill reused each legacy UUID once, but newly created Party and ProjectCustomer records receive separate IDs.
+3. Project-specific contact details, status/source/language, identity-document links, and sales interactions stay on ProjectCustomer.
+4. Migration #12 retired the duplicate identity columns. Do not reintroduce `customer_type`, `display_name`, or `normalized_display_name` on `project_customers`.
+5. PostgreSQL Migration #13 enforces project/name/normalized-phone uniqueness against canonical Party names, including concurrent relationship writes and Party identity changes. The migration fails closed if pre-existing duplicates are found.
 
-The transition must not create two competing writable masters. Once a field is migrated, designate one owner and make compatibility fields read-only or derived. Do not leave Party and ProjectCustomer name/phone values independently editable.
-
-CustomerInteraction history remains project-contextual. Each existing interaction must retain its UUID, timestamp, actor, content and project context; moving identity must not turn a project sales conversation into an organization-wide conversation visible to every project member.
+CustomerInteraction history remains project-contextual. Each existing interaction retains its UUID, timestamp, actor, content, and project context; moving identity does not make project-specific sales conversations visible to every project member.
 
 ### 3.7 Employee and User are separate concepts
 
@@ -186,33 +183,29 @@ A merge must never physically delete the source history. Where an identity match
 
 Before schema work, capture table counts, key relationships, duplicate-candidate counts and migration version on a sanitized, local test copy. Verify a database-plus-local-file backup and restore. Do not use real customer data in a hosted preview or external test fixture.
 
-### Phase 1 — additive schema
+### Phase 1 — Party schema and association (`IMPLEMENTED_AND_VERIFIED` for the delivered slice)
 
-Add Party and its minimum supporting tables. Add a nullable, indexed Party association or explicit mapping table for legacy ProjectCustomer records. Add new FKs with restrictive delete behavior. Do not drop or rename existing tables or columns.
+Migrations #10 and #11 added Party, deterministically backfilled the required `project_customers.party_id` association, and enforced one Party relationship per project. Migration #12 later retired the duplicate identity mirrors after consumers read canonical values from Party. The ProjectCustomer table and UUID were retained.
 
-### Phase 2 — deterministic backfill
+### Phase 2 — deterministic backfill (`IMPLEMENTED_AND_VERIFIED` in disposable CI)
 
-Create one Party per legacy ProjectCustomer row by default. This preserves data without guessing that two similar rows refer to the same person. Keep the original ProjectCustomer UUID unchanged. Record the mapping and migration batch/version.
+The initial migration creates one Party per legacy ProjectCustomer row by default, reusing the legacy UUID as the first Party UUID. Similar names/phones were not merged. The ProjectCustomer UUID remains unchanged. This migration has passed PostgreSQL 18 CI but has not been rehearsed against a representative organization database.
 
 A separate reconciliation report may identify likely duplicates, but it must not merge them automatically.
 
-### Phase 3 — controlled CRM transition
+### Phase 3 — controlled CRM transition (`PARTIALLY_IMPLEMENTED`)
 
-Introduce organization-wide Party search and authorized Party detail operations. Creating or attaching a customer to a project must require both:
-- permission to manage the organization-wide Party record; and
-- permission and explicit project membership to create or manage that project's relationship.
+Party directory search/update and optional association of a Party with a project-customer relationship are implemented. Reuse of an existing Party is permission-gated, while project membership and customer-management capabilities remain enforced independently. Party search does not grant access to another project's interactions, reservations, documents, or relationship status.
 
-A Party search result must never reveal another project's restricted customer interactions, reservations, documents or relationship status.
-
-Keep existing project customer endpoints as compatibility adapters until reservations, interactions and the UI have migrated. Preserve current API behavior where possible and version any intentionally changed contract.
+Project-customer endpoints remain active business workflows with their existing relationship UUIDs. The full ProjectPartyRole model and richer role/contact/representative lifecycle are future work.
 
 ### Phase 4 — Employee and User separation
 
 Implement Employee only after Party is stable. Add optional User linkage, migrate employee profile data only from verified sources, and preserve account credentials/security/session IDs. HR data receives separate permissions and must not become visible through general CRM Party search.
 
-### Phase 5 — retirement
+### Phase 5 — identity mirror retirement (`IMPLEMENTED_AND_VERIFIED` in disposable PostgreSQL 18 CI)
 
-Only after all references and installations are accounted for may legacy duplicate columns/routes be deprecated. Any table/column removal requires a separate release, backup, migration and restore plan.
+Migration #12 removed the redundant ProjectCustomer identity columns after canonical Party ownership was established. Migration #13 added the database-level project/name/phone uniqueness guard. The API and ProjectCustomer table remain; this was not a wholesale CRM-table retirement. Applying these migrations to an existing organization installation still requires a verified backup, duplicate review, explicit operator approval, and restore rehearsal.
 
 ## 6. Required acceptance tests
 
@@ -223,6 +216,7 @@ Only after all references and installations are accounted for may legacy duplica
 - A global Party edit is authorized independently from a project relationship edit.
 - Employees without login accounts and technical Users without Employee records are supported.
 - No global unique constraint rejects shared phone/email values.
+- Within a project, duplicate canonical Party name and normalized phone pairs are rejected by the PostgreSQL guard; the same phone/name may exist in another project where it represents a separate project relationship and no automatic Party merge occurs.
 - Same-name or same-phone records are not auto-merged.
 - Existing ProjectCustomer, CustomerInteraction and reservation UUIDs remain valid throughout the compatibility migration.
 - Counts and relationship checks reconcile before/after backfill.
@@ -232,8 +226,8 @@ Only after all references and installations are accounted for may legacy duplica
 ## 7. Implementation gate
 
 Gate C is not complete when the ER diagram or documents exist. It is complete only after:
-- the physical schema and migration have been reviewed;
-- migration and rollback have been rehearsed against a representative, anonymized database;
+- the physical schema and migrations have been reviewed and PostgreSQL 18 CI covers fresh Up application, concurrent guard behavior, Party identity changes, Down, fail-closed preflight, and test-data recovery;
+- the full production migration/backfill and rollback sequence has been rehearsed against a representative, anonymized database;
 - authorization tests cover organization-wide and project-scoped access;
 - all legacy references reconcile;
 - the CRM UI and API use the new model without dual-write ambiguity;

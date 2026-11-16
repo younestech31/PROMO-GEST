@@ -1,6 +1,6 @@
 # PROMO GEST — Database Design (PostgreSQL 18)
 
-> **Canonical Reference Notice:** This document stops at migration #10; for the verified 11-migration inventory (`20261115120000_UniqueProjectPartyCustomerLink`), concurrency tokens, and deployment roles, see [DOMAIN-MODEL.md](DOMAIN-MODEL.md), [CURRENT-STATE-BASELINE.md](CURRENT-STATE-BASELINE.md), and [DATA-AND-LOCAL-DEPLOYMENT.md](DATA-AND-LOCAL-DEPLOYMENT.md).
+> **Reference Note:** This supplementary overview is synchronized through the 13-migration source baseline at main SHA `065d54cff4e08ed868e676d4cf3d04c715898782`. For exact columns, indexes, trigger definitions, and current schema truth, see [DOMAIN-MODEL.md](DOMAIN-MODEL.md) and [CURRENT-STATE-BASELINE.md](CURRENT-STATE-BASELINE.md).
 
 ## 1. Database ownership and trust boundaries
 
@@ -56,9 +56,9 @@ All primary keys use UUIDs. Foreign keys, unique indexes, check constraints, and
 - Project documents are scoped to a project and retrieved by both project ID and file ID; an API caller cannot use a document identifier from another project to bypass the membership check.
 - The current document categories are `Legal`, `LandAndTitle`, `Permits`, `Plans`, `Engineering`, `Commercial`, `Financial`, `Correspondence`, and `Other`. The database check constraint keeps the category vocabulary consistent.
 - The `stored_files.category` migration backfills existing metadata rows as `Other`, then removes the temporary column default so all new records must provide a valid category. No existing file bytes or metadata rows are deleted.
-- Customer records are partitioned by project. Within one project, the same normalized display name and normalized phone cannot be registered twice; PostgreSQL enforces the composite uniqueness rule.
+- Customer relationships are partitioned by project. Within one project, the same canonical Party normalized display name and project-scoped normalized phone cannot be registered twice. PostgreSQL enforces this cross-table invariant with deferred constraint triggers `trg_project_customers_identity_unique` and `trg_parties_identity_unique`, backed by transaction-scoped advisory locks. The preflight aborts if matching duplicates already exist; it never deletes or merges records.
 - Customer and customer-interaction creator foreign keys are indexed for efficient audit attribution and user-related maintenance queries; these indexes are added by `20261114195931_CustomerModelSnapshotReconciliation`.
-- Each `project_customers` row has a required `party_id` FK to `parties.id`. PR #31 added the Party table and a deterministic initial one-to-one backfill that reuses each legacy customer UUID as the first Party UUID. No global unique constraint exists on Party name; similar identities require human review, not automatic merging. The migration has passed PostgreSQL 18 CI but has not been run against Cloud SQL or a live organization database.
+- Each `project_customers` row has its own UUID and a required `party_id` FK to `parties.id`. The initial one-to-one backfill reused each legacy customer UUID as its first Party UUID, but newly created Party and ProjectCustomer IDs are separate. Migration #12 retired `customer_type`, `display_name`, and `normalized_display_name` mirrors from `project_customers`; `parties` is the sole kind/name source. No global unique constraint exists on Party name; similar identities require human review, not automatic merging. PRs #56–#57 and main CI #573 verify the PostgreSQL 18 guard on disposable databases only; no Cloud SQL or organization database has been migrated.
 - Party currently owns only person/legal-entity kind and display name. Contact channels, relationship status/source and document permissions remain project-scoped; do not treat the first Party slice as complete organization-wide CRM or employee master data.
 - Customer and interaction enum values, phone normalization, and follow-up date ordering are enforced by database constraints as well as domain validation.
 - Customer identity-document references must resolve to a document in the same project through the application service; users without `files.read` cannot inspect linked document metadata or change the link.
@@ -83,7 +83,7 @@ A direct table grant is not a complete privilege review: inherited role membersh
 
 ## 4. Migration workflow
 
-The EF Core migration history currently includes:
+The EF Core migration history currently includes 13 migrations:
 
 1. `20261113000001_InitialFoundation`
 2. `20261113000002_HardeningConstraintsAndAuditImmutability`
@@ -95,8 +95,11 @@ The EF Core migration history currently includes:
 8. `20261114195931_CustomerModelSnapshotReconciliation`
 9. `20261114220000_ProjectSalesReservations`
 10. `20261115100000_OrganizationWidePartyFoundation`
+11. `20261115120000_UniqueProjectPartyCustomerLink`
+12. `20261116100000_RetireProjectCustomerIdentityMirrors`
+13. `20261116120000_EnforceProjectCustomerIdentityUniqueness`
 
-The model snapshot is maintained alongside the migrations and must remain synchronized with `AppDbContext`.
+The model snapshot remains synchronized with the EF entity model. Migration #13 adds PostgreSQL-only triggers and helper functions without changing entity mapping; it therefore has no EF model-snapshot delta. Its Down path removes those database objects.
 
 Schema changes are **not applied automatically by the normal runtime service**. A deliberate operator/deployment step runs the API with `--migrate`, supplying `PROMOGEST_MIGRATE_DB_CONNECTION` for `promogest_owner`. The Cloud SQL development integration may supply its separate migration identity through its development-only configuration. The API runtime then starts with `promogest_app`.
 

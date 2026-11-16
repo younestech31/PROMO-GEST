@@ -21,37 +21,29 @@
 
 ---
 
-## 2. Current Gate Status Against Baseline (Last Code-Changing Source Commit `23f019de7c787c0f93b5b7f0b5cec69992ff087a`; latest test-source commit `c26194dce5124d5d5e8d67fc5a04708346b1d5e4`; main commit inspected at audit start `5a5196d75abcdf608e708844983fad25b600e5a4`)
+## 2. Current Gate Status Against Baseline (main source `065d54cff4e08ed868e676d4cf3d04c715898782`; main CI #573)
 
-### GitHub Actions Run #544 — 15 November 2026
-- **Frontend job — passed:** `npm run lint` (`tsc --noEmit`), `npm test` (**38/38**), SPA build, ASP.NET Core `wwwroot` build, static-hosting checks, and dev-preview leakage checks.
-- **.NET 10 / PostgreSQL 18 job — passed:** solution build with warnings as errors; Domain **27/27**, Application **14/14**, PostgreSQL 18 Integration **24/24** (including `SecurityHeadersMiddlewareTests` and real HTTP-pipeline assertions in `PostgresEndToEndTests`); the database/storage/Data Protection restore drill also passed.
-- **Windows publish job — passed:** Windows x64 publish, machine-scoped Data Protection recovery verification, and PowerShell validation passed.
-- **Overall:** all three required CI jobs completed with `success` on main commit `c26194dce5124d5d5e8d67fc5a04708346b1d5e4`. [Run #544](https://github.com/younestech31/PROMO-GEST/actions/runs/43767110822).
+### Main CI #573 — 16 November 2026
+- **Frontend/static hosting:** passed; strict TypeScript/lint, **39/39** frontend tests, SPA and ASP.NET Core static-host builds, and preview-leak checks.
+- **.NET 10 / PostgreSQL 18:** solution build with warnings as errors succeeded; Domain **34/34**, Application **20/20**, PostgreSQL 18 Integration **29/29**.
+- **Migration lifecycle tests:** direct Down, fail-closed preflight (without deleting ProjectCustomer rows), and successful Up after test-data reconciliation passed.
+- **Windows:** x64 publish, machine-scoped Data Protection recovery, and PowerShell validation passed.
+- **Overall:** all three required jobs completed with `success` on main SHA `065d54cff4e08ed868e676d4cf3d04c715898782`. [Run #573](https://github.com/younestech31/PROMO-GEST/actions/runs/43865150034).
 
-### Current main CI — Run #550 (15 November 2026)
-- Main SHA `5a5196d75abcdf608e708844983fad25b600e5a4`; all three required jobs passed.
-- This was a documentation/source-status commit and CI reran the existing automated frontend, .NET/PostgreSQL 18, and Windows publish checks. It does not itself prove manual browser acceptance.
-- [Run #550](https://github.com/younestech31/PROMO-GEST/actions/runs/43772604996).
-
-### Phase 0 Defect Disposition
-- **Resolved — PR #35:** `CS7036` in `PostgresEndToEndTests.cs` fixed by passing the real `PartyConcurrencyStamp` from loaded customer details.
-- **Resolved — PR #36:** Party Directory records `ACCESS_DENIED` as a Security audit event and captures `previousKind` before canonical identity mutation.
-- **Resolved — PR #37:** project-customer Party reuse and identity-change denials are security-audited; authorized identity changes record previous and new kinds.
-- **Resolved — PR #38:** canonical Party identity updates synchronize every linked project-customer transitional mirror, advance relationship concurrency stamps, and reject cross-project name/phone collisions before mutation. PostgreSQL 18 E2E exercises shared Party linkage, collision rejection, both update routes, mirror synchronization and stale-token rejection.
-- **Resolved — PR #41:** the AI Studio development launcher verifies API readiness before starting Vite and stops Vite if its owned API process exits; this prevents serving an interface with a dead loopback proxy.
-- **Resolved — PR #42:** both AI Studio real-API launchers bootstrap .NET 10 per-user through Microsoft's official installer if missing. The SDK version is checked before API build/start; a mocked clean-container bootstrap regression test is included.
-- **Resolved — PR #48:** all `/api` and `/health` responses receive `Cache-Control: no-store` in `SecurityHeadersMiddleware`; regression tests verify API/health coverage and exclude SPA/static paths and near-miss routes. PR CI #538 and post-merge main CI #539 passed all three jobs.
-- **Resolved — PR #50:** added PostgreSQL 18 / `WebApplicationFactory` assertions confirming the parsed `Cache-Control: no-store` directive on real API/health success, fallback 404, and CSRF 403 responses. This supplements the direct middleware tests and permits additional `no-cache` directives. PR CI #543 passed all three jobs; post-merge main CI #544 passed all three jobs, with PostgreSQL 18 Integration **24/24**.
+### Phase 1 — Party / ProjectCustomer integrity
+- **PR #55 — merged:** aligned tests with the distinct Party/ProjectCustomer IDs and correct identity-document request field; PR CI #562 and post-merge main CI #563 passed.
+- **PR #56 — merged:** Migration #13 adds deferred PostgreSQL triggers for customer relationship writes and canonical Party identity changes; advisory locks serialize identical project/name/phone tuples. PostgreSQL 18 verifies concurrent duplicate rejection and Party-rename collision rejection. PR CI #570 and main CI #571 passed; integration **28/28**.
+- **PR #57 — merged:** PostgreSQL 18 directly tests guard migration Down, fail-closed preflight with legacy duplicate data, preservation of customer records, and successful reapplication after reconciliation. PR CI #572 passed; integration **29/29**.
+- **Production boundary:** these migrations and tests have run only in disposable CI databases. No customer production DB or Google AI Studio Cloud SQL database was migrated.
 
 ### Gate Interpretation
-- **G1–G7 and G9:** automated build, domain/application suites, CSRF/auth/authorization paths, concurrency checks, audit protections, PostgreSQL 18 integration execution, and actual HTTP-pipeline API/health response-cache assertions passed in Run #544 for the tested requirements.
-- **G8:** the automated portion passed: strict TypeScript check, **38/38** frontend tests, SPA build, ASP.NET Core static-hosting output, and preview-leak checks. Separately, the Product Owner explicitly confirmed on 15 November 2026 that Arabic RTL / French LTR desktop/mobile review and the listed real workflows (login/session/CSRF, projects, structure, customers/interactions, internal holds, documents/SHA-256, authorization/audit/concurrency/safe errors, and persistence after reload) passed. These results are recorded as owner-attested `PASS` in [PHASE-0-MANUAL-ACCEPTANCE.md](PHASE-0-MANUAL-ACCEPTANCE.md), not as CI evidence. Browser/version details and sanitized per-case artifacts were not attached. `P0-A01` fresh-database first-run/second-initialization and `P0-A04` logout/session-revocation remain `NOT_RUN`. The Vite-only fallback simulator is not full API parity and must never be treated as production/API evidence.
-- **G10:** Windows x64 publish, DPAPI recovery, PowerShell validation, and CI database/storage/Data Protection restore drill passed. Customer-site installation remains a separate release-acceptance activity.
+- **G1:** Domain **34/34** and Application **20/20** pass in CI #572 for covered requirements.
+- **G2:** PostgreSQL 18 verifies migration Up/Down, fail-closed preflight, relationship uniqueness, concurrent duplicate rejection, Party-update collision rejection, data preservation, and model-snapshot parity. Migration #13 adds provider-specific SQL triggers without changing EF entity mapping; the model snapshot therefore has no synthetic model delta.
+- **G3–G7 and G9:** covered authorization, project scope, CSRF, structured errors, concurrency, audit immutability, and regression paths pass in the tested CI baseline.
+- **G8:** automated checks passed (**39/39** frontend tests, TypeScript/lint, builds and preview-leak checks). Arabic RTL / French LTR browser acceptance remains Product Owner-attested from the prior Phase 0 record, not re-performed by this CI run. P0-A01 first-run/second-initialization and P0-A04 logout/session revocation remain `NOT_RUN`.
+- **G10:** Linux/Windows packaging and database/storage/Data Protection restore checks passed. Customer-site installation and production migration rehearsal remain separate.
 
-**Phase 0 disposition (D-010, 16 November 2026):** The Product Owner explicitly directed Phase 0 closure and accepted P0-A01 (fresh-database first-run/second-initialization) and P0-A04 (logout/session revocation) as residual `NOT_RUN` exceptions for purposes of starting Phase 1. The two rows remain `NOT_RUN`; this decision does not turn them into evidence or a successful G1–G10 result. Complete both before production release or any release claim that depends on those scenarios. D-009's bounded navigation review remains a Phase 1 design task. Phase 1 is now `IN_PROGRESS`; no Phase 2–5 business implementation may start until applicable G1–G10 gates, Phase 1 dependencies, and statutory/practitioner approvals pass.
-
----
+**Phase status:** Phase 0 remains `COMPLETE` by D-010 with P0-A01 and P0-A04 as accepted `NOT_RUN` exceptions. Phase 1 remains `IN_PROGRESS`: Party identity mirror retirement, database duplicate guard, and migration lifecycle tests are implemented and verified. Versioned territorial references and bounded navigation design remain. No Phase 2–5 business coding begins before applicable G1–G10 gates, Phase 1 dependencies, and legal/accounting approvals pass.
 
 ## 3. Statutory / Practitioner Sign-Off Gates (Mandatory Before Phases 2, 3A, 4)
 

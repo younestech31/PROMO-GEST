@@ -16,7 +16,7 @@ All 12 functional ERP domains required by PROMO GEST, mapped strictly using the 
 | **A** | Organization, Governance & Administration | `IMPLEMENTED_AND_VERIFIED` *(except `AdministrativeUnit` 1,541-commune catalogue)* | None (Foundation) |
 | **B** | Real Estate Projects | `IMPLEMENTED_AND_VERIFIED` | Domain A |
 | **C** | Physical Structure & Property Units | `IMPLEMENTED_AND_VERIFIED` *(no DELETE/bulk; enforces `projects.structure.manage`)* | Domain B |
-| **D** | Counterparties (Party), Customers & CRM | `PARTIALLY_IMPLEMENTED` *(C1/C2 API flows verified; Phase 1 master-data completion remains)* | Domains A, B |
+| **D** | Counterparties (Party), Customers & CRM | `PARTIALLY_IMPLEMENTED` *(Party identity split and project-level duplicate guard implemented; wider master-data lifecycle remains)* | Domains A, B |
 | **E** | Commercial Operations & Internal Unit Holds | `IMPLEMENTED_AND_VERIFIED` | Domains B, C, D |
 | **F** | Contracts, Commitments & Legal Deeds | `PLANNED` | Domains C, D, E, **K-Min** |
 | **G** | Installments, Collections & Treasury (DZD) | `PLANNED` | Domains D, F |
@@ -57,9 +57,10 @@ All 12 functional ERP domains required by PROMO GEST, mapped strictly using the 
 - **Frontend surface:** `ProjectCustomerRegistryModal.tsx` supports project customer registry, canonical Party search/selection, customer details, CRM interactions/follow-up fields, and linked identity-document download. The Product Owner owner-attested successful Arabic RTL / French LTR desktop/mobile use of the customer and interaction workflows. A full lead pipeline, standalone Party directory, and broader contact/representative management are not present.
 - **Current Reality:**
   - *Project Customer Registry (C1):* `GET/POST /api/projects/{id}/customers`, `GET/PUT .../customers/{customerId}`, `POST .../customers/{customerId}/interactions`.
-  - *Party Directory (C2, PRs #35–#38):* `GET /api/parties`, `PUT /api/parties/{partyId}`; canonical `parties` identity remains authoritative. Unauthorized reads/identity changes are security-audited; `previousKind` is captured correctly; updates synchronize every linked `project_customers` identity mirror, advance relationship concurrency stamps, and reject duplicate name/phone collisions before mutation. Application and PostgreSQL 18 integration tests pass in CI #544. **The final retirement of redundant relationship identity columns remains Phase 1 migration work.**
+  - *Party Directory (C2, PRs #35–#38):* `GET /api/parties`, `PUT /api/parties/{partyId}`; canonical `parties` identity is authoritative. Unauthorized reads/identity changes are security-audited and stale Party writes use concurrency stamps.
+  - *Phase 1 identity retirement (PRs #55–#56):* duplicate `project_customers` identity columns are removed; new ProjectCustomer IDs remain separate from Party IDs; deferred PostgreSQL triggers enforce project/name/normalized-phone uniqueness under concurrent relationship writes and Party identity changes. PR #57 directly verifies trigger Down and fail-closed preflight; main CI #573 passed PostgreSQL Integration **29/29**.
   - *Employee Master (`PLANNED`):* No `Employee` table yet (`ADR-0009`).
-- **Target Scope (`PLANNED`):** Resolve C2 defects; designate `parties` as sole name/kind master & retire redundant `project_customers` copies cleanly; add `PartyContactPoint`, protected `PartyIdentifier`, `PartyRepresentative`, human-approved manual `Party` merge workflow, Supplier/Subcontractor roles, and `Employee` detached from `User`.
+- **Target Scope (`PLANNED`):** Add `PartyContactPoint`, protected `PartyIdentifier`, `PartyRepresentative`, human-approved manual `Party` merge workflow, fuller Supplier/Subcontractor roles, and `Employee` detached from `User`. Party mirror retirement and the core project-level duplicate guard are implemented; these wider master-data workflows are not.
 
 ### E. Commercial Operations & Internal Unit Holds (`IMPLEMENTED_AND_VERIFIED`)
 - **Frontend surface:** `ProjectSalesReservationsModal.tsx` lists holds, creates them for an available unit and project customer with an expiry, and cancels with a reason. This is an internal hold only; it is not a statutory contract and does not collect money.

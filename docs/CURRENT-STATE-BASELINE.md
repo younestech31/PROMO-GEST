@@ -1,10 +1,10 @@
 # PROMO GEST — Current State Baseline
 
 **Document Role:** Evidence-backed snapshot of the repository, not a product roadmap.  
-**Last Application Runtime Source Commit:** `23f019de7c787c0f93b5b7f0b5cec69992ff087a` (PR #48 merge; central HTTP no-store policy for API/health responses).  
-**Latest Source/Test Commit:** `c26194dce5124d5d5e8d67fc5a04708346b1d5e4` (PR #50 added real HTTP-pipeline cache-policy integration assertions; no runtime, schema, or business-data changes).  
-**Main Commit Inspected at Audit Start:** `5a5196d75abcdf608e708844983fad25b600e5a4` (PR #52 owner-attested Phase 0 acceptance record).  
-**Latest Green CI at Audit Start:** GitHub Actions Run **#550** / `43772604996`, on main SHA `5a5196d75abcdf608e708844983fad25b600e5a4`; all three jobs passed.  
+**Last Application Runtime / Schema Source Commit:** `2fb58c5b8c9ab632b17f9785c1eebce86c885c92` (PR #56 merge; PostgreSQL project-customer identity uniqueness guard).  
+**Latest Test Source Commit:** `065d54cff4e08ed868e676d4cf3d04c715898782` (PR #57 merge; migration rollback and fail-closed preflight regression coverage).  
+**Main Commit Inspected:** `065d54cff4e08ed868e676d4cf3d04c715898782`.  
+**Latest Green Main CI:** Run **#573** / `43865150034` passed all three jobs on main SHA `065d54cff4e08ed868e676d4cf3d04c715898782`.  
 **Governing Rule:** A feature is `IMPLEMENTED_AND_VERIFIED` only when its code and applicable automated verification pass in the audited baseline. A green pipeline does not certify untested browser UX, preview parity, production installation, or legal/accounting correctness.
 
 ---
@@ -13,11 +13,11 @@
 
 | Layer / Subsystem | Status | Current Evidence | Remaining Boundary |
 |---|---|---|---|
-| Domain Core (`PromoGest.Domain`) | `IMPLEMENTED_AND_VERIFIED` | CI #544: **27/27** Domain tests passed; updated local unit suite passes **32/32** (including expired-lockout reset verification). | Additional coverage is added with each domain change. |
-| Application Services (`PromoGest.Application`) | `IMPLEMENTED_AND_VERIFIED` | CI #544: **14/14** Application tests passed; updated local application suite passes **19/19** (including Party audit, `projects.structure.manage`, document category/identity PII isolation, >128 password guard, and `/api/auth/me` org field gating). | Browser-level workflows are outside this test suite. |
-| PostgreSQL 18 Integration (`PromoGest.IntegrationTests`) | `IMPLEMENTED_AND_VERIFIED` | CI #544 passed **24/24** against PostgreSQL 18 (including `PUT /api/organization` and HTTP `Cache-Control: no-store` assertions). Audit remediation added `SetupBootstrapGuard_AndProductionHealthSuppression_EnforcedEndToEnd` and `ViewerDocumentDenial_AndCustomerIdentityDocumentIsolation_EnforcedEndToEnd`. | CI evidence is not a substitute for a customer-site installation drill or manual browser acceptance; local container lacks Docker/PostgreSQL so `PostgresEndToEndTests` compilation is verified locally while live PG18 execution runs in CI/PG18 environments. |
+| Domain Core (`PromoGest.Domain`) | `IMPLEMENTED_AND_VERIFIED` | CI #572: **34/34** Domain tests passed. | Additional coverage is added with each domain change. |
+| Application Services (`PromoGest.Application`) | `IMPLEMENTED_AND_VERIFIED` | CI #572: **20/20** Application tests passed, including Party audit/permissions and project-customer identity behavior. | Browser-level workflows are outside this test suite. |
+| PostgreSQL 18 Integration (`PromoGest.IntegrationTests`) | `IMPLEMENTED_AND_VERIFIED` | CI #572 passed **29/29** against PostgreSQL 18 using separate provisioning, migration-owner, and least-privilege runtime identities. Includes concurrent duplicate rejection, Party identity update rejection, guard migration Down, fail-closed preflight on pre-existing duplicates, data preservation, and successful reapplication after reconciliation. | CI evidence does not replace a representative customer-site backup/restore and migration rehearsal or manual browser acceptance. |
 | Local React SPA (`apps/local-web`) | `PARTIALLY_IMPLEMENTED` | Strict TypeScript check (`tsc --noEmit`), **39/39** frontend tests, production/static-host builds, and preview-leak checks pass. The Product Owner has owner-attested Arabic RTL / French LTR acceptance across desktop/mobile and the listed real workflows. | P0-A01 and P0-A04 remain `NOT_RUN` as owner-accepted Phase 0 residual exceptions; browser/version and per-case sanitized artifacts were not attached. The Vite fallback simulator is intentionally not the production API and remains incomplete. |
-| C2 Party / Customer identity foundation | `IMPLEMENTED_AND_VERIFIED` | PRs #35–#38 merged; Application and PostgreSQL 18 tests cover concurrency stamps, denial audit, cross-project Party reuse, identity-collision rejection, and synchronization of linked customer mirrors. | Duplicate identity columns remain transitional mirrors until the Phase 1 migration retires them. |
+| C2 Party / Customer identity foundation | `IMPLEMENTED_AND_VERIFIED` | PRs #35–#38 and Phase 1 PRs #55–#57 merged. ProjectCustomer identity mirrors are retired; PostgreSQL deferred triggers enforce `(project_id, Party.normalized_display_name, project_customer.normalized_phone)` across relationship writes and Party identity updates. Main CI #573 verifies concurrent duplicate rejection, Party-rename collision rejection, migration rollback, fail-closed preflight, and recovery. | Employee, Party contact-point/identifier/representative models, full PartyRole lifecycle, and human-reviewed merge tooling remain unimplemented. No production or Cloud SQL database was migrated. |
 | Organization profile editing | `IMPLEMENTED_AND_VERIFIED` | `PUT /api/organization` (`OrganizationController`, `OrganizationProfileService`), `OrganizationProfileView.tsx` edit form, `org.manage` enforcement, `ACCESS_DENIED` / update audit events, and `ExpectedConcurrencyStamp` conflict handling are implemented and verified in `OrganizationProfileUpdate_EnforcesPermission_AuditsDenial_AndRejectsStaleConcurrency`. | Non-PG18 environments cannot execute the PG18 test directly; Phase 1 territorial commune catalogue remains separate work. |
 | Modules F–J (Contracts through SCF/Tax) | `PLANNED` | Architecture and legal/accounting prerequisites are documented. | No production business implementation; practitioner sign-off remains mandatory. |
 | Module K | `PARTIALLY_IMPLEMENTED` | K-Min local upload/list/download, SHA-256 checks, `ProjectMember`-capability category scoping, and `customers.read` isolation for customer identity documents are implemented. | Metadata lifecycle, structured links, and K-Full archival remain future work. |
@@ -48,6 +48,19 @@
 
 [Open CI Run #546](https://github.com/younestech31/PROMO-GEST/actions/runs/43768228052)
 
+### Phase 1 Party / ProjectCustomer integrity remediation
+- **PR #55 — merged:** aligned PostgreSQL integration assertions with the actual separation of organization-wide `Party` identity and project-scoped `ProjectCustomer` records. Replaced an outdated positional request with named fields so the uploaded identity document ID binds to `IdentityDocumentStoredFileId`. PR CI #562 and post-merge main CI #563 passed all three jobs.
+- **PR #56 — merged:** added migration `20261116120000_EnforceProjectCustomerIdentityUniqueness`. The migration fails closed if duplicate project/Party-name/phone tuples already exist, then installs deferred PostgreSQL constraint triggers for customer relationship writes and Party identity updates. Transaction-scoped advisory locks serialize the same project/name/phone key. The API maps the database conflict to `CUSTOMER_DUPLICATE`. PR CI #570 and main CI #571 passed all three jobs; PostgreSQL Integration passed **28/28**.
+- **PR #57 — merged:** adds direct PostgreSQL 18 regression coverage for the guard migration Down path, duplicate-data preflight rejection without data loss, and successful migration reapplication after explicit test reconciliation. PR CI #572 passed all three jobs; PostgreSQL Integration passed **29/29**.
+- **Data boundary:** PRs #55–#57 changed source/tests/docs only. They did not migrate production or Google AI Studio Cloud SQL data, alter credentials, or change runtime authorization/CSRF policy.
+
+### GitHub Actions Run #573 — 16 November 2026 (post-merge main verification)
+- **Main SHA:** `065d54cff4e08ed868e676d4cf3d04c715898782`; all three jobs passed. PR CI #572 passed the same migration lifecycle regression suite before merge.
+- **Domain / Application / PostgreSQL 18:** Domain **34/34**, Application **20/20**, Integration **29/29**.
+- **Additional PostgreSQL 18 coverage:** Migration #13 Down removes the two triggers; the Up preflight rejects pre-existing duplicate Party-name/phone tuples without deleting ProjectCustomer records; after explicit test reconciliation, the migration reapplies and recreates both triggers.
+- **Boundary:** the test uses a disposable database and separate provisioning, migration-owner, and runtime identities. It does not prove a migration against a real organization installation or authorize any Cloud SQL/production change.
+
+[Open CI Run #573](https://github.com/younestech31/PROMO-GEST/actions/runs/43865150034)
 ### C2 Party / Customer changes merged and verified
 - **PR #35:** fixed `CS7036` by passing the actual `PartyConcurrencyStamp` returned by the customer-details response. No synthetic token or weakened concurrency check was introduced.
 - **PR #36:** captures `previousKind` before Party mutation and writes `ACCESS_DENIED` security audit events for unauthorized Party directory reads/identity changes.
@@ -83,7 +96,7 @@ Accepted Phase 0 residual exceptions (still tracked; not represented as PASS):
 3. **Supplementary audit artifacts:** browser/version metadata and sanitized per-case screenshots or redacted API trace evidence were not attached; the owner attestation is recorded, and no unprovided artifacts are claimed.
 4. **Navigation decision:** D-009 records the bounded deferral of project-navigation proposal approval/implementation to the Phase 1 design review; do not start a broad UI redesign.
 5. **Preview separation:** keep the Vite-only in-memory simulator clearly separate from real API evidence; it intentionally lacks full parity.
-6. **Phase 1 progress:** Phase 1 is `IN_PROGRESS`. Organization profile editing (`PUT /api/organization` + `OrganizationProfileView.tsx`) and structure authorization alignment (`projects.structure.manage` granted to `SITE_ENGINEER` and enforced in `ProjectStructureService` / UI helpers) are implemented; audit remediation also hardened setup bootstrap (loopback / `PROMOGEST_SETUP_TOKEN`), lockout counter reset on expiry, password max length (`128`), `VIEWER` document denial + category/customer-identity PII scoping, `/api/auth/me` org gating, and Production health mode suppression. Party mirror retirement and versioned territorial reference data follow as separate reviewed slices. Later legal, collection, SCF, and tax modules retain their practitioner gates.
+6. **Phase 1 progress:** Phase 1 remains `IN_PROGRESS`. Organization profile editing, `projects.structure.manage` alignment, Party canonical identity, Party directory access/audit, retirement of duplicate ProjectCustomer identity columns, and the PostgreSQL duplicate-identity guard are implemented and verified. PR #57 verifies migration rollback and fail-closed preflight behavior in PostgreSQL 18 CI. Remaining Phase 1 work includes the official versioned 69-Wilaya / 1,541-commune catalogue under ADR-0010 and the bounded organization-workspace/project-switcher/active-project-workspace design review. P0-A01 and P0-A04 remain `NOT_RUN`; no Phase 2–5 business implementation is authorized until applicable gates and practitioner approvals pass.
 
 ## 4. Preview Boundary (Do Not Confuse with Production)
 

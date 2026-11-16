@@ -10,9 +10,7 @@ public sealed class ProjectCustomerConfiguration : IEntityTypeConfiguration<Proj
     {
         builder.ToTable("project_customers", table =>
         {
-            table.HasCheckConstraint("ck_project_customers_name_non_empty", "length(btrim(display_name)) > 0");
             table.HasCheckConstraint("ck_project_customers_phone_normalized", "normalized_phone ~ '^[0-9]{7,15}$'");
-            table.HasCheckConstraint("ck_project_customers_type", "customer_type IN ('Individual', 'LegalEntity')");
             table.HasCheckConstraint("ck_project_customers_status", "status IN ('Prospect', 'Qualified', 'Customer', 'Archived')");
             table.HasCheckConstraint("ck_project_customers_source", "source IN ('WalkIn', 'Phone', 'Referral', 'Website', 'SocialMedia', 'Other')");
             table.HasCheckConstraint("ck_project_customers_language", "preferred_language IN ('ar', 'fr')");
@@ -22,9 +20,6 @@ public sealed class ProjectCustomerConfiguration : IEntityTypeConfiguration<Proj
         builder.Property(x => x.Id).HasColumnName("id");
         builder.Property(x => x.ProjectId).HasColumnName("project_id").IsRequired();
         builder.Property(x => x.PartyId).HasColumnName("party_id").IsRequired();
-        builder.Property(x => x.CustomerType).HasColumnName("customer_type").HasConversion<string>().HasMaxLength(20).IsRequired();
-        builder.Property(x => x.DisplayName).HasColumnName("display_name").HasMaxLength(200).IsRequired();
-        builder.Property(x => x.NormalizedDisplayName).HasColumnName("normalized_display_name").HasMaxLength(200).IsRequired();
         builder.Property(x => x.ContactPerson).HasColumnName("contact_person").HasMaxLength(150);
         builder.Property(x => x.Phone).HasColumnName("phone").HasMaxLength(40).IsRequired();
         builder.Property(x => x.NormalizedPhone).HasColumnName("normalized_phone").HasMaxLength(20).IsRequired();
@@ -50,9 +45,6 @@ public sealed class ProjectCustomerConfiguration : IEntityTypeConfiguration<Proj
         builder.HasIndex(x => new { x.ProjectId, x.PartyId })
             .IsUnique()
             .HasDatabaseName("ux_project_customers_project_party");
-        builder.HasIndex(x => new { x.ProjectId, x.NormalizedDisplayName, x.NormalizedPhone })
-            .IsUnique()
-            .HasDatabaseName("ux_project_customers_project_name_phone");
         builder.HasIndex(x => new { x.ProjectId, x.Status })
             .HasDatabaseName("ix_project_customers_project_status");
         builder.HasIndex(x => x.IdentityDocumentStoredFileId)

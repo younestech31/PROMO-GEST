@@ -59,7 +59,9 @@ public interface IProjectRepository
     Task<Project?> GetByIdWithMembersAsync(Guid projectId, CancellationToken ct = default);
     Task<bool> ExistsCodeAsync(string normalizedCode, CancellationToken ct = default);
     Task<IReadOnlyList<Project>> ListAllWithMembersAsync(CancellationToken ct = default);
+    Task<IReadOnlyList<Project>> ListAllWithMembersAsync(string? query, ProjectStatus? status, CancellationToken ct = default);
     Task<IReadOnlyList<Project>> ListForUserWithMembersAsync(Guid userId, CancellationToken ct = default);
+    Task<IReadOnlyList<Project>> ListForUserWithMembersAsync(Guid userId, string? query, ProjectStatus? status, CancellationToken ct = default);
     Task<IReadOnlyDictionary<Guid, ProjectStructureCounts>> GetStructureCountsByProjectIdsAsync(IReadOnlyCollection<Guid> projectIds, CancellationToken ct = default);
     Task<ProjectMember?> GetMemberAsync(Guid projectId, Guid userId, CancellationToken ct = default);
     Task AddProjectAsync(Project project, CancellationToken ct = default);
@@ -166,7 +168,6 @@ public interface IProjectCustomerRepository
         Guid partyId,
         Guid? excludeCustomerId = null,
         CancellationToken ct = default);
-    Task<IReadOnlyList<ProjectCustomer>> ListByPartyAsync(Guid partyId, CancellationToken ct = default);
     Task<bool> HasProjectCustomerIdentityCollisionAsync(
         Guid partyId,
         string normalizedDisplayName,

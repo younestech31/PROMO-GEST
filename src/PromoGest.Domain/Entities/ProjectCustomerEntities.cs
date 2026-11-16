@@ -15,9 +15,6 @@ public sealed class ProjectCustomer : BaseEntity
     public Guid ProjectId { get; private set; }
     public Guid PartyId { get; private set; }
     public Party Party { get; private set; } = null!;
-    public CustomerType CustomerType { get; private set; }
-    public string DisplayName { get; private set; } = string.Empty;
-    public string NormalizedDisplayName { get; private set; } = string.Empty;
     public string? ContactPerson { get; private set; }
     public string Phone { get; private set; } = string.Empty;
     public string NormalizedPhone { get; private set; } = string.Empty;
@@ -34,8 +31,7 @@ public sealed class ProjectCustomer : BaseEntity
 
     public static ProjectCustomer Create(
         Guid projectId,
-        CustomerType customerType,
-        string displayName,
+        Guid partyId,
         string? contactPerson,
         string phone,
         string? email,
@@ -44,28 +40,21 @@ public sealed class ProjectCustomer : BaseEntity
         CustomerSource source,
         Guid? identityDocumentStoredFileId,
         Guid createdByUserId,
-        DateTimeOffset nowUtc,
-        Guid? partyId = null)
+        DateTimeOffset nowUtc)
     {
         if (projectId == Guid.Empty || createdByUserId == Guid.Empty)
             throw new DomainException("CUSTOMER_REFERENCE_INVALID", "A valid project and creator are required.");
-
-        var normalized = NormalizeAndValidate(
-            customerType, displayName, contactPerson, phone, email, address, preferredLanguage, source);
-
-        var customerId = Guid.NewGuid();
-        var resolvedPartyId = partyId ?? customerId;
-        if (resolvedPartyId == Guid.Empty)
+        if (partyId == Guid.Empty)
             throw new DomainException("CUSTOMER_PARTY_REFERENCE_INVALID", "A valid party reference is required.");
+
+        var normalized = ValidateAndNormalizeContactInfo(
+            contactPerson, phone, email, address, preferredLanguage, source);
 
         return new ProjectCustomer
         {
-            Id = customerId,
+            Id = Guid.NewGuid(),
             ProjectId = projectId,
-            PartyId = resolvedPartyId,
-            CustomerType = customerType,
-            DisplayName = normalized.DisplayName,
-            NormalizedDisplayName = normalized.NormalizedDisplayName,
+            PartyId = partyId,
             ContactPerson = normalized.ContactPerson,
             Phone = normalized.Phone,
             NormalizedPhone = normalized.NormalizedPhone,
@@ -90,39 +79,7 @@ public sealed class ProjectCustomer : BaseEntity
         Party = party;
     }
 
-    /// <summary>
-    /// Synchronizes the transitional identity mirror with the canonical organization-wide Party.
-    /// Project-scoped contact, status, source, and document data remain unchanged.
-    /// </summary>
-    public void SynchronizePartyIdentity(Party party, DateTimeOffset nowUtc)
-    {
-        ArgumentNullException.ThrowIfNull(party);
-        if (party.Id != PartyId)
-            throw new DomainException("CUSTOMER_PARTY_REFERENCE_INVALID", "The Party identity does not match this customer relationship.");
-
-        var customerType = party.Kind switch
-        {
-            PartyKind.Person => CustomerType.Individual,
-            PartyKind.LegalEntity => CustomerType.LegalEntity,
-            _ => throw new DomainException("PARTY_KIND_INVALID", "Select a person or legal entity.")
-        };
-
-        if (CustomerType == customerType &&
-            string.Equals(DisplayName, party.DisplayName, StringComparison.Ordinal) &&
-            string.Equals(NormalizedDisplayName, party.NormalizedDisplayName, StringComparison.Ordinal))
-        {
-            return;
-        }
-
-        CustomerType = customerType;
-        DisplayName = party.DisplayName;
-        NormalizedDisplayName = party.NormalizedDisplayName;
-        Touch(nowUtc);
-    }
-
     public void UpdateDetails(
-        CustomerType customerType,
-        string displayName,
         string? contactPerson,
         string phone,
         string? email,
@@ -133,15 +90,12 @@ public sealed class ProjectCustomer : BaseEntity
         Guid? identityDocumentStoredFileId,
         DateTimeOffset nowUtc)
     {
-        var normalized = NormalizeAndValidate(
-            customerType, displayName, contactPerson, phone, email, address, preferredLanguage, source);
+        var normalized = ValidateAndNormalizeContactInfo(
+            contactPerson, phone, email, address, preferredLanguage, source);
 
         if (!Enum.IsDefined(status))
             throw new DomainException("CUSTOMER_STATUS_INVALID", "Select a valid customer status.");
 
-        CustomerType = customerType;
-        DisplayName = normalized.DisplayName;
-        NormalizedDisplayName = normalized.NormalizedDisplayName;
         ContactPerson = normalized.ContactPerson;
         Phone = normalized.Phone;
         NormalizedPhone = normalized.NormalizedPhone;
@@ -155,18 +109,14 @@ public sealed class ProjectCustomer : BaseEntity
         Touch(nowUtc);
     }
 
-    private static (
-        string DisplayName,
-        string NormalizedDisplayName,
+    public static (
         string? ContactPerson,
         string Phone,
         string NormalizedPhone,
         string? Email,
         string? NormalizedEmail,
         string? Address,
-        string PreferredLanguage) NormalizeAndValidate(
-            CustomerType customerType,
-            string displayName,
+        string PreferredLanguage) ValidateAndNormalizeContactInfo(
             string? contactPerson,
             string phone,
             string? email,
@@ -174,16 +124,8 @@ public sealed class ProjectCustomer : BaseEntity
             string preferredLanguage,
             CustomerSource source)
     {
-        if (!Enum.IsDefined(customerType))
-            throw new DomainException("CUSTOMER_TYPE_INVALID", "Select an individual or legal entity.");
         if (!Enum.IsDefined(source))
             throw new DomainException("CUSTOMER_SOURCE_INVALID", "Select a valid customer source.");
-
-        var name = NormalizeWhitespace(displayName);
-        if (string.IsNullOrWhiteSpace(name))
-            throw new DomainException("CUSTOMER_NAME_REQUIRED", "Customer or legal-entity name is required.");
-        if (name.Length > 200)
-            throw new DomainException("CUSTOMER_NAME_TOO_LONG", "Customer name must not exceed 200 characters.");
 
         var normalizedPhone = NormalizePhone(phone);
         var cleanedPhone = (phone ?? string.Empty).Trim();
@@ -214,8 +156,6 @@ public sealed class ProjectCustomer : BaseEntity
             throw new DomainException("CUSTOMER_LANGUAGE_INVALID", "Preferred language must be Arabic or French.");
 
         return (
-            name,
-            NormalizeName(name),
             cleanedContactPerson,
             cleanedPhone,
             normalizedPhone,
@@ -227,9 +167,6 @@ public sealed class ProjectCustomer : BaseEntity
 
     private static string NormalizeWhitespace(string? value)
         => Regex.Replace((value ?? string.Empty).Normalize(NormalizationForm.FormKC).Trim(), @"\s+", " ");
-
-    private static string NormalizeName(string value)
-        => NormalizeWhitespace(value).ToUpperInvariant();
 
     private static string NormalizePhone(string? value)
         => new((value ?? string.Empty).Where(char.IsAsciiDigit).ToArray());

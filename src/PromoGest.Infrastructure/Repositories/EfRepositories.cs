@@ -199,20 +199,68 @@ public sealed class EfProjectRepository : IProjectRepository
     public Task<bool> ExistsCodeAsync(string normalizedCode, CancellationToken ct = default)
         => _dbContext.Projects.AnyAsync(p => p.NormalizedCode == normalizedCode, ct);
 
-    public async Task<IReadOnlyList<Project>> ListAllWithMembersAsync(CancellationToken ct = default)
-        => await _dbContext.Projects
-            .Include(p => p.Members)
-            .ThenInclude(m => m.User)
+    public Task<IReadOnlyList<Project>> ListAllWithMembersAsync(CancellationToken ct = default)
+        => ListAllWithMembersAsync(null, null, ct);
+
+    public async Task<IReadOnlyList<Project>> ListAllWithMembersAsync(
+        string? query,
+        Domain.Enums.ProjectStatus? status,
+        CancellationToken ct = default)
+        => await ApplyProjectFilters(
+                _dbContext.Projects
+                    .Include(p => p.Members)
+                    .ThenInclude(m => m.User),
+                query,
+                status)
             .OrderByDescending(p => p.CreatedAtUtc)
             .ToListAsync(ct);
 
-    public async Task<IReadOnlyList<Project>> ListForUserWithMembersAsync(Guid userId, CancellationToken ct = default)
-        => await _dbContext.Projects
-            .Include(p => p.Members)
-            .ThenInclude(m => m.User)
-            .Where(p => p.Members.Any(m => m.UserId == userId))
+    public Task<IReadOnlyList<Project>> ListForUserWithMembersAsync(Guid userId, CancellationToken ct = default)
+        => ListForUserWithMembersAsync(userId, null, null, ct);
+
+    public async Task<IReadOnlyList<Project>> ListForUserWithMembersAsync(
+        Guid userId,
+        string? query,
+        Domain.Enums.ProjectStatus? status,
+        CancellationToken ct = default)
+        => await ApplyProjectFilters(
+                _dbContext.Projects
+                    .Include(p => p.Members)
+                    .ThenInclude(m => m.User)
+                    .Where(p => p.Members.Any(m => m.UserId == userId)),
+                query,
+                status)
             .OrderByDescending(p => p.CreatedAtUtc)
             .ToListAsync(ct);
+
+    private static IQueryable<Project> ApplyProjectFilters(
+        IQueryable<Project> baseQuery,
+        string? query,
+        Domain.Enums.ProjectStatus? status)
+    {
+        if (status.HasValue)
+            baseQuery = baseQuery.Where(p => p.Status == status.Value);
+
+        if (!string.IsNullOrWhiteSpace(query))
+        {
+            var trimmed = query.Trim();
+            var escaped = trimmed
+                .Replace(@"\", @"\\", StringComparison.Ordinal)
+                .Replace("%", @"\%", StringComparison.Ordinal)
+                .Replace("_", @"\_", StringComparison.Ordinal);
+            var pattern = $"%{escaped}%";
+
+            baseQuery = baseQuery.Where(p =>
+                EF.Functions.ILike(p.Code, pattern, @"\") ||
+                EF.Functions.ILike(p.NameAr, pattern, @"\") ||
+                EF.Functions.ILike(p.NameFr, pattern, @"\") ||
+                EF.Functions.ILike(p.WilayaCode, pattern, @"\") ||
+                EF.Functions.ILike(p.WilayaName, pattern, @"\") ||
+                EF.Functions.ILike(p.Municipality, pattern, @"\"));
+        }
+
+        return baseQuery;
+    }
 
     public async Task<IReadOnlyDictionary<Guid, ProjectStructureCounts>> GetStructureCountsByProjectIdsAsync(
         IReadOnlyCollection<Guid> projectIds,

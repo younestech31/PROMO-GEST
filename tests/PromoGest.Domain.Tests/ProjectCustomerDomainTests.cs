@@ -10,14 +10,13 @@ public sealed class ProjectCustomerDomainTests
     private static readonly DateTimeOffset FixedNow = new(2026, 11, 14, 18, 0, 0, TimeSpan.Zero);
 
     private static ProjectCustomer CreateCustomer(
-        string name = "  ليلى   بن عيسى ",
+        Guid? partyId = null,
         string phone = "+213 550-123-456",
         string language = "ar")
         => ProjectCustomer.Create(
             Guid.NewGuid(),
-            CustomerType.Individual,
-            name,
-            null,
+            partyId ?? Guid.NewGuid(),
+            "  ليلى   بن عيسى ",
             phone,
             "leila@example.dz",
             "Oran",
@@ -28,16 +27,16 @@ public sealed class ProjectCustomerDomainTests
             FixedNow);
 
     [Fact]
-    public void ProjectCustomer_NormalizesNameAndPhoneWithoutLosingDisplayPhone()
+    public void ProjectCustomer_NormalizesPhoneEmailAndContactWithoutStoringIdentityMirrors()
     {
-        var customer = CreateCustomer();
+        var partyId = Guid.NewGuid();
+        var customer = CreateCustomer(partyId: partyId);
 
-        Assert.Equal("ليلى بن عيسى", customer.DisplayName);
-        Assert.Equal("ليلى بن عيسى".ToUpperInvariant(), customer.NormalizedDisplayName);
+        Assert.Equal(partyId, customer.PartyId);
+        Assert.Equal("ليلى بن عيسى", customer.ContactPerson);
         Assert.Equal("+213 550-123-456", customer.Phone);
         Assert.Equal("213550123456", customer.NormalizedPhone);
         Assert.Equal("LEILA@EXAMPLE.DZ", customer.NormalizedEmail);
-        Assert.Equal(customer.Id, customer.PartyId);
         Assert.Equal(ProjectCustomerStatus.Prospect, customer.Status);
         Assert.Equal("ar", customer.PreferredLanguage);
     }
@@ -57,28 +56,28 @@ public sealed class ProjectCustomerDomainTests
     public void ProjectCustomer_RejectsInvalidEmailAndLanguage()
     {
         var emailError = Assert.Throws<DomainException>(() => ProjectCustomer.Create(
-            Guid.NewGuid(), CustomerType.Individual, "Test Customer", null, "0550123456",
+            Guid.NewGuid(), Guid.NewGuid(), null, "0550123456",
             "not-an-email", null, "ar", CustomerSource.Other, null, Guid.NewGuid(), FixedNow));
         Assert.Equal("CUSTOMER_EMAIL_INVALID", emailError.Code);
 
         var languageError = Assert.Throws<DomainException>(() => ProjectCustomer.Create(
-            Guid.NewGuid(), CustomerType.Individual, "Test Customer", null, "0550123456",
+            Guid.NewGuid(), Guid.NewGuid(), null, "0550123456",
             null, null, "en", CustomerSource.Other, null, Guid.NewGuid(), FixedNow));
         Assert.Equal("CUSTOMER_LANGUAGE_INVALID", languageError.Code);
     }
 
     [Fact]
-    public void ProjectCustomer_RejectsBlankNamesAndInvalidReferences()
+    public void ProjectCustomer_RejectsInvalidProjectAndPartyReferences()
     {
-        var nameError = Assert.Throws<DomainException>(() => ProjectCustomer.Create(
-            Guid.NewGuid(), CustomerType.Individual, "   ", null, "0550123456",
-            null, null, "ar", CustomerSource.Other, null, Guid.NewGuid(), FixedNow));
-        Assert.Equal("CUSTOMER_NAME_REQUIRED", nameError.Code);
-
         var projectError = Assert.Throws<DomainException>(() => ProjectCustomer.Create(
-            Guid.Empty, CustomerType.Individual, "Test Customer", null, "0550123456",
+            Guid.Empty, Guid.NewGuid(), null, "0550123456",
             null, null, "ar", CustomerSource.Other, null, Guid.NewGuid(), FixedNow));
         Assert.Equal("CUSTOMER_REFERENCE_INVALID", projectError.Code);
+
+        var partyError = Assert.Throws<DomainException>(() => ProjectCustomer.Create(
+            Guid.NewGuid(), Guid.Empty, null, "0550123456",
+            null, null, "ar", CustomerSource.Other, null, Guid.NewGuid(), FixedNow));
+        Assert.Equal("CUSTOMER_PARTY_REFERENCE_INVALID", partyError.Code);
     }
 
     [Fact]
@@ -88,8 +87,6 @@ public sealed class ProjectCustomerDomainTests
         var initialStamp = customer.ConcurrencyStamp;
 
         customer.UpdateDetails(
-            CustomerType.LegalEntity,
-            "  شركة   البناء ",
             "مدير المبيعات",
             "0550 123 456",
             "sales@example.dz",
@@ -100,8 +97,7 @@ public sealed class ProjectCustomerDomainTests
             null,
             FixedNow.AddMinutes(10));
 
-        Assert.Equal(CustomerType.LegalEntity, customer.CustomerType);
-        Assert.Equal("شركة البناء", customer.DisplayName);
+        Assert.Equal("مدير المبيعات", customer.ContactPerson);
         Assert.Equal("0550123456", customer.NormalizedPhone);
         Assert.Equal(ProjectCustomerStatus.Qualified, customer.Status);
         Assert.NotEqual(initialStamp, customer.ConcurrencyStamp);
@@ -109,8 +105,6 @@ public sealed class ProjectCustomerDomainTests
 
         var stampAfterUpdate = customer.ConcurrencyStamp;
         var invalidStatus = Assert.Throws<DomainException>(() => customer.UpdateDetails(
-            CustomerType.LegalEntity,
-            "شركة البناء",
             "مدير المبيعات",
             "0550123456",
             "sales@example.dz",

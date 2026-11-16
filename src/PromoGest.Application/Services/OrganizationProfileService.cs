@@ -4,6 +4,7 @@ using PromoGest.Contracts.Organization;
 using PromoGest.Domain.Entities;
 using PromoGest.Domain.Enums;
 using PromoGest.Domain.Exceptions;
+using PromoGest.Domain.Reference;
 
 namespace PromoGest.Application.Services;
 
@@ -76,6 +77,12 @@ public sealed class OrganizationProfileService
                 "The organization profile changed after it was loaded. Reload the latest data before saving.");
         }
 
+        var canonicalWilaya = AlgerianAdministrativeReference.ResolveCanonicalWilaya(
+            request.WilayaCode,
+            request.WilayaName,
+            "ORG_WILAYA_INVALID",
+            "ORG_WILAYA_NAME_MISMATCH");
+
         var nowUtc = _clock.UtcNow;
         organization.UpdateProfile(
             request.LegalName,
@@ -86,8 +93,8 @@ public sealed class OrganizationProfileService
             request.TradeRegisterNumber,
             request.TaxArticleNumber,
             request.ShareCapitalDzd,
-            request.WilayaCode,
-            request.WilayaName,
+            canonicalWilaya.Code,
+            canonicalWilaya.CanonicalDisplayName,
             request.Address,
             request.Phone,
             request.Email,

@@ -1,6 +1,7 @@
 using PromoGest.Domain.Common;
 using PromoGest.Domain.Enums;
 using PromoGest.Domain.Exceptions;
+using PromoGest.Domain.Reference;
 
 namespace PromoGest.Domain.Entities;
 
@@ -51,10 +52,12 @@ public sealed class Project : BaseEntity
             throw new DomainException("PROJECT_CODE_REQUIRED", "Project code is required.");
         if (string.IsNullOrWhiteSpace(nameAr) && string.IsNullOrWhiteSpace(nameFr))
             throw new DomainException("PROJECT_NAME_REQUIRED", "Project name in Arabic or French is required.");
-        if (!OrganizationSettings.IsValidAlgerianWilayaCode(wilayaCode))
-            throw new DomainException("PROJECT_WILAYA_INVALID", "Valid two-digit Algerian Wilaya code (01-69) is required.");
-        if (string.IsNullOrWhiteSpace(wilayaName))
-            throw new DomainException("PROJECT_WILAYA_NAME_REQUIRED", "Wilaya name is required.");
+        AlgerianAdministrativeReference.ValidateWilayaSelection(
+            wilayaCode,
+            wilayaName,
+            "PROJECT_WILAYA_INVALID",
+            "PROJECT_WILAYA_NAME_REQUIRED",
+            "PROJECT_WILAYA_NAME_MISMATCH");
         if (string.IsNullOrWhiteSpace(municipality))
             throw new DomainException("PROJECT_MUNICIPALITY_REQUIRED", "Municipality (Commune) is required.");
         if (!Enum.IsDefined(status))
@@ -123,10 +126,12 @@ public sealed class Project : BaseEntity
             throw new DomainException("PROJECT_NAME_REQUIRED", "Project name in Arabic or French is required.");
 
         var normalizedWilayaCode = wilayaCode?.Trim() ?? string.Empty;
-        if (!OrganizationSettings.IsValidAlgerianWilayaCode(normalizedWilayaCode))
-            throw new DomainException("PROJECT_WILAYA_INVALID", "Valid two-digit Algerian Wilaya code (01-69) is required.");
-        if (string.IsNullOrWhiteSpace(wilayaName))
-            throw new DomainException("PROJECT_WILAYA_NAME_REQUIRED", "Wilaya name is required.");
+        AlgerianAdministrativeReference.ValidateWilayaSelection(
+            normalizedWilayaCode,
+            wilayaName,
+            "PROJECT_WILAYA_INVALID",
+            "PROJECT_WILAYA_NAME_REQUIRED",
+            "PROJECT_WILAYA_NAME_MISMATCH");
         if (string.IsNullOrWhiteSpace(municipality))
             throw new DomainException("PROJECT_MUNICIPALITY_REQUIRED", "Municipality (Commune) is required.");
         if (!Enum.IsDefined(status))

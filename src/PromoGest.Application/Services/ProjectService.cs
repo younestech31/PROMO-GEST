@@ -4,6 +4,7 @@ using PromoGest.Domain.Entities;
 using PromoGest.Domain.Enums;
 using PromoGest.Domain.Exceptions;
 using PromoGest.Domain.Interfaces;
+using PromoGest.Domain.Reference;
 
 namespace PromoGest.Application.Services;
 
@@ -26,16 +27,33 @@ public sealed class ProjectService
         _clock = clock;
     }
 
+    public Task<IReadOnlyList<ProjectDto>> ListAccessibleProjectsAsync(
+        Guid actorUserId,
+        RequestMetadata metadata,
+        CancellationToken ct = default)
+        => ListAccessibleProjectsAsync(actorUserId, metadata, null, null, ct);
+
     public async Task<IReadOnlyList<ProjectDto>> ListAccessibleProjectsAsync(
         Guid actorUserId,
         RequestMetadata metadata,
+        string? query,
+        string? status,
         CancellationToken ct = default)
     {
         var actor = await RequireActiveActorAsync(actorUserId, "ListProjects", metadata, ct);
 
+        ProjectStatus? parsedStatus = null;
+        if (!string.IsNullOrWhiteSpace(status))
+        {
+            if (!Enum.TryParse<ProjectStatus>(status.Trim(), ignoreCase: true, out var parsed) || !Enum.IsDefined(parsed))
+                throw new DomainException("PROJECT_STATUS_INVALID", "A valid project status is required.");
+            parsedStatus = parsed;
+        }
+
+        var normalizedQuery = string.IsNullOrWhiteSpace(query) ? null : query.Trim();
         IReadOnlyList<Project> projects = actor.IsSystemAdministrator
-            ? await _projectRepository.ListAllWithMembersAsync(ct)
-            : await _projectRepository.ListForUserWithMembersAsync(actorUserId, ct);
+            ? await _projectRepository.ListAllWithMembersAsync(normalizedQuery, parsedStatus, ct)
+            : await _projectRepository.ListForUserWithMembersAsync(actorUserId, normalizedQuery, parsedStatus, ct);
 
         var structureCounts = await _projectRepository.GetStructureCountsByProjectIdsAsync(
             projects.Select(project => project.Id).ToArray(), ct);
@@ -110,13 +128,19 @@ public sealed class ProjectService
             throw new DomainException("PROJECT_STATUS_INVALID", "A valid project status is required.");
         }
 
+        var canonicalWilaya = AlgerianAdministrativeReference.ResolveCanonicalWilaya(
+            request.WilayaCode,
+            request.WilayaName,
+            "PROJECT_WILAYA_INVALID",
+            "PROJECT_WILAYA_NAME_MISMATCH");
+
         var nowUtc = _clock.UtcNow;
         var project = Project.Create(
             request.Code ?? string.Empty,
             request.NameAr,
             request.NameFr,
-            request.WilayaCode,
-            request.WilayaName,
+            canonicalWilaya.Code,
+            canonicalWilaya.CanonicalDisplayName,
             request.Municipality,
             request.Address,
             request.LandTitleReference,
@@ -216,12 +240,18 @@ public sealed class ProjectService
             throw new DomainException("PROJECT_STATUS_INVALID", "A valid project status is required.");
         }
 
+        var canonicalWilaya = AlgerianAdministrativeReference.ResolveCanonicalWilaya(
+            request.WilayaCode,
+            request.WilayaName,
+            "PROJECT_WILAYA_INVALID",
+            "PROJECT_WILAYA_NAME_MISMATCH");
+
         var nowUtc = _clock.UtcNow;
         project.UpdateDetails(
             request.NameAr,
             request.NameFr,
-            request.WilayaCode,
-            request.WilayaName,
+            canonicalWilaya.Code,
+            canonicalWilaya.CanonicalDisplayName,
             request.Municipality,
             request.Address,
             request.LandTitleReference,

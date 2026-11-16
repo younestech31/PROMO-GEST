@@ -100,6 +100,8 @@ public sealed class ProjectCustomerService
             actorUserId, projectId, metadata, ct);
 
         var customerType = ParseEnum<CustomerType>(request.CustomerType, "CUSTOMER_TYPE_INVALID");
+        var partyKind = ToPartyKind(customerType);
+        var normalizedIdentity = Party.NormalizeAndValidate(partyKind, request.DisplayName);
         var source = ParseEnum<CustomerSource>(request.Source, "CUSTOMER_SOURCE_INVALID");
         await ValidateIdentityDocumentAsync(
             project.Id, request.IdentityDocumentStoredFileId, actor, permissions, ct);
@@ -129,10 +131,10 @@ public sealed class ProjectCustomerService
                 ?? throw new NotFoundDomainException("PARTY_NOT_FOUND", "Party identity was not found.");
         }
 
+        var partyId = request.PartyId ?? Guid.NewGuid();
         var customer = ProjectCustomer.Create(
             project.Id,
-            customerType,
-            request.DisplayName,
+            partyId,
             request.ContactPerson,
             request.Phone,
             request.Email,
@@ -141,17 +143,16 @@ public sealed class ProjectCustomerService
             source,
             request.IdentityDocumentStoredFileId,
             actor.Id,
-            _clock.UtcNow,
-            request.PartyId);
-
-        var party = existingParty ?? Party.Create(
-            customer.PartyId,
-            ToPartyKind(customer.CustomerType),
-            customer.DisplayName,
             _clock.UtcNow);
 
-        if (party.Kind != ToPartyKind(customerType) ||
-            !string.Equals(party.NormalizedDisplayName, customer.NormalizedDisplayName, StringComparison.Ordinal))
+        var party = existingParty ?? Party.Create(
+            partyId,
+            partyKind,
+            normalizedIdentity.DisplayName,
+            _clock.UtcNow);
+
+        if (party.Kind != partyKind ||
+            !string.Equals(party.NormalizedDisplayName, normalizedIdentity.NormalizedDisplayName, StringComparison.Ordinal))
         {
             throw new ConflictDomainException(
                 "PARTY_IDENTITY_MISMATCH",
@@ -166,7 +167,7 @@ public sealed class ProjectCustomerService
         }
 
         if (await _customerRepository.ExistsDuplicateAsync(
-            project.Id, customer.NormalizedDisplayName, customer.NormalizedPhone, ct: ct))
+            project.Id, normalizedIdentity.NormalizedDisplayName, customer.NormalizedPhone, ct: ct))
         {
             throw new ConflictDomainException(
                 "CUSTOMER_DUPLICATE",
@@ -188,7 +189,7 @@ public sealed class ProjectCustomerService
             {
                 projectId,
                 customerId = customer.Id,
-                customerType = customer.CustomerType.ToString(),
+                customerType = customerType.ToString(),
                 source = customer.Source.ToString(),
                 identityDocumentLinked = customer.IdentityDocumentStoredFileId.HasValue
             },
@@ -255,24 +256,20 @@ public sealed class ProjectCustomerService
         await ValidateIdentityDocumentAsync(
             project.Id, requestedIdentityDocumentId, actor, permissions, ct);
 
-        var normalizedName = ProjectCustomer.Create(
-            project.Id,
-            customerType,
-            request.DisplayName,
+        var requestedPartyKind = ToPartyKind(customerType);
+        var normalizedIdentity = Party.NormalizeAndValidate(requestedPartyKind, request.DisplayName);
+        var normalizedContact = ProjectCustomer.ValidateAndNormalizeContactInfo(
             request.ContactPerson,
             request.Phone,
             request.Email,
             request.Address,
             request.PreferredLanguage,
-            source,
-            requestedIdentityDocumentId,
-            actor.Id,
-            _clock.UtcNow);
+            source);
 
         if (await _customerRepository.ExistsDuplicateAsync(
             project.Id,
-            normalizedName.NormalizedDisplayName,
-            normalizedName.NormalizedPhone,
+            normalizedIdentity.NormalizedDisplayName,
+            normalizedContact.NormalizedPhone,
             customer.Id,
             ct))
         {
@@ -281,12 +278,11 @@ public sealed class ProjectCustomerService
                 "A different customer with the same normalized name and phone number already exists in this project.");
         }
 
-        var requestedPartyKind = ToPartyKind(customerType);
         var partyIdentityChanged =
             customer.Party.Kind != requestedPartyKind ||
             !string.Equals(
                 customer.Party.NormalizedDisplayName,
-                normalizedName.NormalizedDisplayName,
+                normalizedIdentity.NormalizedDisplayName,
                 StringComparison.Ordinal);
 
         if (partyIdentityChanged)
@@ -318,7 +314,7 @@ public sealed class ProjectCustomerService
 
             if (await _customerRepository.HasProjectCustomerIdentityCollisionAsync(
                     customer.PartyId,
-                    normalizedName.NormalizedDisplayName,
+                    normalizedIdentity.NormalizedDisplayName,
                     ct))
             {
                 throw new ConflictDomainException(
@@ -327,14 +323,7 @@ public sealed class ProjectCustomerService
             }
 
             var identityChangedAtUtc = _clock.UtcNow;
-            customer.Party.UpdateIdentity(requestedPartyKind, normalizedName.DisplayName, identityChangedAtUtc);
-
-            var linkedCustomers = await _customerRepository.ListByPartyAsync(customer.PartyId, ct);
-            foreach (var linkedCustomer in linkedCustomers)
-            {
-                if (linkedCustomer.Id != customer.Id)
-                    linkedCustomer.SynchronizePartyIdentity(customer.Party, identityChangedAtUtc);
-            }
+            customer.Party.UpdateIdentity(requestedPartyKind, normalizedIdentity.DisplayName, identityChangedAtUtc);
 
             await RecordAuditAsync(
                 actor,
@@ -356,8 +345,6 @@ public sealed class ProjectCustomerService
         }
 
         customer.UpdateDetails(
-            customerType,
-            normalizedName.DisplayName,
             request.ContactPerson,
             request.Phone,
             request.Email,

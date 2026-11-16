@@ -5,6 +5,7 @@ using PromoGest.Domain.Entities;
 using PromoGest.Domain.Enums;
 using PromoGest.Domain.Exceptions;
 using PromoGest.Domain.Interfaces;
+using PromoGest.Domain.Reference;
 
 namespace PromoGest.Application.Services;
 
@@ -69,6 +70,12 @@ public sealed class SetupService
             var adminRole = await _installationRepository.GetRoleByCodeAsync(Role.SystemAdminCode, innerCt)
                 ?? throw new DomainException("SYSTEM_ADMIN_ROLE_MISSING", "System Administrator role seed is missing.");
 
+            var canonicalWilaya = AlgerianAdministrativeReference.ResolveCanonicalWilaya(
+                request.WilayaCode,
+                request.WilayaName,
+                "ORG_WILAYA_INVALID",
+                "ORG_WILAYA_NAME_MISMATCH");
+
             createdOrg = OrganizationSettings.Initialize(
                 request.LegalName,
                 request.TradeName,
@@ -78,8 +85,8 @@ public sealed class SetupService
                 request.TradeRegisterNumber,
                 request.TaxArticleNumber,
                 request.ShareCapitalDzd,
-                request.WilayaCode,
-                request.WilayaName,
+                canonicalWilaya.Code,
+                canonicalWilaya.CanonicalDisplayName,
                 request.Address,
                 request.OrganizationPhone,
                 request.OrganizationEmail,

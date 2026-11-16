@@ -20,9 +20,12 @@ public sealed class ProjectsController : ControllerBase
     }
 
     [HttpGet]
-    public async Task<ActionResult<IReadOnlyList<ProjectDto>>> ListAccessible(CancellationToken ct)
+    public async Task<ActionResult<IReadOnlyList<ProjectDto>>> ListAccessible(
+        [FromQuery] string? q = null,
+        [FromQuery] string? status = null,
+        CancellationToken ct = default)
     {
-        var projects = await _projectService.ListAccessibleProjectsAsync(GetActorUserId(), GetMetadata(), ct);
+        var projects = await _projectService.ListAccessibleProjectsAsync(GetActorUserId(), GetMetadata(), q, status, ct);
         return Ok(projects);
     }
 

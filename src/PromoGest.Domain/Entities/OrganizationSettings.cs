@@ -1,6 +1,7 @@
 using System.Text.RegularExpressions;
 using PromoGest.Domain.Common;
 using PromoGest.Domain.Exceptions;
+using PromoGest.Domain.Reference;
 
 namespace PromoGest.Domain.Entities;
 
@@ -133,10 +134,12 @@ public sealed partial class OrganizationSettings : BaseEntity
             throw new DomainException("ORG_LEGAL_NAME_REQUIRED", "Organization legal name is required.");
         if (string.IsNullOrWhiteSpace(legalForm) || !AllowedLegalForms.Contains(legalForm.Trim()))
             throw new DomainException("ORG_LEGAL_FORM_INVALID", "A valid Algerian legal form (SARL, SPA, EURL, SNC, SCS, SPAS, EPIC, OTHER) is required.");
-        if (!IsValidAlgerianWilayaCode(wilayaCode))
-            throw new DomainException("ORG_WILAYA_INVALID", "Valid two-digit Algerian Wilaya code (01-69) is required.");
-        if (string.IsNullOrWhiteSpace(wilayaName))
-            throw new DomainException("ORG_WILAYA_NAME_REQUIRED", "Wilaya name is required.");
+        AlgerianAdministrativeReference.ValidateWilayaSelection(
+            wilayaCode,
+            wilayaName,
+            "ORG_WILAYA_INVALID",
+            "ORG_WILAYA_NAME_REQUIRED",
+            "ORG_WILAYA_NAME_MISMATCH");
         if (string.IsNullOrWhiteSpace(address))
             throw new DomainException("ORG_ADDRESS_REQUIRED", "Organization address is required.");
         if (shareCapitalDzd is < 0)
@@ -148,12 +151,7 @@ public sealed partial class OrganizationSettings : BaseEntity
     }
 
     public static bool IsValidAlgerianWilayaCode(string? wilayaCode)
-    {
-        if (string.IsNullOrWhiteSpace(wilayaCode))
-            return false;
-        var trimmed = wilayaCode.Trim();
-        return trimmed.Length == 2 && int.TryParse(trimmed, out var num) && num is >= 1 and <= 69;
-    }
+        => AlgerianAdministrativeReference.IsValidWilayaCode(wilayaCode);
 
     private static string? NormalizeOptional(string? value)
         => string.IsNullOrWhiteSpace(value) ? null : value.Trim();

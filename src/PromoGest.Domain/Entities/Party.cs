@@ -55,7 +55,7 @@ public sealed class Party : BaseEntity
         Touch(nowUtc);
     }
 
-    private static (string DisplayName, string NormalizedDisplayName) NormalizeAndValidate(
+    public static (string DisplayName, string NormalizedDisplayName) NormalizeAndValidate(
         PartyKind kind,
         string displayName)
     {

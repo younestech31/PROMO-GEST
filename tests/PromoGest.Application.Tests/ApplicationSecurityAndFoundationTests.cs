@@ -186,9 +186,30 @@ public sealed class ApplicationSecurityAndFoundationTests
         public Task<bool> ExistsCodeAsync(string normalizedCode, CancellationToken ct = default)
             => Task.FromResult(Projects.Any(p => p.NormalizedCode == normalizedCode));
         public Task<IReadOnlyList<Project>> ListAllWithMembersAsync(CancellationToken ct = default)
-            => Task.FromResult<IReadOnlyList<Project>>(Projects);
+            => ListAllWithMembersAsync(null, null, ct);
+        public Task<IReadOnlyList<Project>> ListAllWithMembersAsync(string? query, ProjectStatus? status, CancellationToken ct = default)
+            => Task.FromResult<IReadOnlyList<Project>>(FilterProjects(Projects, query, status));
         public Task<IReadOnlyList<Project>> ListForUserWithMembersAsync(Guid userId, CancellationToken ct = default)
-            => Task.FromResult<IReadOnlyList<Project>>(Projects.Where(p => p.Members.Any(m => m.UserId == userId)).ToList());
+            => ListForUserWithMembersAsync(userId, null, null, ct);
+        public Task<IReadOnlyList<Project>> ListForUserWithMembersAsync(Guid userId, string? query, ProjectStatus? status, CancellationToken ct = default)
+            => Task.FromResult<IReadOnlyList<Project>>(FilterProjects(Projects.Where(p => p.Members.Any(m => m.UserId == userId)), query, status));
+        private static IReadOnlyList<Project> FilterProjects(IEnumerable<Project> source, string? query, ProjectStatus? status)
+        {
+            if (status.HasValue)
+                source = source.Where(p => p.Status == status.Value);
+            if (!string.IsNullOrWhiteSpace(query))
+            {
+                var q = query.Trim();
+                source = source.Where(p =>
+                    p.Code.Contains(q, StringComparison.OrdinalIgnoreCase) ||
+                    p.NameAr.Contains(q, StringComparison.OrdinalIgnoreCase) ||
+                    p.NameFr.Contains(q, StringComparison.OrdinalIgnoreCase) ||
+                    p.WilayaCode.Contains(q, StringComparison.OrdinalIgnoreCase) ||
+                    p.WilayaName.Contains(q, StringComparison.OrdinalIgnoreCase) ||
+                    p.Municipality.Contains(q, StringComparison.OrdinalIgnoreCase));
+            }
+            return source.ToList();
+        }
         public Task<IReadOnlyDictionary<Guid, ProjectStructureCounts>> GetStructureCountsByProjectIdsAsync(
             IReadOnlyCollection<Guid> projectIds,
             CancellationToken ct = default)
@@ -259,8 +280,6 @@ public sealed class ApplicationSecurityAndFoundationTests
         public Task AddPropertyUnitAsync(PropertyUnit unit, CancellationToken ct = default) { Units.Add(unit); return Task.CompletedTask; }
         public Task<IReadOnlyList<ProjectCustomer>> ListByProjectAsync(Guid projectId, CancellationToken ct = default)
             => Task.FromResult<IReadOnlyList<ProjectCustomer>>(ProjectCustomers.Where(customer => customer.ProjectId == projectId).ToList());
-        public Task<IReadOnlyList<ProjectCustomer>> ListByPartyAsync(Guid partyId, CancellationToken ct = default)
-            => Task.FromResult<IReadOnlyList<ProjectCustomer>>(ProjectCustomers.Where(customer => customer.PartyId == partyId).ToList());
         public Task<bool> HasProjectCustomerIdentityCollisionAsync(
             Guid partyId,
             string normalizedDisplayName,
@@ -271,8 +290,7 @@ public sealed class ApplicationSecurityAndFoundationTests
                 other.PartyId != partyId &&
                 other.ProjectId == linked.ProjectId &&
                 other.NormalizedPhone == linked.NormalizedPhone &&
-                (other.NormalizedDisplayName == normalizedDisplayName ||
-                 other.Party.NormalizedDisplayName == normalizedDisplayName)));
+                other.Party.NormalizedDisplayName == normalizedDisplayName));
             return Task.FromResult(hasCollision);
         }
         public Task<ProjectCustomer?> GetByProjectAsync(Guid projectId, Guid customerId, CancellationToken ct = default)
@@ -285,8 +303,7 @@ public sealed class ApplicationSecurityAndFoundationTests
             CancellationToken ct = default)
             => Task.FromResult(ProjectCustomers.Any(customer =>
                 customer.ProjectId == projectId &&
-                (customer.NormalizedDisplayName == normalizedDisplayName ||
-                 customer.Party.NormalizedDisplayName == normalizedDisplayName) &&
+                customer.Party.NormalizedDisplayName == normalizedDisplayName &&
                 customer.NormalizedPhone == normalizedPhone &&
                 (!excludeCustomerId.HasValue || customer.Id != excludeCustomerId.Value)));
         public Task<bool> ExistsPartyInProjectAsync(
@@ -426,8 +443,7 @@ public sealed class ApplicationSecurityAndFoundationTests
         var party = Party.Create(Guid.NewGuid(), PartyKind.Person, "Client Protected", clock.UtcNow);
         var customer = ProjectCustomer.Create(
             project.Id,
-            CustomerType.Individual,
-            "Client Protected",
+            party.Id,
             null,
             "0550000001",
             null,
@@ -436,15 +452,13 @@ public sealed class ApplicationSecurityAndFoundationTests
             CustomerSource.WalkIn,
             null,
             employee.Id,
-            clock.UtcNow,
-            party.Id);
+            clock.UtcNow);
         customer.AttachParty(party);
         store.Parties.Add(party);
         store.ProjectCustomers.Add(customer);
         var relatedProjectCustomer = ProjectCustomer.Create(
             Guid.NewGuid(),
-            CustomerType.Individual,
-            "Client Protected",
+            party.Id,
             null,
             "0550000003",
             null,
@@ -453,16 +467,13 @@ public sealed class ApplicationSecurityAndFoundationTests
             CustomerSource.Referral,
             null,
             employee.Id,
-            clock.UtcNow,
-            party.Id);
+            clock.UtcNow);
         relatedProjectCustomer.AttachParty(party);
         store.ProjectCustomers.Add(relatedProjectCustomer);
-        var relatedCustomerStamp = relatedProjectCustomer.ConcurrencyStamp;
         var conflictingParty = Party.Create(Guid.NewGuid(), PartyKind.Person, "Collision Name", clock.UtcNow);
         var conflictingCustomer = ProjectCustomer.Create(
             relatedProjectCustomer.ProjectId,
-            CustomerType.Individual,
-            "Collision Name",
+            conflictingParty.Id,
             null,
             "0550000003",
             null,
@@ -471,8 +482,7 @@ public sealed class ApplicationSecurityAndFoundationTests
             CustomerSource.Referral,
             null,
             employee.Id,
-            clock.UtcNow,
-            conflictingParty.Id);
+            clock.UtcNow);
         conflictingCustomer.AttachParty(conflictingParty);
         store.Parties.Add(conflictingParty);
         store.ProjectCustomers.Add(conflictingCustomer);
@@ -527,7 +537,7 @@ public sealed class ApplicationSecurityAndFoundationTests
             entry.TargetEntityId == party.Id.ToString() &&
             entry.MetadataJson!.Contains("parties.identity.manage", StringComparison.Ordinal));
         Assert.Equal("Client Protected", party.DisplayName);
-        Assert.Equal("Client Protected", customer.DisplayName);
+        Assert.Equal("Client Protected", customer.Party.DisplayName);
 
         var collision = await Assert.ThrowsAsync<ConflictDomainException>(() =>
             service.UpdateAsync(
@@ -550,7 +560,7 @@ public sealed class ApplicationSecurityAndFoundationTests
                 metadata));
         Assert.Equal("PARTY_IDENTITY_CONFLICT", collision.Code);
         Assert.Equal("Client Protected", party.DisplayName);
-        Assert.Equal("Client Protected", relatedProjectCustomer.DisplayName);
+        Assert.Equal("Client Protected", relatedProjectCustomer.Party.DisplayName);
 
         var authorizedUpdate = await service.UpdateAsync(
             init.SystemAdminUserId,
@@ -571,10 +581,9 @@ public sealed class ApplicationSecurityAndFoundationTests
                 party.ConcurrencyStamp),
             metadata);
         Assert.Equal(nameof(CustomerType.LegalEntity), authorizedUpdate.CustomerType);
-        Assert.Equal("SARL Client Updated", relatedProjectCustomer.DisplayName);
-        Assert.Equal("SARL CLIENT UPDATED", relatedProjectCustomer.NormalizedDisplayName);
-        Assert.Equal(CustomerType.LegalEntity, relatedProjectCustomer.CustomerType);
-        Assert.NotEqual(relatedCustomerStamp, relatedProjectCustomer.ConcurrencyStamp);
+        Assert.Equal("SARL Client Updated", relatedProjectCustomer.Party.DisplayName);
+        Assert.Equal("SARL CLIENT UPDATED", relatedProjectCustomer.Party.NormalizedDisplayName);
+        Assert.Equal(PartyKind.LegalEntity, relatedProjectCustomer.Party.Kind);
         var identityAudit = Assert.Single(store.AuditLogs.Where(entry => entry.EventType == "PARTY_IDENTITY_UPDATED"));
         Assert.Contains("\"previousKind\":\"Person\"", identityAudit.MetadataJson);
         Assert.Contains("\"newKind\":\"LegalEntity\"", identityAudit.MetadataJson);
@@ -592,10 +601,10 @@ public sealed class ApplicationSecurityAndFoundationTests
         store.Parties.Add(party);
         var linkedCustomers = new[]
         {
-            ProjectCustomer.Create(Guid.NewGuid(), CustomerType.Individual, "Client Original", null, "0555000001",
-                null, null, "ar", CustomerSource.WalkIn, null, init.SystemAdminUserId, clock.UtcNow, party.Id),
-            ProjectCustomer.Create(Guid.NewGuid(), CustomerType.Individual, "Client Original", null, "0555000002",
-                null, null, "fr", CustomerSource.Referral, null, init.SystemAdminUserId, clock.UtcNow, party.Id)
+            ProjectCustomer.Create(Guid.NewGuid(), party.Id, null, "0555000001",
+                null, null, "ar", CustomerSource.WalkIn, null, init.SystemAdminUserId, clock.UtcNow),
+            ProjectCustomer.Create(Guid.NewGuid(), party.Id, null, "0555000002",
+                null, null, "fr", CustomerSource.Referral, null, init.SystemAdminUserId, clock.UtcNow)
         };
         foreach (var linkedCustomer in linkedCustomers)
         {
@@ -618,12 +627,12 @@ public sealed class ApplicationSecurityAndFoundationTests
         Assert.Equal(2, store.ProjectCustomers.Count);
         Assert.All(linkedCustomers, customer =>
         {
-            Assert.Equal("Client Updated", customer.DisplayName);
-            Assert.Equal("CLIENT UPDATED", customer.NormalizedDisplayName);
-            Assert.Equal(CustomerType.LegalEntity, customer.CustomerType);
+            Assert.Equal("Client Updated", customer.Party.DisplayName);
+            Assert.Equal("CLIENT UPDATED", customer.Party.NormalizedDisplayName);
+            Assert.Equal(PartyKind.LegalEntity, customer.Party.Kind);
         });
         Assert.All(Enumerable.Range(0, linkedCustomers.Length),
-            index => Assert.NotEqual(originalCustomerStamps[index], linkedCustomers[index].ConcurrencyStamp));
+            index => Assert.Equal(originalCustomerStamps[index], linkedCustomers[index].ConcurrencyStamp));
     }
 
     [Fact]
@@ -638,11 +647,11 @@ public sealed class ApplicationSecurityAndFoundationTests
         var party = Party.Create(Guid.NewGuid(), PartyKind.Person, "Client Original", clock.UtcNow);
         var conflictingParty = Party.Create(Guid.NewGuid(), PartyKind.Person, "Client Updated", clock.UtcNow);
         var customer = ProjectCustomer.Create(
-            projectId, CustomerType.Individual, "Client Original", null, "0555000001",
-            null, null, "ar", CustomerSource.WalkIn, null, init.SystemAdminUserId, clock.UtcNow, party.Id);
+            projectId, party.Id, null, "0555000001",
+            null, null, "ar", CustomerSource.WalkIn, null, init.SystemAdminUserId, clock.UtcNow);
         var conflictingCustomer = ProjectCustomer.Create(
-            projectId, CustomerType.Individual, "Client Updated", null, "0555000001",
-            null, null, "fr", CustomerSource.Referral, null, init.SystemAdminUserId, clock.UtcNow, conflictingParty.Id);
+            projectId, conflictingParty.Id, null, "0555000001",
+            null, null, "fr", CustomerSource.Referral, null, init.SystemAdminUserId, clock.UtcNow);
         customer.AttachParty(party);
         conflictingCustomer.AttachParty(conflictingParty);
         store.Parties.AddRange(new[] { party, conflictingParty });
@@ -660,7 +669,7 @@ public sealed class ApplicationSecurityAndFoundationTests
 
         Assert.Equal("PARTY_IDENTITY_CONFLICT", conflict.Code);
         Assert.Equal("Client Original", party.DisplayName);
-        Assert.Equal("Client Original", customer.DisplayName);
+        Assert.Equal("Client Original", customer.Party.DisplayName);
         Assert.Equal(customerStamp, customer.ConcurrencyStamp);
         Assert.Empty(store.AuditLogs.Where(entry => entry.EventType == "PARTY_IDENTITY_UPDATED"));
     }
@@ -1619,8 +1628,7 @@ public sealed class ApplicationSecurityAndFoundationTests
             var party = Party.Create(Guid.NewGuid(), PartyKind.Person, "Amine Client", clock.UtcNow);
             var customer = ProjectCustomer.Create(
                 project.Id,
-                CustomerType.Individual,
-                "Amine Client",
+                party.Id,
                 null,
                 "0550112233",
                 null,
@@ -1629,8 +1637,7 @@ public sealed class ApplicationSecurityAndFoundationTests
                 CustomerSource.WalkIn,
                 customerIdDoc.Id,
                 commUser.Id,
-                clock.UtcNow,
-                party.Id);
+                clock.UtcNow);
             customer.AttachParty(party);
             store.Parties.Add(party);
             store.ProjectCustomers.Add(customer);
@@ -1664,8 +1671,7 @@ public sealed class ApplicationSecurityAndFoundationTests
             var party2 = Party.Create(Guid.NewGuid(), PartyKind.Person, "Karima Client", clock.UtcNow);
             var customer2 = ProjectCustomer.Create(
                 project.Id,
-                CustomerType.Individual,
-                "Karima Client",
+                party2.Id,
                 null,
                 "0550445566",
                 null,
@@ -1674,8 +1680,7 @@ public sealed class ApplicationSecurityAndFoundationTests
                 CustomerSource.WalkIn,
                 disguisedIdDoc.Id,
                 commUser.Id,
-                clock.UtcNow,
-                party2.Id);
+                clock.UtcNow);
             customer2.AttachParty(party2);
             store.Parties.Add(party2);
             store.ProjectCustomers.Add(customer2);
@@ -1702,6 +1707,60 @@ public sealed class ApplicationSecurityAndFoundationTests
             if (Directory.Exists(tempStorage))
                 Directory.Delete(tempStorage, recursive: true);
         }
+    }
+
+    [Fact]
+    public async Task ProjectService_FiltersByQueryAndStatusWithinScope_AndCanonicalizesWilayas()
+    {
+        var store = new InMemoryStore();
+        var clock = new FakeClock();
+        var hasher = new Pbkdf2PasswordHasher();
+        var setup = new SetupService(store, hasher, store, clock);
+        var users = new UserManagementService(store, store, hasher, store, clock);
+        var projectSvc = new ProjectService(store, store, store, clock);
+        var meta = new RequestMetadata("127.0.0.1", "xUnit");
+
+        var mismatchSetup = await Assert.ThrowsAsync<DomainException>(() =>
+            setup.InitializeAsync(ValidInitRequest() with { WilayaCode = "16", WilayaName = "Oran" }, meta));
+        Assert.Equal("ORG_WILAYA_NAME_MISMATCH", mismatchSetup.Code);
+
+        var init = await setup.InitializeAsync(ValidInitRequest() with { WilayaCode = "69", WilayaName = "El Abiodh Sidi Cheikh" }, meta);
+        Assert.Equal("الأبيض سيدي الشيخ / El Abiodh Sidi Cheikh", store.Org!.WilayaName);
+
+        var assignedUser = await users.CreateEmployeeAsync(
+            init.SystemAdminUserId,
+            new CreateEmployeeRequest("scoped.lead", "Scoped Lead", "scoped@elbahdja.dz", null, "StrongPass123", "fr", new[] { Role.CommercialManagerCode }),
+            meta);
+
+        var alpha = await projectSvc.CreateProjectAsync(
+            init.SystemAdminUserId,
+            new CreateProjectRequest("PRJ-69-ALPHA", "إقامة الشهباء", "Résidence Aflou", "59", "Aflou", "Aflou", null, null, null, null, "Commercialization", 200_000_000m, 2, 24),
+            meta);
+        Assert.Equal("أفلو / Aflou", alpha.WilayaName);
+
+        var beta = await projectSvc.CreateProjectAsync(
+            init.SystemAdminUserId,
+            new CreateProjectRequest("PRJ-16-BETA", "إقامة البهجة", "Résidence Hydra", "16", "Alger", "Hydra", null, null, null, null, "Planning", 100_000_000m, 1, 12),
+            meta);
+        await projectSvc.AssignMemberAsync(init.SystemAdminUserId, alpha.Id, new AssignProjectMemberRequest(assignedUser.Id, nameof(ProjectRole.CommercialAgent), false, true, false, false), meta);
+
+        var mismatchProject = await Assert.ThrowsAsync<DomainException>(() =>
+            projectSvc.CreateProjectAsync(
+                init.SystemAdminUserId,
+                new CreateProjectRequest("PRJ-16-BAD", "مشروع", "Projet", "16", "Oran", "Hydra", null, null, null, null, "Planning", 10_000_000m, 1, 1),
+                meta));
+        Assert.Equal("PROJECT_WILAYA_NAME_MISMATCH", mismatchProject.Code);
+
+        var adminFiltered = await projectSvc.ListAccessibleProjectsAsync(init.SystemAdminUserId, meta, "aflou", "Commercialization");
+        var singleAdmin = Assert.Single(adminFiltered);
+        Assert.Equal(alpha.Id, singleAdmin.Id);
+
+        var scopedQueryForUnassigned = await projectSvc.ListAccessibleProjectsAsync(assignedUser.Id, meta, "Hydra", null);
+        Assert.Empty(scopedQueryForUnassigned);
+
+        var scopedQueryForAssigned = await projectSvc.ListAccessibleProjectsAsync(assignedUser.Id, meta, "59", null);
+        Assert.Equal(alpha.Id, Assert.Single(scopedQueryForAssigned).Id);
+        Assert.NotEqual(beta.Id, singleAdmin.Id);
     }
 }
 

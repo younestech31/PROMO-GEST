@@ -93,15 +93,15 @@ public sealed class PartyDirectoryService
             throw new DomainException("PARTY_KIND_INVALID", "Select a person or legal entity.");
 
         var nowUtc = _clock.UtcNow;
-        var normalizedDisplayName = NormalizeIdentityName(request.DisplayName);
+        var normalized = Party.NormalizeAndValidate(kind, request.DisplayName);
         var hasChanged = party.Kind != kind ||
-            !string.Equals(party.NormalizedDisplayName, normalizedDisplayName.ToUpperInvariant(), StringComparison.Ordinal);
+            !string.Equals(party.NormalizedDisplayName, normalized.NormalizedDisplayName, StringComparison.Ordinal);
 
         if (hasChanged)
         {
             if (await _projectCustomerRepository.HasProjectCustomerIdentityCollisionAsync(
                     party.Id,
-                    normalizedDisplayName.ToUpperInvariant(),
+                    normalized.NormalizedDisplayName,
                     ct))
             {
                 throw new ConflictDomainException(
@@ -110,24 +110,19 @@ public sealed class PartyDirectoryService
             }
 
             var previousKind = party.Kind;
-            party.UpdateIdentity(kind, normalizedDisplayName, nowUtc);
-
-            var linkedCustomers = await _projectCustomerRepository.ListByPartyAsync(party.Id, ct);
-            foreach (var linkedCustomer in linkedCustomers)
-                linkedCustomer.SynchronizePartyIdentity(party, nowUtc);
+            party.UpdateIdentity(kind, normalized.DisplayName, nowUtc);
 
             await WriteAuditAsync(
                 actor,
                 "PARTY_IDENTITY_UPDATED",
                 "Party",
                 party.Id.ToString(),
-                "Updated a canonical Party identity and synchronized all project-customer identity mirrors.",
+                "Updated canonical Party identity in the organization directory.",
                 new
                 {
                     partyId = party.Id,
                     previousKind = previousKind.ToString(),
-                    newKind = kind.ToString(),
-                    synchronizedProjectCustomerCount = linkedCustomers.Count
+                    newKind = kind.ToString()
                 },
                 metadata,
                 ct);
@@ -224,19 +219,6 @@ public sealed class PartyDirectoryService
                 "PARTY_SEARCH_QUERY_INVALID",
                 "Enter between 2 and 100 characters to search the Party directory.");
 
-        return value;
-    }
-
-    private static string NormalizeIdentityName(string? displayName)
-    {
-        var value = Regex.Replace(
-            (displayName ?? string.Empty).Normalize(NormalizationForm.FormKC).Trim(),
-            @"\s+",
-            " ");
-        if (string.IsNullOrWhiteSpace(value))
-            throw new DomainException("PARTY_NAME_REQUIRED", "A Party display name is required.");
-        if (value.Length > 200)
-            throw new DomainException("PARTY_NAME_TOO_LONG", "A Party display name must not exceed 200 characters.");
         return value;
     }
 

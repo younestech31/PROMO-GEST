@@ -1165,11 +1165,12 @@ public sealed class PostgresEndToEndTests : IClassFixture<PostgreSql18Integratio
                 var unchangedParty = await db.Parties.SingleAsync(party => party.Id == createdCustomer.PartyId);
                 Assert.Equal("ليلى بن عيسى", unchangedParty.DisplayName);
                 var unchangedLinkedCustomers = await db.ProjectCustomers
+                    .Include(customer => customer.Party)
                     .Where(customer => customer.PartyId == createdCustomer.PartyId)
                     .ToListAsync();
                 Assert.Equal(2, unchangedLinkedCustomers.Count);
                 Assert.All(unchangedLinkedCustomers, customer =>
-                    Assert.Equal("ليلى بن عيسى", customer.DisplayName));
+                    Assert.Equal("ليلى بن عيسى", customer.Party.DisplayName));
             }
 
             var updateCustomerResponse = await adminClient.PutAsJsonAsync(
@@ -1191,17 +1192,18 @@ public sealed class PostgresEndToEndTests : IClassFixture<PostgreSql18Integratio
                 Assert.Equal("SARL ليلى بن عيسى المحدثة", persistedParty.DisplayName);
                 Assert.Equal(PartyKind.LegalEntity, persistedParty.Kind);
                 var linkedCustomers = await db.ProjectCustomers
+                    .Include(customer => customer.Party)
                     .Where(customer => customer.PartyId == updatedCustomer.PartyId)
                     .OrderBy(customer => customer.ProjectId)
                     .ToListAsync();
                 Assert.Equal(2, linkedCustomers.Count);
                 Assert.All(linkedCustomers, customer =>
                 {
-                    Assert.Equal("SARL ليلى بن عيسى المحدثة", customer.DisplayName);
-                    Assert.Equal("SARL ليلى بن عيسى المحدثة".ToUpperInvariant(), customer.NormalizedDisplayName);
-                    Assert.Equal(CustomerType.LegalEntity, customer.CustomerType);
+                    Assert.Equal("SARL ليلى بن عيسى المحدثة", customer.Party.DisplayName);
+                    Assert.Equal("SARL ليلى بن عيسى المحدثة".ToUpperInvariant(), customer.Party.NormalizedDisplayName);
+                    Assert.Equal(PartyKind.LegalEntity, customer.Party.Kind);
                 });
-                Assert.NotEqual(
+                Assert.Equal(
                     sharedPartyCustomerInitialStamp,
                     linkedCustomers.Single(customer => customer.Id == sharedPartyCustomer.Id).ConcurrencyStamp);
             }
@@ -1253,20 +1255,27 @@ public sealed class PostgresEndToEndTests : IClassFixture<PostgreSql18Integratio
                 var persistedParty = await db.Parties.SingleAsync(party => party.Id == updatedCustomer.PartyId);
                 Assert.Equal("SARL ليلى بن عيسى — الهوية المركزية", persistedParty.DisplayName);
                 var linkedCustomers = await db.ProjectCustomers
+                    .Include(customer => customer.Party)
                     .Where(customer => customer.PartyId == updatedCustomer.PartyId)
                     .ToListAsync();
                 Assert.Equal(2, linkedCustomers.Count);
                 Assert.All(linkedCustomers, customer =>
                 {
-                    Assert.Equal("SARL ليلى بن عيسى — الهوية المركزية", customer.DisplayName);
-                    Assert.Equal("SARL ليلى بن عيسى — الهوية المركزية".ToUpperInvariant(), customer.NormalizedDisplayName);
-                    Assert.Equal(CustomerType.LegalEntity, customer.CustomerType);
+                    Assert.Equal("SARL ليلى بن عيسى — الهوية المركزية", customer.Party.DisplayName);
+                    Assert.Equal("SARL ليلى بن عيسى — الهوية المركزية".ToUpperInvariant(), customer.Party.NormalizedDisplayName);
+                    Assert.Equal(PartyKind.LegalEntity, customer.Party.Kind);
                 });
-                Assert.NotEqual(customerStampBeforeDirectoryUpdate,
+                Assert.Equal(customerStampBeforeDirectoryUpdate,
                     linkedCustomers.Single(customer => customer.Id == createdCustomer.Id).ConcurrencyStamp);
-                Assert.NotEqual(sharedCustomerStampBeforeDirectoryUpdate,
+                Assert.Equal(sharedCustomerStampBeforeDirectoryUpdate,
                     linkedCustomers.Single(customer => customer.Id == sharedPartyCustomer.Id).ConcurrencyStamp);
             }
+
+            var refreshedCustomer = await adminClient.GetFromJsonAsync<ProjectCustomerDto>(
+                $"/api/projects/{createdProject.Id}/customers/{createdCustomer.Id}");
+            Assert.NotNull(refreshedCustomer);
+            Assert.Equal("SARL ليلى بن عيسى — الهوية المركزية", refreshedCustomer!.DisplayName);
+            Assert.Equal(updatedPartyDirectoryItem.ConcurrencyStamp, refreshedCustomer.PartyConcurrencyStamp);
 
             var staleAfterDirectoryUpdate = await adminClient.PutAsJsonAsync(
                 $"/api/projects/{createdProject.Id}/customers/{createdCustomer.Id}",

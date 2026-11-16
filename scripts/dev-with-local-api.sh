@@ -138,10 +138,8 @@ elif [[ -n "$CONFIGURED_API_URL" || "$SQL_ENV_PRESENT" == true ]]; then
       source "$ROOT_DIR/scripts/ensure-dotnet10.sh"
       promogest_ensure_dotnet10
 
-      if [[ ! -s "$API_DLL" ]]; then
-        echo "Building the ASP.NET Core API..."
-        dotnet build "$API_PROJECT" --configuration Debug
-      fi
+      echo "Building the ASP.NET Core API..."
+      dotnet build "$API_PROJECT" --configuration Debug
 
       : > "$API_LOG"
       echo "Starting ASP.NET Core API at $API_URL..."

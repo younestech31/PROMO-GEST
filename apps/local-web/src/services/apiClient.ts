@@ -1,5 +1,6 @@
 import type {
   ApiErrorResponse,
+  AdministrativeUnitsReferenceDto,
   PartyDirectoryItemDto,
   UpdatePartyIdentityRequest,
   ProjectDocumentDto,
@@ -260,6 +261,12 @@ async function requestBlob(url: string): Promise<Blob> {
 
 export const apiClient = {
   healthReady: () => requestJson<HealthStatusResponse>('/health/ready', { method: 'GET' }),
+
+  getAdministrativeUnits: () =>
+    requestJson<AdministrativeUnitsReferenceDto>('/api/reference/administrative-units', {
+      method: 'GET',
+      cache: 'no-store',
+    }),
 
   getSetupStatus: () => requestJson<SetupStatusResponse>('/api/setup/status', { method: 'GET', cache: 'no-store' }),
 

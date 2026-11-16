@@ -2040,8 +2040,9 @@ public sealed class PostgresEndToEndTests : IClassFixture<PostgreSql18Integratio
         Assert.NotNull(loginSession);
 
         Assert.True(login.Headers.TryGetValues("Set-Cookie", out var setCookieHeaders));
-        var sessionSetCookie = Assert.Single(setCookieHeaders!.Where(value =>
-            value.StartsWith("promogest_session=", StringComparison.Ordinal)));
+        var sessionSetCookie = Assert.Single(
+            setCookieHeaders!,
+            value => value.StartsWith("promogest_session=", StringComparison.Ordinal));
         var replayableSessionCookie = sessionSetCookie.Split(';', 2)[0];
 
         await AttachCsrfTokenAsync(client);

@@ -32,6 +32,7 @@ import type {
   RoleDto,
   SessionResponse,
   SetupStatusResponse,
+  UpdateOrganizationProfileRequest,
   UpdateEmployeeRequest,
   UpdateProjectRequest,
   UserDto,
@@ -280,6 +281,12 @@ export const apiClient = {
   logout: () => requestJson<void>('/api/auth/logout', { method: 'POST' }),
 
   getSession: () => requestJson<SessionResponse>('/api/auth/me', { method: 'GET' }),
+
+  updateOrganizationProfile: (payload: UpdateOrganizationProfileRequest) =>
+    requestJson<SessionResponse['organization']>('/api/organization', {
+      method: 'PUT',
+      body: JSON.stringify(payload),
+    }),
 
   listRoles: () => requestJson<RoleDto[]>('/api/users/roles', { method: 'GET' }),
 

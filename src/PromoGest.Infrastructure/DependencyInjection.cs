@@ -50,6 +50,7 @@ public static class DependencyInjection
 
         services.AddScoped<SetupService>();
         services.AddScoped<AuthService>();
+        services.AddScoped<OrganizationProfileService>();
         services.AddScoped<UserManagementService>();
         services.AddScoped<ProjectService>();
         services.AddScoped<ProjectStructureService>();

@@ -283,6 +283,9 @@ public sealed class AuthService
                 org.Phone,
                 org.Email,
                 org.DefaultLanguage,
-                org.CurrencyCode));
+                org.CurrencyCode)
+            {
+                ConcurrencyStamp = org.ConcurrencyStamp
+            });
     }
 }

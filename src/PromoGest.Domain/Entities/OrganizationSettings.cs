@@ -99,6 +99,8 @@ public sealed partial class OrganizationSettings : BaseEntity
         DateTimeOffset nowUtc)
     {
         ValidateCommon(legalName, legalForm, nif, shareCapitalDzd, wilayaCode, wilayaName, address, email);
+        if (defaultLanguage is not ("ar" or "fr"))
+            throw new DomainException("ORG_DEFAULT_LANGUAGE_INVALID", "Organization default language must be Arabic or French.");
 
         LegalName = legalName.Trim();
         TradeName = string.IsNullOrWhiteSpace(tradeName) ? null : tradeName.Trim();
@@ -113,7 +115,7 @@ public sealed partial class OrganizationSettings : BaseEntity
         Address = address.Trim();
         Phone = NormalizeOptional(phone);
         Email = NormalizeOptional(email);
-        DefaultLanguage = defaultLanguage is "fr" or "ar" ? defaultLanguage : DefaultLanguage;
+        DefaultLanguage = defaultLanguage;
         Touch(nowUtc);
     }
 

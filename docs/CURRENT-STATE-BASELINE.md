@@ -2,11 +2,11 @@
 
 **Document Role:** Evidence-backed snapshot of the repository, not a product roadmap.  
 **Operational Roadmap:** [Notion Master Roadmap](https://app.notion.com/p/41a13e9ed3688127a157dceb9a0b655f) · [Notion Execution Backlog](https://app.notion.com/p/41a13e9ed3688121adbff807d29d4e46). Notion governs work sequencing and task tracking; this file and the current repository remain the source of implementation and verification truth.  
-**Last Application Runtime / Schema Source Commit:** `53c50fbc0db801b9298ec731cfc44f2d4d58ff7f` (PR #59 merge; PR #67 changed a test assertion only; subsequent PRs #68–#74 changed documentation only; no runtime/schema changes after PR #59).  
+**Last Application Runtime / Schema Source Commit:** `53c50fbc0db801b9298ec731cfc44f2d4d58ff7f` (PR #59 merge; PR #67 changed a test assertion only; PRs #68–#76 are documentation-only; no runtime/schema changes after PR #59).  
 **Latest Test Source Commit:** `6e37abf8eb170f2c4dfc136dc481bdf7a11f22d2` (PR #67 head; removes an xUnit single-item predicate analyzer warning in the logout integration test without changing test behavior; PR CI #595 passed all three jobs). PR #63 remains the source of the expanded first-run and logout/session-revocation regression cases.  
-**Main Commit Inspected:** `8afb07d75fef1c84feec22848aeebb37543fcdb7` (PR #75 baseline synchronization merge; latest application runtime/schema remains `53c50fbc0db801b9298ec731cfc44f2d4d58ff7f`, latest test source is PR #67 head `6e37abf8eb170f2c4dfc136dc481bdf7a11f22d2`).  
-**Latest Main CI confirmed in this audit:** Run **#606** / `43913437191` passed all three jobs on SHA `24d1d57bbe19102c9bbbd63bb31ca2793720d807` (PR #70 merge); a post-merge CI result has not been confirmed for PR #67 or PRs #71–#74.  
-**Latest Documentation PR CI:** PR #75 Run **#619** / `43955158552` passed all three jobs on PR head `f6468e408aee3e13852e139872a008f9bb6016fe`; PR #75 merged to main at `8afb07d75fef1c84feec22848aeebb37543fcdb7`. The run is PR-head evidence, not a post-merge run on the merge SHA.  
+**Main Commit Inspected:** `d30e9854c20bcf8068d49d16bb42b670de8ae22d` (PR #76 documentation-only merge; latest application runtime/schema remains `53c50fbc0db801b9298ec731cfc44f2d4d58ff7f`, latest test source is PR #67 head `6e37abf8eb170f2c4dfc136dc481bdf7a11f22d2`).  
+**Latest Main CI confirmed in this audit:** Run **#606** / `43913437191` passed all three jobs on SHA `24d1d57bbe19102c9bbbd63bb31ca2793720d807` (PR #70 merge); a post-merge CI result has not been confirmed for PR #67 or PRs #71–#76.  
+**Latest Documentation PR CI:** PR #76 Run **#621** / `43957935892` passed all three jobs on PR head `ffec106689409ec519757ae0dbb8901a7c897582`; PR #76 merged to main at `d30e9854c20bcf8068d49d16bb42b670de8ae22d`. The run is PR-head evidence, not a post-merge run on the merge SHA.  
 **Latest Test-Source CI:** PR #67 Run **#595** / `43907255613` passed all three jobs on test head `6e37abf8eb170f2c4dfc136dc481bdf7a11f22d2`; this was a test-only analyzer-warning correction. The detailed first-run/logout regression counts remain evidenced by PR #63 Run #589 / `43900696444` (Domain 34/34, Application 20/20, PostgreSQL 18 Integration 32/32; restore drill passed).  
 **Governing Rule:** A feature is `IMPLEMENTED_AND_VERIFIED` only when its code and applicable automated verification pass in the audited baseline. A green pipeline does not certify untested browser UX, preview parity, production installation, or legal/accounting correctness.
 
@@ -72,10 +72,11 @@
 - No runtime, schema, migration, permissions, business data, production database, Cloud SQL, credentials or deployment changed.
 
 ### PR #76 — 1998 territorial-register source conflict (documentation audit)
-- Base inspected: main `8afb07d75fef1c84feec22848aeebb37543fcdb7`; this change records conflicting official source transcriptions for Chabet El Ameur, not a legal correction.
+- PR #76 head `ffec106689409ec519757ae0dbb8901a7c897582`; CI #621 / `43957935892` passed all three jobs (frontend/static hosting, .NET 10 + PostgreSQL 18 least-privilege integration/restore, Windows publish/PowerShell).
+- Merge SHA `d30e9854c20bcf8068d49d16bb42b670de8ae22d`; post-merge main CI on this SHA is not confirmed in this audit.
 - JO No. 23/1998 (printed p. 11) shows `3614` under Boumerdès code 35; JO No. 44/1985 (p. 1069), JO No. 49/1996 (p. 15), and ONS *Armature urbaine 2008* Table 52 show `3514`. The Decree 85-20 prefix rule makes the 1998 printed value anomalous, but this audit does not determine legal precedence.
 - Record the exact raw values, source provenance, PDF-image verification limitation and qualified-adjudication requirement. No canonical value is selected and no commune row is imported.
-- No runtime, API, UI, schema, migration, permissions, business data, production database, Cloud SQL, credentials or deployment change is in scope.
+- No runtime, API, UI, schema, migration, permissions, business data, production database, Cloud SQL, credentials or deployment changed.
 
 ### Phase 1 design review — P1-04 / D-013 (PR #70 merged; design approved)
 - PR #70 head `e1c183f0d2a4a9ab06abf72a955a6169634b73e6` passed PR CI #605 / `43912825520` (all three jobs); merge SHA `24d1d57bbe19102c9bbbd63bb31ca2793720d807` passed main CI #606 / `43913437191` (all three jobs).

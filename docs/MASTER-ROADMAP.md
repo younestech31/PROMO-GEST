@@ -4,7 +4,8 @@
 **Last Code-Changing Source Baseline:** `53c50fbc0db801b9298ec731cfc44f2d4d58ff7f` (PR #59 merge; server-owned 69-Wilaya reference integration).  
 **Main Commit Inspected:** `53c50fbc0db801b9298ec731cfc44f2d4d58ff7f`.  
 **Latest Green Main CI:** Run **#581** / `43881240365` — all three jobs passed on main SHA `53c50fbc0db801b9298ec731cfc44f2d4d58ff7f` (frontend 40/40; Domain 34/34; Application 20/20; PostgreSQL 18 Integration 30/30; restore drill; Windows x64).  
-**Product Rule:** Deliver complete, secure business workflows in dependency order. Do not let isolated defects, cosmetic changes, or technical administration work displace the ERP product vision.
+**Product Rule:** Deliver complete, secure business workflows in dependency order. Do not let isolated defects, cosmetic changes, or technical administration work displace the ERP product vision.  
+**Notion Operating Roadmap:** [PROMO GEST — Master Roadmap & Operating Reference](https://app.notion.com/p/41a13e9ed3688127a157dceb9a0b655f) and [Execution Backlog](https://app.notion.com/p/41a13e9ed3688121adbff807d29d4e46) are the operational planning and task-status workspace. GitHub remains authoritative for code, technical requirements, decisions, migrations, and verification evidence. In a conflict, current repository source/tests/docs determine implementation truth; Notion determines the agreed work order. Keep both synchronized through focused PRs.
 
 ---
 
@@ -46,7 +47,18 @@ The next work is deliberately bounded. Do not start Phase 2–5 feature coding w
 
 ---
 
-## 4. Governance References
+## 4. Notion Operating Control
+
+The Product Owner established Notion as the operational reference for roadmap sequencing, priorities, dependencies, task ownership when explicitly assigned, and delivery tracking.
+
+- Master operating roadmap: [Notion PROMO GEST — Master Roadmap & Operating Reference](https://app.notion.com/p/41a13e9ed3688127a157dceb9a0b655f).
+- Execution task register: [Notion PROMO GEST — Execution Backlog](https://app.notion.com/p/41a13e9ed3688121adbff807d29d4e46).
+- A Notion task is not implementation evidence. Mark it Done only after its acceptance criteria are met, the relevant PR is merged, required CI is green on the final commit, and manual/practitioner evidence is recorded where applicable.
+- Never invent owners or due dates. Keep dependency-blocked tasks Blocked; do not bypass the phase sequence.
+- Keep technical truth in the canonical repository suite. Every material roadmap/status change must be reconciled with GitHub docs and linked evidence.
+- Current Notion baseline was created from main `20f2e043515bd5cb164ddb2ee3b4a195f0ab86ed`, code baseline `53c50fbc0db801b9298ec731cfc44f2d4d58ff7f`, CI #583 (docs-only commit) and CI #581 (application code baseline).
+
+## 5. Governance References
 
 - [MASTER-BLUEPRINT.md](MASTER-BLUEPRINT.md) — product vision, scope, and architecture.
 - [CURRENT-STATE-BASELINE.md](CURRENT-STATE-BASELINE.md) — audited implementation and verification evidence.

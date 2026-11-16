@@ -2,10 +2,10 @@
 
 **Document Role:** Evidence-backed snapshot of the repository, not a product roadmap.  
 **Operational Roadmap:** [Notion Master Roadmap](https://app.notion.com/p/41a13e9ed3688127a157dceb9a0b655f) · [Notion Execution Backlog](https://app.notion.com/p/41a13e9ed3688121adbff807d29d4e46). Notion governs work sequencing and task tracking; this file and the current repository remain the source of implementation and verification truth.  
-**Last Application Runtime / Schema Source Commit:** `53c50fbc0db801b9298ec731cfc44f2d4d58ff7f` (PR #59 merge; no runtime/schema changes in the subsequent documentation/test-only PRs #63, #65, #66, #68, and #69).  
+**Last Application Runtime / Schema Source Commit:** `53c50fbc0db801b9298ec731cfc44f2d4d58ff7f` (PR #59 merge; no runtime/schema changes in subsequent documentation/test-only PRs #63, #65, #66, #68, #69, or #70).  
 **Latest Test Source Commit:** `58dde79719db5949033363dfed1e4e9cb8b66f29` (PR #63 head; adds PostgreSQL 18 first-run setup and logout/session-revocation regression tests).  
-**Main Commit Inspected:** `4fdfcb2679231ff81b8756a8da6ba3045bea5288` (PR #69 documentation-only merge; PR #68 and #69 did not change application runtime or schema; latest application runtime remains `53c50fbc0db801b9298ec731cfc44f2d4d58ff7f`, latest test source remains PR #63 head `58dde79719db5949033363dfed1e4e9cb8b66f29`).  
-**Latest Main CI:** Run **#604** / `43911498773` passed all three jobs on main SHA `4fdfcb2679231ff81b8756a8da6ba3045bea5288` (PR #69 merge).  
+**Main Commit Inspected:** `24d1d57bbe19102c9bbbd63bb31ca2793720d807` (PR #70 documentation-only merge; latest application runtime remains `53c50fbc0db801b9298ec731cfc44f2d4d58ff7f`, latest test source remains PR #63 head `58dde79719db5949033363dfed1e4e9cb8b66f29`).  
+**Latest Main CI:** Run **#606** / `43913437191` passed all three jobs on main SHA `24d1d57bbe19102c9bbbd63bb31ca2793720d807` (PR #70 merge).  
 **Latest Application/Test CI:** PR #63 Run **#589** / `43900696444` passed all three jobs on test SHA `58dde79719db5949033363dfed1e4e9cb8b66f29`; the .NET job passed Domain **34/34**, Application **20/20**, PostgreSQL 18 Integration **32/32**, and the full restore drill. Main CI #592 subsequently passed all three jobs after the documentation-only PR #65 merge.  
 **Governing Rule:** A feature is `IMPLEMENTED_AND_VERIFIED` only when its code and applicable automated verification pass in the audited baseline. A green pipeline does not certify untested browser UX, preview parity, production installation, or legal/accounting correctness.
 
@@ -47,9 +47,10 @@
 - Merge SHA `4fdfcb2679231ff81b8756a8da6ba3045bea5288`; main CI #604 / `43911498773` passed all 3 jobs (frontend/static hosting, .NET 10 + PostgreSQL 18 least-privilege integration and restore drill, Windows x64/PowerShell).
 - The one-line change removed a duplicated D-012 bullet only. No runtime, schema, migrations, permissions, business records, production/Cloud SQL data, credentials or deployment changed.
 
-### Phase 1 design review — P1-04 / D-013 (pending PR review)
-- The source-audited navigation decision is being recorded in a documentation-only PR. It approves the three-level organization/project model with server-authoritative project access, route-per-tab context, visible project identity, real-data-only organization work center, and separate technical administration. It does not implement navigation features or change permissions.
-- P0-A01 and P0-A04 remain `NOT_RUN`; this review does not change those exceptions or certify browser acceptance.
+### Phase 1 design review — P1-04 / D-013 (PR #70 merged; design approved)
+- PR #70 head `e1c183f0d2a4a9ab06abf72a955a6169634b73e6` passed PR CI #605 / `43912825520` (all three jobs); merge SHA `24d1d57bbe19102c9bbbd63bb31ca2793720d807` passed main CI #606 / `43913437191` (all three jobs).
+- D-013 approves the organization workspace → explicit authorized project switcher → active project workspace model for design only. PR #70 did not implement navigation UI or change API, routes, schema, permissions or runtime behavior. Future UI slices remain separately scoped.
+- P1-01 remains In Progress / Pending; P1-02 remains Blocked pending complete source reconciliation and qualified review. No commune records were imported. P0-A01 and P0-A04 remain `NOT_RUN`; this decision does not certify browser acceptance.
 
 ## 1A. Phase 0 residual regression coverage — PR #63
 
@@ -147,7 +148,7 @@ Accepted Phase 0 residual exceptions (still tracked; not represented as PASS):
 3. **Supplementary audit artifacts:** browser/version metadata and sanitized per-case screenshots or redacted API trace evidence were not attached; the owner attestation is recorded, and no unprovided artifacts are claimed.
 4. **Navigation decision:** D-009 records the bounded deferral of project-navigation proposal approval/implementation to the Phase 1 design review; do not start a broad UI redesign.
 5. **Preview separation:** keep the Vite-only in-memory simulator clearly separate from real API evidence; it intentionally lacks full parity.
-6. **Phase 1 progress:** Phase 1 remains `IN_PROGRESS`. Party identity separation and the PostgreSQL duplicate guard are verified. PR #59 completes the server-owned 69-Wilaya API-to-UI integration. The 1,541-commune catalogue remains pending (`communesCount = 0`, `PendingOfficialVerification`); project municipality remains free text. Remaining Phase 1 work includes official commune-source reconciliation/import with effective-dated history and the bounded organization-workspace/project-switcher/active-project-workspace design review. P0-A01 and P0-A04 remain `NOT_RUN`; no Phase 2–5 business implementation is authorized until applicable gates and practitioner approvals pass.
+6. **Phase 1 progress:** Phase 1 remains `IN_PROGRESS`. Party identity separation and the PostgreSQL duplicate guard are verified. PR #59 completes the server-owned 69-Wilaya API-to-UI integration. The 1,541-commune catalogue remains pending (`communesCount = 0`, `PendingOfficialVerification`); project municipality remains free text. P1-01 official commune-source reconciliation remains In Progress / Pending; P1-02 catalogue implementation remains Blocked until the full crosswalk and qualified review are accepted. P1-04 / D-013 navigation design is approved in PR #70; navigation implementation remains a set of separately scoped future UI slices, not delivered functionality. P0-A01 and P0-A04 remain `NOT_RUN`; no Phase 2–5 business implementation is authorized until applicable gates and practitioner approvals pass.
 
 ## 4. Preview Boundary (Do Not Confuse with Production)
 

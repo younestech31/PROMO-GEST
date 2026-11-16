@@ -2246,4 +2246,167 @@ public sealed class PostgresEndToEndTests : IClassFixture<PostgreSql18Integratio
             a.ActorUserId == siteUser.Id &&
             a.TargetEntityId == identityDocId.ToString());
     }
+
+    [Fact]
+    public async Task Postgres18_EnforcesProjectCustomerIdentityUniquenessAcrossConcurrentPartiesAndPartyUpdates()
+    {
+        var connStr = await _fixture.CreateIsolatedDatabaseConnectionStringAsync();
+        var tempRoot = Path.Combine(Path.GetTempPath(), $"promogest_customer_identity_guard_{Guid.NewGuid():N}");
+
+        await using var factory = CreateFactory(connStr, tempRoot);
+        using var adminClient = factory.CreateClient(new WebApplicationFactoryClientOptions { HandleCookies = true });
+        await AttachCsrfTokenAsync(adminClient);
+
+        var initialize = await adminClient.PostAsJsonAsync("/api/setup/initialize", ValidInitRequest());
+        Assert.Equal(HttpStatusCode.Created, initialize.StatusCode);
+        var login = await adminClient.PostAsJsonAsync(
+            "/api/auth/login",
+            new LoginRequest("sysadmin", "AtlasAdmin#2026"));
+        Assert.Equal(HttpStatusCode.OK, login.StatusCode);
+        await AttachCsrfTokenAsync(adminClient);
+
+        var session = await adminClient.GetFromJsonAsync<SessionResponse>("/api/auth/me");
+        Assert.NotNull(session);
+
+        var projectResponse = await adminClient.PostAsJsonAsync(
+            "/api/projects",
+            new CreateProjectRequest(
+                "PRJ-DUP-01", "مشروع منع التكرار", "Projet Anti-doublon", "16", "Alger", "Hydra",
+                null, null, null, null, "Planning", 100_000_000m, 1, 10));
+        Assert.Equal(HttpStatusCode.Created, projectResponse.StatusCode);
+        var project = await projectResponse.Content.ReadFromJsonAsync<ProjectDto>();
+        Assert.NotNull(project);
+
+        var now = DateTimeOffset.UtcNow;
+        var concurrentPartyOne = Party.Create(Guid.NewGuid(), PartyKind.Person, "Concurrent Buyer", now);
+        var concurrentPartyTwo = Party.Create(Guid.NewGuid(), PartyKind.Person, "Concurrent Buyer", now);
+        using (var partyScope = factory.Services.CreateScope())
+        {
+            var db = partyScope.ServiceProvider.GetRequiredService<AppDbContext>();
+            db.Parties.AddRange(concurrentPartyOne, concurrentPartyTwo);
+            await db.SaveChangesAsync();
+        }
+
+        var bothCustomersReady = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+        var readyCount = 0;
+
+        async Task<string> InsertConcurrentCustomerAsync(Guid partyId)
+        {
+            var signaledReady = false;
+            void SignalReady()
+            {
+                if (signaledReady)
+                    return;
+                signaledReady = true;
+                if (Interlocked.Increment(ref readyCount) == 2)
+                    bothCustomersReady.TrySetResult(true);
+            }
+
+            try
+            {
+                using var scope = factory.Services.CreateScope();
+                var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+                var strategy = db.Database.CreateExecutionStrategy();
+
+                return await strategy.ExecuteAsync(async () =>
+                {
+                    await using var transaction = await db.Database.BeginTransactionAsync();
+
+                    var party = await db.Parties.SingleAsync(item => item.Id == partyId);
+                    var customer = ProjectCustomer.Create(
+                        project!.Id,
+                        party.Id,
+                        null,
+                        "0550123456",
+                        null,
+                        null,
+                        "ar",
+                        CustomerSource.WalkIn,
+                        null,
+                        session!.User.Id,
+                        now);
+                    customer.AttachParty(party);
+                    db.ProjectCustomers.Add(customer);
+                    await db.SaveChangesAsync();
+
+                    // Keep both inserts uncommitted until both transactions have written.
+                    // The deferred PostgreSQL constraint trigger must serialize the final checks.
+                    SignalReady();
+                    await bothCustomersReady.Task;
+                    await transaction.CommitAsync();
+                    return "COMMITTED";
+                });
+            }
+            catch (PostgresException exception)
+            {
+                SignalReady();
+                return exception.SqlState;
+            }
+            catch (DbUpdateException exception)
+            {
+                SignalReady();
+                return (exception.GetBaseException() as PostgresException)?.SqlState ?? "DB_UPDATE_ERROR";
+            }
+        }
+
+        var concurrentResults = await Task.WhenAll(
+            InsertConcurrentCustomerAsync(concurrentPartyOne.Id),
+            InsertConcurrentCustomerAsync(concurrentPartyTwo.Id));
+
+        Assert.Single(concurrentResults, result => result == "COMMITTED");
+        Assert.Single(concurrentResults, result => result == "23505");
+
+        var renamePartyOne = Party.Create(Guid.NewGuid(), PartyKind.Person, "Original Buyer One", now);
+        var renamePartyTwo = Party.Create(Guid.NewGuid(), PartyKind.Person, "Original Buyer Two", now);
+        using (var relationshipScope = factory.Services.CreateScope())
+        {
+            var db = relationshipScope.ServiceProvider.GetRequiredService<AppDbContext>();
+            var firstCustomer = ProjectCustomer.Create(
+                project!.Id, renamePartyOne.Id, null, "0550999999", null, null, "fr",
+                CustomerSource.WalkIn, null, session!.User.Id, now);
+            firstCustomer.AttachParty(renamePartyOne);
+            var secondCustomer = ProjectCustomer.Create(
+                project.Id, renamePartyTwo.Id, null, "0550999999", null, null, "fr",
+                CustomerSource.WalkIn, null, session.User.Id, now);
+            secondCustomer.AttachParty(renamePartyTwo);
+
+            db.Parties.AddRange(renamePartyOne, renamePartyTwo);
+            db.ProjectCustomers.AddRange(firstCustomer, secondCustomer);
+            await db.SaveChangesAsync();
+        }
+
+        Exception? partyRenameFailure = null;
+        using (var updateScope = factory.Services.CreateScope())
+        {
+            var db = updateScope.ServiceProvider.GetRequiredService<AppDbContext>();
+            var party = await db.Parties.SingleAsync(item => item.Id == renamePartyTwo.Id);
+            party.UpdateIdentity(PartyKind.Person, "Original Buyer One", now.AddMinutes(1));
+            try
+            {
+                await db.SaveChangesAsync();
+            }
+            catch (Exception exception)
+            {
+                partyRenameFailure = exception;
+            }
+        }
+
+        Assert.NotNull(partyRenameFailure);
+        var postgresFailure = partyRenameFailure!.GetBaseException() as PostgresException;
+        Assert.NotNull(postgresFailure);
+        Assert.Equal("23505", postgresFailure!.SqlState);
+        Assert.Equal("ux_project_customers_project_name_phone", postgresFailure.ConstraintName);
+
+        using (var verifyScope = factory.Services.CreateScope())
+        {
+            var db = verifyScope.ServiceProvider.GetRequiredService<AppDbContext>();
+            var unchangedParty = await db.Parties.SingleAsync(item => item.Id == renamePartyTwo.Id);
+            Assert.Equal("Original Buyer Two", unchangedParty.DisplayName);
+            Assert.Equal(
+                1,
+                await db.ProjectCustomers.CountAsync(customer => customer.ProjectId == project!.Id &&
+                    (customer.PartyId == concurrentPartyOne.Id || customer.PartyId == concurrentPartyTwo.Id)));
+        }
+    }
+
 }

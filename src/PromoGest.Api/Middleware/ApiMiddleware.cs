@@ -40,15 +40,11 @@ public sealed class ExceptionHandlingMiddleware
         }
         catch (DbUpdateException ex) when (ex.InnerException is PostgresException pgEx && pgEx.SqlState is "23505" or "40001")
         {
-            _logger.LogWarning(pgEx, "PostgreSQL concurrency or uniqueness conflict ({SqlState}) on {Method} {Path}", pgEx.SqlState, context.Request.Method, context.Request.Path);
-            var code = pgEx.ConstraintName is "ux_organization_settings_singleton" or "ux_users_single_system_admin"
-                ? "SETUP_ALREADY_INITIALIZED"
-                : pgEx.SqlState == "40001"
-                    ? "CONCURRENCY_CONFLICT"
-                    : "CONFLICT";
-
-            context.Response.StatusCode = (int)HttpStatusCode.Conflict;
-            await context.Response.WriteAsJsonAsync(new ApiErrorResponse(code, "The requested operation conflicted with an existing or concurrent change."));
+            await WriteDatabaseConflictAsync(context, pgEx);
+        }
+        catch (PostgresException ex) when (ex.SqlState is "23505" or "40001")
+        {
+            await WriteDatabaseConflictAsync(context, ex);
         }
         catch (DbUpdateConcurrencyException ex)
         {
@@ -64,6 +60,31 @@ public sealed class ExceptionHandlingMiddleware
             await context.Response.WriteAsJsonAsync(
                 new ApiErrorResponse("INTERNAL_ERROR", "An unexpected internal error occurred. Contact your local System Administrator."));
         }
+    }
+
+    private async Task WriteDatabaseConflictAsync(HttpContext context, PostgresException postgresException)
+    {
+        _logger.LogWarning(
+            postgresException,
+            "PostgreSQL concurrency or uniqueness conflict ({SqlState}) on {Method} {Path}",
+            postgresException.SqlState,
+            context.Request.Method,
+            context.Request.Path);
+
+        var code = postgresException.ConstraintName switch
+        {
+            "ux_organization_settings_singleton" or "ux_users_single_system_admin"
+                => "SETUP_ALREADY_INITIALIZED",
+            "ux_project_customers_project_name_phone"
+                => "CUSTOMER_DUPLICATE",
+            _ when postgresException.SqlState == "40001"
+                => "CONCURRENCY_CONFLICT",
+            _ => "CONFLICT"
+        };
+
+        context.Response.StatusCode = (int)HttpStatusCode.Conflict;
+        await context.Response.WriteAsJsonAsync(
+            new ApiErrorResponse(code, "The requested operation conflicted with an existing or concurrent change."));
     }
 }
 

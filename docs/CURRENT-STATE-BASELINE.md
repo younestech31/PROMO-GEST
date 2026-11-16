@@ -2,7 +2,7 @@
 
 **Document Role:** Evidence-backed snapshot of the repository, not a product roadmap.  
 **Operational Roadmap:** [Notion Master Roadmap](https://app.notion.com/p/41a13e9ed3688127a157dceb9a0b655f) · [Notion Execution Backlog](https://app.notion.com/p/41a13e9ed3688121adbff807d29d4e46). Notion governs work sequencing and task tracking; this file and the current repository remain the source of implementation and verification truth.  
-**Last Application Runtime / Schema Source Commit:** `53c50fbc0db801b9298ec731cfc44f2d4d58ff7f` (PR #59 merge; no runtime/schema changes in the subsequent PRs #63 and #65).  
+**Last Application Runtime / Schema Source Commit:** `53c50fbc0db801b9298ec731cfc44f2d4d58ff7f` (PR #59 merge; no runtime/schema changes in the subsequent PRs #63, #65, and #66).  
 **Latest Test Source Commit:** `58dde79719db5949033363dfed1e4e9cb8b66f29` (PR #63 head; adds PostgreSQL 18 first-run setup and logout/session-revocation regression tests).  
 **Main Commit Inspected:** `f8f812890e6001d0560a0af1730559152b1cb8e3` (PR #66 baseline documentation merge; no application runtime or schema changes in PR #63, #65, or #66; latest application runtime remains `53c50fbc0db801b9298ec731cfc44f2d4d58ff7f`, latest test source is PR #63 head `58dde79719db5949033363dfed1e4e9cb8b66f29`).  
 **Latest Main CI:** Run **#596** / `43907721028` passed all three jobs on main SHA `f8f812890e6001d0560a0af1730559152b1cb8e3` (PR #66 merge).  

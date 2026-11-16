@@ -203,6 +203,13 @@ export interface TranslationBundle {
     fiscalTitle: string;
     locationTitle: string;
     runtimeTitle: string;
+    editButton: string;
+    saveButton: string;
+    savingButton: string;
+    cancelButton: string;
+    saveSuccess: string;
+    readOnlyNotice: string;
+    currency: string;
   };
 }
 
@@ -411,6 +418,13 @@ const AR: TranslationBundle = {
     fiscalTitle: 'المعرفات الجبائية والتجارية (الجزائر)',
     locationTitle: 'المقر والعنوان',
     runtimeTitle: 'إعدادات التشغيل المحلي',
+    editButton: 'تعديل ملف المؤسسة',
+    saveButton: 'حفظ التغييرات',
+    savingButton: 'جارٍ الحفظ...',
+    cancelButton: 'إلغاء',
+    saveSuccess: 'تم حفظ بيانات المؤسسة بنجاح.',
+    readOnlyNotice: 'ليس لديك صلاحية تعديل بيانات المؤسسة. يمكنك الاطلاع عليها فقط.',
+    currency: 'العملة',
   },
 };
 
@@ -619,6 +633,13 @@ const FR: TranslationBundle = {
     fiscalTitle: 'Identifiants fiscaux et commerciaux',
     locationTitle: 'Siège social',
     runtimeTitle: 'Paramètres locaux',
+    editButton: 'Modifier le profil de l’organisation',
+    saveButton: 'Enregistrer les modifications',
+    savingButton: 'Enregistrement…',
+    cancelButton: 'Annuler',
+    saveSuccess: 'Les informations de l’organisation ont été enregistrées.',
+    readOnlyNotice: 'Vous ne disposez pas de l’autorisation de modifier le profil de l’organisation.',
+    currency: 'Devise',
   },
 };
 
@@ -1027,6 +1048,42 @@ const API_ERROR_MESSAGES: Record<string, { ar: string; fr: string }> = {
   FORBIDDEN_PROJECT_RESERVATION_WRITE: {
     ar: 'لا تملك صلاحية إدارة حجوزات هذا المشروع.',
     fr: 'Vous n’êtes pas autorisé à gérer les réservations de ce projet.',
+  },
+  FORBIDDEN_ORGANIZATION_MANAGE: {
+    ar: 'لا تملك صلاحية تعديل ملف المؤسسة.',
+    fr: 'Vous n’avez pas l’autorisation de modifier le profil de l’organisation.',
+  },
+  ORG_CONCURRENCY_CONFLICT: {
+    ar: 'تم تعديل ملف المؤسسة من طرف مستخدم آخر. أعد تحميل البيانات قبل الحفظ.',
+    fr: 'Le profil de l’organisation a été modifié par un autre utilisateur. Rechargez les données avant l’enregistrement.',
+  },
+  ORG_DEFAULT_LANGUAGE_INVALID: {
+    ar: 'اللغة الافتراضية يجب أن تكون العربية أو الفرنسية.',
+    fr: 'La langue par défaut doit être l’arabe ou le français.',
+  },
+  ORG_EMAIL_INVALID: {
+    ar: 'صيغة البريد الإلكتروني للمؤسسة غير صحيحة.',
+    fr: 'Le format de l’adresse e-mail de l’organisation est invalide.',
+  },
+  ORG_WILAYA_INVALID: {
+    ar: 'رمز الولاية غير صحيح. اختر ولاية من القائمة.',
+    fr: 'Le code de wilaya est invalide. Sélectionnez une wilaya dans la liste.',
+  },
+  ORG_CAPITAL_NEGATIVE: {
+    ar: 'رأس المال لا يمكن أن يكون سالبًا.',
+    fr: 'Le capital social ne peut pas être négatif.',
+  },
+  ORG_LEGAL_NAME_REQUIRED: {
+    ar: 'الاسم القانوني للمؤسسة مطلوب.',
+    fr: 'La raison sociale de l’organisation est obligatoire.',
+  },
+  ORG_LEGAL_FORM_INVALID: {
+    ar: 'الشكل القانوني للمؤسسة غير صحيح.',
+    fr: 'La forme juridique de l’organisation est invalide.',
+  },
+  ORG_ADDRESS_REQUIRED: {
+    ar: 'عنوان المقر الاجتماعي مطلوب.',
+    fr: 'L’adresse du siège social est obligatoire.',
   },
   ENDPOINT_NOT_FOUND: {
     ar: 'نقطة النهاية المطلوبة غير موجودة.',

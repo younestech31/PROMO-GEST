@@ -72,8 +72,8 @@ Every claim across this blueprint uses **strictly one** of the six evidence-back
 
 | Layer / Domain | Current State | Verification Evidence |
 |---|---|---|
-| Domain Core (`PromoGest.Domain`) | `IMPLEMENTED_AND_VERIFIED` | Main CI #573: **34/34** Domain tests passed |
-| Application Services (`PromoGest.Application`) | `IMPLEMENTED_AND_VERIFIED` | Main CI #573: **20/20** Application tests passed |
+| Domain Core (`PromoGest.Domain`) | `IMPLEMENTED_AND_VERIFIED` | Main CI #581: **34/34** Domain tests passed |
+| Application Services (`PromoGest.Application`) | `IMPLEMENTED_AND_VERIFIED` | Main CI #581: **20/20** Application tests passed |
 | C2 Party / Customer identity foundation | `IMPLEMENTED_AND_VERIFIED` | PRs #35–#38 and #55–#57 merged; canonical Party ownership, retired ProjectCustomer identity mirrors, PostgreSQL project/name/phone uniqueness, concurrent duplicate rejection, Party rename protection, fail-closed preflight, and migration Down/reapply are covered by PostgreSQL 18 tests |
 | PostgreSQL 18 Integration Suite (`PromoGest.IntegrationTests`) | `IMPLEMENTED_AND_VERIFIED` | Main CI #581: **30/30** PostgreSQL 18 integration tests passed, including the public 69-Wilaya reference endpoint contract; full database/storage/Data Protection restore drill passed |
 | Local React SPA (`apps/local-web`) | `PARTIALLY_IMPLEMENTED` | Main CI #581: strict TypeScript, **40/40** tests, production build, ASP.NET Core `wwwroot` and preview-leak checks pass. Product Owner RTL/LTR browser acceptance remains owner-attested, not repeated by CI; P0-A01 and P0-A04 remain `NOT_RUN`. Vite-only simulator parity remains intentionally incomplete |

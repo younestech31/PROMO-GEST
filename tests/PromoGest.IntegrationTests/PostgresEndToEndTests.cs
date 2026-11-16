@@ -7,6 +7,8 @@ using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.TestHost;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
@@ -198,6 +200,18 @@ public sealed class PostgreSql18IntegrationFixture : IAsyncLifetime
         }
 
         return runtimeConnection;
+    }
+
+    public string GetMigrationConnectionString(string runtimeConnectionString)
+    {
+        var databaseName = new NpgsqlConnectionStringBuilder(runtimeConnectionString).Database;
+        if (string.IsNullOrWhiteSpace(databaseName))
+            throw new InvalidOperationException("The runtime PostgreSQL connection string has no database name.");
+
+        return new NpgsqlConnectionStringBuilder(_migrationConnectionString)
+        {
+            Database = databaseName
+        }.ConnectionString;
     }
 
     private static async Task VerifyFutureTableDefaultsAsync(
@@ -2406,6 +2420,137 @@ public sealed class PostgresEndToEndTests : IClassFixture<PostgreSql18Integratio
                 1,
                 await db.ProjectCustomers.CountAsync(customer => customer.ProjectId == project!.Id &&
                     (customer.PartyId == concurrentPartyOne.Id || customer.PartyId == concurrentPartyTwo.Id)));
+        }
+    }
+
+
+    [Fact]
+    public async Task Postgres18_ProjectCustomerIdentityGuardMigration_RollsBackAndFailsClosedOnExistingDuplicates()
+    {
+        var runtimeConnectionString = await _fixture.CreateIsolatedDatabaseConnectionStringAsync();
+        var migrationConnectionString = _fixture.GetMigrationConnectionString(runtimeConnectionString);
+        var tempRoot = Path.Combine(Path.GetTempPath(), $"promogest_customer_guard_migration_{Guid.NewGuid():N}");
+
+        await using var factory = CreateFactory(runtimeConnectionString, tempRoot);
+        using var adminClient = factory.CreateClient(new WebApplicationFactoryClientOptions { HandleCookies = true });
+        await AttachCsrfTokenAsync(adminClient);
+
+        var initialize = await adminClient.PostAsJsonAsync("/api/setup/initialize", ValidInitRequest());
+        Assert.Equal(HttpStatusCode.Created, initialize.StatusCode);
+        var login = await adminClient.PostAsJsonAsync(
+            "/api/auth/login",
+            new LoginRequest("sysadmin", "AtlasAdmin#2026"));
+        Assert.Equal(HttpStatusCode.OK, login.StatusCode);
+        await AttachCsrfTokenAsync(adminClient);
+
+        var projectResponse = await adminClient.PostAsJsonAsync(
+            "/api/projects",
+            new CreateProjectRequest(
+                "PRJ-MIGRATION-GUARD", "مشروع اختبار الترحيل", "Projet Test Migration", "16", "Alger", "Hydra",
+                null, null, null, null, "Planning", 100_000_000m, 1, 10));
+        Assert.Equal(HttpStatusCode.Created, projectResponse.StatusCode);
+        var project = await projectResponse.Content.ReadFromJsonAsync<ProjectDto>();
+        Assert.NotNull(project);
+
+        async Task<ProjectCustomerDto> CreateCustomerAsync(string displayName)
+        {
+            var response = await adminClient.PostAsJsonAsync(
+                $"/api/projects/{project!.Id}/customers",
+                new CreateProjectCustomerRequest(
+                    CustomerType: "Individual",
+                    DisplayName: displayName,
+                    ContactPerson: null,
+                    Phone: "0550123456",
+                    Email: null,
+                    Address: null,
+                    PreferredLanguage: "ar",
+                    Source: "WalkIn",
+                    IdentityDocumentStoredFileId: null,
+                    PartyId: null));
+
+            Assert.Equal(HttpStatusCode.Created, response.StatusCode);
+            var customer = await response.Content.ReadFromJsonAsync<ProjectCustomerDto>();
+            Assert.NotNull(customer);
+            return customer!;
+        }
+
+        var firstCustomer = await CreateCustomerAsync("Migration Guard Buyer A");
+        var secondCustomer = await CreateCustomerAsync("Migration Guard Buyer B");
+        Assert.NotEqual(firstCustomer.PartyId, secondCustomer.PartyId);
+
+        var migrationOptions = new DbContextOptionsBuilder<AppDbContext>()
+            .UseNpgsql(
+                migrationConnectionString,
+                npgsql => npgsql.MigrationsAssembly(typeof(AppDbContext).Assembly.FullName))
+            .Options;
+
+        await using var migrationDb = new AppDbContext(migrationOptions);
+        var migrator = migrationDb.GetService<IMigrator>();
+
+        // Prove the Down path removes only the DB guard objects and leaves the schema/data intact.
+        await migrator.MigrateAsync("20261116100000_RetireProjectCustomerIdentityMirrors");
+        await using (var ownerConnection = new NpgsqlConnection(migrationConnectionString))
+        {
+            await ownerConnection.OpenAsync();
+            await using var triggerCount = new NpgsqlCommand(
+                "SELECT COUNT(*) FROM pg_trigger WHERE NOT tgisinternal AND tgname IN " +
+                "('trg_project_customers_identity_unique', 'trg_parties_identity_unique');",
+                ownerConnection);
+            Assert.Equal(0L, (long)(await triggerCount.ExecuteScalarAsync())!);
+        }
+
+        // Simulate duplicate legacy data that could have appeared before the guard migration.
+        await migrationDb.Database.ExecuteSqlInterpolatedAsync($"""
+            UPDATE parties
+            SET display_name = {"Migration Guard Buyer A"},
+                normalized_display_name = {"MIGRATION GUARD BUYER A"}
+            WHERE id = {secondCustomer.PartyId};
+            """);
+
+        var migrationFailure = await Record.ExceptionAsync(() => migrator.MigrateAsync());
+        Assert.NotNull(migrationFailure);
+        var postgresFailure = migrationFailure!.GetBaseException() as PostgresException;
+        Assert.NotNull(postgresFailure);
+        Assert.Contains("Cannot enable project customer identity uniqueness", postgresFailure!.MessageText);
+
+        var appliedAfterRejectedMigration = await migrationDb.Database.GetAppliedMigrationsAsync();
+        Assert.DoesNotContain(
+            "20261116120000_EnforceProjectCustomerIdentityUniqueness",
+            appliedAfterRejectedMigration);
+
+        // The failed preflight must not delete, merge, or rewrite customer records.
+        Assert.Equal(
+            2,
+            await migrationDb.ProjectCustomers.CountAsync(customer => customer.ProjectId == project!.Id));
+        var duplicateNames = await migrationDb.Parties
+            .Where(party => party.Id == firstCustomer.PartyId || party.Id == secondCustomer.PartyId)
+            .Select(party => party.NormalizedDisplayName)
+            .Distinct()
+            .CountAsync();
+        Assert.Equal(1, duplicateNames);
+
+        // Reconcile the synthetic duplicate and prove the migration can be applied cleanly.
+        await migrationDb.Database.ExecuteSqlInterpolatedAsync($"""
+            UPDATE parties
+            SET display_name = {"Migration Guard Buyer B"},
+                normalized_display_name = {"MIGRATION GUARD BUYER B"}
+            WHERE id = {secondCustomer.PartyId};
+            """);
+        await migrator.MigrateAsync();
+
+        var appliedAfterRecovery = await migrationDb.Database.GetAppliedMigrationsAsync();
+        Assert.Contains(
+            "20261116120000_EnforceProjectCustomerIdentityUniqueness",
+            appliedAfterRecovery);
+
+        await using (var ownerConnection = new NpgsqlConnection(migrationConnectionString))
+        {
+            await ownerConnection.OpenAsync();
+            await using var triggerCount = new NpgsqlCommand(
+                "SELECT COUNT(*) FROM pg_trigger WHERE NOT tgisinternal AND tgname IN " +
+                "('trg_project_customers_identity_unique', 'trg_parties_identity_unique');",
+                ownerConnection);
+            Assert.Equal(2L, (long)(await triggerCount.ExecuteScalarAsync())!);
         }
     }
 

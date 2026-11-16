@@ -1,10 +1,10 @@
 # PROMO GEST — UI Implementation & Gap Matrix
 
 **Document role:** Source-audited inventory of the current React user interface, its API-backed actions, module ownership, and the gap between today's interface and the product interaction model. This is a current-state record, not a redesign specification or browser-acceptance certificate.  
-**Main commit inspected:** `62ebdcb725e0ab95059e7e4abe64581976898642` (documentation-only merge PR #61).  
+**Main commit inspected:** `4fdfcb2679231ff81b8756a8da6ba3045bea5288` (documentation-only merge PR #69; PR CI #603 passed all 3 jobs, main CI #604 is the post-merge verification).  
 **Last application runtime source commit:** `53c50fbc0db801b9298ec731cfc44f2d4d58ff7f` (PR #59; no later application-source change was found on `main`).  
-**Latest test-source commit:** `53c50fbc0db801b9298ec731cfc44f2d4d58ff7f` (PostgreSQL 18 administrative-reference endpoint regression and frontend preview-contract test).  
-**Last merged documentation PR CI:** Run #584 / [43888881047](https://github.com/younestech31/PROMO-GEST/actions/runs/43888881047) passed all three jobs on PR #61 head `b1f36615f12c1186f481109431c8aa2edd0dc4ae` (documentation-only). This run is not attributed to the merge SHA.  
+**Latest test-source commit:** `58dde79719db5949033363dfed1e4e9cb8b66f29` (PR #63 test-only PostgreSQL 18 first-run setup and logout/session-revocation regression tests).  
+**Latest documentation PR CI:** PR #69 Run #603 / [43911049988](https://github.com/younestech31/PROMO-GEST/actions/runs/43911049988) passed all 3 jobs on PR head `e6345ae4d3f3b9497ca7d16824b10a8cb5a6cd60`; its main merge SHA `4fdfcb2679231ff81b8756a8da6ba3045bea5288` is checked by main Run #604 / [43911498773](https://github.com/younestech31/PROMO-GEST/actions/runs/43911498773).  
 **Latest application-source CI:** Run #581 / [43881240365](https://github.com/younestech31/PROMO-GEST/actions/runs/43881240365) passed all three jobs on code SHA `53c50fbc0db801b9298ec731cfc44f2d4d58ff7f`.
 
 ## 1. Reading this matrix correctly
@@ -88,6 +88,22 @@ Latest repository evidence at the time of this audit:
 5. **P1-04 — bounded navigation review:** compare the current shell and project modals with the three-level organization/project interaction proposal, using this refreshed source matrix; do not begin a broad redesign or weaken server-side ProjectMember authorization.
 6. **P1-05 — Phase 1 closure:** keep blocked until P1-01 through P1-04, P0-A01/P0-A04 residuals, latest CI, and applicable professional review evidence are reconciled in Notion.
 7. **Later phases:** do not start Phase 2–5 business implementation before Phase 1 closure, K-Min prerequisites, and qualified Algerian practitioner sign-offs.
+
+## 7A. Phase 1 bounded navigation review — D-013 (16 November 2026)
+
+D-013 approves the three-level organization workspace → explicit project selection/switcher → active project workspace model **with modifications**, as a design decision only. It does not upgrade missing UI capabilities to implemented states.
+
+Source facts verified against the current application code and API:
+- `App.tsx` maintains five in-memory route states only; no router or stable project route exists. On login it loads `GET /api/projects` and lands on `overview`.
+- `ErpShellLayout.tsx` shows organization identity and language; it links to overview/projects and conditionally users/audit. No persistent project switcher or active-project identity strip exists.
+- `OverviewView.tsx` shows PG18/API/environment readiness diagnostics, project count and shortcuts; no real task, approval, alert or operational KPI feed exists.
+- `ProjectsAccessView.tsx` is a full accessible-project table with code, localized name, location, status, budget, member and structure counts. It launches project-specific structure/customer/reservation/document/access modals whose headers show project code and localized name. No search/filter/pagination is rendered in this view.
+- `GET /api/projects` supports `q` and `status`; `ProjectService.ListAccessibleProjectsAsync` returns all projects only for `SYSTEM_ADMIN`, otherwise uses the repository's membership-filtered query. PostgreSQL filters search across code, Arabic/French names, Wilaya and municipality. `GET /api/projects/{id}` separately checks explicit membership for non-admins. The current web API helper `listProjects()` does not yet pass `q` / `status`.
+- UI permission helpers hide/disable affordances, but project services/controllers enforce server authorization. The current `org.manage` profile-edit flow uses expected-concurrency protection; the old claim that the organization profile is read-only has been corrected in `PROJECT-NAVIGATION-UX.md`.
+
+**Approved constraints:** Do not fabricate tasks/approvals/alerts/KPIs. Keep organization profile management separate from technical diagnostics. Add server-backed search/pass-through and server-side pagination before scaling project directory access. Project context shall be route-per-tab and visibly identified; it is not an authorization token. Each API request revalidates permissions, ProjectMember membership, capabilities and record/project ownership. Do not rely on localStorage/currentProjectId for authorization. Preserve unsaved edits with explicit switch confirmation. Recents/favorites are preferences only. Do not enable cross-project writes/bulk mutations in first release. Keep current modal workflows until replacement routes pass acceptance. Maintain Arabic RTL / French LTR and accessible keyboard/mobile patterns.
+
+**Next implementation order (separate tasks/PRs):** (1) URL route foundation and per-tab isolation, (2) persistent active-project identity/breadcrumb and explicit switcher backed by the authorized API, (3) server-side query pass-through/search/filter/pagination, (4) separately gated technical administration, (5) real organization work center only when underlying modules own real task/approval data, (6) optional preference-only recents/favorites, and (7) an independent workstream/milestone domain review. No UI implementation, route library, API/permission/schema/migration or business data change was included in D-013.
 
 ## 8. Change policy for this document
 

@@ -16,11 +16,18 @@
 | Domain Core (`PromoGest.Domain`) | `IMPLEMENTED_AND_VERIFIED` | CI #544: **27/27** Domain tests passed. | Additional coverage is added with each domain change. |
 | Application Services (`PromoGest.Application`) | `IMPLEMENTED_AND_VERIFIED` | CI #544: **14/14** Application tests passed, including Party denial auditing and identity-mirror synchronization coverage. | Browser-level workflows are outside this test suite. |
 | PostgreSQL 18 Integration (`PromoGest.IntegrationTests`) | `IMPLEMENTED_AND_VERIFIED` | CI #544: solution build and PostgreSQL 18 integration suite passed (**24/24**), including real WebApplicationFactory assertions for no-store on successful health/API, fallback 404, and CSRF 403 responses; the database, storage, and Data Protection restore drill passed. | CI evidence is not a substitute for a customer-site installation drill or manual browser acceptance. |
-| Local React SPA (`apps/local-web`) | `PARTIALLY_IMPLEMENTED` | CI #546 re-ran all three required jobs successfully; frontend checks remain green (TypeScript strict check, **38/38** pure tests, production/static-host builds, and preview-leak checks). The Product Owner has owner-attested Arabic RTL / French LTR acceptance across desktop/mobile and the listed real workflows. | `P0-A01` first-run setup and `P0-A04` logout/revocation remain unconfirmed; browser/version and per-case sanitized artifacts were not attached. The Vite fallback simulator is intentionally not the production API and remains incomplete. |
+| Local React SPA (`apps/local-web`) | `PARTIALLY_IMPLEMENTED` | CI #550 re-ran all three required jobs successfully; frontend checks remain green (TypeScript strict check, **38/38** pure tests, production/static-host builds, and preview-leak checks). The Product Owner has owner-attested Arabic RTL / French LTR acceptance across desktop/mobile and the listed real workflows. | P0-A01 and P0-A04 remain `NOT_RUN` as owner-accepted Phase 0 residual exceptions; browser/version and per-case sanitized artifacts were not attached. The Vite fallback simulator is intentionally not the production API and remains incomplete. |
 | C2 Party / Customer identity foundation | `IMPLEMENTED_AND_VERIFIED` | PRs #35–#38 merged; Application and PostgreSQL 18 tests cover concurrency stamps, denial audit, cross-project Party reuse, identity-collision rejection, and synchronization of linked customer mirrors. | Duplicate identity columns remain transitional mirrors until the Phase 1 migration retires them. |
 | Organization profile editing | `PARTIALLY_IMPLEMENTED` | Organization profile view is read-only; `org.manage` is seeded. | `PUT /api/organization` is not implemented. |
 | Modules F–J (Contracts through SCF/Tax) | `PLANNED` | Architecture and legal/accounting prerequisites are documented. | No production business implementation; practitioner sign-off remains mandatory. |
 | Module K | `PARTIALLY_IMPLEMENTED` | K-Min local upload/list/download and SHA-256 checks are implemented and exercised by PostgreSQL 18 E2E. | Metadata lifecycle, structured links, and K-Full archival remain future work. |
+
+### GitHub Actions Run #550 — 15 November 2026 (main Phase 0 closure anchor)
+- **Commit:** `5a5196d75abcdf608e708844983fad25b600e5a4` (PR #52 owner-attested Phase 0 acceptance documentation).
+- **Frontend, .NET 10 / PostgreSQL 18, and Windows publish jobs:** all three passed.
+- **Overall:** success; this run revalidated the automated baseline but did not execute manual browser acceptance. P0-A01 and P0-A04 were subsequently accepted as explicit unrun exceptions in D-010.
+
+[Open CI Run #550](https://github.com/younestech31/PROMO-GEST/actions/runs/43772604996)
 
 ## 2. Verified CI Evidence
 

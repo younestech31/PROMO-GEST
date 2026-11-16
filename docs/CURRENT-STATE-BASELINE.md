@@ -5,7 +5,7 @@
 **Last Application Runtime / Schema Source Commit:** `53c50fbc0db801b9298ec731cfc44f2d4d58ff7f` (PR #59 merge; server-owned 69-Wilaya reference API integrated into setup, organization and project forms).  
 **Latest Test Source Commit:** `53c50fbc0db801b9298ec731cfc44f2d4d58ff7f` (PR #59 merge; PostgreSQL 18 reference endpoint regression and frontend preview-contract test).  
 **Main Commit Inspected:** `62ebdcb725e0ab95059e7e4abe64581976898642` (documentation-only merge PR #61; latest application runtime/test source remains `53c50fbc0db801b9298ec731cfc44f2d4d58ff7f`).  
-**Latest Documentation PR CI:** Run **#584** / `43888881047` passed all three jobs on PR #61 head `b1f36615f12c1186f481109431c8aa2edd0dc4ae`; it is not a CI run on merge SHA `62ebdcb725e0ab95059e7e4abe64581976898642`.  
+**Last Merged Documentation PR CI:** Run **#584** / `43888881047` passed all three jobs on PR #61 head `b1f36615f12c1186f481109431c8aa2edd0dc4ae`; it is not a CI run on merge SHA `62ebdcb725e0ab95059e7e4abe64581976898642`.  
 **Latest Application-Source CI:** Run **#581** / `43881240365` passed all three jobs on application/test SHA `53c50fbc0db801b9298ec731cfc44f2d4d58ff7f`.  
 **Governing Rule:** A feature is `IMPLEMENTED_AND_VERIFIED` only when its code and applicable automated verification pass in the audited baseline. A green pipeline does not certify untested browser UX, preview parity, production installation, or legal/accounting correctness.
 

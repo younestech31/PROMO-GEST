@@ -1,10 +1,11 @@
 # PROMO GEST — Current State Baseline
 
 **Document Role:** Evidence-backed snapshot of the repository, not a product roadmap.  
+**Operational Roadmap:** [Notion Master Roadmap](https://app.notion.com/p/41a13e9ed3688127a157dceb9a0b655f) · [Notion Execution Backlog](https://app.notion.com/p/41a13e9ed3688121adbff807d29d4e46). Notion governs work sequencing and task tracking; this file and the current repository remain the source of implementation and verification truth.  
 **Last Application Runtime / Schema Source Commit:** `53c50fbc0db801b9298ec731cfc44f2d4d58ff7f` (PR #59 merge; server-owned 69-Wilaya reference API integrated into setup, organization and project forms).  
 **Latest Test Source Commit:** `53c50fbc0db801b9298ec731cfc44f2d4d58ff7f` (PR #59 merge; PostgreSQL 18 reference endpoint regression and frontend preview-contract test).  
-**Main Commit Inspected:** `53c50fbc0db801b9298ec731cfc44f2d4d58ff7f`.  
-**Latest Green Main CI:** Run **#581** / `43881240365` passed all three jobs on main SHA `53c50fbc0db801b9298ec731cfc44f2d4d58ff7f`.  
+**Main Commit Inspected:** `20f2e043515bd5cb164ddb2ee3b4a195f0ab86ed` (documentation-only merge PR #60; latest code-changing source remains `53c50fbc0db801b9298ec731cfc44f2d4d58ff7f`).  
+**Latest Green Main CI:** Run **#583** / `43884047504` passed all three jobs on main SHA `20f2e043515bd5cb164ddb2ee3b4a195f0ab86ed` (docs-only PR #60). Latest code-changing baseline `53c50fbc0db801b9298ec731cfc44f2d4d58ff7f` passed application CI #581 / `43881240365` across all three jobs.  
 **Governing Rule:** A feature is `IMPLEMENTED_AND_VERIFIED` only when its code and applicable automated verification pass in the audited baseline. A green pipeline does not certify untested browser UX, preview parity, production installation, or legal/accounting correctness.
 
 ---

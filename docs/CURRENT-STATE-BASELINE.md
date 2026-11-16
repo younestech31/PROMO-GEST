@@ -2,12 +2,12 @@
 
 **Document Role:** Evidence-backed snapshot of the repository, not a product roadmap.  
 **Operational Roadmap:** [Notion Master Roadmap](https://app.notion.com/p/41a13e9ed3688127a157dceb9a0b655f) · [Notion Execution Backlog](https://app.notion.com/p/41a13e9ed3688121adbff807d29d4e46). Notion governs work sequencing and task tracking; this file and the current repository remain the source of implementation and verification truth.  
-**Last Application Runtime / Schema Source Commit:** `53c50fbc0db801b9298ec731cfc44f2d4d58ff7f` (PR #59 merge; no runtime/schema changes in subsequent documentation/test-only PRs #63, #65, #66, #68, #69, #70, #71, or #72).  
-**Latest Test Source Commit:** `58dde79719db5949033363dfed1e4e9cb8b66f29` (PR #63 head; adds PostgreSQL 18 first-run setup and logout/session-revocation regression tests).  
-**Main Commit Inspected:** `c920876c2d9c3233d468601e3636cf347a875924` (PR #72 documentation-only merge; latest application runtime remains `53c50fbc0db801b9298ec731cfc44f2d4d58ff7f`, latest test source remains PR #63 head `58dde79719db5949033363dfed1e4e9cb8b66f29`).  
-**Latest Main CI:** Run **#606** / `43913437191` passed all three jobs on main SHA `24d1d57bbe19102c9bbbd63bb31ca2793720d807` (PR #70 merge); no post-merge CI has been confirmed for PR #71 or PR #72.  
-**Latest Documentation PR CI:** PR #72 Run **#612** / `43928612284` passed all three jobs on PR head `2ebf4be8f4080a8c104ca57dadbeaae3f4f989ba`; PR #72 merged to main at `c920876c2d9c3233d468601e3636cf347a875924`. The run is PR-head evidence, not a post-merge run on the merge SHA.  
-**Latest Application/Test CI:** PR #63 Run **#589** / `43900696444` passed all three jobs on test SHA `58dde79719db5949033363dfed1e4e9cb8b66f29`; the .NET job passed Domain **34/34**, Application **20/20**, PostgreSQL 18 Integration **32/32**, and the full restore drill. Main CI #592 subsequently passed all three jobs after the documentation-only PR #65 merge.  
+**Last Application Runtime / Schema Source Commit:** `53c50fbc0db801b9298ec731cfc44f2d4d58ff7f` (PR #59 merge; PR #67 changed a test assertion only; subsequent PRs #68–#74 changed documentation only; no runtime/schema changes after PR #59).  
+**Latest Test Source Commit:** `6e37abf8eb170f2c4dfc136dc481bdf7a11f22d2` (PR #67 head; removes an xUnit single-item predicate analyzer warning in the logout integration test without changing test behavior; PR CI #595 passed all three jobs). PR #63 remains the source of the expanded first-run and logout/session-revocation regression cases.  
+**Main Commit Inspected:** `27a65b613132953204201d885ca1939c4d856db6` (PR #74 documentation-only merge; latest application runtime/schema remains `53c50fbc0db801b9298ec731cfc44f2d4d58ff7f`, latest test source is PR #67 head `6e37abf8eb170f2c4dfc136dc481bdf7a11f22d2`).  
+**Latest Main CI confirmed in this audit:** Run **#606** / `43913437191` passed all three jobs on SHA `24d1d57bbe19102c9bbbd63bb31ca2793720d807` (PR #70 merge); a post-merge CI result has not been confirmed for PR #67 or PRs #71–#74.  
+**Latest Documentation PR CI:** PR #74 Run **#617** / `43951981746` passed all three jobs on PR head `a1c9b6f4b850736f7f8c9b25d980a161626e1f15`; PR #74 merged to main at `27a65b613132953204201d885ca1939c4d856db6`. The run is PR-head evidence, not a post-merge run on the merge SHA.  
+**Latest Test-Source CI:** PR #67 Run **#595** / `43907255613` passed all three jobs on test head `6e37abf8eb170f2c4dfc136dc481bdf7a11f22d2`; this was a test-only analyzer-warning correction. The detailed first-run/logout regression counts remain evidenced by PR #63 Run #589 / `43900696444` (Domain 34/34, Application 20/20, PostgreSQL 18 Integration 32/32; restore drill passed).  
 **Governing Rule:** A feature is `IMPLEMENTED_AND_VERIFIED` only when its code and applicable automated verification pass in the audited baseline. A green pipeline does not certify untested browser UX, preview parity, production installation, or legal/accounting correctness.
 
 ---
@@ -54,6 +54,22 @@
 - Updated `REFERENCE-DATA-GOVERNANCE.md` and ADR-0010 with Decree 85-20's code lifecycle rule, and the confirmed 1985, 1986, 1998, 2021 and 2026 register instruments. The amendment inventory remains explicitly non-exhaustive; the full 1,541-row bilingual crosswalk and qualified review remain outstanding.
 - Stable internal UUID versus effective-dated official code is an application integrity decision, not a rule attributed to Decree 85-20.
 - Documentation only: no runtime, API, UI, router, schema, migration, permissions, security policy, business data, production database, Google AI Studio Cloud SQL, credentials, or deployment changed.
+
+### PR #73 — Baseline synchronization after PR #72 (documentation only)
+- PR #73 head `55237adc69793aae3d919935892eb8e697572b42`; CI #614 / `43930654793` passed all three jobs on the PR head.
+- Merge SHA `873107f1792fb1f5ba2e7d29f1e6f84f68ac4312`; post-merge main CI was not confirmed in the subsequent audit.
+- Synchronized the five canonical baseline documents and corrected the ADR-0010 summary to distinguish the statutory 1,541 count from the 0 loaded commune records. No runtime/schema changes.
+
+### PR #67 — Integration-test analyzer correction (test only)
+- PR #67 head `6e37abf8eb170f2c4dfc136dc481bdf7a11f22d2`; CI #595 / `43907255613` passed all three jobs.
+- Merge SHA `165540afce1ca4df0c933950b1cb7b303f9285fc`; post-merge main CI was not confirmed.
+- Replaced a LINQ-filtered `Assert.Single` with the predicate overload to remove xUnit2031 without changing assertion intent or runtime behavior. No application runtime/schema change.
+
+### PR #74 — Corrections to official territorial-source details (documentation only)
+- PR #74 head `a1c9b6f4b850736f7f8c9b25d980a161626e1f15`; CI #617 / `43951981746` passed all three jobs (frontend/static hosting, .NET 10 + PostgreSQL 18, Windows publish/PowerShell).
+- Merge SHA `27a65b613132953204201d885ca1939c4d856db6`; post-merge main CI was not confirmed in this audit.
+- Corrected the 8 February 1986 annex to all four commune/code/seat rows, corrected the official seat spelling `Zoudj El Beida`, and refined the 1998 order's territorial scope. The amendment inventory remains non-exhaustive.
+- No runtime, schema, migration, permissions, business data, production database, Cloud SQL, credentials or deployment changed.
 
 ### Phase 1 design review — P1-04 / D-013 (PR #70 merged; design approved)
 - PR #70 head `e1c183f0d2a4a9ab06abf72a955a6169634b73e6` passed PR CI #605 / `43912825520` (all three jobs); merge SHA `24d1d57bbe19102c9bbbd63bb31ca2793720d807` passed main CI #606 / `43913437191` (all three jobs).

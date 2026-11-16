@@ -92,7 +92,7 @@ export function OrganizationProfileView({
     try {
       const updated = await apiClient.updateOrganizationProfile({
         ...draft,
-        expectedConcurrencyStamp: organization.concurrencyStamp,
+        expectedConcurrencyStamp: organization.concurrencyStamp ?? '',
       });
       onUpdated(updated);
       setIsEditing(false);

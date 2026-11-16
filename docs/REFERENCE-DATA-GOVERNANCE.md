@@ -94,7 +94,7 @@ Before adding a complete commune dataset:
 8. Add deterministic import, validation and regression tests.
 9. Add an update/rollback plan for installations with historical project records.
 
-See [ADR 0010 — Versioned administrative reference data](ADR/ADR-0010-versioned-algerian-administrative-reference-data.md).
+See [ADR 0010 — Versioned administrative reference data](ADR/0010-versioned-algerian-administrative-reference-data.md).
 
 ## 8. Official-source audit and reconciliation findings — 16 November 2026
 

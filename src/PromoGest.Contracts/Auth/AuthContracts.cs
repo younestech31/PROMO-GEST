@@ -33,7 +33,10 @@ public sealed record OrganizationSummaryResponse(
     string? Phone,
     string? Email,
     string DefaultLanguage,
-    string CurrencyCode);
+    string CurrencyCode)
+{
+    public Guid ConcurrencyStamp { get; init; }
+}
 
 public sealed record SessionResponse(
     AuthenticatedUserResponse User,

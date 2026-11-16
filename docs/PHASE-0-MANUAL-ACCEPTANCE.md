@@ -207,9 +207,20 @@ Do not attach an unredacted HAR, browser storage dump, environment file, SQL con
 
 **Status provenance:** Every `PASS` in this register is based on the Product Owner's 15 November 2026 confirmation, not on a newly executed test or a CI run. The status is recorded at the workflow-group level described by the owner; no claim is made that each negative/boundary subcase in every detailed test row has a separately attached timestamp or trace. The missing artifact metadata is stated in Section 6 above.
 
-## 7. Phase 0 exit criteria
+## 7. Owner-directed Phase 0 closure — 16 November 2026 (D-010)
 
-Phase 0 may move to `COMPLETE` only when:
+The Product Owner explicitly directed that Phase 0 be considered closed for program sequencing and that Phase 1 begin. This is an owner-approved acceptance of known residual risks, not a claim that every original technical exit criterion was executed.
+
+- P0-A02, P0-A03, P0-A05 and P0-B–G remain `PASS` as owner-attested above.
+- P0-A01 (first-run initialization on an empty disposable database and rejection of a second initialization) remains `NOT_RUN`.
+- P0-A04 (logout/session revocation followed by protected-route denial) remains `NOT_RUN`.
+- Browser/version metadata and sanitized per-case artifacts were not provided; none are claimed.
+- Phase 0 is administratively `COMPLETE` by the Product Owner's direction. The outstanding checks remain visible residual work and must be executed before production release or any release claim depending on those scenarios.
+- Phase 1 is authorized to enter `IN_PROGRESS`. D-010 does not waive G1–G10, security, data-integrity, backup/restore, or later practitioner sign-off gates.
+
+## 8. Original Phase 0 exit criteria
+
+The original technical exit criteria remain the engineering definition of a fully evidenced Phase 0. The Product Owner's D-010 administrative closure above accepted the named exceptions for program sequencing; it does not assert that these criteria were all satisfied. The original criteria are:
 1. The current main CI is green for the exact main commit under review.
 2. Every applicable case above has a recorded result; there are no unresolved critical or high-severity failures.
 3. Principal workflows pass against the real ASP.NET Core API and PostgreSQL 18, including persistence/reload and permission denial paths.

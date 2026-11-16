@@ -1,7 +1,7 @@
 # PROMO GEST — Consolidated Decision Log & Architecture Decision Records (ADRs)
 
 **Document Role:** Single repository of architectural, design, and governance decisions for PROMO GEST.  
-**Current Audit Evidence Anchor:** Latest application runtime/schema source remains PR #59 / `53c50fbc0db801b9298ec731cfc44f2d4d58ff7f`; latest regression-test source is PR #63 head `58dde79719db5949033363dfed1e4e9cb8b66f29` (PR CI #589 passed all three jobs). Latest inspected main base for this review is PR #69 merge `4fdfcb2679231ff81b8756a8da6ba3045bea5288`; PR #69 head `e6345ae4d3f3b9497ca7d16824b10a8cb5a6cd60` passed PR CI #603 / `43911049988` (3/3 jobs). Post-merge main CI #604 / `43911498773` is the verification run for `4fdfcb...`. PR #68 head `f98a21125cc45c567bb3de49e6516a085734480e` passed CI #601 (3/3); its merge `7d1b14e4...` passed main CI #602 (3/3). D-004 through D-013 are retained as current/historical evidence records.
+**Current Audit Evidence Anchor:** Latest application runtime/schema source remains PR #59 / `53c50fbc0db801b9298ec731cfc44f2d4d58ff7f`; latest regression-test source is PR #63 head `58dde79719db5949033363dfed1e4e9cb8b66f29` (PR CI #589 passed all three jobs). Latest inspected main is PR #70 merge `24d1d57bbe19102c9bbbd63bb31ca2793720d807`; PR #70 head `e1c183f0d2a4a9ab06abf72a955a6169634b73e6` passed PR CI #605 / `43912825520` (3/3 jobs). Post-merge main CI #606 / `43913437191` passed all three jobs on merge SHA `24d1d57bbe19102c9bbbd63bb31ca2793720d807`. PR #68 head `f98a21125cc45c567bb3de49e6516a085734480e` passed CI #601 (3/3); its merge `7d1b14e4...` passed main CI #602 (3/3). D-004 through D-013 are retained as current/historical evidence records.
 
 ---
 

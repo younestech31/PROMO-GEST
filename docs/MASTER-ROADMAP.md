@@ -2,8 +2,8 @@
 
 **Document Role:** Dependency-ordered delivery roadmap and execution control for PROMO GEST.  
 **Last Code-Changing Source Baseline:** `53c50fbc0db801b9298ec731cfc44f2d4d58ff7f` (PR #59 merge; server-owned 69-Wilaya reference integration).  
-**Main Commit Inspected:** `4fdfcb2679231ff81b8756a8da6ba3045bea5288` (documentation-only merge PR #69; latest application runtime remains `53c50fbc0db801b9298ec731cfc44f2d4d58ff7f`).  
-**Latest documentation PR CI:** PR #69 Run **#603** / `43911049988` passed all three jobs on PR head `e6345ae4d3f3b9497ca7d16824b10a8cb5a6cd60`; main CI #604 / `43911498773` passed all three jobs on merge SHA `4fdfcb2679231ff81b8756a8da6ba3045bea5288`. **Latest application-source CI:** Run #581 / `43881240365` passed all three jobs on source SHA `53c50fbc0db801b9298ec731cfc44f2d4d58ff7f`.  
+**Main Commit Inspected:** `24d1d57bbe19102c9bbbd63bb31ca2793720d807` (documentation-only merge PR #70; latest application runtime remains `53c50fbc0db801b9298ec731cfc44f2d4d58ff7f`).  
+**Latest documentation PR CI:** PR #70 Run **#605** / `43912825520` passed all three jobs on PR head `e1c183f0d2a4a9ab06abf72a955a6169634b73e6`; main CI #606 / `43913437191` passed all three jobs on merge SHA `24d1d57bbe19102c9bbbd63bb31ca2793720d807`. **Latest application-source CI:** Run #581 / `43881240365` passed all three jobs on source SHA `53c50fbc0db801b9298ec731cfc44f2d4d58ff7f`.  
 **Product Rule:** Deliver complete, secure business workflows in dependency order. Do not let isolated defects, cosmetic changes, or technical administration work displace the ERP product vision.  
 **Notion Operating Roadmap:** [PROMO GEST — Master Roadmap & Operating Reference](https://app.notion.com/p/41a13e9ed3688127a157dceb9a0b655f) and [Execution Backlog](https://app.notion.com/p/41a13e9ed3688121adbff807d29d4e46) are the operational planning and task-status workspace. GitHub remains authoritative for code, technical requirements, decisions, migrations, and verification evidence. In a conflict, current repository source/tests/docs determine implementation truth; Notion determines the agreed work order. Keep both synchronized through focused PRs.
 

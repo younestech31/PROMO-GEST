@@ -20,7 +20,7 @@ Law No. 26-06 (Official Journal No. 25, 5 April 2026) establishes 69 Wilayas and
 6. Represent historical parent changes with validity intervals; never rewrite historical contracts, permits or project locations because the current parent/name changed.
 7. Reject unsupported code/name combinations in new canonical requests. The client is not trusted to author canonical labels.
 8. Do not load or publish a commune dataset until all relationships and labels have been validated against an official source and reconciled to the 1,541-commune legal baseline.
-9. Treat the 1985/2021/2026 instruments cited here as verified milestones only, not an exhaustive list of amendments. Identify and reconcile all intervening instruments before accepting the full crosswalk.
+9. Treat the 1985, 1986, 1998, 2021 and 2026 instruments cited here as verified milestones only, not an exhaustive list of amendments. Identify and reconcile all other intervening instruments before accepting the full crosswalk.
 10. Do not use the official commune code as a permanent internal identity. Preserve a stable internal UUID across reviewed versions; retain each official code as an effective-dated external attribute. When a commune's parent Wilaya changes, preserve its former code and record the new code as a new version; never reallocate a former or dissolved code. This is an application integrity decision grounded in Decree 85-20, not a claim that the decree specifies internal database identifiers.
 
 ## Consequences

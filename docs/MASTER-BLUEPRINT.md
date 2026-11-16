@@ -4,10 +4,18 @@
 **Last Application Runtime Source Commit:** `53c50fbc0db801b9298ec731cfc44f2d4d58ff7f` (PR #59 merge; server-owned 69-Wilaya reference integrated into setup, organization and project forms).  
 **Latest Test-Source Commit:** `53c50fbc0db801b9298ec731cfc44f2d4d58ff7f` (PR #59 PostgreSQL 18 endpoint and preview-contract regression tests).  
 **Main Commit Inspected:** `53c50fbc0db801b9298ec731cfc44f2d4d58ff7f`.  
-**Latest Green Main CI:** GitHub Actions Run #581 / `43881240365`; all three jobs passed.  
+**Latest Green Main CI:** GitHub Actions Run #583 / `43884047504`; all three jobs passed on documentation-only main SHA `20f2e043515bd5cb164ddb2ee3b4a195f0ab86ed`. Latest code-changing source baseline remains `53c50fbc0db801b9298ec731cfc44f2d4d58ff7f` with application CI #581 / `43881240365` all three jobs passed.  
 **Governing Charter:** Local-first, on-premises per organization, PostgreSQL 18 single source of truth, single System Administrator (`SYSTEM_ADMIN`), HTTP-only `SameSite=Strict` cookie sessions (`promogest_session`) + CSRF, local filesystem storage with SHA-256 verification, Arabic RTL primary / French LTR secondary, Algerian DZD & legal context.
 
 ---
+
+## 0. Operational Roadmap Reference
+
+Notion is the operational workspace for delivery order, priorities, dependencies, and task progress:
+- [PROMO GEST — Master Roadmap & Operating Reference](https://app.notion.com/p/41a13e9ed3688127a157dceb9a0b655f)
+- [PROMO GEST — Execution Backlog](https://app.notion.com/p/41a13e9ed3688121adbff807d29d4e46)
+
+GitHub `docs/`, source code, migrations, tests, and CI remain the authoritative technical evidence. A Notion status never upgrades an implementation state without linked repository and acceptance evidence. Reconcile both systems on every roadmap-affecting PR.
 
 ## 1. Unified 6-State Status Taxonomy
 

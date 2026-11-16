@@ -19,6 +19,7 @@ using PromoGest.Contracts.Audit;
 using PromoGest.Contracts.Common;
 using PromoGest.Contracts.Projects;
 using PromoGest.Contracts.Setup;
+using PromoGest.Contracts.Organization;
 using PromoGest.Contracts.Users;
 using PromoGest.Domain.Entities;
 using PromoGest.Domain.Enums;
@@ -1905,4 +1906,117 @@ public sealed class PostgresEndToEndTests : IClassFixture<PostgreSql18Integratio
         Assert.Equal(1, await db.OrganizationSettings.CountAsync());
         Assert.Equal(1, await db.Users.CountAsync(u => u.IsSystemAdministrator));
     }
+    [Fact]
+    public async Task OrganizationProfileUpdate_EnforcesPermission_AuditsDenial_AndRejectsStaleConcurrency()
+    {
+        var connStr = await _fixture.CreateIsolatedDatabaseConnectionStringAsync();
+        var tempRoot = Path.Combine(Path.GetTempPath(), $"promogest_org_profile_{Guid.NewGuid():N}");
+
+        await using var factory = CreateFactory(connStr, tempRoot);
+        using var adminClient = factory.CreateClient(new WebApplicationFactoryClientOptions { HandleCookies = true });
+
+        await AttachCsrfTokenAsync(adminClient);
+        var initialize = await adminClient.PostAsJsonAsync("/api/setup/initialize", ValidInitRequest());
+        Assert.Equal(HttpStatusCode.Created, initialize.StatusCode);
+
+        var adminLogin = await adminClient.PostAsJsonAsync(
+            "/api/auth/login",
+            new LoginRequest("sysadmin", "AtlasAdmin#2026"));
+        Assert.Equal(HttpStatusCode.OK, adminLogin.StatusCode);
+        await AttachCsrfTokenAsync(adminClient);
+
+        var adminSession = await adminClient.GetFromJsonAsync<SessionResponse>("/api/auth/me");
+        Assert.NotNull(adminSession);
+        Assert.NotEqual(Guid.Empty, adminSession!.Organization.ConcurrencyStamp);
+
+        var employeeResponse = await adminClient.PostAsJsonAsync("/api/users", new CreateEmployeeRequest(
+            "org.editor",
+            "Organization Editor",
+            "org.editor@atlasimmo.dz",
+            null,
+            "OrgEditorPass#2026",
+            "fr",
+            new[] { Role.CommercialManagerCode }));
+        Assert.Equal(HttpStatusCode.Created, employeeResponse.StatusCode);
+
+        using var employeeClient = factory.CreateClient(new WebApplicationFactoryClientOptions { HandleCookies = true });
+        var employeeLogin = await employeeClient.PostAsJsonAsync(
+            "/api/auth/login",
+            new LoginRequest("org.editor", "OrgEditorPass#2026"));
+        Assert.Equal(HttpStatusCode.OK, employeeLogin.StatusCode);
+        await AttachCsrfTokenAsync(employeeClient);
+
+        UpdateOrganizationProfileRequest CreateRequest(
+            string legalName,
+            Guid expectedStamp,
+            string? email = "direction@atlasimmo.dz")
+            => new(
+                legalName,
+                "Atlas Immo",
+                "SPA",
+                "001616098765432",
+                "001616098765400",
+                "16/00-9876543B21",
+                "16098765432",
+                100_000_000m,
+                "16",
+                "Alger",
+                "Dely Ibrahim, Alger",
+                "+21321000010",
+                email,
+                "ar",
+                expectedStamp);
+
+        var forbidden = await employeeClient.PutAsJsonAsync(
+            "/api/organization",
+            CreateRequest("Unauthorized Update", adminSession.Organization.ConcurrencyStamp));
+        Assert.Equal(HttpStatusCode.Forbidden, forbidden.StatusCode);
+        var forbiddenError = await forbidden.Content.ReadFromJsonAsync<ApiErrorResponse>();
+        Assert.Equal("FORBIDDEN_ORGANIZATION_MANAGE", forbiddenError!.Code);
+
+        using (var auditScope = factory.Services.CreateScope())
+        {
+            var db = auditScope.ServiceProvider.GetRequiredService<AppDbContext>();
+            Assert.Contains(await db.AuditLogs.ToListAsync(), entry =>
+                entry.EventType == "ACCESS_DENIED" &&
+                entry.TargetEntityType == "OrganizationSettings");
+        }
+
+        var authorizedRequest = CreateRequest(
+            "Promotion Atlas Updated",
+            adminSession.Organization.ConcurrencyStamp,
+            "contact@atlasimmo.dz");
+        var updateResponse = await adminClient.PutAsJsonAsync("/api/organization", authorizedRequest);
+        Assert.Equal(HttpStatusCode.OK, updateResponse.StatusCode);
+
+        var updatedOrganization = await updateResponse.Content.ReadFromJsonAsync<OrganizationSummaryResponse>();
+        Assert.NotNull(updatedOrganization);
+        Assert.Equal("Promotion Atlas Updated", updatedOrganization!.LegalName);
+        Assert.Equal("contact@atlasimmo.dz", updatedOrganization.Email);
+        Assert.NotEqual(adminSession.Organization.ConcurrencyStamp, updatedOrganization.ConcurrencyStamp);
+        Assert.Equal("DZD", updatedOrganization.CurrencyCode);
+
+        var staleRequest = authorizedRequest with { LegalName = "Stale Organization Name" };
+        var staleResponse = await adminClient.PutAsJsonAsync("/api/organization", staleRequest);
+        Assert.Equal(HttpStatusCode.Conflict, staleResponse.StatusCode);
+        var staleError = await staleResponse.Content.ReadFromJsonAsync<ApiErrorResponse>();
+        Assert.Equal("ORG_CONCURRENCY_CONFLICT", staleError!.Code);
+
+        var refreshedSession = await adminClient.GetFromJsonAsync<SessionResponse>("/api/auth/me");
+        Assert.NotNull(refreshedSession);
+        Assert.Equal("Promotion Atlas Updated", refreshedSession!.Organization.LegalName);
+        Assert.Equal(updatedOrganization.ConcurrencyStamp, refreshedSession.Organization.ConcurrencyStamp);
+
+        var invalidRequest = authorizedRequest with
+        {
+            Email = "not-an-email",
+            ExpectedConcurrencyStamp = updatedOrganization.ConcurrencyStamp
+        };
+        var invalidResponse = await adminClient.PutAsJsonAsync("/api/organization", invalidRequest);
+        Assert.Equal(HttpStatusCode.BadRequest, invalidResponse.StatusCode);
+        var invalidError = await invalidResponse.Content.ReadFromJsonAsync<ApiErrorResponse>();
+        Assert.Equal("ORG_EMAIL_INVALID", invalidError!.Code);
+    }
+
+
 }

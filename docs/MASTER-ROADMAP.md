@@ -1,9 +1,9 @@
 # PROMO GEST — Product Milestones & Delivery Roadmap
 
 **Document Role:** Dependency-ordered delivery roadmap and execution control for PROMO GEST.  
-**Last Code-Changing Source Baseline:** `23f019de7c787c0f93b5b7f0b5cec69992ff087a` (PR #48 merge; API/health no-store policy).  
-**Main Commit Inspected at Audit Start:** `5a5196d75abcdf608e708844983fad25b600e5a4` (PR #52 owner-attested Phase 0 acceptance record).  
-**Latest Green CI at Audit Start:** GitHub Actions Run **#550** / `43772604996` — all three jobs passed on 15 November 2026.  
+**Last Code-Changing Source Baseline:** `2fb58c5b8c9ab632b17f9785c1eebce86c885c92` (PR #56 merge; PostgreSQL customer-identity uniqueness guard).  
+**Main Commit Inspected:** `2fb58c5b8c9ab632b17f9785c1eebce86c885c92`.  
+**Latest Green Main CI:** GitHub Actions Run **#571** / `43863513630` — all three jobs passed on 16 November 2026.  
 **Product Rule:** Deliver complete, secure business workflows in dependency order. Do not let isolated defects, cosmetic changes, or technical administration work displace the ERP product vision.
 
 ---
@@ -13,7 +13,7 @@
 | Phase | Module Scope | Status | Primary Gate Requirements |
 |---|---|---|---|
 | **Phase 0** | Stabilization, runtime proof, and baseline correction | `COMPLETE` (owner-directed closure; D-010) | Product Owner explicitly closed Phase 0 on 16 November 2026 after attesting the principal bilingual desktop/mobile workflows. P0-A01 and P0-A04 remain `NOT_RUN` and are accepted residual exceptions, not passes. Supporting browser/version artifacts were not attached. This administrative closure authorizes Phase 1 only; it does not waive G1–G10 or production-release evidence. |
-| **Phase 1** | Foundation completion, master data, and product navigation alignment | `IN_PROGRESS` | Organization profile editing (`PUT /api/organization` with `org.manage` and CAS) and `projects.structure.manage` alignment are implemented alongside audit hardening remediations. Remaining Phase 1 work: retire transitional `project_customers` identity mirrors through reviewed migration/backfill/rollback; complete versioned official 69-Wilaya / commune reference data under ADR-0010; review the organization workspace → project switcher → active project workspace model as bounded design work before any navigation implementation. |
+| **Phase 1** | Foundation completion, master data, and product navigation alignment | `IN_PROGRESS` | Organization profile editing, `projects.structure.manage`, Party canonical identity, retired ProjectCustomer identity mirrors, and the PostgreSQL 18 project/name/phone duplicate guard are implemented and verified (PRs #55–#56; main CI #571). Remaining Phase 1 work: complete the official versioned 69-Wilaya / 1,541-commune reference data under ADR-0010 and conduct the bounded organization workspace → project switcher → active project workspace design review before any navigation implementation. |
 | **Phase 2** | Contracts, legal deeds, and **K-Min** | `PLANNED` | Complete K-Min metadata/archive/structured DocumentLink capabilities; implement distinct statutory reservation, VSP, and final notarial sale workflows with immutable ContractVersion; obtain qualified Algerian legal/notarial sign-off before encoding statutory rules. |
 | **Phase 3A** | DZD installments, collections, and treasury | `PLANNED` | Versioned PaymentObligation schedules, confirmed cash/bank/check receipts, allocations, refunds/reversals, separation of promoter treasury from FGCMPI escrow, and qualified legal/accounting review. |
 | **Phase 3B / 3C** | Construction works, procurement, and stock | `PLANNED` | Work lots, contractor agreements, site measurements and interim payment situations, accepted ConstructionMilestoneEvidence, supplier directory, purchase orders, and warehouse/site stock ledger. |
@@ -29,7 +29,7 @@ The next work is deliberately bounded. Do not start Phase 2–5 feature coding w
 1. **Phase 0 closure (owner decision D-010):** retain the owner-attested PASS groups for P0-A02, P0-A03, P0-A05 and P0-B–G. Keep P0-A01 and P0-A04 visibly `NOT_RUN` as accepted residual exceptions; complete them before production release or any later gate that relies on those scenarios. Do not relabel them as passed.
 2. **Product-scope map — completed as a documentation baseline:** [UI-IMPLEMENTATION-AND-GAP-MATRIX.md](UI-IMPLEMENTATION-AND-GAP-MATRIX.md) records the current React screens, API-backed actions, module ownership, implementation states, and gaps from source inspection. Keep it synchronized with future UI/API changes; it is not manual browser acceptance.
 3. **Bound navigation decision:** defer approval and implementation of `PROJECT-NAVIGATION-UX.md` to the Phase 1 design review. Keep the current UI intact in Phase 0; Phase 1 must first review the organization workspace, explicit project switcher, active project workspace, and separate technical administration as a bounded design task.
-4. **Execute Phase 1 (now IN_PROGRESS by owner direction):** organization profile editing (`PUT /api/organization`) and structure authorization alignment (`projects.structure.manage`) are delivered; remaining Phase 1 work covers Party/ProjectCustomer mirror retirement and versioned territorial reference data as individually reviewable vertical slices.
+4. **Execute Phase 1 (IN_PROGRESS):** organization profile editing, `projects.structure.manage`, Party/ProjectCustomer identity separation, and PostgreSQL duplicate-prevention are delivered and verified. Continue with the versioned territorial reference catalogue and bounded product-navigation design review as separate, reviewable slices.
 5. **Reassess release scope:** the exact first-production-release boundary remains a Product Owner decision. Do not assume that later legal/financial phases are included or excluded without a documented decision.
 
 ---

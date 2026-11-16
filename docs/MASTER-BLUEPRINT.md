@@ -1,10 +1,10 @@
 # PROMO GEST — Master Engineering Blueprint
 
 **Document Role:** Single authoritative index & master entry point for the PROMO GEST local-first real estate developer ERP (*promoteur immobilier* — Algeria).  
-**Last Application Runtime Source Commit:** `23f019de7c787c0f93b5b7f0b5cec69992ff087a` (PR #48 merge; API/health no-store policy).  
-**Latest Test-Source Commit:** `c26194dce5124d5d5e8d67fc5a04708346b1d5e4` (PR #50; real HTTP-pipeline cache-policy assertions).  
-**Main Commit Inspected at Audit Start:** `5a5196d75abcdf608e708844983fad25b600e5a4` (PR #52 owner-attested Phase 0 acceptance record).  
-**Latest Green CI at Audit Start:** GitHub Actions Run #550 / `43772604996` on current main; all three jobs passed.  
+**Last Application Runtime Source Commit:** `53c50fbc0db801b9298ec731cfc44f2d4d58ff7f` (PR #59 merge; server-owned 69-Wilaya reference integrated into setup, organization and project forms).  
+**Latest Test-Source Commit:** `53c50fbc0db801b9298ec731cfc44f2d4d58ff7f` (PR #59 PostgreSQL 18 endpoint and preview-contract regression tests).  
+**Main Commit Inspected:** `53c50fbc0db801b9298ec731cfc44f2d4d58ff7f`.  
+**Latest Green Main CI:** GitHub Actions Run #581 / `43881240365`; all three jobs passed.  
 **Governing Charter:** Local-first, on-premises per organization, PostgreSQL 18 single source of truth, single System Administrator (`SYSTEM_ADMIN`), HTTP-only `SameSite=Strict` cookie sessions (`promogest_session`) + CSRF, local filesystem storage with SHA-256 verification, Arabic RTL primary / French LTR secondary, Algerian DZD & legal context.
 
 ---
@@ -68,15 +68,16 @@ Every claim across this blueprint uses **strictly one** of the six evidence-back
 3. **Counterparties (Party), CRM & Holds:** Organization-wide `parties` identity (`id`, `party_kind`, `display_name`), project-scoped `project_customers` & `customer_interactions`, and internal lot/unit holds (`project_sales_reservations`), cleanly separated from future Statutory Reservation Contracts, VSP / *Acte Notarié* sales contracts, regulated payment milestones, and DZD collections.
 4. **Execution, Accounting & Statutory Compliance:** Works/construction tracking (lots, contractor situations, FGCMPI/legal compliance), suppliers/inventory, **Algerian SCF (Système Comptable Financier)** journal generation, VAT/IBS/TAP/IRG tax tracking (Finance Laws 2025/2026 gated on qualified accountant review), and local reporting.
 
-### High-Level Program Status Snapshot (Main Source Baseline: `065d54cff4e08ed868e676d4cf3d04c715898782`; latest main CI #573)
+### High-Level Program Status Snapshot (Main Source Baseline: `53c50fbc0db801b9298ec731cfc44f2d4d58ff7f`; latest main CI #581)
 
 | Layer / Domain | Current State | Verification Evidence |
 |---|---|---|
-| Domain Core (`PromoGest.Domain`) | `IMPLEMENTED_AND_VERIFIED` | Main CI #573: **34/34** Domain tests passed |
-| Application Services (`PromoGest.Application`) | `IMPLEMENTED_AND_VERIFIED` | Main CI #573: **20/20** Application tests passed |
+| Domain Core (`PromoGest.Domain`) | `IMPLEMENTED_AND_VERIFIED` | Main CI #581: **34/34** Domain tests passed |
+| Application Services (`PromoGest.Application`) | `IMPLEMENTED_AND_VERIFIED` | Main CI #581: **20/20** Application tests passed |
 | C2 Party / Customer identity foundation | `IMPLEMENTED_AND_VERIFIED` | PRs #35–#38 and #55–#57 merged; canonical Party ownership, retired ProjectCustomer identity mirrors, PostgreSQL project/name/phone uniqueness, concurrent duplicate rejection, Party rename protection, fail-closed preflight, and migration Down/reapply are covered by PostgreSQL 18 tests |
-| PostgreSQL 18 Integration Suite (`PromoGest.IntegrationTests`) | `IMPLEMENTED_AND_VERIFIED` | Main CI #573: **29/29** PostgreSQL 18 integration tests passed, including Party/customer duplicate prevention, migration Down/preflight/recovery; full database/storage/Data Protection restore drill passed |
-| Local React SPA (`apps/local-web`) | `PARTIALLY_IMPLEMENTED` | Strict TypeScript check, **39/39** pure tests, production build and `wwwroot` checks pass; Product Owner owner-attested RTL/LTR desktop/mobile acceptance for the listed workflows; P0-A01 and P0-A04 remain `NOT_RUN` as owner-accepted Phase 0 residual exceptions; Vite-only simulator parity is intentionally incomplete |
+| PostgreSQL 18 Integration Suite (`PromoGest.IntegrationTests`) | `IMPLEMENTED_AND_VERIFIED` | Main CI #581: **30/30** PostgreSQL 18 integration tests passed, including the public 69-Wilaya reference endpoint contract; full database/storage/Data Protection restore drill passed |
+| Local React SPA (`apps/local-web`) | `PARTIALLY_IMPLEMENTED` | Main CI #581: strict TypeScript, **40/40** tests, production build, ASP.NET Core `wwwroot` and preview-leak checks pass. Product Owner RTL/LTR browser acceptance remains owner-attested, not repeated by CI; P0-A01 and P0-A04 remain `NOT_RUN`. Vite-only simulator parity remains intentionally incomplete |
+| Algerian administrative reference — Wilaya subset | `IMPLEMENTED_AND_VERIFIED` | Main CI #581 verifies the server-owned versioned 69-Wilaya endpoint and frontend/preview consumption by first-run setup, organization profile and project create/update forms. The endpoint explicitly reports `communesCount = 0` and `PendingOfficialVerification`; the 1,541-commune hierarchy is not yet implemented. |
 | Organization Profile Edit (`PUT /api/organization`) | `IMPLEMENTED_AND_VERIFIED` | `OrganizationController` (`PUT /api/organization`), `OrganizationProfileService`, `OrganizationProfileView.tsx`, `org.manage` enforcement, and CAS `ExpectedConcurrencyStamp` conflict tests verified in `PostgresEndToEndTests` |
 | Modules F–J & L (Contracts, DZD Finance/Installments, Works/Chantier, Procurement/Stock, SCF Accounting, Reporting) | `PLANNED` | Design baselines documented; no production business modules implemented |
 | Module K (Document Vault `stored_files`) | `PARTIALLY_IMPLEMENTED` | K-Min upload/list/download, SHA-256 verification, category capability checks, and `customers.read` isolation for customer identity files are implemented; metadata lifecycle, structured links and K-Full archival remain unimplemented |

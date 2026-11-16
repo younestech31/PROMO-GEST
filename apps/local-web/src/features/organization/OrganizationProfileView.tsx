@@ -48,7 +48,7 @@ export function OrganizationProfileView({
   const { reference, isLoading: referenceLoading, hasError: referenceError, retry: retryReference } =
     useAdministrativeReference();
   const wilayas = reference?.wilayas ?? [];
-  const [draft, setDraft = useState<OrganizationProfileDraft>(() => toDraft(organization));
+  const [draft, setDraft] = useState<OrganizationProfileDraft>(() => toDraft(organization));
   const [isEditing, setIsEditing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);

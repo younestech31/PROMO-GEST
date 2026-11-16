@@ -1,7 +1,7 @@
 # PROMO GEST — Algerian Administrative Reference-Data Governance
 
-**Legal baseline checked:** 15 November 2026.  
-**Status:** The application accepts Wilaya codes 01–69; a canonical bilingual commune catalogue has not yet been implemented or approved.
+**Legal baseline checked:** 16 November 2026.  
+**Status:** The server-owned, bilingual, versioned 69-Wilaya catalogue and its UI integration are implemented and verified (PR #59). The canonical commune catalogue remains pending official extraction/reconciliation: the API reports `PendingOfficialVerification` and `communesCount = 0`; the 1,541 figure is the statutory baseline, not a loaded record count.
 
 ## 1. Authoritative territorial baseline
 
@@ -34,12 +34,14 @@ This is a specific assets/liabilities transition. It must not be described as pr
 
 ## 3. Current application gap
 
-The current model stores:
+The current organization and project records preserve:
 - a Wilaya code;
-- a Wilaya display name;
-- a free-text municipality/commune name.
+- a bilingual Wilaya display-name snapshot;
+- a free-text municipality/commune snapshot.
 
-The domain currently validates the two-digit Wilaya range 01–69 and non-empty location labels. It does not resolve a canonical bilingual Wilaya name from the submitted code on the server. The project municipality remains free text. This is a 69-code compatibility baseline, not a complete national administrative gazetteer.
+The server-owned reference in `PromoGest.Domain.Reference.AlgerianAdministrativeReference` provides the 69 bilingual Wilaya records with version, effective date and legal-source metadata. `GET /api/reference/administrative-units` exposes that catalogue publicly as read-only reference data. Domain validation resolves and checks Wilaya code/name combinations on writes. PR #59 connects the first-run setup, organization-profile edit and project create/update selectors to this API; each submits the server catalogue's canonical bilingual display name.
+
+The API reports the legal commune baseline of 1,541 but deliberately contains zero commune records until the complete hierarchy and labels are reviewed. Project municipality remains free text. The implemented Wilaya subset is not a complete national administrative gazetteer.
 
 ## 4. Target reference-data model
 
@@ -73,15 +75,18 @@ When an administrative unit changes parent:
 
 ## 6. API and UI ownership
 
-The API/domain layer must own validation and canonical labels. The browser must not be authoritative for a Wilaya name, commune mapping or code. The API should return the reference-data version and bilingual labels to the UI.
+The API/domain layer owns Wilaya validation and canonical labels. The browser consumes `GET /api/reference/administrative-units` and is not authoritative for names or codes. The response includes the version, effective date, legal source, commune verification status/counts and bilingual Wilaya labels.
 
-During the compatibility period, the API may accept a legacy free-text value only as a clearly marked legacy snapshot. New canonical references should be validated server-side. The in-memory Vite preview must consume the same versioned data contract and must not maintain a divergent list.
+PR #59 verified the read-only public endpoint on PostgreSQL 18, including `Cache-Control: no-store`, all 69 ordered codes, bilingual labels and explicit pending-commune metadata. Setup, organization-profile and project forms read this endpoint and fail closed if the reference is unavailable or does not contain exactly 69 valid two-digit Wilaya entries. The Vite-only simulator mirrors the response contract; production remains ASP.NET Core-owned.
+
+During the commune compatibility period, legacy free-text municipality values remain snapshots. Do not silently assign or rewrite a canonical commune reference before the source and effective date have been reviewed.
 
 ## 7. Dataset acceptance checklist
 
 Before adding a complete commune dataset:
-1. Identify the exact official source edition and legal effective date.
-2. Extract all 69 Wilaya–commune relationships from the authoritative text/data.
+1. Identify the exact official source edition and legal effective date. Do not treat the ONS June 2021 code-geography document (58-Wilaya baseline) as the final 2026 hierarchy by itself.
+2. Reconcile the prior official commune codes/names with Law 26-06 and the official 2026 texts that establish the 11 new Wilayas and their commune lists; document any code renumbering or split explicitly.
+3. Extract all 69 Wilaya–commune relationships from the authoritative text/data.
 3. Verify the total count against the legal baseline of 1,541 communes, accounting for source-specific spelling/alias issues.
 4. Review Arabic and French labels together.
 5. Verify that no commune is duplicated, omitted or assigned to two current parents without a justified effective-date history.

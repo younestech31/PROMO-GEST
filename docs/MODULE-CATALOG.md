@@ -2,9 +2,9 @@
 
 All 12 functional ERP domains required by PROMO GEST, mapped strictly using the 6-state taxonomy against actual inspected code, controllers, EF configurations, and tests.
 
-**Last Code-Changing Source Baseline:** `23f019de7c787c0f93b5b7f0b5cec69992ff087a` (PR #48 merge; API/health no-store policy).  
-**Main Commit Inspected at Audit Start:** `5a5196d75abcdf608e708844983fad25b600e5a4` (PR #52 owner-attested Phase 0 acceptance record).  
-**Latest Green CI at Audit Start:** Run **#550** / `43772604996` — frontend, .NET/PostgreSQL 18, and Windows jobs all passed.  
+**Last Code-Changing Source Baseline:** `53c50fbc0db801b9298ec731cfc44f2d4d58ff7f` (PR #59 merge; server-owned 69-Wilaya reference integrated with the main forms).  
+**Main Commit Inspected:** `53c50fbc0db801b9298ec731cfc44f2d4d58ff7f`.  
+**Latest Green Main CI:** Run **#581** / `43881240365` — all three jobs passed (frontend 40/40, Domain 34/34, Application 20/20, PostgreSQL 18 Integration 30/30, restore drill, Windows x64).  
 **Live Preview / Manual Acceptance Evidence:** On 15 November 2026, the Product Owner confirmed the real Google AI Studio development server/API and PostgreSQL development connection operate, and owner-attested successful Arabic RTL / French LTR desktop/mobile workflows for projects, structure, customer interactions, internal holds, documents/SHA-256, authorization, audit, concurrency, safe errors, and persistence. Detailed group mapping is in `PHASE-0-MANUAL-ACCEPTANCE.md`; Phase 0 was administratively closed by owner decision D-010, with P0-A01 and P0-A04 still `NOT_RUN` as accepted residual exceptions.
 
 ---
@@ -40,7 +40,8 @@ All 12 functional ERP domains required by PROMO GEST, mapped strictly using the 
   - *Audit Trail (`IMPLEMENTED_AND_VERIFIED`):* `GET /api/audit`.
   - *Offline CLI Recovery (`IMPLEMENTED_AND_VERIFIED`):* `--unlock-admin`, `--reset-admin-password` (`Program.cs`, `AdminRecoveryService`).
   - *Organization Profile Update (`IMPLEMENTED_AND_VERIFIED`):* `PUT /api/organization` (`OrganizationController`, `OrganizationProfileService`) and `OrganizationProfileView.tsx` edit form enforce `org.manage`, `ExpectedConcurrencyStamp`, `singleton_guard`, and security/audit logging (verified in `PostgresEndToEndTests`).
-- **Target Scope (`PLANNED`):** Active session revocation UI, and versioned Algerian Administrative Reference catalogue (`AdministrativeUnit`, 69 Wilayas + verified 1,541 communes per ADR-0010).
+- *Administrative Reference — Wilaya subset (`IMPLEMENTED_AND_VERIFIED`):* `GET /api/reference/administrative-units` returns the server-owned versioned bilingual 69-Wilaya catalogue and source/effective-date metadata. PR #59 connects first-run setup, organization-profile edit and project create/update selectors to this API; PostgreSQL 18 E2E verifies the endpoint and no-store policy, and frontend tests verify the Vite preview contract.
+- **Target Scope (`PLANNED`):** Active session revocation UI and the complete effective-dated 1,541-commune hierarchy. The endpoint currently reports `communesCount = 0` and `PendingOfficialVerification`; free-text municipality remains for compatibility.
 
 ### B. Real Estate Projects (`IMPLEMENTED_AND_VERIFIED`)
 - **Frontend surface:** `ProjectsAccessView.tsx` lists accessible projects, supports project creation/update and team membership operations. It launches project sub-areas as modals from the directory; it is not yet the dedicated project switcher or active project workspace.

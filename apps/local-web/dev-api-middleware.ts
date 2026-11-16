@@ -28,6 +28,7 @@ import type {
   UserDto,
 } from './src/types/erp';
 import { getDevPreviewCookieAttributes } from './src/utils/devPreviewCookies';
+import { DEV_PREVIEW_ADMINISTRATIVE_REFERENCE } from './src/utils/administrativeReferencePreview';
 import {
   canUserAccessProjectStructure,
   changeUnitStatusInStore,
@@ -455,6 +456,13 @@ export function createPromoGestDevApiPlugin(): Plugin {
             timestampUtc: new Date().toISOString(),
             environmentMode: 'ViteDevContractPreview',
             previewMode: true,
+          });
+        }
+
+        // Public, read-only mirror of the production reference-data contract.
+        if (method === 'GET' && pathname === '/api/reference/administrative-units') {
+          return sendJson(res, 200, DEV_PREVIEW_ADMINISTRATIVE_REFERENCE, {
+            'Cache-Control': 'no-store',
           });
         }
 

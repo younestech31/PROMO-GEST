@@ -47,20 +47,17 @@ public sealed class OrganizationProfileService
             throw new ForbiddenDomainException("AUTH_ACCOUNT_INACTIVE", "Account is inactive.");
         }
 
-        if (!actor.IsSystemAdministrator)
+        var permissions = await _userRepository.GetEffectivePermissionsAsync(actor.Id, ct);
+        if (!permissions.Contains(ManagePermission, StringComparer.OrdinalIgnoreCase))
         {
-            var permissions = await _userRepository.GetEffectivePermissionsAsync(actor.Id, ct);
-            if (!permissions.Contains(ManagePermission, StringComparer.OrdinalIgnoreCase))
-            {
-                await RecordAccessDeniedAsync(
-                    actor,
-                    "User attempted to update organization profile without org.manage permission.",
-                    metadata,
-                    ct);
-                throw new ForbiddenDomainException(
-                    "FORBIDDEN_ORGANIZATION_MANAGE",
-                    "You do not have permission to manage the organization profile.");
-            }
+            await RecordAccessDeniedAsync(
+                actor,
+                "User attempted to update organization profile without org.manage permission.",
+                metadata,
+                ct);
+            throw new ForbiddenDomainException(
+                "FORBIDDEN_ORGANIZATION_MANAGE",
+                "You do not have permission to manage the organization profile.");
         }
 
         var organization = await _installationRepository.GetOrganizationSettingsAsync(ct)
@@ -154,6 +151,8 @@ public sealed class OrganizationProfileService
             organization.Phone,
             organization.Email,
             organization.DefaultLanguage,
-            organization.CurrencyCode,
-            organization.ConcurrencyStamp);
+            organization.CurrencyCode)
+        {
+            ConcurrencyStamp = organization.ConcurrencyStamp
+        };
 }

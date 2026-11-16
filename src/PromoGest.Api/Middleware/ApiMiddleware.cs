@@ -61,7 +61,6 @@ public sealed class ExceptionHandlingMiddleware
                 new ApiErrorResponse("INTERNAL_ERROR", "An unexpected internal error occurred. Contact your local System Administrator."));
         }
     }
-}
 
     private async Task WriteDatabaseConflictAsync(HttpContext context, PostgresException postgresException)
     {
@@ -87,6 +86,7 @@ public sealed class ExceptionHandlingMiddleware
         await context.Response.WriteAsJsonAsync(
             new ApiErrorResponse(code, "The requested operation conflicted with an existing or concurrent change."));
     }
+}
 
 public sealed class CsrfValidationMiddleware
 {

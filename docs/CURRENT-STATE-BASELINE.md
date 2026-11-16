@@ -2,10 +2,10 @@
 
 **Document Role:** Evidence-backed snapshot of the repository, not a product roadmap.  
 **Operational Roadmap:** [Notion Master Roadmap](https://app.notion.com/p/41a13e9ed3688127a157dceb9a0b655f) · [Notion Execution Backlog](https://app.notion.com/p/41a13e9ed3688121adbff807d29d4e46). Notion governs work sequencing and task tracking; this file and the current repository remain the source of implementation and verification truth.  
-**Last Application Runtime / Schema Source Commit:** `53c50fbc0db801b9298ec731cfc44f2d4d58ff7f` (PR #59 merge; no runtime/schema changes in the subsequent PRs #63, #65, and #66).  
+**Last Application Runtime / Schema Source Commit:** `53c50fbc0db801b9298ec731cfc44f2d4d58ff7f` (PR #59 merge; no runtime/schema changes in the subsequent documentation/test-only PRs #63, #65, #66, #68, and #69).  
 **Latest Test Source Commit:** `58dde79719db5949033363dfed1e4e9cb8b66f29` (PR #63 head; adds PostgreSQL 18 first-run setup and logout/session-revocation regression tests).  
-**Main Commit Inspected:** `f8f812890e6001d0560a0af1730559152b1cb8e3` (PR #66 baseline documentation merge; no application runtime or schema changes in PR #63, #65, or #66; latest application runtime remains `53c50fbc0db801b9298ec731cfc44f2d4d58ff7f`, latest test source is PR #63 head `58dde79719db5949033363dfed1e4e9cb8b66f29`).  
-**Latest Main CI:** Run **#596** / `43907721028` passed all three jobs on main SHA `f8f812890e6001d0560a0af1730559152b1cb8e3` (PR #66 merge).  
+**Main Commit Inspected:** `4fdfcb2679231ff81b8756a8da6ba3045bea5288` (PR #69 documentation-only merge; PR #68 and #69 did not change application runtime or schema; latest application runtime remains `53c50fbc0db801b9298ec731cfc44f2d4d58ff7f`, latest test source remains PR #63 head `58dde79719db5949033363dfed1e4e9cb8b66f29`).  
+**Latest Main CI:** Run **#604** / `43911498773` passed all three jobs on main SHA `4fdfcb2679231ff81b8756a8da6ba3045bea5288` (PR #69 merge).  
 **Latest Application/Test CI:** PR #63 Run **#589** / `43900696444` passed all three jobs on test SHA `58dde79719db5949033363dfed1e4e9cb8b66f29`; the .NET job passed Domain **34/34**, Application **20/20**, PostgreSQL 18 Integration **32/32**, and the full restore drill. Main CI #592 subsequently passed all three jobs after the documentation-only PR #65 merge.  
 **Governing Rule:** A feature is `IMPLEMENTED_AND_VERIFIED` only when its code and applicable automated verification pass in the audited baseline. A green pipeline does not certify untested browser UX, preview parity, production installation, or legal/accounting correctness.
 
@@ -36,6 +36,20 @@
 - PR #66 head `f00a661e7083196e9bbee54f37a5084e4d569be4`; PR CI Run **#594** / `43907160572` passed all three required jobs (frontend/static hosting, .NET 10 + PostgreSQL 18 least-privilege/integration and full restore drill, Windows x64 publish/PowerShell validation).
 - Merge commit `f8f812890e6001d0560a0af1730559152b1cb8e3`; main push CI Run **#596** / `43907721028` passed all three jobs.
 - The change refreshed this baseline and the Phase 0 manual register only. P0-A01 and P0-A04 remain `NOT_RUN` for manual browser acceptance; no runtime, schema, migration, organization data, production database, Cloud SQL data, credentials, or deployment was changed.
+
+### PR #68 — Phase 1 Party / Employee master-data scope decision (documentation only)
+- PR #68 head `f98a21125cc45c567bb3de49e6516a085734480e`; PR CI #601 / `43909506105` passed all 3 jobs.
+- Merge SHA `7d1b14e4a5783731d3531f199eec0a08dcc6238c`; main CI #602 / `43909915570` passed all 3 jobs.
+- D-012 records the Party / ProjectCustomer / User / ProjectMember boundary; REQ-D04 is aligned to the verified PR #56/#57 PostgreSQL migration evidence; REQ-D05/D06 remain planned and Module D remains partially implemented. No runtime, schema, permissions or data changed.
+
+### PR #69 — D-012 documentation correction (one-line)
+- PR #69 head `e6345ae4d3f3b9497ca7d16824b10a8cb5a6cd60`; PR CI #603 / `43911049988` passed all 3 jobs.
+- Merge SHA `4fdfcb2679231ff81b8756a8da6ba3045bea5288`; main CI #604 / `43911498773` passed all 3 jobs (frontend/static hosting, .NET 10 + PostgreSQL 18 least-privilege integration and restore drill, Windows x64/PowerShell).
+- The one-line change removed a duplicated D-012 bullet only. No runtime, schema, migrations, permissions, business records, production/Cloud SQL data, credentials or deployment changed.
+
+### Phase 1 design review — P1-04 / D-013 (pending PR review)
+- The source-audited navigation decision is being recorded in a documentation-only PR. It approves the three-level organization/project model with server-authoritative project access, route-per-tab context, visible project identity, real-data-only organization work center, and separate technical administration. It does not implement navigation features or change permissions.
+- P0-A01 and P0-A04 remain `NOT_RUN`; this review does not change those exceptions or certify browser acceptance.
 
 ## 1A. Phase 0 residual regression coverage — PR #63
 

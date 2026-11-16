@@ -3,8 +3,8 @@
 All 12 functional ERP domains required by PROMO GEST, mapped strictly using the 6-state taxonomy against actual inspected code, controllers, EF configurations, and tests.
 
 **Last Code-Changing Source Baseline:** `53c50fbc0db801b9298ec731cfc44f2d4d58ff7f` (PR #59 merge; server-owned 69-Wilaya reference integrated with the main forms).  
-**Main Commit Inspected:** `53c50fbc0db801b9298ec731cfc44f2d4d58ff7f`.  
-**Latest Green Main CI:** Run **#581** / `43881240365` — all three jobs passed (frontend 40/40, Domain 34/34, Application 20/20, PostgreSQL 18 Integration 30/30, restore drill, Windows x64).  
+**Main Commit Inspected:** `62ebdcb725e0ab95059e7e4abe64581976898642` (documentation-only merge PR #61; latest application-source baseline remains `53c50fbc0db801b9298ec731cfc44f2d4d58ff7f`).  
+**Latest Documentation PR CI:** Run **#584** / `43888881047` passed all three jobs on PR #61 head `b1f36615f12c1186f481109431c8aa2edd0dc4ae` (documentation-only; not the merge SHA). **Latest application-source CI:** Run **#581** / `43881240365` passed all three jobs on the current runtime/test baseline `53c50fbc0db801b9298ec731cfc44f2d4d58ff7f` (frontend 40/40, Domain 34/34, Application 20/20, PostgreSQL 18 Integration 30/30, restore drill, Windows x64).  
 **Live Preview / Manual Acceptance Evidence:** On 15 November 2026, the Product Owner confirmed the real Google AI Studio development server/API and PostgreSQL development connection operate, and owner-attested successful Arabic RTL / French LTR desktop/mobile workflows for projects, structure, customer interactions, internal holds, documents/SHA-256, authorization, audit, concurrency, safe errors, and persistence. Detailed group mapping is in `PHASE-0-MANUAL-ACCEPTANCE.md`; Phase 0 was administratively closed by owner decision D-010, with P0-A01 and P0-A04 still `NOT_RUN` as accepted residual exceptions.
 
 ---

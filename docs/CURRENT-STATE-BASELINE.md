@@ -1,10 +1,10 @@
 # PROMO GEST — Current State Baseline
 
 **Document Role:** Evidence-backed snapshot of the repository, not a product roadmap.  
-**Last Application Runtime / Schema Source Commit:** `2fb58c5b8c9ab632b17f9785c1eebce86c885c92` (PR #56 merge; PostgreSQL project-customer identity uniqueness guard).  
-**Latest Test Source Commit:** `065d54cff4e08ed868e676d4cf3d04c715898782` (PR #57 merge; migration rollback and fail-closed preflight regression coverage).  
-**Main Commit Inspected:** `065d54cff4e08ed868e676d4cf3d04c715898782`.  
-**Latest Green Main CI:** Run **#573** / `43865150034` passed all three jobs on main SHA `065d54cff4e08ed868e676d4cf3d04c715898782`.  
+**Last Application Runtime / Schema Source Commit:** `53c50fbc0db801b9298ec731cfc44f2d4d58ff7f` (PR #59 merge; server-owned 69-Wilaya reference API integrated into setup, organization and project forms).  
+**Latest Test Source Commit:** `53c50fbc0db801b9298ec731cfc44f2d4d58ff7f` (PR #59 merge; PostgreSQL 18 reference endpoint regression and frontend preview-contract test).  
+**Main Commit Inspected:** `53c50fbc0db801b9298ec731cfc44f2d4d58ff7f`.  
+**Latest Green Main CI:** Run **#581** / `43881240365` passed all three jobs on main SHA `53c50fbc0db801b9298ec731cfc44f2d4d58ff7f`.  
 **Governing Rule:** A feature is `IMPLEMENTED_AND_VERIFIED` only when its code and applicable automated verification pass in the audited baseline. A green pipeline does not certify untested browser UX, preview parity, production installation, or legal/accounting correctness.
 
 ---
@@ -16,9 +16,10 @@
 | Domain Core (`PromoGest.Domain`) | `IMPLEMENTED_AND_VERIFIED` | CI #572: **34/34** Domain tests passed. | Additional coverage is added with each domain change. |
 | Application Services (`PromoGest.Application`) | `IMPLEMENTED_AND_VERIFIED` | CI #572: **20/20** Application tests passed, including Party audit/permissions and project-customer identity behavior. | Browser-level workflows are outside this test suite. |
 | PostgreSQL 18 Integration (`PromoGest.IntegrationTests`) | `IMPLEMENTED_AND_VERIFIED` | CI #572 passed **29/29** against PostgreSQL 18 using separate provisioning, migration-owner, and least-privilege runtime identities. Includes concurrent duplicate rejection, Party identity update rejection, guard migration Down, fail-closed preflight on pre-existing duplicates, data preservation, and successful reapplication after reconciliation. | CI evidence does not replace a representative customer-site backup/restore and migration rehearsal or manual browser acceptance. |
-| Local React SPA (`apps/local-web`) | `PARTIALLY_IMPLEMENTED` | Strict TypeScript check (`tsc --noEmit`), **39/39** frontend tests, production/static-host builds, and preview-leak checks pass. The Product Owner has owner-attested Arabic RTL / French LTR acceptance across desktop/mobile and the listed real workflows. | P0-A01 and P0-A04 remain `NOT_RUN` as owner-accepted Phase 0 residual exceptions; browser/version and per-case sanitized artifacts were not attached. The Vite fallback simulator is intentionally not the production API and remains incomplete. |
+| Local React SPA (`apps/local-web`) | `PARTIALLY_IMPLEMENTED` | Strict TypeScript check (`tsc --noEmit`), **40/40** frontend tests, production/static-host builds, and preview-leak checks pass. The Product Owner has owner-attested Arabic RTL / French LTR acceptance across desktop/mobile and the listed real workflows. | P0-A01 and P0-A04 remain `NOT_RUN` as owner-accepted Phase 0 residual exceptions; browser/version and per-case sanitized artifacts were not attached. The Vite fallback simulator is intentionally not the production API and remains incomplete. |
 | C2 Party / Customer identity foundation | `IMPLEMENTED_AND_VERIFIED` | PRs #35–#38 and Phase 1 PRs #55–#57 merged. ProjectCustomer identity mirrors are retired; PostgreSQL deferred triggers enforce `(project_id, Party.normalized_display_name, project_customer.normalized_phone)` across relationship writes and Party identity updates. Main CI #573 verifies concurrent duplicate rejection, Party-rename collision rejection, migration rollback, fail-closed preflight, and recovery. | Employee, Party contact-point/identifier/representative models, full PartyRole lifecycle, and human-reviewed merge tooling remain unimplemented. No production or Cloud SQL database was migrated. |
-| Organization profile editing | `IMPLEMENTED_AND_VERIFIED` | `PUT /api/organization` (`OrganizationController`, `OrganizationProfileService`), `OrganizationProfileView.tsx` edit form, `org.manage` enforcement, `ACCESS_DENIED` / update audit events, and `ExpectedConcurrencyStamp` conflict handling are implemented and verified in `OrganizationProfileUpdate_EnforcesPermission_AuditsDenial_AndRejectsStaleConcurrency`. | Non-PG18 environments cannot execute the PG18 test directly; Phase 1 territorial commune catalogue remains separate work. |
+| Organization profile editing | `IMPLEMENTED_AND_VERIFIED` | `PUT /api/organization`, `org.manage` enforcement, audit events and `ExpectedConcurrencyStamp` conflict handling are verified. PR #59 also connects its Wilaya selector to the server-owned reference API. | Commune/municipality remains free text pending a verified commune catalogue. |
+| Algerian administrative reference — Wilaya subset | `IMPLEMENTED_AND_VERIFIED` | Versioned bilingual 69-Wilaya reference in `AlgerianAdministrativeReference`; public `GET /api/reference/administrative-units`; first-run setup, organization profile and project create/update selectors consume the API. Main CI #581 verifies endpoint contract and preview mirror. | API reports `communesCount = 0` and `PendingOfficialVerification`; the full 1,541-commune hierarchy is not loaded. |
 | Modules F–J (Contracts through SCF/Tax) | `PLANNED` | Architecture and legal/accounting prerequisites are documented. | No production business implementation; practitioner sign-off remains mandatory. |
 | Module K | `PARTIALLY_IMPLEMENTED` | K-Min local upload/list/download, SHA-256 checks, `ProjectMember`-capability category scoping, and `customers.read` isolation for customer identity documents are implemented. | Metadata lifecycle, structured links, and K-Full archival remain future work. |
 
@@ -53,6 +54,24 @@
 - **PR #56 — merged:** added migration `20261116120000_EnforceProjectCustomerIdentityUniqueness`. The migration fails closed if duplicate project/Party-name/phone tuples already exist, then installs deferred PostgreSQL constraint triggers for customer relationship writes and Party identity updates. Transaction-scoped advisory locks serialize the same project/name/phone key. The API maps the database conflict to `CUSTOMER_DUPLICATE`. PR CI #570 and main CI #571 passed all three jobs; PostgreSQL Integration passed **28/28**.
 - **PR #57 — merged:** adds direct PostgreSQL 18 regression coverage for the guard migration Down path, duplicate-data preflight rejection without data loss, and successful migration reapplication after explicit test reconciliation. PR CI #572 passed all three jobs; PostgreSQL Integration passed **29/29**.
 - **Data boundary:** PRs #55–#57 changed source/tests/docs only. They did not migrate production or Google AI Studio Cloud SQL data, alter credentials, or change runtime authorization/CSRF policy.
+
+### GitHub Actions Run #581 — 16 November 2026 (post-PR #59 main verification)
+- **Main SHA:** `53c50fbc0db801b9298ec731cfc44f2d4d58ff7f`; all three required jobs passed.
+- **Frontend/static hosting:** TypeScript strict check, **40/40** frontend tests, SPA build, ASP.NET Core `wwwroot` build and preview-leak checks passed.
+- **.NET 10 / PostgreSQL 18:** Domain **34/34**, Application **20/20**, Integration **30/30**; solution build passed.
+- **Reference endpoint regression:** anonymous `GET /api/reference/administrative-units` returns the ordered 69 Wilaya codes, bilingual labels and version/source metadata; it reports `communesCount = 0` and `PendingOfficialVerification`; `Cache-Control: no-store` is asserted.
+- **Operations:** full database/storage/Data Protection restore drill passed; Windows x64 publish, machine-scoped Data Protection recovery and PowerShell validation passed.
+- **Boundary:** no commune records were imported; this CI does not represent a manual browser RTL/LTR rerun or a customer-site production migration rehearsal.
+
+[Open CI Run #581](https://github.com/younestech31/PROMO-GEST/actions/runs/43881240365)
+
+### PR #59 — Server-owned 69-Wilaya reference integration (merged)
+- Typed frontend contract and API client consume `GET /api/reference/administrative-units`.
+- A shared hook validates all 69 records and fails closed when the reference is unavailable or incomplete.
+- First-run setup, organization profile edit and project create/update use the API-owned choices and submit the canonical bilingual label.
+- Vite-only preview mirrors the response contract; production remains ASP.NET Core-owned.
+- PostgreSQL 18 E2E verifies anonymous read, ordered codes 01–69, bilingual labels, version metadata and `no-store`; frontend tests verify the preview contract.
+- No schema/migration, security policy, production data or Cloud SQL changes.
 
 ### GitHub Actions Run #573 — 16 November 2026 (post-merge main verification)
 - **Main SHA:** `065d54cff4e08ed868e676d4cf3d04c715898782`; all three jobs passed. PR CI #572 passed the same migration lifecycle regression suite before merge.
@@ -96,7 +115,7 @@ Accepted Phase 0 residual exceptions (still tracked; not represented as PASS):
 3. **Supplementary audit artifacts:** browser/version metadata and sanitized per-case screenshots or redacted API trace evidence were not attached; the owner attestation is recorded, and no unprovided artifacts are claimed.
 4. **Navigation decision:** D-009 records the bounded deferral of project-navigation proposal approval/implementation to the Phase 1 design review; do not start a broad UI redesign.
 5. **Preview separation:** keep the Vite-only in-memory simulator clearly separate from real API evidence; it intentionally lacks full parity.
-6. **Phase 1 progress:** Phase 1 remains `IN_PROGRESS`. Organization profile editing, `projects.structure.manage` alignment, Party canonical identity, Party directory access/audit, retirement of duplicate ProjectCustomer identity columns, and the PostgreSQL duplicate-identity guard are implemented and verified. PR #57 verifies migration rollback and fail-closed preflight behavior in PostgreSQL 18 CI. Remaining Phase 1 work includes the official versioned 69-Wilaya / 1,541-commune catalogue under ADR-0010 and the bounded organization-workspace/project-switcher/active-project-workspace design review. P0-A01 and P0-A04 remain `NOT_RUN`; no Phase 2–5 business implementation is authorized until applicable gates and practitioner approvals pass.
+6. **Phase 1 progress:** Phase 1 remains `IN_PROGRESS`. Party identity separation and the PostgreSQL duplicate guard are verified. PR #59 completes the server-owned 69-Wilaya API-to-UI integration. The 1,541-commune catalogue remains pending (`communesCount = 0`, `PendingOfficialVerification`); project municipality remains free text. Remaining Phase 1 work includes official commune-source reconciliation/import with effective-dated history and the bounded organization-workspace/project-switcher/active-project-workspace design review. P0-A01 and P0-A04 remain `NOT_RUN`; no Phase 2–5 business implementation is authorized until applicable gates and practitioner approvals pass.
 
 ## 4. Preview Boundary (Do Not Confuse with Production)
 

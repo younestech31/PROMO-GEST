@@ -1968,6 +1968,130 @@ public sealed class PostgresEndToEndTests : IClassFixture<PostgreSql18Integratio
     }
 
     [Fact]
+    public async Task FirstRunSetup_OnEmptyPostgreSql18Database_InitializesExactlyOnce()
+    {
+        var connStr = await _fixture.CreateIsolatedDatabaseConnectionStringAsync();
+        var tempRoot = Path.Combine(Path.GetTempPath(), $"promogest_first_run_acceptance_{Guid.NewGuid():N}");
+
+        await using var factory = CreateFactory(connStr, tempRoot);
+        using var client = factory.CreateClient(new WebApplicationFactoryClientOptions { HandleCookies = true });
+
+        var statusBefore = await client.GetFromJsonAsync<SetupStatusResponse>("/api/setup/status");
+        Assert.NotNull(statusBefore);
+        Assert.False(statusBefore!.IsInitialized);
+
+        using (var scope = factory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+            Assert.Empty(await db.OrganizationSettings.ToListAsync());
+            Assert.Empty(await db.Users.ToListAsync());
+        }
+
+        await AttachCsrfTokenAsync(client);
+
+        var firstSetup = await client.PostAsJsonAsync("/api/setup/initialize", ValidInitRequest());
+        Assert.Equal(HttpStatusCode.Created, firstSetup.StatusCode);
+
+        var secondSetup = await client.PostAsJsonAsync("/api/setup/initialize", ValidInitRequest());
+        Assert.Equal(HttpStatusCode.Conflict, secondSetup.StatusCode);
+        var secondSetupError = await secondSetup.Content.ReadFromJsonAsync<ApiErrorResponse>();
+        Assert.Equal("SETUP_ALREADY_INITIALIZED", secondSetupError!.Code);
+
+        var statusAfter = await client.GetFromJsonAsync<SetupStatusResponse>("/api/setup/status");
+        Assert.NotNull(statusAfter);
+        Assert.True(statusAfter!.IsInitialized);
+
+        using (var scope = factory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+            Assert.Single(await db.OrganizationSettings.ToListAsync());
+
+            var users = await db.Users.ToListAsync();
+            var systemAdmin = Assert.Single(users.Where(user => user.IsSystemAdministrator));
+            Assert.Single(users);
+            Assert.Equal("sysadmin", systemAdmin.Username);
+
+            Assert.Single(await db.UserRoles.Where(role => role.UserId == systemAdmin.Id).ToListAsync());
+            Assert.Single(await db.AuditLogs
+                .Where(entry => entry.EventType == "SETUP_INITIALIZED")
+                .ToListAsync());
+        }
+    }
+
+    [Fact]
+    public async Task Logout_RevokesServerSession_AndRejectsCurrentAndReplayedCookies()
+    {
+        var connStr = await _fixture.CreateIsolatedDatabaseConnectionStringAsync();
+        var tempRoot = Path.Combine(Path.GetTempPath(), $"promogest_logout_acceptance_{Guid.NewGuid():N}");
+
+        await using var factory = CreateFactory(connStr, tempRoot);
+        using var client = factory.CreateClient(new WebApplicationFactoryClientOptions { HandleCookies = true });
+
+        await AttachCsrfTokenAsync(client);
+        var setup = await client.PostAsJsonAsync("/api/setup/initialize", ValidInitRequest());
+        Assert.Equal(HttpStatusCode.Created, setup.StatusCode);
+
+        var login = await client.PostAsJsonAsync(
+            "/api/auth/login",
+            new LoginRequest("sysadmin", "AtlasAdmin#2026"));
+        Assert.Equal(HttpStatusCode.OK, login.StatusCode);
+
+        var loginSession = await login.Content.ReadFromJsonAsync<SessionResponse>();
+        Assert.NotNull(loginSession);
+
+        Assert.True(login.Headers.TryGetValues("Set-Cookie", out var setCookieHeaders));
+        var sessionSetCookie = Assert.Single(setCookieHeaders!.Where(value =>
+            value.StartsWith("promogest_session=", StringComparison.Ordinal)));
+        var replayableSessionCookie = sessionSetCookie.Split(';', 2)[0];
+
+        await AttachCsrfTokenAsync(client);
+        Assert.Equal(HttpStatusCode.OK, (await client.GetAsync("/api/auth/me")).StatusCode);
+
+        // An unsafe logout without CSRF proof must be rejected and must not revoke the session.
+        client.DefaultRequestHeaders.Remove("X-CSRF-TOKEN");
+        var csrfRejectedLogout = await client.PostAsync("/api/auth/logout", content: null);
+        Assert.Equal(HttpStatusCode.Forbidden, csrfRejectedLogout.StatusCode);
+        var csrfError = await csrfRejectedLogout.Content.ReadFromJsonAsync<ApiErrorResponse>();
+        Assert.Equal("CSRF_TOKEN_INVALID", csrfError!.Code);
+
+        await AttachCsrfTokenAsync(client);
+        Assert.Equal(HttpStatusCode.OK, (await client.GetAsync("/api/auth/me")).StatusCode);
+
+        var logout = await client.PostAsync("/api/auth/logout", content: null);
+        Assert.Equal(HttpStatusCode.NoContent, logout.StatusCode);
+        Assert.True(logout.Headers.TryGetValues("Set-Cookie", out var logoutCookieHeaders));
+        Assert.Contains(logoutCookieHeaders!, value =>
+            value.StartsWith("promogest_session=;", StringComparison.Ordinal));
+
+        // The browser client has received the deletion cookie.
+        Assert.Equal(HttpStatusCode.Unauthorized, (await client.GetAsync("/api/auth/me")).StatusCode);
+        Assert.Equal(HttpStatusCode.Unauthorized, (await client.GetAsync("/api/audit")).StatusCode);
+
+        // Replaying the pre-logout cookie from a separate client proves server-side revocation,
+        // rather than relying only on the browser cookie being cleared.
+        using var replayClient = factory.CreateClient();
+        Assert.True(replayClient.DefaultRequestHeaders.TryAddWithoutValidation(
+            "Cookie",
+            replayableSessionCookie));
+        Assert.Equal(HttpStatusCode.Unauthorized, (await replayClient.GetAsync("/api/auth/me")).StatusCode);
+        Assert.Equal(HttpStatusCode.Unauthorized, (await replayClient.GetAsync("/api/audit")).StatusCode);
+
+        using (var scope = factory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+            var session = await db.UserSessions.SingleAsync(item => item.UserId == loginSession!.User.Id);
+            Assert.True(session.IsRevoked);
+            Assert.NotNull(session.RevokedAtUtc);
+
+            Assert.Single(await db.AuditLogs
+                .Where(entry =>
+                    entry.EventType == "AUTH_LOGOUT" &&
+                    entry.ActorUserId == loginSession.User.Id)
+                .ToListAsync());
+        }
+    }
+
+    [Fact]
     public async Task ConcurrentFirstRunSetup_AllowsExactlyOneWinner_AndLocksDatabase()
     {
         var connStr = await _fixture.CreateIsolatedDatabaseConnectionStringAsync();

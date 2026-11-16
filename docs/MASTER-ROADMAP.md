@@ -3,7 +3,7 @@
 **Document Role:** Dependency-ordered delivery roadmap and execution control for PROMO GEST.  
 **Last Code-Changing Source Baseline:** `53c50fbc0db801b9298ec731cfc44f2d4d58ff7f` (PR #59 merge; server-owned 69-Wilaya reference integration).  
 **Main Commit Inspected:** `53c50fbc0db801b9298ec731cfc44f2d4d58ff7f`.  
-**Latest Green PR CI:** Run **#580** / `43880708500` — all three jobs passed for PR #59 (frontend 40/40, .NET/PostgreSQL 18 and Windows). Post-merge main CI #581 is being revalidated.  
+**Latest Green Main CI:** Run **#581** / `43881240365` — all three jobs passed on main SHA `53c50fbc0db801b9298ec731cfc44f2d4d58ff7f` (frontend 40/40; Domain 34/34; Application 20/20; PostgreSQL 18 Integration 30/30; restore drill; Windows x64).  
 **Product Rule:** Deliver complete, secure business workflows in dependency order. Do not let isolated defects, cosmetic changes, or technical administration work displace the ERP product vision.
 
 ---

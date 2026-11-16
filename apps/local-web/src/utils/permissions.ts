@@ -38,10 +38,11 @@ export function canManageProjectAccess(user: AuthenticatedUser | null, project?:
   return getProjectMembership(user, project)?.roleInProject === 'ProjectManager';
 }
 
-/** Project membership supplies the resource scope; project capabilities supply structure-management authority. */
+/** Project membership supplies the resource scope; global permission and project capabilities supply structure-management authority. */
 export function canManageProjectStructure(user: AuthenticatedUser | null, project: ProjectDto): boolean {
   if (!user || !user.isActive) return false;
   if (user.isSystemAdministrator) return true;
+  if (!hasPermission(user, 'projects.structure.manage')) return false;
   const membership = getProjectMembership(user, project);
   return Boolean(membership && (
     membership.canManageConstruction || membership.roleInProject === 'ProjectManager'

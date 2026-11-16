@@ -2,7 +2,9 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
   checkPasswordStrength,
+  PASSWORD_MAX_LENGTH,
   validateCreateEmployee,
+  validateLoginRequest,
   validateSetupRequest,
 } from './validation';
 import {
@@ -20,11 +22,58 @@ import {
 } from './permissions';
 import type { AuthenticatedUser, ProjectDto } from '../types/erp';
 
-test('Password strength requires >= 10 chars, upper, lower, and digit', () => {
+test('Password strength requires >= 10 and <= 128 chars, upper, lower, and digit', () => {
   assert.equal(checkPasswordStrength('short1A').valid, false);
   assert.equal(checkPasswordStrength('alllowercase123').valid, false);
   assert.equal(checkPasswordStrength('NoDigitsHereAtAll').valid, false);
   assert.equal(checkPasswordStrength('PromoGest2026').valid, true);
+  const maxValid = 'Aa1' + 'x'.repeat(PASSWORD_MAX_LENGTH - 3);
+  assert.equal(checkPasswordStrength(maxValid).valid, true);
+  const overMax = 'Aa1' + 'x'.repeat(PASSWORD_MAX_LENGTH - 2);
+  assert.equal(overMax.length, PASSWORD_MAX_LENGTH + 1);
+  assert.equal(checkPasswordStrength(overMax).valid, false);
+  assert.equal(checkPasswordStrength(overMax).maxLength, false);
+});
+
+test('Validation rejects passwords exceeding 128 characters across setup, login, and user creation', () => {
+  const overMax = 'Aa1' + 'x'.repeat(PASSWORD_MAX_LENGTH - 2);
+
+  const setupErrors = validateSetupRequest(
+    {
+      legalName: 'SARL Promotion',
+      legalForm: 'SARL',
+      wilayaCode: '16',
+      wilayaName: 'Alger',
+      address: 'Hydra',
+      defaultLanguage: 'ar',
+      adminUsername: 'admin',
+      adminFullName: 'Karim',
+      adminEmail: 'karim@promo.dz',
+      adminPassword: overMax,
+    },
+    overMax,
+    'ar'
+  );
+  assert.ok(setupErrors.adminPassword);
+
+  const loginErrors = validateLoginRequest(
+    { usernameOrEmail: 'karim', password: overMax },
+    'fr'
+  );
+  assert.ok(loginErrors.password);
+
+  const empErrors = validateCreateEmployee(
+    {
+      username: 'employee1',
+      fullName: 'Amine',
+      email: 'amine@promo.dz',
+      password: overMax,
+      preferredLanguage: 'fr',
+      roleCodes: ['SITE_ENGINEER'],
+    },
+    'fr'
+  );
+  assert.ok(empErrors.password);
 });
 
 test('Setup validation rejects mismatched passwords and invalid NIF', () => {
@@ -202,4 +251,11 @@ test('Permission helpers enforce System Admin and project-level roles', () => {
   assert.equal(canManageProjectCustomers(projectDirectorWithoutMembership, assignedProject), true);
   assert.equal(canReadProjectSalesReservations(projectDirectorWithoutMembership, assignedProject), true);
   assert.equal(canManageProjectSalesReservations(projectDirectorWithoutMembership, assignedProject), true);
+
+  // Even as ProjectManager with CanManageConstruction, structure edits require projects.structure.manage.
+  const withoutStructurePerm: AuthenticatedUser = {
+    ...projectDirectorWithoutMembership,
+    permissions: projectDirectorWithoutMembership.permissions.filter((p) => p !== 'projects.structure.manage'),
+  };
+  assert.equal(canManageProjectStructure(withoutStructurePerm, assignedProject), false);
 });

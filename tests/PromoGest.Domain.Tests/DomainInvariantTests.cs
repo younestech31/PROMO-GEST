@@ -71,6 +71,42 @@ public sealed class DomainInvariantTests
     }
 
     [Fact]
+    public void User_ResetsFailedAttemptsAfterLockoutExpiry_AndRequiresFiveNewFailuresToRelock()
+    {
+        var employee = User.CreateEmployee(
+            "amine.lock",
+            "Amine Lock",
+            "amine.lock@promogest.dz",
+            null,
+            "hash",
+            "fr",
+            FixedNow);
+
+        for (var i = 0; i < User.MaxFailedLoginAttempts; i++)
+        {
+            employee.RecordFailedLogin(FixedNow.AddSeconds(i));
+        }
+        Assert.True(employee.IsLockedOut(FixedNow.AddMinutes(1)));
+        Assert.Equal(User.MaxFailedLoginAttempts, employee.FailedLoginAttempts);
+
+        var afterExpiry = FixedNow.Add(User.LockoutDuration).AddSeconds(5);
+        Assert.False(employee.IsLockedOut(afterExpiry));
+
+        // First failure after expiry resets counter to 1 and does not instantly re-lock
+        Assert.False(employee.RecordFailedLogin(afterExpiry));
+        Assert.Equal(1, employee.FailedLoginAttempts);
+        Assert.False(employee.IsLockedOut(afterExpiry.AddSeconds(1)));
+
+        for (var i = 2; i < User.MaxFailedLoginAttempts; i++)
+        {
+            Assert.False(employee.RecordFailedLogin(afterExpiry.AddSeconds(i)));
+        }
+
+        Assert.True(employee.RecordFailedLogin(afterExpiry.AddSeconds(10)));
+        Assert.True(employee.IsLockedOut(afterExpiry.AddMinutes(1)));
+    }
+
+    [Fact]
     public void OrganizationSettings_EnforcesAlgerianInvariantsAndRejectsInvalidCodes()
     {
         var org = OrganizationSettings.Initialize(

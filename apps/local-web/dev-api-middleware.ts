@@ -140,10 +140,12 @@ const ROLE_PERMS: Record<string, string[]> = {
   ],
   COMMERCIAL_MANAGER: ['org.read', 'projects.read', 'files.read', 'files.write'],
   FINANCE_OFFICER: ['org.read', 'projects.read', 'files.read', 'files.write'],
-  SITE_ENGINEER: ['org.read', 'projects.read', 'files.read', 'files.write'],
+  SITE_ENGINEER: ['org.read', 'projects.read', 'projects.structure.manage', 'files.read', 'files.write'],
   LEGAL_OFFICER: ['org.read', 'projects.read', 'files.read', 'files.write'],
-  VIEWER: ['org.read', 'projects.read', 'files.read'],
+  VIEWER: ['org.read', 'projects.read'],
 };
+
+const PASSWORD_MAX_LENGTH = 128;
 
 function hashPassword(password: string): string {
   const salt = crypto.randomBytes(16);
@@ -202,7 +204,6 @@ function sendJson(
 
 export function createPromoGestDevApiPlugin(): Plugin {
   let organization: OrganizationSummary | null = null;
-  let initializedAtUtc: string | null = null;
   const users: StoredUserRecord[] = [];
   const sessions: StoredSession[] = [];
   const projects: ProjectDto[] = [];
@@ -336,7 +337,6 @@ export function createPromoGestDevApiPlugin(): Plugin {
       defaultLanguage: 'ar',
       currencyCode: 'DZD',
     };
-    initializedAtUtc = nowIso;
 
     const admin: StoredUserRecord = {
       id: '30000000-0000-0000-0000-000000000002',
@@ -488,7 +488,7 @@ export function createPromoGestDevApiPlugin(): Plugin {
             isInitialized: Boolean(organization),
             organizationLegalName: organization?.legalName ?? null,
             defaultLanguage: organization?.defaultLanguage ?? 'ar',
-            initializedAtUtc,
+            requiresBootstrapToken: false,
           });
         }
 
@@ -573,9 +573,14 @@ export function createPromoGestDevApiPlugin(): Plugin {
               message: 'Password must be at least 10 characters.',
             });
           }
+          if (body.adminPassword.length > PASSWORD_MAX_LENGTH) {
+            return sendJson(res, 400, {
+              code: 'PASSWORD_TOO_LONG',
+              message: `Password must not exceed ${PASSWORD_MAX_LENGTH} characters.`,
+            });
+          }
 
           const nowIso = new Date().toISOString();
-          initializedAtUtc = nowIso;
           organization = {
             id: crypto.randomUUID(),
             legalName: body.legalName.trim(),
@@ -643,6 +648,11 @@ export function createPromoGestDevApiPlugin(): Plugin {
 
           const body = await readJsonBody<{ usernameOrEmail: string; password: string }>(req);
           const norm = (body.usernameOrEmail || '').trim().toLowerCase();
+          if ((body.password || '').length > PASSWORD_MAX_LENGTH) {
+            addAudit('AUTH_LOGIN_FAILED', 'Security', `Failed login exceeded password length limit for '${norm.slice(0, 32)}'.`, null, 'User');
+            return sendJson(res, 401, { code: 'AUTH_INVALID_CREDENTIALS', message: 'Invalid username or password.' });
+          }
+
           const user = users.find((u) => u.username.toLowerCase() === norm || u.email.toLowerCase() === norm);
 
           // Generic error on ALL failed logins to prevent account enumeration
@@ -662,6 +672,10 @@ export function createPromoGestDevApiPlugin(): Plugin {
           }
 
           if (!verifyPassword(body.password || '', user.passwordHash)) {
+            if (user.lockoutEndUtc && new Date(user.lockoutEndUtc).getTime() <= Date.now()) {
+              user.failedLoginAttempts = 0;
+              user.lockoutEndUtc = null;
+            }
             user.failedLoginAttempts += 1;
             if (user.failedLoginAttempts >= 5) {
               user.lockoutEndUtc = new Date(Date.now() + 15 * 60_000).toISOString();
@@ -804,6 +818,12 @@ export function createPromoGestDevApiPlugin(): Plugin {
               message: 'Only one System Administrator account is permitted.',
             });
           }
+          if (!body.password || body.password.length < 10) {
+            return sendJson(res, 400, { code: 'PASSWORD_TOO_SHORT', message: 'Password must be at least 10 characters.' });
+          }
+          if (body.password.length > PASSWORD_MAX_LENGTH) {
+            return sendJson(res, 400, { code: 'PASSWORD_TOO_LONG', message: `Password must not exceed ${PASSWORD_MAX_LENGTH} characters.` });
+          }
           if (users.some((u) => u.username.toLowerCase() === body.username.trim().toLowerCase() || u.email.toLowerCase() === body.email.trim().toLowerCase())) {
             return sendJson(res, 409, { code: 'USER_ALREADY_EXISTS', message: 'Username or email already exists.' });
           }
@@ -889,6 +909,9 @@ export function createPromoGestDevApiPlugin(): Plugin {
           const body = await readJsonBody<{ newPassword: string }>(req);
           if (!body.newPassword || body.newPassword.length < 10) {
             return sendJson(res, 400, { code: 'PASSWORD_TOO_SHORT', message: 'Password must be at least 10 characters.' });
+          }
+          if (body.newPassword.length > PASSWORD_MAX_LENGTH) {
+            return sendJson(res, 400, { code: 'PASSWORD_TOO_LONG', message: `Password must not exceed ${PASSWORD_MAX_LENGTH} characters.` });
           }
           target.passwordHash = hashPassword(body.newPassword);
           target.securityStamp = crypto.randomUUID();

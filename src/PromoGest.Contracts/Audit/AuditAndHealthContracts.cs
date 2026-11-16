@@ -17,4 +17,4 @@ public sealed record HealthStatusResponse(
     bool DatabaseConnected,
     bool IsInitialized,
     DateTimeOffset TimestampUtc,
-    string EnvironmentMode);
+    string? EnvironmentMode);

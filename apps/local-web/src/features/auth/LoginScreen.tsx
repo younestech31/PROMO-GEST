@@ -1,4 +1,4 @@
-import { useState, type FormEvent } from 'react';
+import { useEffect, useState, type FormEvent } from 'react';
 import { Building2, Lock } from 'lucide-react';
 import type { AppLanguage, SessionResponse } from '../../types/erp';
 import { getTranslations, translateApiError } from '../../localization/translations';
@@ -31,6 +31,13 @@ export function LoginScreen({
   const [errors, setErrors] = useState<ValidationErrors>({});
   const [authError, setAuthError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  useEffect(() => {
+    setErrors((prev) =>
+      Object.keys(prev).length > 0
+        ? validateLoginRequest({ usernameOrEmail, password }, language)
+        : prev);
+  }, [language]);
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();

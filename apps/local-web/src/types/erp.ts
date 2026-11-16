@@ -10,7 +10,7 @@ export interface SetupStatusResponse {
   isInitialized: boolean;
   organizationLegalName: string | null;
   defaultLanguage: AppLanguage | null;
-  initializedAtUtc: string | null;
+  requiresBootstrapToken?: boolean;
 }
 
 export interface InitializeInstallationRequest {
@@ -458,6 +458,6 @@ export interface HealthStatusResponse {
   databaseConnected: boolean;
   isInitialized: boolean;
   timestampUtc: string;
-  environmentMode: string;
+  environmentMode: string | null;
   previewMode?: boolean;
 }

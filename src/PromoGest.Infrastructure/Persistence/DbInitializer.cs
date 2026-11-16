@@ -85,9 +85,21 @@ public static class DbInitializer
         Link(Role.ProjectDirectorCode, "org.read", "projects.read", "projects.create", "projects.manage", "projects.access.manage", "projects.structure.manage", "files.read", "files.write", "customers.read", "customers.manage", "sales.reservations.read", "sales.reservations.manage", "parties.directory.read");
         Link(Role.CommercialManagerCode, "org.read", "projects.read", "files.read", "files.write", "customers.read", "customers.manage", "sales.reservations.read", "sales.reservations.manage", "parties.directory.read");
         Link(Role.FinanceOfficerCode, "org.read", "projects.read", "files.read", "files.write");
-        Link(Role.SiteEngineerCode, "org.read", "projects.read", "files.read", "files.write");
+        Link(Role.SiteEngineerCode, "org.read", "projects.read", "projects.structure.manage", "files.read", "files.write");
         Link(Role.LegalOfficerCode, "org.read", "projects.read", "files.read", "files.write", "customers.read");
-        Link(Role.ViewerCode, "org.read", "projects.read", "files.read");
+        Link(Role.ViewerCode, "org.read", "projects.read");
+
+        if (roleMap.TryGetValue(Role.ViewerCode, out var viewerRoleId) &&
+            permMap.TryGetValue("files.read", out var filesReadPermissionId))
+        {
+            var staleViewerFileRead = await dbContext.RolePermissions
+                .Where(rp => rp.RoleId == viewerRoleId && rp.PermissionId == filesReadPermissionId)
+                .ToListAsync(ct);
+            if (staleViewerFileRead.Count > 0)
+            {
+                dbContext.RolePermissions.RemoveRange(staleViewerFileRead);
+            }
+        }
 
         await dbContext.SaveChangesAsync(ct);
     }

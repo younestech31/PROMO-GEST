@@ -35,6 +35,8 @@ export interface TranslationBundle {
     adminPassword: string;
     confirmPassword: string;
     passwordHint: string;
+    bootstrapToken: string;
+    bootstrapTokenHint: string;
     submitButton: string;
     submitting: string;
     singleAdminNotice: string;
@@ -249,7 +251,9 @@ const AR: TranslationBundle = {
     adminPhone: 'رقم الهاتف',
     adminPassword: 'كلمة المرور *',
     confirmPassword: 'تأكيد كلمة المرور *',
-    passwordHint: '10 أحرف على الأقل تشمل حرفاً كبيراً وصغيراً ورقماً.',
+    passwordHint: 'من 10 إلى 128 حرفاً تشمل حرفاً كبيراً وصغيراً ورقماً.',
+    bootstrapToken: 'رمز التهيئة الأولية (X-PROMOGEST-SETUP-TOKEN) *',
+    bootstrapTokenHint: 'أدخل الرمز السري المهيأ على الخادم (PROMOGEST_SETUP_TOKEN) لإتمام الإعداد من خارج الجهاز المحلي.',
     submitButton: 'إتمام التهيئة وإنشاء مدير النظام',
     submitting: 'جاري التهيئة الآمنة لقاعدة البيانات...',
     singleAdminNotice: 'تغلق هذه الشاشة نهائياً بمجرد إتمام التثبيت الأولي.',
@@ -464,7 +468,9 @@ const FR: TranslationBundle = {
     adminPhone: 'Téléphone',
     adminPassword: 'Mot de passe *',
     confirmPassword: 'Confirmer le mot de passe *',
-    passwordHint: '10 caractères minimum incluant majuscule, minuscule et chiffre.',
+    passwordHint: 'De 10 à 128 caractères incluant majuscule, minuscule et chiffre.',
+    bootstrapToken: 'Jeton d\'initialisation (X-PROMOGEST-SETUP-TOKEN) *',
+    bootstrapTokenHint: 'Saisissez le jeton configuré sur le serveur (PROMOGEST_SETUP_TOKEN) pour initialiser à distance.',
     submitButton: 'Initialiser le serveur et créer l\'administrateur',
     submitting: 'Initialisation transactionnelle de PostgreSQL...',
     singleAdminNotice: 'Cet assistant est définitivement verrouillé après l\'initialisation.',
@@ -684,9 +690,17 @@ const API_ERROR_MESSAGES: Record<string, { ar: string; fr: string }> = {
     ar: 'ليس لديك صلاحية الوصول إلى هذا المشروع.',
     fr: 'Vous n\'avez pas l\'autorisation d\'accéder à ce projet.',
   },
+  SETUP_BOOTSTRAP_FORBIDDEN: {
+    ar: 'التهيئة الأولية مقصورة على الخادم المحلي أو تتطلب رمز تهيئة صالحاً (X-PROMOGEST-SETUP-TOKEN).',
+    fr: 'L\'initialisation est réservée au serveur local ou requiert un jeton valide (X-PROMOGEST-SETUP-TOKEN).',
+  },
   PASSWORD_TOO_SHORT: {
     ar: 'كلمة المرور يجب أن تحتوي على 10 أحرف على الأقل.',
     fr: 'Le mot de passe doit contenir au moins 10 caractères.',
+  },
+  PASSWORD_TOO_LONG: {
+    ar: 'كلمة المرور يجب ألا تتجاوز 128 حرفاً.',
+    fr: 'Le mot de passe ne doit pas dépasser 128 caractères.',
   },
   PASSWORD_COMPLEXITY_UNMET: {
     ar: 'كلمة المرور يجب أن تتضمن حرفاً كبيراً وحرفاً صغيراً ورقماً.',

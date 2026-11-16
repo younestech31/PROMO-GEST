@@ -389,12 +389,17 @@ public sealed class PostgresEndToEndTests : IClassFixture<PostgreSql18Integratio
         _fixture = fixture;
     }
 
-    private WebApplicationFactory<Program> CreateFactory(string connectionString, string tempRoot)
+    private WebApplicationFactory<Program> CreateFactory(
+        string connectionString,
+        string tempRoot,
+        string environmentName = "Development",
+        IDictionary<string, string?>? extraConfiguration = null,
+        IPAddress? simulatedRemoteIp = null)
     {
         Directory.CreateDirectory(tempRoot);
         return new WebApplicationFactory<Program>().WithWebHostBuilder(builder =>
         {
-            builder.UseEnvironment("Development");
+            builder.UseEnvironment(environmentName);
             builder.ConfigureLogging(logging =>
             {
                 logging.AddProvider(_serverLogs);
@@ -402,13 +407,21 @@ public sealed class PostgresEndToEndTests : IClassFixture<PostgreSql18Integratio
             });
             builder.ConfigureAppConfiguration((_, config) =>
             {
-                config.AddInMemoryCollection(new Dictionary<string, string?>
+                var settings = new Dictionary<string, string?>
                 {
                     ["ConnectionStrings:DefaultConnection"] = connectionString,
                     ["Security:RequireHttpsCookies"] = "false",
                     ["Storage:RootDirectory"] = Path.Combine(tempRoot, "storage"),
                     ["Sales:ReservationExpiryWorkerEnabled"] = "false"
-                });
+                };
+                if (extraConfiguration is not null)
+                {
+                    foreach (var (key, value) in extraConfiguration)
+                    {
+                        settings[key] = value;
+                    }
+                }
+                config.AddInMemoryCollection(settings);
             });
             builder.ConfigureTestServices(services =>
             {
@@ -417,8 +430,26 @@ public sealed class PostgresEndToEndTests : IClassFixture<PostgreSql18Integratio
                 services.AddDbContext<AppDbContext>(options =>
                     options.UseNpgsql(connectionString, npgsql =>
                         npgsql.MigrationsAssembly(typeof(AppDbContext).Assembly.FullName)));
+                if (simulatedRemoteIp is not null)
+                {
+                    services.AddSingleton<IStartupFilter>(new SimulatedRemoteIpStartupFilter(simulatedRemoteIp));
+                }
             });
         });
+    }
+
+    private sealed class SimulatedRemoteIpStartupFilter(IPAddress remoteIp) : IStartupFilter
+    {
+        public Action<Microsoft.AspNetCore.Builder.IApplicationBuilder> Configure(Action<Microsoft.AspNetCore.Builder.IApplicationBuilder> next)
+            => app =>
+            {
+                app.Use(innerNext => async context =>
+                {
+                    context.Connection.RemoteIpAddress = remoteIp;
+                    await innerNext(context);
+                });
+                next(app);
+            };
     }
 
     private static async Task AttachCsrfTokenAsync(HttpClient client)
@@ -2019,5 +2050,175 @@ public sealed class PostgresEndToEndTests : IClassFixture<PostgreSql18Integratio
         Assert.Equal("ORG_EMAIL_INVALID", invalidError!.Code);
     }
 
+    [Fact]
+    public async Task SetupBootstrapGuard_AndProductionHealthSuppression_EnforcedEndToEnd()
+    {
+        var connStr = await _fixture.CreateIsolatedDatabaseConnectionStringAsync();
+        var tempRoot = Path.Combine(Path.GetTempPath(), $"promogest_bootstrap_{Guid.NewGuid():N}");
 
+        // 1. Without token, non-loopback client is rejected with 403 SETUP_BOOTSTRAP_FORBIDDEN
+        await using (var remoteFactory = CreateFactory(
+            connStr,
+            tempRoot,
+            environmentName: "Production",
+            simulatedRemoteIp: IPAddress.Parse("203.0.113.10")))
+        {
+            using var remoteClient = remoteFactory.CreateClient(new WebApplicationFactoryClientOptions { HandleCookies = true });
+            await AttachCsrfTokenAsync(remoteClient);
+
+            var status = await remoteClient.GetFromJsonAsync<SetupStatusResponse>("/api/setup/status");
+            Assert.NotNull(status);
+            Assert.False(status!.IsInitialized);
+            Assert.False(status.RequiresBootstrapToken);
+
+            // Production health endpoints suppress environmentMode
+            var liveJson = await remoteClient.GetFromJsonAsync<System.Text.Json.JsonElement>("/health/live");
+            Assert.Equal(System.Text.Json.JsonValueKind.Null, liveJson.GetProperty("environmentMode").ValueKind);
+            var ready = await remoteClient.GetFromJsonAsync<HealthStatusResponse>("/health/ready");
+            Assert.NotNull(ready);
+            Assert.Null(ready!.EnvironmentMode);
+
+            var blockedInit = await remoteClient.PostAsJsonAsync("/api/setup/initialize", ValidInitRequest());
+            Assert.Equal(HttpStatusCode.Forbidden, blockedInit.StatusCode);
+            var blockedError = await blockedInit.Content.ReadFromJsonAsync<ApiErrorResponse>();
+            Assert.Equal("SETUP_BOOTSTRAP_FORBIDDEN", blockedError!.Code);
+        }
+
+        // 2. With Security:SetupBootstrapToken configured, status advertises RequiresBootstrapToken and requires X-PROMOGEST-SETUP-TOKEN
+        const string expectedToken = "bootstrap-secret-token-2026";
+        await using (var tokenFactory = CreateFactory(
+            connStr,
+            tempRoot,
+            environmentName: "Production",
+            extraConfiguration: new Dictionary<string, string?>
+            {
+                ["Security:SetupBootstrapToken"] = expectedToken
+            },
+            simulatedRemoteIp: IPAddress.Parse("203.0.113.10")))
+        {
+            using var client = tokenFactory.CreateClient(new WebApplicationFactoryClientOptions { HandleCookies = true });
+            await AttachCsrfTokenAsync(client);
+
+            var statusBefore = await client.GetFromJsonAsync<SetupStatusResponse>("/api/setup/status");
+            Assert.NotNull(statusBefore);
+            Assert.True(statusBefore!.RequiresBootstrapToken);
+
+            // Missing token -> 403
+            var missingTokenResp = await client.PostAsJsonAsync("/api/setup/initialize", ValidInitRequest());
+            Assert.Equal(HttpStatusCode.Forbidden, missingTokenResp.StatusCode);
+
+            // Wrong token -> 403
+            client.DefaultRequestHeaders.Remove("X-PROMOGEST-SETUP-TOKEN");
+            client.DefaultRequestHeaders.Add("X-PROMOGEST-SETUP-TOKEN", "wrong-token");
+            var wrongTokenResp = await client.PostAsJsonAsync("/api/setup/initialize", ValidInitRequest());
+            Assert.Equal(HttpStatusCode.Forbidden, wrongTokenResp.StatusCode);
+
+            // Valid token -> 201 Created
+            client.DefaultRequestHeaders.Remove("X-PROMOGEST-SETUP-TOKEN");
+            client.DefaultRequestHeaders.Add("X-PROMOGEST-SETUP-TOKEN", expectedToken);
+            var okResp = await client.PostAsJsonAsync("/api/setup/initialize", ValidInitRequest());
+            Assert.Equal(HttpStatusCode.Created, okResp.StatusCode);
+
+            var statusAfter = await client.GetFromJsonAsync<SetupStatusResponse>("/api/setup/status");
+            Assert.NotNull(statusAfter);
+            Assert.True(statusAfter!.IsInitialized);
+            Assert.False(statusAfter.RequiresBootstrapToken);
+        }
+    }
+
+    [Fact]
+    public async Task ViewerDocumentDenial_AndCustomerIdentityDocumentIsolation_EnforcedEndToEnd()
+    {
+        var connStr = await _fixture.CreateIsolatedDatabaseConnectionStringAsync();
+        var tempRoot = Path.Combine(Path.GetTempPath(), $"promogest_docs_pii_{Guid.NewGuid():N}");
+
+        await using var factory = CreateFactory(connStr, tempRoot);
+        using var adminClient = factory.CreateClient(new WebApplicationFactoryClientOptions { HandleCookies = true });
+        await AttachCsrfTokenAsync(adminClient);
+
+        Assert.Equal(HttpStatusCode.Created, (await adminClient.PostAsJsonAsync("/api/setup/initialize", ValidInitRequest())).StatusCode);
+        Assert.Equal(HttpStatusCode.OK, (await adminClient.PostAsJsonAsync("/api/auth/login", new LoginRequest("sysadmin", "AtlasAdmin#2026"))).StatusCode);
+        await AttachCsrfTokenAsync(adminClient);
+
+        var projectResp = await adminClient.PostAsJsonAsync("/api/projects", new CreateProjectRequest(
+            "PRJ-PII-01", "مشروع الخصوصية", "Projet Confidentialité", "16", "Alger", "Hydra",
+            null, null, null, null, "Planning", 100_000_000m, 1, 10));
+        Assert.Equal(HttpStatusCode.Created, projectResp.StatusCode);
+        var project = await projectResp.Content.ReadFromJsonAsync<ProjectDto>();
+
+        var viewerResp = await adminClient.PostAsJsonAsync("/api/users", new CreateEmployeeRequest(
+            "viewer.pii", "Viewer PII", "viewer.pii@atlasimmo.dz", null, "ViewerPass#2026", "fr", new[] { Role.ViewerCode }));
+        Assert.Equal(HttpStatusCode.Created, viewerResp.StatusCode);
+        var viewer = await viewerResp.Content.ReadFromJsonAsync<UserDto>();
+
+        var siteResp = await adminClient.PostAsJsonAsync("/api/users", new CreateEmployeeRequest(
+            "site.pii", "Site PII", "site.pii@atlasimmo.dz", null, "SitePass#2026", "fr", new[] { Role.SiteEngineerCode }));
+        Assert.Equal(HttpStatusCode.Created, siteResp.StatusCode);
+        var siteUser = await siteResp.Content.ReadFromJsonAsync<UserDto>();
+
+        Assert.Equal(HttpStatusCode.OK, (await adminClient.PutAsJsonAsync(
+            $"/api/projects/{project!.Id}/members",
+            new AssignProjectMemberRequest(viewer!.Id, "ReadOnlyObserver", false, false, false, false))).StatusCode);
+        Assert.Equal(HttpStatusCode.OK, (await adminClient.PutAsJsonAsync(
+            $"/api/projects/{project.Id}/members",
+            new AssignProjectMemberRequest(siteUser!.Id, "SiteSupervisor", false, false, true, true))).StatusCode);
+
+        // Upload one general 'Other' document and one identity document disguised under 'Other'
+        Guid generalDocId;
+        Guid identityDocId;
+        using (var genForm = new MultipartFormDataContent())
+        {
+            genForm.Add(new ByteArrayContent(System.Text.Encoding.UTF8.GetBytes("general-note")), "file", "general.txt");
+            genForm.Add(new StringContent("Other"), "category");
+            var genUpload = await adminClient.PostAsync($"/api/projects/{project.Id}/documents", genForm);
+            Assert.Equal(HttpStatusCode.Created, genUpload.StatusCode);
+            generalDocId = (await genUpload.Content.ReadFromJsonAsync<ProjectDocumentDto>())!.Id;
+        }
+        using (var idForm = new MultipartFormDataContent())
+        {
+            idForm.Add(new ByteArrayContent(new byte[] { 0x25, 0x50, 0x44, 0x46, 0x2D, 0x31 }), "file", "cni-buyer.pdf");
+            idForm.Add(new StringContent("Other"), "category");
+            var idUpload = await adminClient.PostAsync($"/api/projects/{project.Id}/documents", idForm);
+            Assert.Equal(HttpStatusCode.Created, idUpload.StatusCode);
+            identityDocId = (await idUpload.Content.ReadFromJsonAsync<ProjectDocumentDto>())!.Id;
+        }
+
+        var customerResp = await adminClient.PostAsJsonAsync($"/api/projects/{project.Id}/customers", new CreateProjectCustomerRequest(
+            "Individual", "Samira Buyer", null, "0550123456", "samira@example.dz", null, "fr", "WalkIn", null, identityDocId));
+        Assert.Equal(HttpStatusCode.Created, customerResp.StatusCode);
+
+        // VIEWER does not hold files.read and is denied both document listing and download
+        using var viewerClient = factory.CreateClient(new WebApplicationFactoryClientOptions { HandleCookies = true });
+        await AttachCsrfTokenAsync(viewerClient);
+        Assert.Equal(HttpStatusCode.OK, (await viewerClient.PostAsJsonAsync("/api/auth/login", new LoginRequest("viewer.pii", "ViewerPass#2026"))).StatusCode);
+        var viewerSession = await viewerClient.GetFromJsonAsync<SessionResponse>("/api/auth/me");
+        Assert.DoesNotContain("files.read", viewerSession!.User.Permissions);
+        Assert.Equal(HttpStatusCode.Forbidden, (await viewerClient.GetAsync($"/api/projects/{project.Id}/documents")).StatusCode);
+        Assert.Equal(HttpStatusCode.Forbidden, (await viewerClient.GetAsync($"/api/projects/{project.Id}/documents/{generalDocId}/download")).StatusCode);
+
+        // SITE_ENGINEER has files.read and projects.structure.manage, but lacks customers.read
+        using var siteClient = factory.CreateClient(new WebApplicationFactoryClientOptions { HandleCookies = true });
+        await AttachCsrfTokenAsync(siteClient);
+        Assert.Equal(HttpStatusCode.OK, (await siteClient.PostAsJsonAsync("/api/auth/login", new LoginRequest("site.pii", "SitePass#2026"))).StatusCode);
+        var siteSession = await siteClient.GetFromJsonAsync<SessionResponse>("/api/auth/me");
+        Assert.Contains("projects.structure.manage", siteSession!.User.Permissions);
+        Assert.DoesNotContain("customers.read", siteSession.User.Permissions);
+
+        var siteDocs = await siteClient.GetFromJsonAsync<List<ProjectDocumentDto>>($"/api/projects/{project.Id}/documents");
+        Assert.NotNull(siteDocs);
+        Assert.Contains(siteDocs!, d => d.Id == generalDocId);
+        Assert.DoesNotContain(siteDocs!, d => d.Id == identityDocId);
+
+        var piiDownloadResp = await siteClient.GetAsync($"/api/projects/{project.Id}/documents/{identityDocId}/download");
+        Assert.Equal(HttpStatusCode.Forbidden, piiDownloadResp.StatusCode);
+        var piiError = await piiDownloadResp.Content.ReadFromJsonAsync<ApiErrorResponse>();
+        Assert.Equal("PROJECT_DOCUMENT_ACCESS_DENIED", piiError!.Code);
+
+        using var scope = factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+        Assert.Contains(await db.AuditLogs.ToListAsync(), a =>
+            a.EventType == "ACCESS_DENIED" &&
+            a.ActorUserId == siteUser.Id &&
+            a.TargetEntityId == identityDocId.ToString());
+    }
 }

@@ -524,6 +524,7 @@ public sealed class ProjectStructureService
              permissions.Contains("projects.read", StringComparer.OrdinalIgnoreCase));
         var canManageStructure = actor.IsSystemAdministrator ||
             (hasProjectMembership &&
+             permissions.Contains("projects.structure.manage", StringComparer.OrdinalIgnoreCase) &&
              (membership!.CanManageConstruction ||
               membership.RoleInProject == ProjectRole.ProjectManager));
 

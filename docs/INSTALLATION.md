@@ -75,9 +75,10 @@ Register-ScheduledTask -TaskName "PromoGestNightlyBackup" -Action $action -Trigg
 
 ## 7. Step 5 — Local LAN HTTPS & First-Run Wizard
 1. Start Caddy using the staged `C:\PromoGest\caddy\Caddyfile` and distribute Caddy's local root CA certificate to office workstations.
-2. Open `https://promogest.lan` (or the configured LAN IP) from the System Administrator workstation.
-3. Complete the **First-Run Installation Wizard** (Organization legal/fiscal details + the single System Administrator account).
-4. Once initialized, the wizard is permanently locked. If the System Administrator ever locks out or loses their password, use the local server console CLI (`PromoGest.Api.exe --unlock-admin` or `--reset-admin-password`).
+2. **Bootstrap access guard:** `POST /api/setup/initialize` accepts requests only from the server's loopback interface unless `Security:SetupBootstrapToken` (or `PROMOGEST_SETUP_TOKEN`) is configured. To run the wizard from a LAN admin workstation, configure a strong temporary bootstrap token in `appsettings.Production.json` or the service environment before starting the service, enter that token in the First-Run Wizard (`X-PROMOGEST-SETUP-TOKEN`), and remove the token after setup completes (or run the wizard locally on `https://127.0.0.1` / `https://localhost`).
+3. Open `https://promogest.lan` (or the local server browser) from the System Administrator workstation.
+4. Complete the **First-Run Installation Wizard** (Organization legal/fiscal details + the single System Administrator account).
+5. Once initialized, the wizard is permanently locked. If the System Administrator ever locks out or loses their password, use the local server console CLI (`PromoGest.Api.exe --unlock-admin` or `--reset-admin-password`).
 
 ## 8. Linux deployment (Ubuntu 24.04 LTS)
 

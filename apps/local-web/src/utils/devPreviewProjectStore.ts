@@ -62,10 +62,11 @@ export function canUserAccessProjectStructure(
   const membership = project.members.find((m) => m.userId === user.id);
   if (!membership) return false;
   if (!canManage) {
-    return true;
+    return user.permissions.includes('projects.read');
   }
   return Boolean(
-    membership && (membership.canManageConstruction || membership.roleInProject === 'ProjectManager')
+    user.permissions.includes('projects.structure.manage') &&
+    (membership.canManageConstruction || membership.roleInProject === 'ProjectManager')
   );
 }
 

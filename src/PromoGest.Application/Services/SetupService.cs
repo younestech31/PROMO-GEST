@@ -34,14 +34,13 @@ public sealed class SetupService
         var org = await _installationRepository.GetOrganizationSettingsAsync(ct);
         if (org is null || !org.IsInitialized)
         {
-            return new SetupStatusResponse(false, null, "ar", null);
+            return new SetupStatusResponse(false, null, "ar");
         }
 
         return new SetupStatusResponse(
             true,
             org.LegalName,
-            org.DefaultLanguage,
-            org.InitializedAtUtc);
+            org.DefaultLanguage);
     }
 
     public async Task<InitializeInstallationResponse> InitializeAsync(

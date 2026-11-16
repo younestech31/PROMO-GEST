@@ -57,24 +57,26 @@ public sealed class HealthController : ControllerBase
     [HttpGet("live")]
     public ActionResult<object> Live()
     {
+        var environmentMode = _environment.IsDevelopment() ? _environment.EnvironmentName : null;
         return Ok(new
         {
             status = "Healthy",
             timestampUtc = _clock.UtcNow,
-            environmentMode = _environment.EnvironmentName
+            environmentMode
         });
     }
 
     [HttpGet("ready")]
     public async Task<ActionResult<HealthStatusResponse>> Ready(CancellationToken ct)
     {
+        var environmentMode = _environment.IsDevelopment() ? _environment.EnvironmentName : null;
         try
         {
             var canConnect = await _dbContext.Database.CanConnectAsync(ct);
             if (!canConnect)
             {
                 return StatusCode(StatusCodes.Status503ServiceUnavailable,
-                    new HealthStatusResponse("Unhealthy", false, false, _clock.UtcNow, _environment.EnvironmentName));
+                    new HealthStatusResponse("Unhealthy", false, false, _clock.UtcNow, environmentMode));
             }
 
             var isInitialized = await _dbContext.OrganizationSettings.AnyAsync(o => o.IsInitialized, ct);
@@ -83,12 +85,12 @@ public sealed class HealthController : ControllerBase
                 true,
                 isInitialized,
                 _clock.UtcNow,
-                _environment.EnvironmentName));
+                environmentMode));
         }
         catch
         {
             return StatusCode(StatusCodes.Status503ServiceUnavailable,
-                new HealthStatusResponse("Unhealthy", false, false, _clock.UtcNow, _environment.EnvironmentName));
+                new HealthStatusResponse("Unhealthy", false, false, _clock.UtcNow, environmentMode));
         }
     }
 }

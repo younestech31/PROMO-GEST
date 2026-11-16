@@ -115,7 +115,7 @@ For cookies, inspect attributes without copying values: production HTTPS uses th
 | P0-C04 | Change a unit through an allowed physical status transition. | The new status persists; an invalid direct transition (for example, directly marking a unit as sold/delivered) is rejected. |
 | P0-C05 | Try to read or manage Project A structure as `QA-NONMEMBER`, including a request using Project A's ID. | The API denies the operation and records the required security audit; client-side hiding alone is not sufficient. |
 
-**Known authorization boundary:** current source checks explicit project membership and `projects.read` for structure reads; structure management currently checks `CanManageConstruction` or ProjectManager membership. The seeded `projects.structure.manage` permission is not yet the effective backend check. This mismatch is recorded for Phase 1 alignment; do not claim it was fixed by a browser test.
+**Authorization boundary:** current source checks explicit project membership, `projects.read` for structure reads, and both `projects.structure.manage` and explicit `ProjectMember` capability (`CanManageConstruction` or `ProjectManager`) for structure mutations. `SITE_ENGINEER`, `PROJECT_DIRECTOR`, and `SYSTEM_ADMIN` receive `projects.structure.manage`.
 
 ### D. Customers and CRM interactions
 

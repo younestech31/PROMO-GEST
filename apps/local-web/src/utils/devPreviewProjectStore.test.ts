@@ -445,8 +445,10 @@ test('devPreviewProjectStore enforces uniqueness, area bounds, concurrency stamp
 
   assert.equal(canUserAccessProjectStructure({ id: 'emp-outsider', isSystemAdministrator: false, permissions: ['projects.read'] }, project, false), false);
   assert.equal(canUserAccessProjectStructure({ id: 'emp-read', isSystemAdministrator: false, permissions: ['projects.read'] }, project, false), true);
+  assert.equal(canUserAccessProjectStructure({ id: 'emp-read', isSystemAdministrator: false, permissions: [] }, project, false), false);
   assert.equal(canUserAccessProjectStructure({ id: 'emp-read', isSystemAdministrator: false, permissions: ['projects.read'] }, project, true), false);
-  assert.equal(canUserAccessProjectStructure({ id: 'emp-site', isSystemAdministrator: false, permissions: ['projects.read'] }, project, true), true);
+  assert.equal(canUserAccessProjectStructure({ id: 'emp-site', isSystemAdministrator: false, permissions: ['projects.read'] }, project, true), false);
+  assert.equal(canUserAccessProjectStructure({ id: 'emp-site', isSystemAdministrator: false, permissions: ['projects.read', 'projects.structure.manage'] }, project, true), true);
   assert.equal(
     canUserAccessProjectStructure(
       { id: 'emp-outsider', isSystemAdministrator: false, permissions: ['projects.read', 'projects.manage', 'projects.structure.manage'] },
@@ -735,6 +737,41 @@ test('Dev API middleware exposes Les Sables d Or with 3 buildings & 72 units and
     });
     assert.equal(deniedWrite.status, 403);
     assert.equal(deniedWrite.json.code, 'FORBIDDEN_PROJECT_STRUCTURE_MANAGE');
+
+    // 9. Setup status omits initializedAtUtc; oversized login password rejected; VIEWER lacks files.read
+    const setupStatus = await empClient.request('/api/setup/status');
+    assert.equal(setupStatus.status, 200);
+    assert.equal('initializedAtUtc' in setupStatus.json, false);
+    assert.equal(setupStatus.json.requiresBootstrapToken, false);
+
+    const viewerCreate = await adminClient.request('/api/users', {
+      method: 'POST',
+      body: JSON.stringify({
+        username: 'viewer.user',
+        fullName: 'Viewer User',
+        email: 'viewer@demo.local',
+        password: 'StrongPassword2026!',
+        preferredLanguage: 'fr',
+        roleCodes: ['VIEWER'],
+      }),
+    });
+    assert.equal(viewerCreate.status, 201);
+
+    const viewerClient = new CookieJarFetch(baseUrl);
+    await viewerClient.request('/api/auth/csrf');
+    const oversizedLogin = await viewerClient.request('/api/auth/login', {
+      method: 'POST',
+      body: JSON.stringify({ usernameOrEmail: 'viewer.user', password: 'A'.repeat(129) }),
+    });
+    assert.equal(oversizedLogin.status, 401);
+    assert.equal(oversizedLogin.json.code, 'AUTH_INVALID_CREDENTIALS');
+
+    const viewerLogin = await viewerClient.request('/api/auth/login', {
+      method: 'POST',
+      body: JSON.stringify({ usernameOrEmail: 'viewer.user', password: 'StrongPassword2026!' }),
+    });
+    assert.equal(viewerLogin.status, 200);
+    assert.equal(viewerLogin.json.user.permissions.includes('files.read'), false);
   } finally {
     await new Promise<void>((resolve) => server.close(() => resolve()));
   }

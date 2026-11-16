@@ -39,6 +39,34 @@ public sealed class EfProjectDocumentRepository : IProjectDocumentRepository
                     file.Scope == StoredFileScope.Project,
             ct);
 
+    public async Task<IReadOnlySet<Guid>> ListCustomerIdentityDocumentIdsAsync(
+        Guid projectId,
+        CancellationToken ct = default)
+    {
+        var ids = await _dbContext.ProjectCustomers
+            .AsNoTracking()
+            .Where(customer =>
+                customer.ProjectId == projectId &&
+                customer.IdentityDocumentStoredFileId != null)
+            .Select(customer => customer.IdentityDocumentStoredFileId!.Value)
+            .Distinct()
+            .ToListAsync(ct);
+
+        return ids.ToHashSet();
+    }
+
+    public Task<bool> IsCustomerIdentityDocumentAsync(
+        Guid projectId,
+        Guid fileId,
+        CancellationToken ct = default)
+        => _dbContext.ProjectCustomers
+            .AsNoTracking()
+            .AnyAsync(
+                customer =>
+                    customer.ProjectId == projectId &&
+                    customer.IdentityDocumentStoredFileId == fileId,
+                ct);
+
     public Task AddAsync(StoredFile file, CancellationToken ct = default)
     {
         _dbContext.StoredFiles.Add(file);

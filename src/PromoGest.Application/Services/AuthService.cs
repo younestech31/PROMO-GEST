@@ -1,4 +1,5 @@
 using PromoGest.Application.Interfaces;
+using PromoGest.Application.Validators;
 using PromoGest.Contracts.Auth;
 using PromoGest.Domain.Entities;
 using PromoGest.Domain.Enums;
@@ -54,11 +55,31 @@ public sealed class AuthService
             throw new UnauthorizedDomainException("AUTH_INVALID_CREDENTIALS", "Invalid username or password.");
 
         var nowUtc = _clock.UtcNow;
+        var identifier = request.UsernameOrEmail.Trim();
+        if (request.Password.Length > PasswordPolicyValidator.MaximumLength)
+        {
+            await _auditWriter.WriteAsync(
+                AuditLog.Record(
+                    nowUtc,
+                    null,
+                    identifier.Length > 32 ? identifier[..32] : identifier,
+                    "AUTH_LOGIN_FAILED",
+                    AuditSeverity.Security,
+                    "User",
+                    null,
+                    "Failed login attempt exceeded password length limit.",
+                    null,
+                    metadata.IpAddress,
+                    metadata.UserAgent),
+                ct);
+            await _userRepository.SaveChangesAsync(ct);
+            throw new UnauthorizedDomainException("AUTH_INVALID_CREDENTIALS", "Invalid username or password.");
+        }
+
         var org = await _installationRepository.GetOrganizationSettingsAsync(ct);
         if (org is null || !org.IsInitialized)
             throw new ConflictDomainException("SETUP_REQUIRED", "System installation must be initialized before signing in.");
 
-        var identifier = request.UsernameOrEmail.Trim();
         var user = await _userRepository.GetByUsernameOrEmailWithRolesAsync(identifier, ct);
 
         if (user is null)
@@ -254,6 +275,12 @@ public sealed class AuthService
         IReadOnlyList<string> permissions)
     {
         var roleCodes = user.UserRoles.Select(ur => ur.Role.Code).Distinct().ToList();
+        var canReadOrg = user.IsSystemAdministrator ||
+            permissions.Contains("org.read", StringComparer.OrdinalIgnoreCase) ||
+            permissions.Contains("org.manage", StringComparer.OrdinalIgnoreCase);
+        var canManageOrg = user.IsSystemAdministrator ||
+            permissions.Contains("org.manage", StringComparer.OrdinalIgnoreCase);
+
         return new SessionResponse(
             new AuthenticatedUserResponse(
                 user.Id,
@@ -272,20 +299,20 @@ public sealed class AuthService
                 org.LegalName,
                 org.TradeName,
                 org.LegalForm,
-                org.Nif,
-                org.Nis,
-                org.TradeRegisterNumber,
-                org.TaxArticleNumber,
-                org.ShareCapitalDzd,
+                canReadOrg ? org.Nif : null,
+                canReadOrg ? org.Nis : null,
+                canReadOrg ? org.TradeRegisterNumber : null,
+                canReadOrg ? org.TaxArticleNumber : null,
+                canReadOrg ? org.ShareCapitalDzd : null,
                 org.WilayaCode,
                 org.WilayaName,
-                org.Address,
-                org.Phone,
-                org.Email,
+                canReadOrg ? org.Address : string.Empty,
+                canReadOrg ? org.Phone : null,
+                canReadOrg ? org.Email : null,
                 org.DefaultLanguage,
                 org.CurrencyCode)
             {
-                ConcurrencyStamp = org.ConcurrencyStamp
+                ConcurrencyStamp = canManageOrg ? org.ConcurrencyStamp : Guid.Empty
             });
     }
 }

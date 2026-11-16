@@ -116,7 +116,6 @@ export function App() {
       isInitialized: true,
       organizationLegalName: previewSession.organization.legalName,
       defaultLanguage: previewSession.organization.defaultLanguage,
-      initializedAtUtc: new Date().toISOString(),
     });
     await handleLoggedIn(previewSession);
   };
@@ -147,6 +146,7 @@ export function App() {
         language={language}
         onLanguageChange={setLanguage}
         onInitialized={handleInitialized}
+        requiresBootstrapToken={Boolean(setupStatus.requiresBootstrapToken)}
         isPreviewMode={health?.previewMode === true}
         onPreviewLogin={handleOpenPreview}
       />
@@ -199,7 +199,10 @@ export function App() {
           language={language}
           canManage={
             health?.previewMode !== true &&
-            Boolean(session.organization.concurrencyStamp) &&
+            Boolean(
+              session.organization.concurrencyStamp &&
+              session.organization.concurrencyStamp !== '00000000-0000-0000-0000-000000000000'
+            ) &&
             (session.user.isSystemAdministrator ||
               session.user.permissions.includes('org.manage'))
           }

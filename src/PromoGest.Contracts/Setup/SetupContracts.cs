@@ -4,7 +4,7 @@ public sealed record SetupStatusResponse(
     bool IsInitialized,
     string? OrganizationLegalName,
     string? DefaultLanguage,
-    DateTimeOffset? InitializedAtUtc);
+    bool RequiresBootstrapToken = false);
 
 public sealed record InitializeInstallationRequest(
     string LegalName,

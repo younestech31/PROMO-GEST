@@ -69,9 +69,20 @@ public sealed class ProjectDocumentService
         RequestMetadata metadata,
         CancellationToken ct = default)
     {
-        await RequireProjectAccessAsync(actorUserId, projectId, canWrite: false, metadata, ct);
+        var (actor, _, membership, permissions) = await RequireProjectAccessAsync(
+            actorUserId, projectId, canWrite: false, metadata, ct);
         var files = await _documentRepository.ListProjectDocumentsAsync(projectId, ct);
-        return files.Select(item => Map(item.File, item.UploadedByFullName)).ToList();
+        var canReadCustomerIdentity = CanReadCustomerIdentityDocuments(actor, permissions);
+        var identityDocIds = canReadCustomerIdentity
+            ? (IReadOnlySet<Guid>)new HashSet<Guid>()
+            : await _documentRepository.ListCustomerIdentityDocumentIdsAsync(projectId, ct);
+
+        return files
+            .Where(item =>
+                CanAccessCategory(actor.IsSystemAdministrator, membership, forUpload: false, item.File.Category) &&
+                (canReadCustomerIdentity || !identityDocIds.Contains(item.File.Id)))
+            .Select(item => Map(item.File, item.UploadedByFullName))
+            .ToList();
     }
 
     public async Task<ProjectDocumentDto> UploadAsync(
@@ -85,11 +96,34 @@ public sealed class ProjectDocumentService
         RequestMetadata metadata,
         CancellationToken ct = default)
     {
-        var (actor, project) = await RequireProjectAccessAsync(actorUserId, projectId, canWrite: true, metadata, ct);
+        var (actor, project, membership, _) = await RequireProjectAccessAsync(
+            actorUserId, projectId, canWrite: true, metadata, ct);
 
         var normalizedCategory = (category ?? string.Empty).Trim();
         if (!AllowedCategories.Contains(normalizedCategory))
             throw new DomainException("FILE_CATEGORY_INVALID", "Select a valid document category.");
+
+        if (!CanAccessCategory(actor.IsSystemAdministrator, membership, forUpload: true, normalizedCategory))
+        {
+            await _auditWriter.WriteAsync(
+                AuditLog.Record(
+                    _clock.UtcNow,
+                    actor.Id,
+                    actor.Username,
+                    "ACCESS_DENIED",
+                    AuditSeverity.Security,
+                    "Project",
+                    project.Id.ToString(),
+                    $"Unauthorized project-document category upload ('{normalizedCategory}') by '{actor.Username}' on project '{project.Code}'.",
+                    JsonSerializer.Serialize(new { projectId = project.Id, category = normalizedCategory, operation = "write" }),
+                    metadata.IpAddress,
+                    metadata.UserAgent),
+                ct);
+            await _documentRepository.SaveChangesAsync(ct);
+            throw new ForbiddenDomainException(
+                "FORBIDDEN_PROJECT_DOCUMENT_WRITE",
+                "You do not have permission to upload documents in this category.");
+        }
 
         if (description is not null && description.Trim().Length > 500)
             throw new DomainException("FILE_DESCRIPTION_TOO_LONG", "Document description must not exceed 500 characters.");
@@ -158,9 +192,36 @@ public sealed class ProjectDocumentService
         RequestMetadata metadata,
         CancellationToken ct = default)
     {
-        var (actor, project) = await RequireProjectAccessAsync(actorUserId, projectId, canWrite: false, metadata, ct);
+        var (actor, project, membership, permissions) = await RequireProjectAccessAsync(
+            actorUserId, projectId, canWrite: false, metadata, ct);
         var file = await _documentRepository.GetProjectDocumentAsync(project.Id, fileId, ct)
             ?? throw new NotFoundDomainException("PROJECT_DOCUMENT_NOT_FOUND", "Project document was not found.");
+
+        var categoryAllowed = CanAccessCategory(actor.IsSystemAdministrator, membership, forUpload: false, file.Category);
+        var isBlockedIdentityDocument = !CanReadCustomerIdentityDocuments(actor, permissions) &&
+            await _documentRepository.IsCustomerIdentityDocumentAsync(project.Id, file.Id, ct);
+
+        if (!categoryAllowed || isBlockedIdentityDocument)
+        {
+            await _auditWriter.WriteAsync(
+                AuditLog.Record(
+                    _clock.UtcNow,
+                    actor.Id,
+                    actor.Username,
+                    "ACCESS_DENIED",
+                    AuditSeverity.Security,
+                    "StoredFile",
+                    file.Id.ToString(),
+                    $"Unauthorized project-document download attempt by '{actor.Username}' for '{file.OriginalFileName}' (category '{file.Category}') on project '{project.Code}'.",
+                    JsonSerializer.Serialize(new { projectId = project.Id, fileId = file.Id, category = file.Category, identityPii = isBlockedIdentityDocument }),
+                    metadata.IpAddress,
+                    metadata.UserAgent),
+                ct);
+            await _documentRepository.SaveChangesAsync(ct);
+            throw new ForbiddenDomainException(
+                "PROJECT_DOCUMENT_ACCESS_DENIED",
+                "You do not have permission to access this project document.");
+        }
 
         var fullPath = _fileStorage.ResolveSafeFullPath(file);
         FileStream contentStream;
@@ -228,7 +289,7 @@ public sealed class ProjectDocumentService
         }
     }
 
-    private async Task<(User Actor, Project Project)> RequireProjectAccessAsync(
+    private async Task<(User Actor, Project Project, ProjectMember? Membership, IReadOnlyList<string> Permissions)> RequireProjectAccessAsync(
         Guid actorUserId,
         Guid projectId,
         bool canWrite,
@@ -307,7 +368,38 @@ public sealed class ProjectDocumentService
                     : "You do not have permission to view documents for this project.");
         }
 
-        return (actor, project);
+        return (actor, project, membership, permissions);
+    }
+
+    private static bool CanReadCustomerIdentityDocuments(User actor, IReadOnlyList<string> permissions)
+        => actor.IsSystemAdministrator ||
+           permissions.Contains("customers.read", StringComparer.OrdinalIgnoreCase);
+
+    private static bool CanAccessCategory(
+        bool isSystemAdministrator,
+        ProjectMember? membership,
+        bool forUpload,
+        string category)
+    {
+        if (isSystemAdministrator)
+            return true;
+
+        if (membership is null)
+            return false;
+
+        if (membership.RoleInProject == ProjectRole.ProjectManager)
+            return true;
+
+        return category switch
+        {
+            "Financial" => membership.CanViewFinancials,
+            "Commercial" => membership.CanManageSales,
+            "Engineering" or "Plans" => forUpload
+                ? membership.CanManageConstruction
+                : membership.CanManageConstruction || membership.CanManageDocuments,
+            "Legal" or "LandAndTitle" => membership.CanManageDocuments,
+            _ => true
+        };
     }
 
     private async Task RecordIntegrityFailureAsync(

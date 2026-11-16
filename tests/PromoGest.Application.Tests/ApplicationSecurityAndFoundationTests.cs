@@ -1,5 +1,6 @@
 using PromoGest.Application.Interfaces;
 using PromoGest.Application.Services;
+using PromoGest.Application.Validators;
 using PromoGest.Contracts.Auth;
 using PromoGest.Contracts.Projects;
 using PromoGest.Contracts.Setup;
@@ -9,6 +10,7 @@ using PromoGest.Domain.Enums;
 using PromoGest.Domain.Exceptions;
 using PromoGest.Domain.Interfaces;
 using PromoGest.Infrastructure.Security;
+using PromoGest.Infrastructure.Storage;
 using Xunit;
 
 namespace PromoGest.Application.Tests;
@@ -24,6 +26,22 @@ public sealed class ApplicationSecurityAndFoundationTests
     {
         public Task WriteAsync(AuditLog entry, CancellationToken ct = default)
             => throw new IOException("Simulated audit persistence failure.");
+    }
+
+    private sealed class SpyPasswordHasher : IPasswordHasher
+    {
+        private readonly IPasswordHasher _inner;
+        public int VerifyCallCount { get; private set; }
+
+        public SpyPasswordHasher(IPasswordHasher inner) => _inner = inner;
+
+        public string HashPassword(string plainTextPassword) => _inner.HashPassword(plainTextPassword);
+
+        public bool VerifyPassword(string plainTextPassword, string passwordHash)
+        {
+            VerifyCallCount++;
+            return _inner.VerifyPassword(plainTextPassword, passwordHash);
+        }
     }
 
     private sealed class InMemoryStore :
@@ -52,6 +70,7 @@ public sealed class ApplicationSecurityAndFoundationTests
         public List<Party> Parties { get; } = new();
         public List<ProjectCustomer> ProjectCustomers { get; } = new();
         public List<CustomerInteraction> CustomerInteractions { get; } = new();
+        public List<StoredFile> StoredFiles { get; } = new();
 
         public InMemoryStore()
         {
@@ -59,22 +78,58 @@ public sealed class ApplicationSecurityAndFoundationTests
             var adminRole = Role.Create(Guid.NewGuid(), Role.SystemAdminCode, "مدير النظام", "Administrateur Système", "Admin", "Admin", true, t);
             var commRole = Role.Create(Guid.NewGuid(), Role.CommercialManagerCode, "مسؤول المبيعات", "Responsable Commercial", "Sales", "Sales", false, t);
             var siteEngineerRole = Role.Create(Guid.NewGuid(), Role.SiteEngineerCode, "مهندس الموقع", "Ingénieur de chantier", "Site", "Site", false, t);
-            Roles.AddRange(new[] { adminRole, commRole, siteEngineerRole });
+            var financeRole = Role.Create(Guid.NewGuid(), Role.FinanceOfficerCode, "مسؤول المالية", "Responsable Financier", "Finance", "Finance", false, t);
+            var legalRole = Role.Create(Guid.NewGuid(), Role.LegalOfficerCode, "المكلف بالشؤون القانونية", "Chargé Juridique", "Legal", "Legal", false, t);
+            var viewerRole = Role.Create(Guid.NewGuid(), Role.ViewerCode, "مستخدم للمطالعة فقط", "Consultant Lecture Seule", "Viewer", "Viewer", false, t);
+            Roles.AddRange(new[] { adminRole, commRole, siteEngineerRole, financeRole, legalRole, viewerRole });
 
+            var pOrgRead = Permission.Create(Guid.NewGuid(), "org.read", "Organization", "قراءة المؤسسة", "Lire org", t);
+            var pOrgManage = Permission.Create(Guid.NewGuid(), "org.manage", "Organization", "إدارة المؤسسة", "Gérer org", t);
             var pRead = Permission.Create(Guid.NewGuid(), "projects.read", "Projects", "قراءة", "Lire", t);
+            var pStructureManage = Permission.Create(Guid.NewGuid(), "projects.structure.manage", "Project Structure", "إدارة الهيكل", "Gérer structure", t);
             var pUsers = Permission.Create(Guid.NewGuid(), "users.manage", "Admin", "مستخدمين", "Utilisateurs", t);
             var pAudit = Permission.Create(Guid.NewGuid(), "audit.read", "Security", "تدقيق", "Audit", t);
+            var pFilesRead = Permission.Create(Guid.NewGuid(), "files.read", "Documents", "قراءة الوثائق", "Lire documents", t);
+            var pFilesWrite = Permission.Create(Guid.NewGuid(), "files.write", "Documents", "رفع الوثائق", "Écrire documents", t);
             var pCustomersRead = Permission.Create(Guid.NewGuid(), "customers.read", "Customers", "قراءة العملاء", "Lire clients", t);
             var pCustomersManage = Permission.Create(Guid.NewGuid(), "customers.manage", "Customers", "إدارة العملاء", "Gérer clients", t);
-            Permissions.AddRange(new[] { pRead, pUsers, pAudit, pCustomersRead, pCustomersManage });
+            Permissions.AddRange(new[]
+            {
+                pOrgRead, pOrgManage, pRead, pStructureManage, pUsers, pAudit,
+                pFilesRead, pFilesWrite, pCustomersRead, pCustomersManage
+            });
 
-            RolePermissions.Add(RolePermission.Create(adminRole.Id, pRead.Id));
-            RolePermissions.Add(RolePermission.Create(adminRole.Id, pUsers.Id));
-            RolePermissions.Add(RolePermission.Create(adminRole.Id, pAudit.Id));
+            foreach (var perm in Permissions)
+            {
+                RolePermissions.Add(RolePermission.Create(adminRole.Id, perm.Id));
+            }
+
+            RolePermissions.Add(RolePermission.Create(commRole.Id, pOrgRead.Id));
             RolePermissions.Add(RolePermission.Create(commRole.Id, pRead.Id));
+            RolePermissions.Add(RolePermission.Create(commRole.Id, pFilesRead.Id));
+            RolePermissions.Add(RolePermission.Create(commRole.Id, pFilesWrite.Id));
             RolePermissions.Add(RolePermission.Create(commRole.Id, pCustomersRead.Id));
             RolePermissions.Add(RolePermission.Create(commRole.Id, pCustomersManage.Id));
+
+            RolePermissions.Add(RolePermission.Create(siteEngineerRole.Id, pOrgRead.Id));
             RolePermissions.Add(RolePermission.Create(siteEngineerRole.Id, pRead.Id));
+            RolePermissions.Add(RolePermission.Create(siteEngineerRole.Id, pStructureManage.Id));
+            RolePermissions.Add(RolePermission.Create(siteEngineerRole.Id, pFilesRead.Id));
+            RolePermissions.Add(RolePermission.Create(siteEngineerRole.Id, pFilesWrite.Id));
+
+            RolePermissions.Add(RolePermission.Create(financeRole.Id, pOrgRead.Id));
+            RolePermissions.Add(RolePermission.Create(financeRole.Id, pRead.Id));
+            RolePermissions.Add(RolePermission.Create(financeRole.Id, pFilesRead.Id));
+            RolePermissions.Add(RolePermission.Create(financeRole.Id, pFilesWrite.Id));
+
+            RolePermissions.Add(RolePermission.Create(legalRole.Id, pOrgRead.Id));
+            RolePermissions.Add(RolePermission.Create(legalRole.Id, pRead.Id));
+            RolePermissions.Add(RolePermission.Create(legalRole.Id, pFilesRead.Id));
+            RolePermissions.Add(RolePermission.Create(legalRole.Id, pFilesWrite.Id));
+            RolePermissions.Add(RolePermission.Create(legalRole.Id, pCustomersRead.Id));
+
+            RolePermissions.Add(RolePermission.Create(viewerRole.Id, pOrgRead.Id));
+            RolePermissions.Add(RolePermission.Create(viewerRole.Id, pRead.Id));
         }
 
         public Task<OrganizationSettings?> GetOrganizationSettingsAsync(CancellationToken ct = default) => Task.FromResult(Org);
@@ -246,10 +301,27 @@ public sealed class ApplicationSecurityAndFoundationTests
         public Task AddCustomerAsync(ProjectCustomer customer, CancellationToken ct = default) { ProjectCustomers.Add(customer); return Task.CompletedTask; }
         public Task AddInteractionAsync(CustomerInteraction interaction, CancellationToken ct = default) { CustomerInteractions.Add(interaction); return Task.CompletedTask; }
         public Task<IReadOnlyList<ProjectDocumentListItem>> ListProjectDocumentsAsync(Guid projectId, CancellationToken ct = default)
-            => Task.FromResult<IReadOnlyList<ProjectDocumentListItem>>(Array.Empty<ProjectDocumentListItem>());
+            => Task.FromResult<IReadOnlyList<ProjectDocumentListItem>>(
+                StoredFiles
+                    .Where(file => file.Scope == StoredFileScope.Project && file.ProjectId == projectId)
+                    .OrderByDescending(file => file.CreatedAtUtc)
+                    .Select(file => new ProjectDocumentListItem(
+                        file,
+                        Users.FirstOrDefault(u => u.Id == file.UploadedByUserId)?.FullName ?? "Unknown"))
+                    .ToList());
         public Task<StoredFile?> GetProjectDocumentAsync(Guid projectId, Guid fileId, CancellationToken ct = default)
-            => Task.FromResult<StoredFile?>(null);
-        public Task AddAsync(StoredFile file, CancellationToken ct = default) => Task.CompletedTask;
+            => Task.FromResult(StoredFiles.FirstOrDefault(file =>
+                file.Scope == StoredFileScope.Project && file.ProjectId == projectId && file.Id == fileId));
+        public Task<IReadOnlySet<Guid>> ListCustomerIdentityDocumentIdsAsync(Guid projectId, CancellationToken ct = default)
+            => Task.FromResult<IReadOnlySet<Guid>>(
+                ProjectCustomers
+                    .Where(customer => customer.ProjectId == projectId && customer.IdentityDocumentStoredFileId.HasValue)
+                    .Select(customer => customer.IdentityDocumentStoredFileId!.Value)
+                    .ToHashSet());
+        public Task<bool> IsCustomerIdentityDocumentAsync(Guid projectId, Guid fileId, CancellationToken ct = default)
+            => Task.FromResult(ProjectCustomers.Any(customer =>
+                customer.ProjectId == projectId && customer.IdentityDocumentStoredFileId == fileId));
+        public Task AddAsync(StoredFile file, CancellationToken ct = default) { StoredFiles.Add(file); return Task.CompletedTask; }
         public Task<Party?> GetByIdAsync(Guid partyId, CancellationToken ct = default)
             => Task.FromResult(Parties.FirstOrDefault(party => party.Id == partyId));
         public Task<IReadOnlyList<Party>> SearchDirectoryAsync(string normalizedPrefix, int limit, CancellationToken ct = default)
@@ -1315,6 +1387,321 @@ public sealed class ApplicationSecurityAndFoundationTests
 
         Assert.Equal(listed.ActualBuildingsCount, detailed.ActualBuildingsCount);
         Assert.Equal(listed.ActualUnitsCount, detailed.ActualUnitsCount);
+    }
+
+    [Fact]
+    public async Task ExpiredLockout_ResetsFailedAttempts_AndRequiresFiveNewFailuresToRelock()
+    {
+        var store = new InMemoryStore();
+        var clock = new FakeClock();
+        var hasher = new Pbkdf2PasswordHasher();
+        var tokenGen = new CryptoSessionTokenGenerator();
+        var setup = new SetupService(store, hasher, store, clock);
+        var userSvc = new UserManagementService(store, store, hasher, store, clock);
+        var authSvc = new AuthService(store, store, hasher, tokenGen, store, clock);
+        var meta = new RequestMetadata("127.0.0.1", "xUnit");
+
+        var init = await setup.InitializeAsync(ValidInitRequest(), meta);
+        var emp = await userSvc.CreateEmployeeAsync(
+            init.SystemAdminUserId,
+            new CreateEmployeeRequest("nadia.lock", "Nadia Lock", "nadia.lock@elbahdja.dz", null, "StrongPass123", "fr", new[] { Role.CommercialManagerCode }),
+            meta);
+
+        for (var i = 0; i < User.MaxFailedLoginAttempts; i++)
+        {
+            await Assert.ThrowsAsync<UnauthorizedDomainException>(() =>
+                authSvc.LoginAsync(new LoginRequest("nadia.lock", "WrongPass999"), meta));
+        }
+
+        // Advance past lockout expiry
+        clock.UtcNow = clock.UtcNow.Add(User.LockoutDuration).AddMinutes(1);
+
+        // One failed login after expiry resets counter to 1 and does not immediately re-lock
+        await Assert.ThrowsAsync<UnauthorizedDomainException>(() =>
+            authSvc.LoginAsync(new LoginRequest("nadia.lock", "WrongPass999"), meta));
+        var userAfterFirstRetry = await store.GetByIdWithRolesAsync(emp.Id);
+        Assert.NotNull(userAfterFirstRetry);
+        Assert.Equal(1, userAfterFirstRetry!.FailedLoginAttempts);
+        Assert.False(userAfterFirstRetry.IsLockedOut(clock.UtcNow));
+
+        // Valid login succeeds instead of being blocked by instant re-lockout
+        var ok = await authSvc.LoginAsync(new LoginRequest("nadia.lock", "StrongPass123"), meta);
+        Assert.Equal(emp.Id, ok.Session.User.Id);
+        Assert.Equal(0, userAfterFirstRetry.FailedLoginAttempts);
+    }
+
+    [Fact]
+    public async Task PasswordPolicy_EnforcesMaximumLength128_AndLoginRejectsOversizedPasswordBeforeHashing()
+    {
+        var overMax = "Aa1" + new string('x', PasswordPolicyValidator.MaximumLength - 2);
+        Assert.Equal(129, overMax.Length);
+
+        var policyEx = Assert.Throws<DomainException>(() => PasswordPolicyValidator.EnsureValid(overMax));
+        Assert.Equal("PASSWORD_TOO_LONG", policyEx.Code);
+
+        var store = new InMemoryStore();
+        var clock = new FakeClock();
+        var realHasher = new Pbkdf2PasswordHasher();
+        var setup = new SetupService(store, realHasher, store, clock);
+        var spyHasher = new SpyPasswordHasher(realHasher);
+        var authSvc = new AuthService(store, store, spyHasher, new CryptoSessionTokenGenerator(), store, clock);
+        var meta = new RequestMetadata("127.0.0.1", "xUnit");
+
+        await setup.InitializeAsync(ValidInitRequest(), meta);
+
+        var ex = await Assert.ThrowsAsync<UnauthorizedDomainException>(() =>
+            authSvc.LoginAsync(new LoginRequest("sysadmin", overMax), meta));
+        Assert.Equal("AUTH_INVALID_CREDENTIALS", ex.Code);
+        Assert.Equal(0, spyHasher.VerifyCallCount);
+        Assert.Contains(store.AuditLogs, a => a.EventType == "AUTH_LOGIN_FAILED" && a.Summary.Contains("length limit"));
+    }
+
+    [Fact]
+    public async Task AuthService_GatesOrganizationSensitiveFieldsAndConcurrencyStampByPermissions()
+    {
+        var store = new InMemoryStore();
+        var clock = new FakeClock();
+        var hasher = new Pbkdf2PasswordHasher();
+        var tokenGen = new CryptoSessionTokenGenerator();
+        var setup = new SetupService(store, hasher, store, clock);
+        var userSvc = new UserManagementService(store, store, hasher, store, clock);
+        var authSvc = new AuthService(store, store, hasher, tokenGen, store, clock);
+        var meta = new RequestMetadata("127.0.0.1", "xUnit");
+
+        var init = await setup.InitializeAsync(ValidInitRequest(), meta);
+        var adminLogin = await authSvc.LoginAsync(new LoginRequest("sysadmin", "StrongPass123"), meta);
+        Assert.NotEqual(Guid.Empty, adminLogin.Session.Organization.ConcurrencyStamp);
+        Assert.Equal("001616012345678", adminLogin.Session.Organization.Nif);
+        Assert.Equal("Hydra", adminLogin.Session.Organization.Address);
+
+        // Non-admin with org.read gets fiscal/contact fields but Guid.Empty concurrency stamp
+        await userSvc.CreateEmployeeAsync(
+            init.SystemAdminUserId,
+            new CreateEmployeeRequest("viewer.org", "Viewer Org", "viewer.org@elbahdja.dz", null, "StrongPass123", "fr", new[] { Role.ViewerCode }),
+            meta);
+        var viewerLogin = await authSvc.LoginAsync(new LoginRequest("viewer.org", "StrongPass123"), meta);
+        Assert.Equal(Guid.Empty, viewerLogin.Session.Organization.ConcurrencyStamp);
+        Assert.Equal("001616012345678", viewerLogin.Session.Organization.Nif);
+
+        // User with custom role lacking org.read and org.manage receives redacted fiscal/contact fields
+        var restrictedRole = Role.Create(Guid.NewGuid(), "NO_ORG_ROLE", "بدون قراءة", "Sans org", "Restricted", "Restricted", false, clock.UtcNow);
+        store.Roles.Add(restrictedRole);
+        var restrictedUser = User.CreateEmployee(
+            "restricted.user",
+            "Restricted User",
+            "restricted@elbahdja.dz",
+            null,
+            hasher.HashPassword("StrongPass123"),
+            "fr",
+            clock.UtcNow);
+        await store.AddUserAsync(restrictedUser);
+        await store.AddUserRoleAsync(UserRole.Create(restrictedUser.Id, restrictedRole.Id, init.SystemAdminUserId, clock.UtcNow));
+
+        var restrictedLogin = await authSvc.LoginAsync(new LoginRequest("restricted.user", "StrongPass123"), meta);
+        Assert.Null(restrictedLogin.Session.Organization.Nif);
+        Assert.Null(restrictedLogin.Session.Organization.Nis);
+        Assert.Null(restrictedLogin.Session.Organization.TradeRegisterNumber);
+        Assert.Null(restrictedLogin.Session.Organization.TaxArticleNumber);
+        Assert.Null(restrictedLogin.Session.Organization.ShareCapitalDzd);
+        Assert.Equal(string.Empty, restrictedLogin.Session.Organization.Address);
+        Assert.Null(restrictedLogin.Session.Organization.Phone);
+        Assert.Null(restrictedLogin.Session.Organization.Email);
+        Assert.Equal(Guid.Empty, restrictedLogin.Session.Organization.ConcurrencyStamp);
+
+        var validated = await authSvc.ValidateSessionAsync(restrictedLogin.OpaqueSessionToken);
+        Assert.NotNull(validated);
+        Assert.Null(validated!.Organization.Nif);
+        Assert.Equal(string.Empty, validated.Organization.Address);
+        Assert.Equal(Guid.Empty, validated.Organization.ConcurrencyStamp);
+    }
+
+    [Fact]
+    public async Task ProjectStructure_RequiresProjectsStructureManagePermissionEvenForProjectManager()
+    {
+        var store = new InMemoryStore();
+        var clock = new FakeClock();
+        var hasher = new Pbkdf2PasswordHasher();
+        var setup = new SetupService(store, hasher, store, clock);
+        var userSvc = new UserManagementService(store, store, hasher, store, clock);
+        var projectSvc = new ProjectService(store, store, store, clock);
+        var structureSvc = new ProjectStructureService(store, store, store, store, clock);
+        var meta = new RequestMetadata("127.0.0.1", "xUnit");
+
+        var init = await setup.InitializeAsync(ValidInitRequest(), meta);
+        var project = await projectSvc.CreateProjectAsync(
+            init.SystemAdminUserId,
+            new CreateProjectRequest("PRJ-STRUCT-PERM", "مشروع", "Projet", "16", "Alger", "Hydra", null, null, null, null, "Planning", 100_000_000m, 1, 10),
+            meta);
+
+        // CommercialManager does NOT have projects.structure.manage
+        var commercialPm = await userSvc.CreateEmployeeAsync(
+            init.SystemAdminUserId,
+            new CreateEmployeeRequest("comm.pm", "Commercial PM", "comm.pm@elbahdja.dz", null, "StrongPass123", "fr", new[] { Role.CommercialManagerCode }),
+            meta);
+
+        await projectSvc.AssignMemberAsync(
+            init.SystemAdminUserId,
+            project.Id,
+            new AssignProjectMemberRequest(commercialPm.Id, nameof(ProjectRole.ProjectManager), true, true, true, true),
+            meta);
+
+        // Reading structure succeeds with projects.read + membership, but mutating is denied without projects.structure.manage
+        var readStructure = await structureSvc.GetProjectStructureAsync(commercialPm.Id, project.Id, meta);
+        Assert.Empty(readStructure.Buildings);
+
+        var deniedCreate = await Assert.ThrowsAsync<ForbiddenDomainException>(() =>
+            structureSvc.CreateBuildingAsync(
+                commercialPm.Id,
+                project.Id,
+                new CreateBuildingRequest("B1", "عمارة 1", "Bloc 1", "Planned"),
+                meta));
+        Assert.Equal("FORBIDDEN_PROJECT_STRUCTURE_MANAGE", deniedCreate.Code);
+    }
+
+    [Fact]
+    public async Task ProjectDocuments_EnforceCategoryNarrowing_AndIsolateCustomerIdentityDocuments()
+    {
+        var tempStorage = Path.Combine(Path.GetTempPath(), $"promogest-app-docs-{Guid.NewGuid():N}");
+        Directory.CreateDirectory(tempStorage);
+        try
+        {
+            var store = new InMemoryStore();
+            var clock = new FakeClock();
+            var hasher = new Pbkdf2PasswordHasher();
+            var storage = new LocalFileStorageService(new LocalStorageOptions { RootDirectory = tempStorage }, clock);
+            var setup = new SetupService(store, hasher, store, clock);
+            var userSvc = new UserManagementService(store, store, hasher, store, clock);
+            var projectSvc = new ProjectService(store, store, store, clock);
+            var docSvc = new ProjectDocumentService(store, store, store, storage, store, clock);
+            var meta = new RequestMetadata("127.0.0.1", "xUnit");
+
+            var init = await setup.InitializeAsync(ValidInitRequest(), meta);
+            var project = await projectSvc.CreateProjectAsync(
+                init.SystemAdminUserId,
+                new CreateProjectRequest("PRJ-DOC-SCOPE", "مشروع الوثائق", "Projet Docs", "16", "Alger", "Hydra", null, null, null, null, "Planning", 100_000_000m, 1, 10),
+                meta);
+
+            var financeUser = await userSvc.CreateEmployeeAsync(
+                init.SystemAdminUserId,
+                new CreateEmployeeRequest("fin.officer", "Finance Officer", "fin@elbahdja.dz", null, "StrongPass123", "fr", new[] { Role.FinanceOfficerCode }),
+                meta);
+            var siteUser = await userSvc.CreateEmployeeAsync(
+                init.SystemAdminUserId,
+                new CreateEmployeeRequest("site.eng", "Site Engineer", "site@elbahdja.dz", null, "StrongPass123", "fr", new[] { Role.SiteEngineerCode }),
+                meta);
+            var commUser = await userSvc.CreateEmployeeAsync(
+                init.SystemAdminUserId,
+                new CreateEmployeeRequest("comm.mgr", "Commercial Manager", "comm@elbahdja.dz", null, "StrongPass123", "fr", new[] { Role.CommercialManagerCode }),
+                meta);
+            var viewerUser = await userSvc.CreateEmployeeAsync(
+                init.SystemAdminUserId,
+                new CreateEmployeeRequest("viewer.doc", "Viewer Doc", "viewer.doc@elbahdja.dz", null, "StrongPass123", "fr", new[] { Role.ViewerCode }),
+                meta);
+
+            await projectSvc.AssignMemberAsync(init.SystemAdminUserId, project.Id, new AssignProjectMemberRequest(financeUser.Id, nameof(ProjectRole.FinanceController), true, false, false, true), meta);
+            await projectSvc.AssignMemberAsync(init.SystemAdminUserId, project.Id, new AssignProjectMemberRequest(siteUser.Id, nameof(ProjectRole.SiteSupervisor), false, false, true, true), meta);
+            await projectSvc.AssignMemberAsync(init.SystemAdminUserId, project.Id, new AssignProjectMemberRequest(commUser.Id, nameof(ProjectRole.CommercialAgent), false, true, false, true), meta);
+            await projectSvc.AssignMemberAsync(init.SystemAdminUserId, project.Id, new AssignProjectMemberRequest(viewerUser.Id, nameof(ProjectRole.ReadOnlyObserver), false, false, false, false), meta);
+
+            // Admin uploads documents across categories and one customer identity document
+            async Task<ProjectDocumentDto> UploadTextAsync(Guid actorId, string name, string category)
+            {
+                await using var ms = new MemoryStream(System.Text.Encoding.UTF8.GetBytes($"content-{name}"));
+                return await docSvc.UploadAsync(actorId, project.Id, ms, name, category, null, ms.Length, meta);
+            }
+
+            var financialDoc = await UploadTextAsync(init.SystemAdminUserId, "budget.txt", "Financial");
+            var engineeringDoc = await UploadTextAsync(init.SystemAdminUserId, "plan.txt", "Engineering");
+            var legalDoc = await UploadTextAsync(init.SystemAdminUserId, "title.txt", "Legal");
+            var generalDoc = await UploadTextAsync(init.SystemAdminUserId, "note.txt", "Other");
+            var customerIdDoc = await UploadTextAsync(init.SystemAdminUserId, "cni-client.txt", "Commercial");
+
+            var party = Party.Create(Guid.NewGuid(), PartyKind.Person, "Amine Client", clock.UtcNow);
+            var customer = ProjectCustomer.Create(
+                project.Id,
+                CustomerType.Individual,
+                "Amine Client",
+                null,
+                "0550112233",
+                null,
+                null,
+                "fr",
+                CustomerSource.WalkIn,
+                customerIdDoc.Id,
+                commUser.Id,
+                clock.UtcNow,
+                party.Id);
+            customer.AttachParty(party);
+            store.Parties.Add(party);
+            store.ProjectCustomers.Add(customer);
+
+            // VIEWER lacks files.read and is denied listing and download
+            await Assert.ThrowsAsync<ForbiddenDomainException>(() => docSvc.ListAsync(viewerUser.Id, project.Id, meta));
+            await Assert.ThrowsAsync<ForbiddenDomainException>(() => docSvc.GetDownloadAsync(viewerUser.Id, project.Id, generalDoc.Id, meta));
+
+            // FinanceOfficer (CanViewFinancials + CanManageDocuments) sees Financial, Legal, Engineering, Other, NOT Commercial
+            var financeList = await docSvc.ListAsync(financeUser.Id, project.Id, meta);
+            Assert.Contains(financeList, d => d.Id == financialDoc.Id);
+            Assert.Contains(financeList, d => d.Id == legalDoc.Id);
+            Assert.Contains(financeList, d => d.Id == generalDoc.Id);
+            Assert.DoesNotContain(financeList, d => d.Id == customerIdDoc.Id);
+            await Assert.ThrowsAsync<ForbiddenDomainException>(() => docSvc.GetDownloadAsync(financeUser.Id, project.Id, customerIdDoc.Id, meta));
+
+            // FinanceOfficer cannot upload Engineering even with CanManageDocuments because Engineering upload requires CanManageConstruction
+            await Assert.ThrowsAsync<ForbiddenDomainException>(() => UploadTextAsync(financeUser.Id, "eng-forbidden.txt", "Engineering"));
+
+            // SiteEngineer (CanManageConstruction + CanManageDocuments, no CanViewFinancials, no customers.read)
+            // sees Engineering, Legal, Other, NOT Financial or Commercial
+            var siteList = await docSvc.ListAsync(siteUser.Id, project.Id, meta);
+            Assert.Contains(siteList, d => d.Id == engineeringDoc.Id);
+            Assert.Contains(siteList, d => d.Id == legalDoc.Id);
+            Assert.DoesNotContain(siteList, d => d.Id == financialDoc.Id);
+            Assert.DoesNotContain(siteList, d => d.Id == customerIdDoc.Id);
+            await Assert.ThrowsAsync<ForbiddenDomainException>(() => docSvc.GetDownloadAsync(siteUser.Id, project.Id, financialDoc.Id, meta));
+
+            // Even if customer identity doc is uploaded under "Other", SiteEngineer (lacks customers.read) cannot see or download it
+            var disguisedIdDoc = await UploadTextAsync(init.SystemAdminUserId, "passport-other.txt", "Other");
+            var party2 = Party.Create(Guid.NewGuid(), PartyKind.Person, "Karima Client", clock.UtcNow);
+            var customer2 = ProjectCustomer.Create(
+                project.Id,
+                CustomerType.Individual,
+                "Karima Client",
+                null,
+                "0550445566",
+                null,
+                null,
+                "fr",
+                CustomerSource.WalkIn,
+                disguisedIdDoc.Id,
+                commUser.Id,
+                clock.UtcNow,
+                party2.Id);
+            customer2.AttachParty(party2);
+            store.Parties.Add(party2);
+            store.ProjectCustomers.Add(customer2);
+
+            var siteListAfter = await docSvc.ListAsync(siteUser.Id, project.Id, meta);
+            Assert.DoesNotContain(siteListAfter, d => d.Id == disguisedIdDoc.Id);
+            var piiDenied = await Assert.ThrowsAsync<ForbiddenDomainException>(() => docSvc.GetDownloadAsync(siteUser.Id, project.Id, disguisedIdDoc.Id, meta));
+            Assert.Equal("PROJECT_DOCUMENT_ACCESS_DENIED", piiDenied.Code);
+            Assert.Contains(store.AuditLogs, entry =>
+                entry.EventType == "ACCESS_DENIED" &&
+                entry.ActorUserId == siteUser.Id &&
+                entry.TargetEntityId == disguisedIdDoc.Id.ToString());
+
+            // CommercialManager (CanManageSales + CanManageDocuments + customers.read) CAN list and download both customer identity documents
+            var commList = await docSvc.ListAsync(commUser.Id, project.Id, meta);
+            Assert.Contains(commList, d => d.Id == customerIdDoc.Id);
+            Assert.Contains(commList, d => d.Id == disguisedIdDoc.Id);
+            var commDownload = await docSvc.GetDownloadAsync(commUser.Id, project.Id, disguisedIdDoc.Id, meta);
+            await using var commContent = commDownload.Content;
+            Assert.Equal("passport-other.txt", commDownload.FileName);
+        }
+        finally
+        {
+            if (Directory.Exists(tempStorage))
+                Directory.Delete(tempStorage, recursive: true);
+        }
     }
 }
 

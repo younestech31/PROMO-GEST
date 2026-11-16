@@ -13,9 +13,9 @@ All 12 functional ERP domains required by PROMO GEST, mapped strictly using the 
 
 | Code | Domain Name | Overall Status | Primary Dependencies |
 |---|---|---|---|
-| **A** | Organization, Governance & Administration | `PARTIALLY_IMPLEMENTED` | None (Foundation) |
+| **A** | Organization, Governance & Administration | `IMPLEMENTED_AND_VERIFIED` *(except `AdministrativeUnit` 1,541-commune catalogue)* | None (Foundation) |
 | **B** | Real Estate Projects | `IMPLEMENTED_AND_VERIFIED` | Domain A |
-| **C** | Physical Structure & Property Units | `IMPLEMENTED_AND_VERIFIED` *(no DELETE/bulk; `projects.structure.manage` note)* | Domain B |
+| **C** | Physical Structure & Property Units | `IMPLEMENTED_AND_VERIFIED` *(no DELETE/bulk; enforces `projects.structure.manage`)* | Domain B |
 | **D** | Counterparties (Party), Customers & CRM | `PARTIALLY_IMPLEMENTED` *(C1/C2 API flows verified; Phase 1 master-data completion remains)* | Domains A, B |
 | **E** | Commercial Operations & Internal Unit Holds | `IMPLEMENTED_AND_VERIFIED` | Domains B, C, D |
 | **F** | Contracts, Commitments & Legal Deeds | `PLANNED` | Domains C, D, E, **K-Min** |
@@ -32,15 +32,15 @@ All 12 functional ERP domains required by PROMO GEST, mapped strictly using the 
 
 ### A. Organization, Governance & Administration (`PARTIALLY_IMPLEMENTED`)
 - **Frontend surfaces:** `FirstRunSetupWizard.tsx`, `LoginScreen.tsx`, `UsersManagementView.tsx`, `AuditLogView.tsx`, `OrganizationProfileView.tsx`, and organization-level `OverviewView.tsx`.
-- **UI boundary:** organization profile remains read-only; technical administration links (users/audit) currently share the same shell/navigation as daily operations rather than a separate technical-admin workspace.
+- **UI boundary:** technical administration links (users/audit) currently share the same shell/navigation as daily operations rather than a separate technical-admin workspace.
 - **Current Reality:**
-  - *First-Run Wizard (`IMPLEMENTED_AND_VERIFIED`):* `GET /api/setup/status`, `POST /api/setup/initialize`.
-  - *Session Auth & CSRF (`IMPLEMENTED_AND_VERIFIED`):* `GET /api/auth/csrf`, `POST /api/auth/login`, `POST /api/auth/logout`, `GET /api/auth/me` (cookie **`promogest_session`** + `X-CSRF-TOKEN`).
+  - *First-Run Wizard (`IMPLEMENTED_AND_VERIFIED`):* `GET /api/setup/status`, `POST /api/setup/initialize` (enforces loopback IP or `X-PROMOGEST-SETUP-TOKEN` bootstrap guard).
+  - *Session Auth & CSRF (`IMPLEMENTED_AND_VERIFIED`):* `GET /api/auth/csrf` (intentionally `[AllowAnonymous]` bootstrap), `POST /api/auth/login`, `POST /api/auth/logout`, `GET /api/auth/me` (cookie **`promogest_session`** + `X-CSRF-TOKEN`; gates org fiscal/contact fields by `org.read` and `ConcurrencyStamp` by `org.manage`).
   - *User & Role Management (`IMPLEMENTED_AND_VERIFIED`):* `GET/POST/PUT /api/users`, `PATCH /api/users/{id}/status`, `POST /api/users/{id}/reset-password`, `GET /api/users/roles`.
   - *Audit Trail (`IMPLEMENTED_AND_VERIFIED`):* `GET /api/audit`.
   - *Offline CLI Recovery (`IMPLEMENTED_AND_VERIFIED`):* `--unlock-admin`, `--reset-admin-password` (`Program.cs`, `AdminRecoveryService`).
-  - *Organization Profile Update (`PARTIALLY_IMPLEMENTED`):* `OrganizationProfileView.tsx` is read-only; no `PUT /api/organization` endpoint exists yet despite `org.manage` being seeded.
-- **Target Scope (`PLANNED`):** Audited organization profile updates (`org.manage`, preserving immutable `singleton_guard`), active session revocation UI, and versioned Algerian Administrative Reference catalogue (`AdministrativeUnit`, 69 Wilayas + verified 1,541 communes per ADR-0010).
+  - *Organization Profile Update (`IMPLEMENTED_AND_VERIFIED`):* `PUT /api/organization` (`OrganizationController`, `OrganizationProfileService`) and `OrganizationProfileView.tsx` edit form enforce `org.manage`, `ExpectedConcurrencyStamp`, `singleton_guard`, and security/audit logging (verified in `PostgresEndToEndTests`).
+- **Target Scope (`PLANNED`):** Active session revocation UI, and versioned Algerian Administrative Reference catalogue (`AdministrativeUnit`, 69 Wilayas + verified 1,541 communes per ADR-0010).
 
 ### B. Real Estate Projects (`IMPLEMENTED_AND_VERIFIED`)
 - **Frontend surface:** `ProjectsAccessView.tsx` lists accessible projects, supports project creation/update and team membership operations. It launches project sub-areas as modals from the directory; it is not yet the dedicated project switcher or active project workspace.
@@ -50,7 +50,7 @@ All 12 functional ERP domains required by PROMO GEST, mapped strictly using the 
 ### C. Physical Structure & Property Units (`IMPLEMENTED_AND_VERIFIED` with documented gaps)
 - **Frontend surface:** `ProjectStructureModal.tsx` supports building/floor/unit create and update flows and property-unit status changes. The Product Owner owner-attested successful Arabic RTL / French LTR desktop/mobile use of the project-structure workflow; see `PHASE-0-MANUAL-ACCEPTANCE.md`.
 - **Current Reality:** `GET /api/projects/{id}/structure`, `POST/PUT .../buildings`, `POST/PUT .../buildings/{bId}/floors`, `POST/PUT .../floors/{fId}/units`, `PUT .../units/{uId}/status`. `UnitType` (`Apartment`, `Shop`, `ParkingSpace`, `Office`, `Storage`); `PropertyUnitStatus` (`Planned`, `UnderConstruction`, `AvailableForSale`, `Reserved`, `Sold`, `Delivered`, `Withdrawn`).
-- **Documented Reality Notes:** Neither `DELETE` endpoints nor `/bulk` HTTP endpoints exist in `ProjectStructureController`; `gross_area_square_meters`, `net_area_square_meters`, `rooms_count` exist on `property_units` (no `price_dzd` or `orientation` columns yet); `ProjectStructureService` checks `ProjectMember.CanManageConstruction || ProjectManager` instead of `projects.structure.manage`.
+- **Documented Reality Notes:** Neither `DELETE` endpoints nor `/bulk` HTTP endpoints exist in `ProjectStructureController`; `gross_area_square_meters`, `net_area_square_meters`, `rooms_count` exist on `property_units` (no `price_dzd` or `orientation` columns yet); `ProjectStructureService` and `canManageProjectStructure` enforce both `projects.structure.manage` (seeded on `SYSTEM_ADMIN`, `PROJECT_DIRECTOR`, and `SITE_ENGINEER`) and `ProjectMember` (`CanManageConstruction || ProjectManager`).
 - **Target Scope (`PLANNED`):** Controlled retirement (`Withdrawn`), base reference pricing/composition, and multi-dimensional unit status separating physical readiness, commercial availability, and legal contract ownership.
 
 ### D. Counterparties (Party), Customers & CRM (`PARTIALLY_IMPLEMENTED`)

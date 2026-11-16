@@ -13,6 +13,7 @@ interface FirstRunSetupWizardProps {
   language: AppLanguage;
   onLanguageChange: (lang: AppLanguage) => void;
   onInitialized: () => void | Promise<void>;
+  requiresBootstrapToken?: boolean;
   isPreviewMode: boolean;
   onPreviewLogin: () => Promise<void>;
 }
@@ -21,6 +22,7 @@ export function FirstRunSetupWizard({
   language,
   onLanguageChange,
   onInitialized,
+  requiresBootstrapToken = false,
   isPreviewMode,
   onPreviewLogin,
 }: FirstRunSetupWizardProps) {
@@ -48,6 +50,7 @@ export function FirstRunSetupWizard({
     adminPassword: '',
   });
   const [confirmPassword, setConfirmPassword] = useState('');
+  const [bootstrapToken, setBootstrapToken] = useState('');
   const [errors, setErrors] = useState<ValidationErrors>({});
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -80,16 +83,22 @@ export function FirstRunSetupWizard({
         return;
       }
 
-      const validation = validateSetupRequest(form, confirmPassword, language);
+      const validation = validateSetupRequest(form, confirmPassword, language, {
+        requiresBootstrapToken: Boolean(currentSetup.requiresBootstrapToken ?? requiresBootstrapToken),
+        bootstrapToken,
+      });
       setErrors(validation);
       if (Object.keys(validation).length > 0) {
         return;
       }
 
-      await apiClient.initializeInstallation({
-        ...form,
-        shareCapitalDzd: form.shareCapitalDzd ?? null,
-      });
+      await apiClient.initializeInstallation(
+        {
+          ...form,
+          shareCapitalDzd: form.shareCapitalDzd ?? null,
+        },
+        bootstrapToken
+      );
       await onInitialized();
     } catch (err) {
       // A concurrent first-run request may have initialized the installation
@@ -423,12 +432,34 @@ export function FirstRunSetupWizard({
                     required
                   />
                 </FormField>
+
+                {requiresBootstrapToken && (
+                  <div className="md:col-span-2">
+                    <FormField
+                      id="setup-bootstrapToken"
+                      label={t.setup.bootstrapToken}
+                      error={errors.bootstrapToken}
+                      hint={t.setup.bootstrapTokenHint}
+                    >
+                      <input
+                        id="setup-bootstrapToken"
+                        type="password"
+                        dir="ltr"
+                        autoComplete="off"
+                        value={bootstrapToken}
+                        onChange={(e) => setBootstrapToken(e.target.value)}
+                        className={`${inputBaseClass} font-data`}
+                        required
+                      />
+                    </FormField>
+                  </div>
+                )}
               </div>
 
               {form.adminPassword.length > 0 && (
                 <div className="mt-4 flex flex-wrap items-center gap-4 text-xs">
-                  <span className={strength.minLength ? 'text-emerald-700 font-medium' : 'text-slate-500'}>
-                    {strength.minLength ? '✓ ' : '· '}10+ chars
+                  <span className={strength.minLength && strength.maxLength ? 'text-emerald-700 font-medium' : 'text-slate-500'}>
+                    {strength.minLength && strength.maxLength ? '✓ ' : '· '}10–128 chars
                   </span>
                   <span className={strength.hasUpper ? 'text-emerald-700 font-medium' : 'text-slate-500'}>
                     {strength.hasUpper ? '✓ ' : '· '}A-Z

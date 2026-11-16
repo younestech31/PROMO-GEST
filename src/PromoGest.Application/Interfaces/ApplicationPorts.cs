@@ -119,6 +119,8 @@ public interface IProjectDocumentRepository
 {
     Task<IReadOnlyList<ProjectDocumentListItem>> ListProjectDocumentsAsync(Guid projectId, CancellationToken ct = default);
     Task<StoredFile?> GetProjectDocumentAsync(Guid projectId, Guid fileId, CancellationToken ct = default);
+    Task<IReadOnlySet<Guid>> ListCustomerIdentityDocumentIdsAsync(Guid projectId, CancellationToken ct = default);
+    Task<bool> IsCustomerIdentityDocumentAsync(Guid projectId, Guid fileId, CancellationToken ct = default);
     Task AddAsync(StoredFile file, CancellationToken ct = default);
     Task SaveChangesAsync(CancellationToken ct = default);
 }

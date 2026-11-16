@@ -8,20 +8,25 @@ import type {
 
 export type ValidationErrors = Record<string, string>;
 
+export const PASSWORD_MAX_LENGTH = 128;
+
 export function checkPasswordStrength(password: string): {
   valid: boolean;
   minLength: boolean;
+  maxLength: boolean;
   hasUpper: boolean;
   hasLower: boolean;
   hasDigit: boolean;
 } {
   const minLength = password.length >= 10;
+  const maxLength = password.length <= PASSWORD_MAX_LENGTH;
   const hasUpper = /[A-Z]/.test(password);
   const hasLower = /[a-z]/.test(password);
   const hasDigit = /\d/.test(password);
   return {
-    valid: minLength && hasUpper && hasLower && hasDigit,
+    valid: minLength && maxLength && hasUpper && hasLower && hasDigit,
     minLength,
+    maxLength,
     hasUpper,
     hasLower,
     hasDigit,
@@ -31,7 +36,8 @@ export function checkPasswordStrength(password: string): {
 export function validateSetupRequest(
   req: InitializeInstallationRequest,
   confirmPassword: string,
-  lang: AppLanguage
+  lang: AppLanguage,
+  options?: { requiresBootstrapToken?: boolean; bootstrapToken?: string }
 ): ValidationErrors {
   const errors: ValidationErrors = {};
   const t = (ar: string, fr: string) => (lang === 'ar' ? ar : fr);
@@ -64,7 +70,12 @@ export function validateSetupRequest(
     errors.adminEmail = t('يرجى إدخال بريد إلكتروني صحيح.', 'Veuillez saisir une adresse e-mail valide.');
   }
   const strength = checkPasswordStrength(req.adminPassword);
-  if (!strength.valid) {
+  if (!strength.maxLength) {
+    errors.adminPassword = t(
+      'كلمة المرور يجب ألا تتجاوز 128 حرفاً.',
+      'Le mot de passe ne doit pas dépasser 128 caractères.'
+    );
+  } else if (!strength.valid) {
     errors.adminPassword = t(
       'كلمة المرور يجب أن تحتوي على 10 أحرف على الأقل، وحرف كبير وصغير ورقم.',
       'Le mot de passe doit contenir au moins 10 caractères, une majuscule, une minuscule et un chiffre.'
@@ -72,6 +83,12 @@ export function validateSetupRequest(
   }
   if (req.adminPassword !== confirmPassword) {
     errors.confirmPassword = t('تأكيد كلمة المرور غير مطابق.', 'La confirmation du mot de passe ne correspond pas.');
+  }
+  if (options?.requiresBootstrapToken && !options.bootstrapToken?.trim()) {
+    errors.bootstrapToken = t(
+      'رمز التهيئة الأولية مطلوب لإتمام الإعداد عن بُعد.',
+      'Le jeton d’initialisation est requis pour configurer le serveur à distance.'
+    );
   }
 
   return errors;
@@ -86,6 +103,11 @@ export function validateLoginRequest(req: LoginRequest, lang: AppLanguage): Vali
   }
   if (!req.password) {
     errors.password = t('يرجى إدخال كلمة المرور.', 'Veuillez saisir votre mot de passe.');
+  } else if (req.password.length > PASSWORD_MAX_LENGTH) {
+    errors.password = t(
+      'كلمة المرور يجب ألا تتجاوز 128 حرفاً.',
+      'Le mot de passe ne doit pas dépasser 128 caractères.'
+    );
   }
   return errors;
 }
@@ -103,7 +125,13 @@ export function validateCreateEmployee(req: CreateEmployeeRequest, lang: AppLang
   if (!req.email.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(req.email.trim())) {
     errors.email = t('البريد الإلكتروني غير صالح.', 'Adresse e-mail invalide.');
   }
-  if (!checkPasswordStrength(req.password).valid) {
+  const strength = checkPasswordStrength(req.password);
+  if (!strength.maxLength) {
+    errors.password = t(
+      'كلمة المرور يجب ألا تتجاوز 128 حرفاً.',
+      'Le mot de passe ne doit pas dépasser 128 caractères.'
+    );
+  } else if (!strength.valid) {
     errors.password = t(
       'كلمة المرور يجب أن تحتوي على 10 أحرف على الأقل مع حرف كبير وصغير ورقم.',
       'Le mot de passe exige au moins 10 caractères, une majuscule, une minuscule et un chiffre.'

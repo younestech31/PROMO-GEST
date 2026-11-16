@@ -1,6 +1,10 @@
+using System.Net;
+using System.Security.Cryptography;
+using System.Text;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using PromoGest.Application.Services;
+using PromoGest.Contracts.Common;
 using PromoGest.Contracts.Setup;
 
 namespace PromoGest.Api.Controllers;
@@ -9,11 +13,23 @@ namespace PromoGest.Api.Controllers;
 [Route("api/setup")]
 public sealed class SetupController : ControllerBase
 {
-    private readonly SetupService _setupService;
+    public const string BootstrapTokenHeaderName = "X-PROMOGEST-SETUP-TOKEN";
 
-    public SetupController(SetupService setupService)
+    private readonly SetupService _setupService;
+    private readonly IConfiguration _configuration;
+    private readonly IHostEnvironment _environment;
+    private readonly ILogger<SetupController> _logger;
+
+    public SetupController(
+        SetupService setupService,
+        IConfiguration configuration,
+        IHostEnvironment environment,
+        ILogger<SetupController> logger)
     {
         _setupService = setupService;
+        _configuration = configuration;
+        _environment = environment;
+        _logger = logger;
     }
 
     [HttpGet("status")]
@@ -22,7 +38,8 @@ public sealed class SetupController : ControllerBase
     public async Task<ActionResult<SetupStatusResponse>> GetStatus(CancellationToken ct)
     {
         var status = await _setupService.GetStatusAsync(ct);
-        return Ok(status);
+        var requiresToken = !status.IsInitialized && !string.IsNullOrWhiteSpace(ResolveExpectedBootstrapToken());
+        return Ok(status with { RequiresBootstrapToken = requiresToken });
     }
 
     [HttpPost("initialize")]
@@ -31,11 +48,61 @@ public sealed class SetupController : ControllerBase
         [FromBody] InitializeInstallationRequest request,
         CancellationToken ct)
     {
+        if (!IsBootstrapAuthorized())
+        {
+            _logger.LogWarning(
+                "Blocked unauthorized first-run setup initialization attempt from IP {RemoteIp}.",
+                HttpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown");
+            return StatusCode(
+                StatusCodes.Status403Forbidden,
+                new ApiErrorResponse(
+                    "SETUP_BOOTSTRAP_FORBIDDEN",
+                    "First-run setup initialization is restricted to the local server loopback interface or a valid setup bootstrap token."));
+        }
+
         var metadata = new RequestMetadata(
             HttpContext.Connection.RemoteIpAddress?.ToString(),
             Request.Headers.UserAgent.ToString());
 
         var result = await _setupService.InitializeAsync(request, metadata, ct);
         return Created("/api/setup/status", result);
+    }
+
+    private string? ResolveExpectedBootstrapToken()
+    {
+        var configured = _configuration["Security:SetupBootstrapToken"];
+        if (!string.IsNullOrWhiteSpace(configured))
+        {
+            return configured.Trim();
+        }
+
+        var envToken = Environment.GetEnvironmentVariable("PROMOGEST_SETUP_TOKEN");
+        return string.IsNullOrWhiteSpace(envToken) ? null : envToken.Trim();
+    }
+
+    private bool IsBootstrapAuthorized()
+    {
+        var expectedToken = ResolveExpectedBootstrapToken();
+        if (!string.IsNullOrWhiteSpace(expectedToken))
+        {
+            var suppliedToken = Request.Headers[BootstrapTokenHeaderName].FirstOrDefault()?.Trim();
+            if (string.IsNullOrWhiteSpace(suppliedToken))
+            {
+                return false;
+            }
+
+            var expectedHash = SHA256.HashData(Encoding.UTF8.GetBytes(expectedToken));
+            var suppliedHash = SHA256.HashData(Encoding.UTF8.GetBytes(suppliedToken));
+            return CryptographicOperations.FixedTimeEquals(expectedHash, suppliedHash);
+        }
+
+        var remoteIp = HttpContext.Connection.RemoteIpAddress;
+        if (remoteIp is null)
+        {
+            // ASP.NET Core TestServer leaves RemoteIpAddress null unless overridden in tests.
+            return _environment.IsDevelopment();
+        }
+
+        return IPAddress.IsLoopback(remoteIp);
     }
 }

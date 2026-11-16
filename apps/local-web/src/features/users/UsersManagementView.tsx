@@ -9,7 +9,7 @@ import type {
 } from '../../types/erp';
 import { getTranslations, translateApiError } from '../../localization/translations';
 import { formatLocalDateTime } from '../../utils/algerianFormat';
-import { checkPasswordStrength, validateCreateEmployee, type ValidationErrors } from '../../utils/validation';
+import { checkPasswordStrength, PASSWORD_MAX_LENGTH, validateCreateEmployee, type ValidationErrors } from '../../utils/validation';
 import { apiClient, ApiError } from '../../services/apiClient';
 import { FormField, inputBaseClass } from '../../components/FormField';
 
@@ -169,7 +169,16 @@ export function UsersManagementView({ language }: UsersManagementViewProps) {
     if (!resetUser) return;
     setModalError(null);
 
-    if (!checkPasswordStrength(newPassword).valid) {
+    const strength = checkPasswordStrength(newPassword);
+    if (!strength.maxLength) {
+      setModalError(
+        language === 'ar'
+          ? `كلمة المرور يجب ألا تتجاوز ${PASSWORD_MAX_LENGTH} حرفاً.`
+          : `Le mot de passe ne doit pas dépasser ${PASSWORD_MAX_LENGTH} caractères.`
+      );
+      return;
+    }
+    if (!strength.valid) {
       setModalError(t.setup.passwordHint);
       return;
     }

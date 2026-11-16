@@ -119,6 +119,12 @@ public sealed partial class User : BaseEntity
 
     public bool RecordFailedLogin(DateTimeOffset nowUtc)
     {
+        if (LockoutEndUtc.HasValue && nowUtc >= LockoutEndUtc.Value)
+        {
+            FailedLoginAttempts = 0;
+            LockoutEndUtc = null;
+        }
+
         FailedLoginAttempts++;
         var lockedNow = false;
         if (FailedLoginAttempts >= MaxFailedLoginAttempts)

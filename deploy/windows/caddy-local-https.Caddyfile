@@ -1,10 +1,6 @@
 # Caddyfile for Local LAN HTTPS Termination (Internal CA)
 # Binds PROMO GEST on local hostname (e.g. erp.local or 192.168.1.50) without requiring internet ACME.
 
-{
-    auto_https disable_redirects
-}
-
 https://promogest.lan, https://192.168.1.50 {
     tls internal
     encode zstd gzip

@@ -263,9 +263,12 @@ export const apiClient = {
 
   getSetupStatus: () => requestJson<SetupStatusResponse>('/api/setup/status', { method: 'GET', cache: 'no-store' }),
 
-  initializeInstallation: (payload: InitializeInstallationRequest) =>
+  initializeInstallation: (payload: InitializeInstallationRequest, bootstrapToken?: string) =>
     requestJson<InitializeInstallationResponse>('/api/setup/initialize', {
       method: 'POST',
+      headers: bootstrapToken?.trim()
+        ? { 'X-PROMOGEST-SETUP-TOKEN': bootstrapToken.trim() }
+        : undefined,
       body: JSON.stringify(payload),
     }),
 

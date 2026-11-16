@@ -21,7 +21,7 @@ export function useAdministrativeReference() {
 
         const codes = new Set(result.wilayas.map((wilaya) => wilaya.code));
         const validItems = result.wilayas.every((wilaya) =>
-          /^\\d{2}$/.test(wilaya.code) &&
+          /^[0-9]{2}$/.test(wilaya.code) &&
           Boolean(wilaya.nameAr.trim()) &&
           Boolean(wilaya.nameFr.trim()) &&
           Boolean(wilaya.canonicalDisplayName.trim())

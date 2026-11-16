@@ -3,8 +3,8 @@
 **Document Role:** Evidence-backed snapshot of the repository, not a product roadmap.  
 **Last Application Runtime Source Commit:** `23f019de7c787c0f93b5b7f0b5cec69992ff087a` (PR #48 merge; central HTTP no-store policy for API/health responses).  
 **Latest Source/Test Commit:** `c26194dce5124d5d5e8d67fc5a04708346b1d5e4` (PR #50 added real HTTP-pipeline cache-policy integration assertions; no runtime, schema, or business-data changes).  
-**Main Commit Inspected at Audit Start:** `432e6f8ea76bb540dd5bc69d3314c0d658805ba7` (PR #51 documentation merge).  
-**Latest Green CI at Audit Start:** GitHub Actions Run **#546** / `43768228052`, on main SHA `432e6f8ea76bb540dd5bc69d3314c0d658805ba7`; all three jobs passed.  
+**Main Commit Inspected at Audit Start:** `5a5196d75abcdf608e708844983fad25b600e5a4` (PR #52 owner-attested Phase 0 acceptance record).  
+**Latest Green CI at Audit Start:** GitHub Actions Run **#550** / `43772604996`, on main SHA `5a5196d75abcdf608e708844983fad25b600e5a4`; all three jobs passed.  
 **Governing Rule:** A feature is `IMPLEMENTED_AND_VERIFIED` only when its code and applicable automated verification pass in the audited baseline. A green pipeline does not certify untested browser UX, preview parity, production installation, or legal/accounting correctness.
 
 ---
@@ -67,16 +67,16 @@ The screen-by-screen source inventory is maintained in [UI-IMPLEMENTATION-AND-GA
 
 ## 3. Phase 0 — Remaining Work
 
-Phase 0 remains `IN_PROGRESS`. Main CI #546 is green. In addition to the earlier targeted AI Studio smoke confirmation, the Product Owner explicitly attested on 15 November 2026 that the principal bilingual desktop/mobile workflows listed in [PHASE-0-MANUAL-ACCEPTANCE.md](PHASE-0-MANUAL-ACCEPTANCE.md) passed: login/session/CSRF, projects, structure, customers/interactions, internal holds, documents/SHA-256, authorization/audit/concurrency/safe errors, and persistence after reload. The result register records those groups as owner-attested `PASS`, not CI-verified browser evidence.
+Phase 0 is `COMPLETE` by the Product Owner's explicit direction on 16 November 2026 (D-010); Main CI #550 is green. This is an owner-approved administrative closure with two explicit test exceptions, not a claim that every original exit criterion was evidenced. In addition to the earlier targeted AI Studio smoke confirmation, the Product Owner explicitly attested on 15 November 2026 that the principal bilingual desktop/mobile workflows listed in [PHASE-0-MANUAL-ACCEPTANCE.md](PHASE-0-MANUAL-ACCEPTANCE.md) passed: login/session/CSRF, projects, structure, customers/interactions, internal holds, documents/SHA-256, authorization/audit/concurrency/safe errors, and persistence after reload. The result register records those groups as owner-attested `PASS`, not CI-verified browser evidence.
 
-Remaining Phase 0 work is bounded:
+Accepted Phase 0 residual exceptions (still tracked; not represented as PASS):
 
 1. **P0-A01 first-run acceptance:** execute first-run initialization against a separate empty disposable database and verify that a second initialization is rejected. This was not explicitly included in the latest owner confirmation and remains `NOT_RUN`.
 2. **P0-A04 logout acceptance:** verify logout revocation and that reopening a protected route does not restore access. Logout was not explicitly included in the latest owner confirmation and remains `NOT_RUN`.
 3. **Supplementary audit artifacts:** browser/version metadata and sanitized per-case screenshots or redacted API trace evidence were not attached; the owner attestation is recorded, and no unprovided artifacts are claimed.
 4. **Navigation decision:** D-009 records the bounded deferral of project-navigation proposal approval/implementation to the Phase 1 design review; do not start a broad UI redesign.
 5. **Preview separation:** keep the Vite-only in-memory simulator clearly separate from real API evidence; it intentionally lacks full parity.
-6. **Phase 1 boundary:** organization profile editing, structure authorization alignment, retirement of transitional Party mirrors, and the versioned 69-Wilaya / commune reference catalogue remain Phase 1 work. Later legal, collection, SCF, and tax modules retain their practitioner gates.
+6. **Phase 1 start:** Phase 1 is now `IN_PROGRESS` by owner direction. The first bounded vertical slice is organization profile editing; structure authorization alignment, Party mirror retirement, and versioned territorial reference data follow as separate reviewed slices. Later legal, collection, SCF, and tax modules retain their practitioner gates.
 
 ## 4. Preview Boundary (Do Not Confuse with Production)
 

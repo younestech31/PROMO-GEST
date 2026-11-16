@@ -1,18 +1,31 @@
 # PROMO GEST — Project Navigation & Active Context UX
 
-**Status:** Proposed product interaction specification for review  
+**Status:** Reviewed and approved with modifications by D-013 (design only; not implementation)  
 **Scope:** Project selection, switching, multi-project work, and project-specific navigation  
 **Applies to:** The local-first organization-wide ERP shell and project workspace
 
-## Current repository implementation check — 15 November 2026
+## Current repository implementation check — 16 November 2026
 
-Source inspected: last code-changing commit `23f019de7c787c0f93b5b7f0b5cec69992ff087a`; main commit inspected at audit start `c26194dce5124d5d5e8d67fc5a04708346b1d5e4`.
+Source inspected: latest application runtime/schema source remains PR #59 commit `53c50fbc0db801b9298ec731cfc44f2d4d58ff7f`; documentation-only main base inspected for D-013 is PR #69 merge `4fdfcb2679231ff81b8756a8da6ba3045bea5288` (PR #69 CI #603 passed; post-merge main CI #604 verifies this base).
 
 The current React application has five top-level in-memory route states: `overview`, `projects`, `users`, `audit`, and `organization`. The authenticated shell keeps organization identity visible and exposes a project directory. `ProjectsAccessView.tsx` opens structure, customer registry, internal-hold, and document workflows in project-specific modals from each directory row. The modal headers show project code and name.
 
-The source does **not** yet implement a dedicated persistent project switcher, a route-addressable active project workspace, or a persistent project identity strip across project pages. User/role management, audit viewing, and system-health diagnostics are currently reachable in the same application shell/overview as operational project work; a distinct technical-administration workspace is not present. Organization profile view is read-only.
+The source does **not** yet implement a dedicated persistent project switcher, a route-addressable active project workspace, or a persistent project identity strip across project pages. User/role management, audit viewing, and system-health diagnostics are currently reachable in the same application shell/overview as operational project work; a distinct technical-administration workspace is not present. Organization profile supports authorized updates through `org.manage` with `ExpectedConcurrencyStamp` concurrency handling; it is not read-only.
 
-This is a source-code inspection, not manual browser acceptance. For the exact screen/API/module mapping and implementation boundaries, see [UI-IMPLEMENTATION-AND-GAP-MATRIX.md](UI-IMPLEMENTATION-AND-GAP-MATRIX.md). This proposal remains **proposed**, not approved or implemented. The current gap does not authorize a broad navigation rewrite before Phase 0 acceptance and Phase 1 dependencies.
+This is a source-code inspection, not manual browser acceptance. For the exact screen/API/module mapping and implementation boundaries, see [UI-IMPLEMENTATION-AND-GAP-MATRIX.md](UI-IMPLEMENTATION-AND-GAP-MATRIX.md). D-013 approves the three-level model with explicit modifications and guardrails. Approval is for the design only: no project switcher, route-addressable active workspace, new API, or navigation UI implementation is claimed. Each implementation slice requires its own Notion task, focused PR, relevant G1–G10 checks and real browser acceptance.
+
+## D-013 review outcome — approved with modifications (design only)
+
+The proposed model is approved subject to the binding constraints below:
+
+- **Organization workspace:** Keep the post-login organization-level landing view, but show only authorized, real workflow data. There is no current task inbox, approval queue, alert engine or real portfolio KPI feed. Do not fill these gaps with static/mock metrics. Move system readiness, database, backup/restore, security and audit diagnostics into a separately gated technical-administration area. Organization legal-profile editing remains an organization-management workflow requiring `org.manage` and concurrency handling.
+- **Project selection:** Preserve the full Project Directory as a deliberate browse/manage destination, and add a compact explicit project switcher as a later vertical slice. Current `GET /api/projects` already accepts `q` and `status`; non-admin results are filtered in PostgreSQL by `ProjectMember`, while `SYSTEM_ADMIN` can list all. Current client `listProjects()` does not pass query parameters and the directory has no search/filter/pagination UI. Future search must call the server; pagination must be server-side. Do not fetch unrestricted company project data into the browser.
+- **Project context:** Use a stable URL per browser tab (for example `/projects/{projectId}/...`) as navigation context, not as authorization. Every request must re-check active user, global permission, project membership, specific capability, record ownership and lifecycle on the server. A local preference, recents/favorites list or URL must never grant access. Preserve project code, localized name, location and status visibly in the project header, breadcrumb, forms and high-impact confirmations. Current modal workflows already show code and localized name and remain until replacements pass acceptance.
+- **Switch safety:** Prompt save/discard/cancel when leaving a dirty form; handle revoked membership through API denial and clear stale route state. Avoid cross-project write/bulk operations in the first release. Each browser tab may use a different authorized project.
+- **Scope sequence:** Build route foundation first, then active-project identity shell and switcher, then server search/pagination, then separately gated technical administration; deliver a real work center only after owning modules expose actual task/approval data. Recent/favorite preferences and workstream/milestone models are later independent slices.
+- **Localization and accessibility:** Test keyboard navigation/focus, dialog and switcher semantics, mobile presentation, empty/loading/error states and mixed-direction project IDs in Arabic RTL and French LTR. Existing root direction handling is present; it is not proof of the not-yet-built navigation being accepted.
+
+D-013 does not authorize UI/API/schema/permission changes, router adoption, new storage, production or Cloud SQL data changes, or a broad redesign. See `DECISION-LOG.md` D-013 and `UI-IMPLEMENTATION-AND-GAP-MATRIX.md` for the source-audited boundary.
 
 ## 1. Product decision
 

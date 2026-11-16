@@ -1,8 +1,8 @@
 # Algerian administrative reference data
 
-**Current legal baseline checked:** 15 November 2026  
+**Current legal baseline checked:** 16 November 2026  
 **Purpose:** authoritative reference for Wilaya codes in organization and project records  
-**Status:** the code accepts codes 01–69; municipality/commune mapping remains a separate data-governance task.
+**Status:** 69 bilingual Wilaya records are server-owned and exposed by `GET /api/reference/administrative-units`; setup, organization-profile and project selectors consume that endpoint (PR #59). The 1,541-commune catalogue remains unimported and requires separate source reconciliation.
 
 ## 1. Legal source and implementation decision
 
@@ -47,11 +47,11 @@ This change is code/data only. It does not require a database schema migration: 
 
 ## 4. Known limitations and next data-design step
 
-The current application stores `wilayaCode` and `wilayaName` as separate fields. The frontend supplies a bilingual display string, while the API/domain currently validates the code range and that the name is nonblank. It does **not yet resolve the canonical bilingual Wilaya name from the code on the server**.
+The application stores a Wilaya code and preserves the bilingual display string in organization/project records. The server-owned `AlgerianAdministrativeReference` resolves the canonical bilingual name and validates code/name consistency. `GET /api/reference/administrative-units` publishes the versioned 69-Wilaya catalogue; PR #59 makes first-run setup, organization-profile editing and project create/update forms consume the endpoint and submit the canonical server-provided name. The commune/municipality field remains free text because no verified 1,541-commune catalogue is loaded.
 
 The current project form also accepts municipality as free text. There is no complete, versioned, authoritative code-to-commune mapping in the repository. Therefore:
 - Do not describe the current location model as a complete Algerian administrative reference database.
-- The next reference-data design should introduce a single server-owned catalogue for Wilaya code, canonical Arabic/French names, effective dates, and authorized commune references when official commune data and transfer status are verified.
+- The next reference-data slice must extend the existing server-owned catalogue with the official 1,541 communes, effective-dated parent relationships, bilingual labels and separately reviewed transitional operational-authority mappings. Do not create separate manually maintained copies in setup, projects, API and preview.
 - UI dropdowns should consume the server-owned catalogue or a checked-in versioned reference dataset; never maintain separate manually edited copies in setup, projects, API and preview.
 - Historical project addresses must remain preserved as entered; canonical location references should be additive and support migration/reconciliation.
 

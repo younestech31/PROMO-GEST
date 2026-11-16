@@ -53,7 +53,7 @@ export function ProjectsAccessView({
     useAdministrativeReference();
   const wilayas = reference?.wilayas ?? [];
 
-  const [projects, setProjects = useState<ProjectDto[]>([]);
+  const [projects, setProjects] = useState<ProjectDto[]>([]);
   const [users, setUsers] = useState<UserDto[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);

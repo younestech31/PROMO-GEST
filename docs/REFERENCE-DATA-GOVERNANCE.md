@@ -61,6 +61,8 @@ Keep two concepts distinct:
 
 Do not invent commune codes, transliterations, boundary changes or office assignments. Do not infer a commune transfer solely from a new Wilaya capital/name list. A full bilingual commune dataset must be extracted from the official territorial law or a verified government dataset, reviewed and reconciled before it becomes selectable in production.
 
+The code rules in Articles 3–4 of Decree 85-20 mean that an official commune code is not a permanent identity: its first two digits encode the parent Wilaya, and a commune transferred to another Wilaya receives a new code while its former code is never reassigned. In PROMO GEST, use a stable internal UUID as the record identity and retain official codes as source-backed, effective-dated attributes with explicit history. This UUID rule is an application data-integrity decision; it is not presented as a requirement stated by the decree.
+
 ## 5. Historical-record preservation
 
 Existing organization and project records contain free-text location snapshots. Preserve those original values.
@@ -68,6 +70,7 @@ Existing organization and project records contain free-text location snapshots. 
 The future migration should add nullable canonical reference IDs while keeping the original text and a source/verification state. A record can be linked to a canonical code only after the chosen code and effective date have been reviewed. Do not silently rewrite a historical project, contract, permit, land-title record or address when the current territorial catalogue changes.
 
 When an administrative unit changes parent:
+- preserve the old official code and its validity interval; when the official register assigns a new code, create a new effective-dated code assertion against the same reviewed internal identity rather than overwriting the historical value;
 - retain the previous relationship with its validity interval;
 - create the new relationship with its effective date;
 - preserve both the recorded business address and the authority used for the transaction;
@@ -85,7 +88,7 @@ During the commune compatibility period, legacy free-text municipality values re
 
 Before adding a complete commune dataset:
 1. Identify the exact official source edition, publication date and legally confirmed effective-from date. Do not treat the ONS June 2021 code-geography document (58-Wilaya baseline) as the final 2026 hierarchy by itself.
-2. Reconcile the prior official commune codes/names with Law 26-06 and the official 2026 territorial-register amendment; document every parent reassignment, code change, split or renamed locality explicitly.
+2. Reconcile the full legal register lineage: Decree 85-20, the 22 June 1985 base order, the 12 September 2021 amendment, Law 26-06 and the 5 May 2026 amendment published in JO58. Apply the decree's code rule: a commune transferred to another Wilaya gets a new code and its old code is never reallocated; document every parent reassignment, code change, split or renamed locality explicitly.
 3. Extract all 69 Wilaya–commune relationships from the combined authoritative sources, retaining source provenance for unchanged groups and amended groups.
 4. Verify the total count against the legal baseline of 1,541 communes, accounting for source-specific spelling/alias issues.
 5. Review Arabic and French labels together and keep administrative seats separate from commune names.
@@ -104,6 +107,9 @@ This is a source audit, not an imported dataset or a legal opinion. It records w
 
 | Official source | What it establishes | Boundary / non-substitute |
 |---|---|---|
+| [Decree 85-20 of 2 February 1985, JO No. 6, 3 February 1985 — French](https://www.joradp.dz/FTP/jo-francais/1985/F1985006.PDF) | Articles 3–4 establish the territorial register and code structure: two digits for a Wilaya; four digits for a commune, with the first two identifying its parent Wilaya. A commune transferred to another Wilaya receives a new code; its former code is not reassigned. Codes of dissolved units are not reassigned; unaffected units retain their code. | Establishes code semantics and update rules, not a stable database primary key or the current full 69-Wilaya dataset. |
+| [Interministerial order of 22 June 1985, JO No. 44, 23 October 1985, p. 1052 — French](https://www.joradp.dz/FTP/jo-francais/1985/F1985044.PDF) | Establishes the initial territorial-register annex under Decree 85-20. | Historical baseline; subsequent amendments must be applied in sequence. |
+| [Interministerial order of 12 September 2021, JO No. 79, 17 October 2021 — French](https://www.joradp.dz/FTP/jo-francais/2021/F2021079.pdf) | Article 1 modifies and completes the annex to the 22 June 1985 order under Decree 85-20. It is an amendment to the register, not a replacement of the whole source chain. | Must be reconciled with the 1985 baseline and subsequent 2026 amendment; its publication date is not automatically the effective date of every individual row. |
 | [Law 26-06, JO No. 25, 5 April 2026 — Arabic](https://www.joradp.dz/FTP/jo-arabe/2026/A2026025.pdf) / [French](https://www.joradp.dz/FTP/jo-francais/2026/F2026025.pdf) | Article 3 establishes the 69-Wilaya / 1,541-commune national count. Article 2 amends specified articles of Law 84-09, including the legal commune compositions for affected parent Wilayas and the new Wilaya groupings. | The lists are legal parentage evidence; this text is not, by itself, a complete bilingual, code-assigned, seat-aware 1,541-row data file. |
 | [Presidential Decree 26-206, JO No. 40, 3 June 2026 — French](https://www.joradp.dz/FTP/jo-francais/2026/F2026040.pdf) / [Arabic](https://www.joradp.dz/FTP/jo-arabe/2026/A2026040.pdf) | Supplements Decree 84-79 with the names and chef-lieux of Wilayas 59–69. | It establishes Wilaya names/seats, not the complete municipality-to-Wilaya mapping or commune codes. |
 | [Executive Decree 26-208, JO No. 40, 3 June 2026 — same issue](https://www.joradp.dz/FTP/jo-francais/2026/F2026040.pdf) | Establishes the asset/liability sharing rules between parent and new Wilayas. Article 2 sets separate completion deadlines: before 31 December 2026 for patrimonial operations and at the end of FY2026 for financial operations. | It is a transition/asset-liability instrument, not evidence that every local office or operational registry transferred, and not the source of legal commune parentage. |
@@ -116,13 +122,15 @@ This is a source audit, not an imported dataset or a legal opinion. It records w
 - The JO58 order is dated 5 May 2026 and was published on 12 August 2026. Its annex uses *three* separate fields (commune, numeric code, seat). For example, the Batna section shows `Ghassira` / `0502` / `Ouled Abed` and `Maafa` / `0503` / `Barbat`; the Laghouat section shows `El Assafia` / `0320` / `El Assafia Gharbia`. A seat must never be loaded into the commune-name or alias field.
 - The JO58 new-Wilaya headings list these commune counts: Aflou 12, Barika 8, El Kantara 5, Bir El Ater 4, El Aricha 4, Ksar Chellala 6, Aïn Ouessara 10, Messaad 8, Ksar El Boukhari 21, Bou Saâda 23, and El Abiodh Sidi Cheikh 7. Their sum is 108 rows across the 11 new-Wilaya sections only; it is not a replacement for the national 1,541 count.
 - The JO58 annex uses explicit `sans changement` blocks for some Wilaya groups. These references must be resolved against the cited prior official register/baseline; they cannot be interpreted as missing records or silently omitted during extraction.
+- Decree 85-20 (JO No. 6, 3 February 1985), Articles 3–4, defines the two-digit Wilaya and four-digit commune code structure. The first two commune-code digits encode the attached Wilaya; a commune transferred to another Wilaya receives a new code and its old code is not reallocated. The rule also says codes of dissolved Wilayas/communes are not reallocated and unaffected units retain their codes. Therefore an external commune code cannot serve as PROMO GEST's immutable primary identity.
 - Official French editions use variant spellings for some names. One visible example is the new Wilaya 65: the current in-code reference spells `Aïn Oussera`, while the JO40 decree and JO58 territorial register spell `Aïn Ouessara`. The JO58 register also writes `Bou Saada` where the current code and JO40 decree use `Bou Saâda`. Treat these as source variants requiring recorded provenance and a reviewed canonical-label decision, not automatic transliteration or silent rename.
 - Record the instrument's signed date, publication date and legally confirmed `valid_from` separately. Do not assume that a signature date, the first PDF date, or a Wilaya-seat decree publication automatically supplies every commune relationship's effective-from date. The applicable commencement and any transitional parent interval require legal review.
 
 ### 8.3 Required crosswalk before import
 
 The source reconciliation must produce a reproducible 1,541-row crosswalk with, at minimum:
-- a stable internal row ID and the official Wilaya code/name for each version;
+- a stable internal row ID independent of the official code, plus the official Wilaya code/name for each version;
+- a versioned official commune code with valid-from / valid-to and retained prior codes; assert that transferred communes receive the legally assigned new code and that former/dissolved codes are never silently reused;
 - the legal commune name in Arabic and French as separately sourced fields;
 - the official commune code, if established by the territorial register;
 - the administrative seat in separate Arabic/French fields only where the source actually establishes it;

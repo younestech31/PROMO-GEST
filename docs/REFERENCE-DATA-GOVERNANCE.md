@@ -84,14 +84,53 @@ During the commune compatibility period, legacy free-text municipality values re
 ## 7. Dataset acceptance checklist
 
 Before adding a complete commune dataset:
-1. Identify the exact official source edition and legal effective date. Do not treat the ONS June 2021 code-geography document (58-Wilaya baseline) as the final 2026 hierarchy by itself.
-2. Reconcile the prior official commune codes/names with Law 26-06 and the official 2026 texts that establish the 11 new Wilayas and their commune lists; document any code renumbering or split explicitly.
-3. Extract all 69 Wilaya–commune relationships from the authoritative text/data.
-3. Verify the total count against the legal baseline of 1,541 communes, accounting for source-specific spelling/alias issues.
-4. Review Arabic and French labels together.
-5. Verify that no commune is duplicated, omitted or assigned to two current parents without a justified effective-date history.
-6. Document any transitional authority mapping separately from the legal hierarchy.
-7. Add deterministic import, validation and regression tests.
-8. Add an update/rollback plan for installations with historical project records.
+1. Identify the exact official source edition, publication date and legally confirmed effective-from date. Do not treat the ONS June 2021 code-geography document (58-Wilaya baseline) as the final 2026 hierarchy by itself.
+2. Reconcile the prior official commune codes/names with Law 26-06 and the official 2026 territorial-register amendment; document every parent reassignment, code change, split or renamed locality explicitly.
+3. Extract all 69 Wilaya–commune relationships from the combined authoritative sources, retaining source provenance for unchanged groups and amended groups.
+4. Verify the total count against the legal baseline of 1,541 communes, accounting for source-specific spelling/alias issues.
+5. Review Arabic and French labels together and keep administrative seats separate from commune names.
+6. Verify that no commune is duplicated, omitted or assigned to two current parents without a justified effective-date history.
+7. Document any transitional authority mapping separately from the legal hierarchy.
+8. Add deterministic import, validation and regression tests.
+9. Add an update/rollback plan for installations with historical project records.
 
 See [ADR 0010 — Versioned administrative reference data](ADR/0010-versioned-algerian-administrative-reference-data.md).
+
+## 8. Official-source audit and reconciliation findings — 16 November 2026
+
+This is a source audit, not an imported dataset or a legal opinion. It records what each publication proves and what it does not prove. P1-01 remains `In Progress / Verification Pending`; P1-02 (the commune catalogue implementation) remains blocked until the full row-level crosswalk and qualified review are accepted.
+
+### 8.1 Source hierarchy
+
+| Official source | What it establishes | Boundary / non-substitute |
+|---|---|---|
+| [Law 26-06, JO No. 25, 5 April 2026 — Arabic](https://www.joradp.dz/FTP/jo-arabe/2026/A2026025.pdf) / [French](https://www.joradp.dz/FTP/jo-francais/2026/F2026025.pdf) | Article 3 establishes the 69-Wilaya / 1,541-commune national count. Article 2 amends specified articles of Law 84-09, including the legal commune compositions for affected parent Wilayas and the new Wilaya groupings. | The lists are legal parentage evidence; this text is not, by itself, a complete bilingual, code-assigned, seat-aware 1,541-row data file. |
+| [Presidential Decree 26-206, JO No. 40, 3 June 2026 — French](https://www.joradp.dz/FTP/jo-francais/2026/F2026040.pdf) / [Arabic](https://www.joradp.dz/FTP/jo-arabe/2026/A2026040.pdf) | Supplements Decree 84-79 with the names and chef-lieux of Wilayas 59–69. | It establishes Wilaya names/seats, not the complete municipality-to-Wilaya mapping or commune codes. |
+| [Executive Decree 26-208, JO No. 40, 3 June 2026 — same issue](https://www.joradp.dz/FTP/jo-francais/2026/F2026040.pdf) | Establishes the asset/liability sharing rules between parent and new Wilayas. Article 2 sets separate completion deadlines: before 31 December 2026 for patrimonial operations and at the end of FY2026 for financial operations. | It is a transition/asset-liability instrument, not evidence that every local office or operational registry transferred, and not the source of legal commune parentage. |
+| [Interministerial order of 5 May 2026, JO No. 58, 12 August 2026 — French](https://www.joradp.dz/FTP/JO-FRANCAIS/2026/F2026058.pdf) / [Arabic](https://www.joradp.dz/FTP/jo-arabe/2026/A2026058.pdf) | Amends/completes the 1985 territorial-register annex. The annex has three distinct headings: `COMMUNES`, `NUMEROS DE CODE`, and `SIEGES`; it names/code-numbers communes and separately records seats. It also explicitly marks unchanged Wilaya groups. | This is an amendment/delta with `sans changement` references, not a standalone republication of all 1,541 rows. The seat column is not an Arabic or French commune-name column. |
+| [ONS National Geographic Code, June 2021](https://www.ons.dz/IMG/pdf/code_geo_2021.pdf) | Official bilingual historical baseline with Arabic/French commune labels and W./C. codes; it describes 58 Wilayas and 1,541 communes under the 2021 territorial arrangement. | It predates Law 26-06 and cannot be imported unchanged as the current 69-Wilaya parent hierarchy. Use it as a historical baseline/crosswalk input only, after reconciliation with the 2026 legal changes. |
+
+### 8.2 Directly observed reconciliation facts
+
+- The Law 26-06 JO25 French/Arabic editions identify the same national invariant: 69 Wilayas and 1,541 communes. The amended legal articles include specific parent-commune lists; these lists are the primary legal evidence for jurisdictional parentage.
+- The JO58 order is dated 5 May 2026 and was published on 12 August 2026. Its annex uses *three* separate fields (commune, numeric code, seat). For example, the Batna section shows `Ghassira` / `0502` / `Ouled Abed` and `Maafa` / `0503` / `Barbat`; the Laghouat section shows `El Assafia` / `0320` / `El Assafia Gharbia`. A seat must never be loaded into the commune-name or alias field.
+- The JO58 new-Wilaya headings list these commune counts: Aflou 12, Barika 8, El Kantara 5, Bir El Ater 4, El Aricha 4, Ksar Chellala 6, Aïn Ouessara 10, Messaad 8, Ksar El Boukhari 21, Bou Saâda 23, and El Abiodh Sidi Cheikh 7. Their sum is 108 rows across the 11 new-Wilaya sections only; it is not a replacement for the national 1,541 count.
+- The JO58 annex uses explicit `sans changement` blocks for some Wilaya groups. These references must be resolved against the cited prior official register/baseline; they cannot be interpreted as missing records or silently omitted during extraction.
+- Official French editions use variant spellings for some names. One visible example is the new Wilaya 65: the current in-code reference spells `Aïn Oussera`, while the JO40 decree and JO58 territorial register spell `Aïn Ouessara`. The JO58 register also writes `Bou Saada` where the current code and JO40 decree use `Bou Saâda`. Treat these as source variants requiring recorded provenance and a reviewed canonical-label decision, not automatic transliteration or silent rename.
+- Record the instrument's signed date, publication date and legally confirmed `valid_from` separately. Do not assume that a signature date, the first PDF date, or a Wilaya-seat decree publication automatically supplies every commune relationship's effective-from date. The applicable commencement and any transitional parent interval require legal review.
+
+### 8.3 Required crosswalk before import
+
+The source reconciliation must produce a reproducible 1,541-row crosswalk with, at minimum:
+- a stable internal row ID and the official Wilaya code/name for each version;
+- the legal commune name in Arabic and French as separately sourced fields;
+- the official commune code, if established by the territorial register;
+- the administrative seat in separate Arabic/French fields only where the source actually establishes it;
+- parent-Wilaya relationship with valid-from / valid-to, source instrument, article/annex, page and extraction provenance;
+- retained historical spelling/code/parent values and source-specific aliases without using a seat as a commune name;
+- separate legal-jurisdiction and operational-authority references, with no assumption that Decree 26-208's asset-transfer timetable completes every operational-office transfer;
+- source file URLs, retrieval/publication metadata, checksum of each source artifact, parser/extraction version, and a reviewer record.
+
+Required deterministic checks: exactly 1,541 active commune rows for the legally approved baseline; all 69 Wilayas represented; no duplicate official code within a version; no missing parent; no unintended duplicate commune; no overlapping current-parent intervals; all historical parent changes have an evidence-backed boundary; and Arabic/French variants are paired only where an authoritative source supports the pairing.
+
+No commune data, schema, migration, production database, or Google AI Studio Cloud SQL data was changed by this audit. The existing free-text municipality compatibility path must remain until the complete source crosswalk, legal-effective dates and qualified review are accepted.

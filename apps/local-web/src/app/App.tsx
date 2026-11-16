@@ -194,7 +194,17 @@ export function App() {
       {activeRoute === 'users' && <UsersManagementView language={language} />}
       {activeRoute === 'audit' && <AuditLogView language={language} />}
       {activeRoute === 'organization' && (
-        <OrganizationProfileView organization={session.organization} language={language} />
+        <OrganizationProfileView
+          organization={session.organization}
+          language={language}
+          canManage={
+            session.user.isSystemAdministrator ||
+            session.user.permissions.includes('org.manage')
+          }
+          onUpdated={(organization) =>
+            setSession((current) => current ? { ...current, organization } : current)
+          }
+        />
       )}
     </ErpShellLayout>
   );

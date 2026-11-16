@@ -21,7 +21,7 @@
 
 ---
 
-## 2. Current Gate Status Against Baseline (Last Code-Changing Source Commit `23f019de7c787c0f93b5b7f0b5cec69992ff087a`; latest test-source commit `c26194dce5124d5d5e8d67fc5a04708346b1d5e4`; main commit inspected at audit start `432e6f8ea76bb540dd5bc69d3314c0d658805ba7`)
+## 2. Current Gate Status Against Baseline (Last Code-Changing Source Commit `23f019de7c787c0f93b5b7f0b5cec69992ff087a`; latest test-source commit `c26194dce5124d5d5e8d67fc5a04708346b1d5e4`; main commit inspected at audit start `5a5196d75abcdf608e708844983fad25b600e5a4`)
 
 ### GitHub Actions Run #544 — 15 November 2026
 - **Frontend job — passed:** `npm run lint` (`tsc --noEmit`), `npm test` (**38/38**), SPA build, ASP.NET Core `wwwroot` build, static-hosting checks, and dev-preview leakage checks.
@@ -29,10 +29,10 @@
 - **Windows publish job — passed:** Windows x64 publish, machine-scoped Data Protection recovery verification, and PowerShell validation passed.
 - **Overall:** all three required CI jobs completed with `success` on main commit `c26194dce5124d5d5e8d67fc5a04708346b1d5e4`. [Run #544](https://github.com/younestech31/PROMO-GEST/actions/runs/43767110822).
 
-### Current main CI — Run #546 (15 November 2026)
-- Main SHA `432e6f8ea76bb540dd5bc69d3314c0d658805ba7`; all three required jobs passed.
-- This was a documentation-only main commit and CI reran the existing automated frontend, .NET/PostgreSQL 18, and Windows publish checks. It does not itself prove manual browser acceptance.
-- [Run #546](https://github.com/younestech31/PROMO-GEST/actions/runs/43768228052).
+### Current main CI — Run #550 (15 November 2026)
+- Main SHA `5a5196d75abcdf608e708844983fad25b600e5a4`; all three required jobs passed.
+- This was a documentation/source-status commit and CI reran the existing automated frontend, .NET/PostgreSQL 18, and Windows publish checks. It does not itself prove manual browser acceptance.
+- [Run #550](https://github.com/younestech31/PROMO-GEST/actions/runs/43772604996).
 
 ### Phase 0 Defect Disposition
 - **Resolved — PR #35:** `CS7036` in `PostgresEndToEndTests.cs` fixed by passing the real `PartyConcurrencyStamp` from loaded customer details.
@@ -49,7 +49,7 @@
 - **G8:** the automated portion passed: strict TypeScript check, **38/38** frontend tests, SPA build, ASP.NET Core static-hosting output, and preview-leak checks. Separately, the Product Owner explicitly confirmed on 15 November 2026 that Arabic RTL / French LTR desktop/mobile review and the listed real workflows (login/session/CSRF, projects, structure, customers/interactions, internal holds, documents/SHA-256, authorization/audit/concurrency/safe errors, and persistence after reload) passed. These results are recorded as owner-attested `PASS` in [PHASE-0-MANUAL-ACCEPTANCE.md](PHASE-0-MANUAL-ACCEPTANCE.md), not as CI evidence. Browser/version details and sanitized per-case artifacts were not attached. `P0-A01` fresh-database first-run/second-initialization and `P0-A04` logout/session-revocation remain `NOT_RUN`. The Vite-only fallback simulator is not full API parity and must never be treated as production/API evidence.
 - **G10:** Windows x64 publish, DPAPI recovery, PowerShell validation, and CI database/storage/Data Protection restore drill passed. Customer-site installation remains a separate release-acceptance activity.
 
-**Release Implication:** PR #48 implements the HTTP response-cache policy; PR #50 verifies it through the real HTTP pipeline; main CI #546 is green. The Product Owner has now attested the named bilingual browser and real-workflow acceptance groups. Phase 0 remains `IN_PROGRESS` pending the specific P0-A01 fresh-database setup scenario and P0-A04 logout/session-revocation check. D-009 has already recorded the bounded navigation-proposal deferral. Phase 1 and statutory/practitioner sign-offs remain prerequisites for production release and downstream legal/financial modules.
+**Phase 0 disposition (D-010, 16 November 2026):** The Product Owner explicitly directed Phase 0 closure and accepted P0-A01 (fresh-database first-run/second-initialization) and P0-A04 (logout/session revocation) as residual `NOT_RUN` exceptions for purposes of starting Phase 1. The two rows remain `NOT_RUN`; this decision does not turn them into evidence or a successful G1–G10 result. Complete both before production release or any release claim that depends on those scenarios. D-009's bounded navigation review remains a Phase 1 design task. Phase 1 is now `IN_PROGRESS`; no Phase 2–5 business implementation may start until applicable G1–G10 gates, Phase 1 dependencies, and statutory/practitioner approvals pass.
 
 ---
 

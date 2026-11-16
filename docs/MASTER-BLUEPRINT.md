@@ -3,8 +3,8 @@
 **Document Role:** Single authoritative index & master entry point for the PROMO GEST local-first real estate developer ERP (*promoteur immobilier* — Algeria).  
 **Last Application Runtime Source Commit:** `23f019de7c787c0f93b5b7f0b5cec69992ff087a` (PR #48 merge; API/health no-store policy).  
 **Latest Test-Source Commit:** `c26194dce5124d5d5e8d67fc5a04708346b1d5e4` (PR #50; real HTTP-pipeline cache-policy assertions).  
-**Main Commit Inspected at Audit Start:** `432e6f8ea76bb540dd5bc69d3314c0d658805ba7` (PR #51 documentation merge).  
-**Latest Green CI at Audit Start:** GitHub Actions Run #546 / `43768228052` on current main; all three jobs passed.  
+**Main Commit Inspected at Audit Start:** `5a5196d75abcdf608e708844983fad25b600e5a4` (PR #52 owner-attested Phase 0 acceptance record).  
+**Latest Green CI at Audit Start:** GitHub Actions Run #550 / `43772604996` on current main; all three jobs passed.  
 **Governing Charter:** Local-first, on-premises per organization, PostgreSQL 18 single source of truth, single System Administrator (`SYSTEM_ADMIN`), HTTP-only `SameSite=Strict` cookie sessions (`promogest_session`) + CSRF, local filesystem storage with SHA-256 verification, Arabic RTL primary / French LTR secondary, Algerian DZD & legal context.
 
 ---
@@ -43,7 +43,7 @@ Every claim across this blueprint uses **strictly one** of the six evidence-back
 | 11 | [DEVELOPMENT-WORKFLOW.md](DEVELOPMENT-WORKFLOW.md) | Mandatory pre-work, in-development, post-development, and Definition-of-Done governance preventing architectural drift. |
 | 12 | [REQUIREMENT-TRACEABILITY.md](REQUIREMENT-TRACEABILITY.md) | Complete traceability matrix linking functional requirements across Domains **A–L** to code, endpoints, permissions, views, tests, and gates. |
 | 13 | [UI-IMPLEMENTATION-AND-GAP-MATRIX.md](UI-IMPLEMENTATION-AND-GAP-MATRIX.md) | Source-audited inventory of current React screens, API-backed actions, module status, navigation gaps, and Phase 0/1 UI boundaries. |
-| 14 | [PHASE-0-MANUAL-ACCEPTANCE.md](PHASE-0-MANUAL-ACCEPTANCE.md) | Executable browser/real-API acceptance protocol for Phase 0; records Product Owner-attested PASS groups separately from CI and unconfirmed P0-A01/P0-A04. |
+| 14 | [PHASE-0-MANUAL-ACCEPTANCE.md](PHASE-0-MANUAL-ACCEPTANCE.md) | Executable browser/real-API acceptance protocol for Phase 0; records Product Owner-attested PASS groups separately from CI, the owner-directed closure decision, and residual P0-A01/P0-A04 exceptions. |
 
 ---
 
@@ -76,7 +76,7 @@ Every claim across this blueprint uses **strictly one** of the six evidence-back
 | Application Services (`PromoGest.Application`) | `IMPLEMENTED_AND_VERIFIED` | CI #544: **14/14** Application tests passed |
 | C2 Party / Customer identity foundation | `IMPLEMENTED_AND_VERIFIED` | PRs #35–#38 merged; audit denials, concurrency, cross-project reuse, identity-collision rejection, and linked mirror synchronization are covered by Application and PostgreSQL 18 tests |
 | PostgreSQL 18 Integration Suite (`PromoGest.IntegrationTests`) | `IMPLEMENTED_AND_VERIFIED` | CI #544: **24/24** PostgreSQL 18 integration tests, including real API/health response-cache integration assertions, passed; former `CS7036` is resolved |
-| Local React SPA (`apps/local-web`) | `PARTIALLY_IMPLEMENTED` | CI #546: strict TypeScript check, **38/38** pure tests, production build and `wwwroot` checks pass; Product Owner owner-attested RTL/LTR desktop/mobile acceptance for the listed workflows; P0-A01 and P0-A04 remain unconfirmed and Vite-only simulator parity is intentionally incomplete |
+| Local React SPA (`apps/local-web`) | `PARTIALLY_IMPLEMENTED` | CI #550: strict TypeScript check, **38/38** pure tests, production build and `wwwroot` checks pass; Product Owner owner-attested RTL/LTR desktop/mobile acceptance for the listed workflows; P0-A01 and P0-A04 remain `NOT_RUN` as owner-accepted Phase 0 residual exceptions; Vite-only simulator parity is intentionally incomplete |
 | Organization Profile Edit (`PUT /api/organization`) | `PARTIALLY_IMPLEMENTED` | `OrganizationProfileView.tsx` is read-only; `org.manage` is seeded but no update endpoint exists |
 | Modules F–J & L (Contracts, DZD Finance/Installments, Works/Chantier, Procurement/Stock, SCF Accounting, Reporting) | `PLANNED` | Design baselines documented; no production business modules implemented |
 | Module K (Document Vault `stored_files`) | `PARTIALLY_IMPLEMENTED` | K-Min upload/list/download and SHA-256 API path pass PostgreSQL 18 E2E; metadata lifecycle, structured links and K-Full archival remain unimplemented |
@@ -95,7 +95,7 @@ Technical administration (server health, database readiness, backup/restore, sec
 
 [PROJECT-NAVIGATION-UX.md](PROJECT-NAVIGATION-UX.md) is the detailed design proposal. Review it against the current code, business workflows, and this roadmap before implementation; it is a design reference, not evidence that the navigation model is already implemented. The exact screen-by-screen implementation and gap inventory is recorded in [UI-IMPLEMENTATION-AND-GAP-MATRIX.md](UI-IMPLEMENTATION-AND-GAP-MATRIX.md).
 
-**Live preview and manual acceptance evidence:** On 15 November 2026, the Product Owner confirmed that the Google AI Studio development server/API and PostgreSQL development connection operate, and separately attested successful Arabic RTL / French LTR desktop/mobile checks for login/session/CSRF, projects, structure, customers/interactions, internal holds, documents/SHA-256, authorization, audit, concurrency, safe errors, and persistence after reload. The attestation is recorded in `PHASE-0-MANUAL-ACCEPTANCE.md`; browser-version metadata and sanitized screenshot/API artifacts were not attached. P0-A01 fresh-database initialization/second-initialization rejection and P0-A04 logout/session-revocation remain unconfirmed.
+**Live preview and manual acceptance evidence:** On 15 November 2026, the Product Owner confirmed that the Google AI Studio development server/API and PostgreSQL development connection operate, and separately attested successful Arabic RTL / French LTR desktop/mobile checks for login/session/CSRF, projects, structure, customers/interactions, internal holds, documents/SHA-256, authorization, audit, concurrency, safe errors, and persistence after reload. The attestation is recorded in `PHASE-0-MANUAL-ACCEPTANCE.md`; browser-version metadata and sanitized screenshot/API artifacts were not attached. Phase 0 is administratively closed under D-010; P0-A01 fresh-database initialization/second-initialization rejection and P0-A04 logout/session-revocation remain `NOT_RUN` as accepted residual exceptions, not passes.
 
 ## 5. Product Scope & Release Boundaries (Governance Guardrail)
 

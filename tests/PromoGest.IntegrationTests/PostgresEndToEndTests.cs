@@ -2306,31 +2306,36 @@ public sealed class PostgresEndToEndTests : IClassFixture<PostgreSql18Integratio
             {
                 using var scope = factory.Services.CreateScope();
                 var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-                await using var transaction = await db.Database.BeginTransactionAsync();
+                var strategy = db.Database.CreateExecutionStrategy();
 
-                var party = await db.Parties.SingleAsync(item => item.Id == partyId);
-                var customer = ProjectCustomer.Create(
-                    project!.Id,
-                    party.Id,
-                    null,
-                    "0550123456",
-                    null,
-                    null,
-                    "ar",
-                    CustomerSource.WalkIn,
-                    null,
-                    session!.User.Id,
-                    now);
-                customer.AttachParty(party);
-                db.ProjectCustomers.Add(customer);
-                await db.SaveChangesAsync();
+                return await strategy.ExecuteAsync(async () =>
+                {
+                    await using var transaction = await db.Database.BeginTransactionAsync();
 
-                // Keep both inserts uncommitted until both transactions have written.
-                // The deferred PostgreSQL constraint trigger must serialize the final checks.
-                SignalReady();
-                await bothCustomersReady.Task;
-                await transaction.CommitAsync();
-                return "COMMITTED";
+                    var party = await db.Parties.SingleAsync(item => item.Id == partyId);
+                    var customer = ProjectCustomer.Create(
+                        project!.Id,
+                        party.Id,
+                        null,
+                        "0550123456",
+                        null,
+                        null,
+                        "ar",
+                        CustomerSource.WalkIn,
+                        null,
+                        session!.User.Id,
+                        now);
+                    customer.AttachParty(party);
+                    db.ProjectCustomers.Add(customer);
+                    await db.SaveChangesAsync();
+
+                    // Keep both inserts uncommitted until both transactions have written.
+                    // The deferred PostgreSQL constraint trigger must serialize the final checks.
+                    SignalReady();
+                    await bothCustomersReady.Task;
+                    await transaction.CommitAsync();
+                    return "COMMITTED";
+                });
             }
             catch (PostgresException exception)
             {

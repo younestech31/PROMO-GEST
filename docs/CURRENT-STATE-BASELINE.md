@@ -2,11 +2,11 @@
 
 **Document Role:** Evidence-backed snapshot of the repository, not a product roadmap.  
 **Operational Roadmap:** [Notion Master Roadmap](https://app.notion.com/p/41a13e9ed3688127a157dceb9a0b655f) · [Notion Execution Backlog](https://app.notion.com/p/41a13e9ed3688121adbff807d29d4e46). Notion governs work sequencing and task tracking; this file and the current repository remain the source of implementation and verification truth.  
-**Last Application Runtime / Schema Source Commit:** `53c50fbc0db801b9298ec731cfc44f2d4d58ff7f` (PR #59 merge; server-owned 69-Wilaya reference API integrated into setup, organization and project forms).  
-**Latest Test Source Commit:** `53c50fbc0db801b9298ec731cfc44f2d4d58ff7f` (PR #59 merge; PostgreSQL 18 reference endpoint regression and frontend preview-contract test).  
-**Main Commit Inspected:** `62ebdcb725e0ab95059e7e4abe64581976898642` (documentation-only merge PR #61; latest application runtime/test source remains `53c50fbc0db801b9298ec731cfc44f2d4d58ff7f`).  
-**Last Merged Documentation PR CI:** Run **#584** / `43888881047` passed all three jobs on PR #61 head `b1f36615f12c1186f481109431c8aa2edd0dc4ae`; it is not a CI run on merge SHA `62ebdcb725e0ab95059e7e4abe64581976898642`.  
-**Latest Application-Source CI:** Run **#581** / `43881240365` passed all three jobs on application/test SHA `53c50fbc0db801b9298ec731cfc44f2d4d58ff7f`.  
+**Last Application Runtime / Schema Source Commit:** `53c50fbc0db801b9298ec731cfc44f2d4d58ff7f` (PR #59 merge; the last runtime/schema change remains the server-owned 69-Wilaya reference integration).  
+**Latest Test-Source Commit:** `ba3106dfd24b0fca915788350e4e1166c0cbe9ce` (PR #63 merge; adds PostgreSQL 18 end-to-end setup-singleton and logout/session-revocation regressions).  
+**Main Commit Inspected:** `a30cc898c1c6de87f83334ac453af03ba31208ce` (documentation-only merge PR #65; runtime source remains `53c50fbc0db801b9298ec731cfc44f2d4d58ff7f`, test source includes PR #63).  
+**Latest Merged Documentation PR CI:** Run **#592** / `43904395690` passed all three jobs on PR #65 head `e0676155419dda46cfbd2cc8ffa9654378cabf83`; this was a documentation-only PR and the run is not attributed to merge SHA `a30cc898c1c6de87f83334ac453af03ba31208ce`.  
+**Latest Test-Source PR CI:** Run **#589** / `43900696444` passed all three jobs on PR #63 head `58dde79719db5949033363dfed1e4e9cb8b66f29`; this is the tested PR head, not the later merge SHA `ba3106dfd24b0fca915788350e4e1166c0cbe9ce`.  
 **Governing Rule:** A feature is `IMPLEMENTED_AND_VERIFIED` only when its code and applicable automated verification pass in the audited baseline. A green pipeline does not certify untested browser UX, preview parity, production installation, or legal/accounting correctness.
 
 ---
@@ -17,8 +17,8 @@
 |---|---|---|---|
 | Domain Core (`PromoGest.Domain`) | `IMPLEMENTED_AND_VERIFIED` | CI #581: **34/34** Domain tests passed. | Additional coverage is added with each domain change. |
 | Application Services (`PromoGest.Application`) | `IMPLEMENTED_AND_VERIFIED` | CI #581: **20/20** Application tests passed, including Party audit/permissions and project-customer identity behavior. | Browser-level workflows are outside this test suite. |
-| PostgreSQL 18 Integration (`PromoGest.IntegrationTests`) | `IMPLEMENTED_AND_VERIFIED` | CI #581 passed **30/30** against PostgreSQL 18 using separate provisioning, migration-owner, and least-privilege runtime identities. Includes concurrent duplicate rejection, Party identity update rejection, guard migration Down, fail-closed preflight/recovery, and the public 69-Wilaya reference endpoint contract. Full restore drill passed. | CI evidence does not replace a representative customer-site backup/restore and migration rehearsal or manual browser acceptance. |
-| Local React SPA (`apps/local-web`) | `PARTIALLY_IMPLEMENTED` | Strict TypeScript check (`tsc --noEmit`), **40/40** frontend tests, production/static-host builds, and preview-leak checks pass. The Product Owner has owner-attested Arabic RTL / French LTR acceptance across desktop/mobile and the listed real workflows. | P0-A01 and P0-A04 remain `NOT_RUN` as owner-accepted Phase 0 residual exceptions; browser/version and per-case sanitized artifacts were not attached. The Vite fallback simulator is intentionally not the production API and remains incomplete. |
+| PostgreSQL 18 Integration (`PromoGest.IntegrationTests`) | `IMPLEMENTED_AND_VERIFIED` | PR #63 CI #589: **32/32** passed on PostgreSQL 18, including fresh empty-database setup singleton and logout/CSRF/session replay-revocation tests. Separate provisioning, migration-owner and least-privilege runtime identities; restore drill and Linux/Windows jobs also passed. | CI evidence does not replace manual real-browser acceptance or a representative customer-site backup/restore and migration rehearsal. |
+| Local React SPA (`apps/local-web`) | `PARTIALLY_IMPLEMENTED` | PR #65 CI #592: strict TypeScript, **40/40** frontend tests, production/static-host builds and preview-leak checks passed. Earlier owner-attested Arabic RTL / French LTR workflows remain separately identified. | P0-A01 and P0-A04 manual browser acceptance and sanitized browser/version artifacts remain outstanding; Vite fallback simulator remains intentionally incomplete. |
 | C2 Party / Customer identity foundation | `IMPLEMENTED_AND_VERIFIED` | PRs #35–#38 and Phase 1 PRs #55–#57 merged. ProjectCustomer identity mirrors are retired; PostgreSQL deferred triggers enforce `(project_id, Party.normalized_display_name, project_customer.normalized_phone)` across relationship writes and Party identity updates. Main CI #573 verifies concurrent duplicate rejection, Party-rename collision rejection, migration rollback, fail-closed preflight, and recovery. | Employee, Party contact-point/identifier/representative models, full PartyRole lifecycle, and human-reviewed merge tooling remain unimplemented. No production or Cloud SQL database was migrated. |
 | Organization profile editing | `IMPLEMENTED_AND_VERIFIED` | `PUT /api/organization`, `org.manage` enforcement, audit events and `ExpectedConcurrencyStamp` conflict handling are verified. PR #59 also connects its Wilaya selector to the server-owned reference API. | Commune/municipality remains free text pending a verified commune catalogue. |
 | Algerian administrative reference — Wilaya subset | `IMPLEMENTED_AND_VERIFIED` | Versioned bilingual 69-Wilaya reference in `AlgerianAdministrativeReference`; public `GET /api/reference/administrative-units`; first-run setup, organization profile and project create/update selectors consume the API. Main CI #581 verifies endpoint contract and preview mirror. | API reports `communesCount = 0` and `PendingOfficialVerification`; the full 1,541-commune hierarchy is not loaded. |
@@ -67,6 +67,18 @@
 
 [Open CI Run #581](https://github.com/younestech31/PROMO-GEST/actions/runs/43881240365)
 
+### PR #63 — Automated Phase 0 residual regression coverage (merged)
+- **PR head:** `58dde79719db5949033363dfed1e4e9cb8b66f29`; merge SHA: `ba3106dfd24b0fca915788350e4e1166c0cbe9ce`.
+- **CI Run #589:** all three required jobs passed. Frontend **40/40**, Domain **34/34**, Application **20/20**, PostgreSQL 18 Integration **32/32**; restore drill, Linux publish and Windows publish/PowerShell validation passed.
+- Added `FirstRunSetup_OnEmptyPostgreSql18Database_InitializesExactlyOnce`: confirms a fresh isolated database, one successful initialization, safe `409 SETUP_ALREADY_INITIALIZED`, one organization, one user/SYSTEM_ADMIN, one role assignment and one setup audit event.
+- Added `Logout_RevokesServerSession_AndRejectsCurrentAndReplayedCookies`: confirms missing-CSRF logout rejection without revoking the live session; valid logout/cookie deletion; protected API `401`; replayed original cookie rejected by the server; revoked session row and `AUTH_LOGOUT` audit record.
+- **Boundary:** these are automated `WebApplicationFactory` + PostgreSQL 18 tests. They do not mean the manual Google AI Studio/browser checks in P0-A01/P0-A04 have been run. Those manual cases remain `NOT_RUN`.
+
+### PR #65 — Official 2026 commune source audit (merged; documentation only)
+- Recorded the distinction between Law 26-06, Decrees 26-206/26-208, the JO No. 58 territorial-register amendment and the ONS 2021 58-Wilaya historical baseline.
+- Defined the 1,541-row bilingual/code/parent/effective-date crosswalk and completeness/uniqueness checks. No commune rows were imported; `communesCount` remains 0 and P1-01 remains In Progress pending the row-level reconciliation and qualified review.
+- **CI Run #592** passed all three jobs on PR #65 head `e0676155419dda46cfbd2cc8ffa9654378cabf83`; it was a documentation-only PR run, not a run on merge SHA `a30cc898c1c6de87f83334ac453af03ba31208ce`.
+
 ### PR #59 — Server-owned 69-Wilaya reference integration (merged)
 - Typed frontend contract and API client consume `GET /api/reference/administrative-units`.
 - A shared hook validates all 69 records and fails closed when the reference is unavailable or incomplete.
@@ -112,12 +124,12 @@ Phase 0 is `COMPLETE` by the Product Owner's explicit direction on 16 November 2
 
 Accepted Phase 0 residual exceptions (still tracked; not represented as PASS):
 
-1. **P0-A01 first-run acceptance:** execute first-run initialization against a separate empty disposable database and verify that a second initialization is rejected. This was not explicitly included in the latest owner confirmation and remains `NOT_RUN`.
-2. **P0-A04 logout acceptance:** verify logout revocation and that reopening a protected route does not restore access. Logout was not explicitly included in the latest owner confirmation and remains `NOT_RUN`.
+1. **P0-A01 manual acceptance:** the separate-empty-database browser/manual case remains `NOT_RUN`. Automated API/database regression coverage was added by merged PR #63 and passed PR CI #589 (PostgreSQL 18 Integration 32/32); that test does not substitute for executing the actual browser wizard and recording sanitized evidence.
+2. **P0-A04 manual acceptance:** the real-browser logout/reload case remains `NOT_RUN`. Automated API/database regression coverage was added by merged PR #63 and passed PR CI #589, including CSRF rejection, cookie deletion, protected API denial and replay of the pre-logout cookie; that does not substitute for browser acceptance.
 3. **Supplementary audit artifacts:** browser/version metadata and sanitized per-case screenshots or redacted API trace evidence were not attached; the owner attestation is recorded, and no unprovided artifacts are claimed.
 4. **Navigation decision:** D-009 records the bounded deferral of project-navigation proposal approval/implementation to the Phase 1 design review; do not start a broad UI redesign.
 5. **Preview separation:** keep the Vite-only in-memory simulator clearly separate from real API evidence; it intentionally lacks full parity.
-6. **Phase 1 progress:** Phase 1 remains `IN_PROGRESS`. Party identity separation and the PostgreSQL duplicate guard are verified. PR #59 completes the server-owned 69-Wilaya API-to-UI integration. The 1,541-commune catalogue remains pending (`communesCount = 0`, `PendingOfficialVerification`); project municipality remains free text. Remaining Phase 1 work includes official commune-source reconciliation/import with effective-dated history and the bounded organization-workspace/project-switcher/active-project-workspace design review. P0-A01 and P0-A04 remain `NOT_RUN`; no Phase 2–5 business implementation is authorized until applicable gates and practitioner approvals pass.
+6. **Phase 1 progress:** Phase 1 remains `IN_PROGRESS`. Party identity separation, the PostgreSQL duplicate guard, migration lifecycle tests and the 69-Wilaya API-to-UI integration are verified. PR #65 merged the official-source audit documentation, but the full 1,541-commune row-level crosswalk is still outstanding (`communesCount = 0`, `PendingOfficialVerification`); P1-02 remains blocked. The bounded organization-workspace/project-switcher/active-project-workspace design review remains. Manual P0-A01/P0-A04 acceptance remains outstanding; no Phase 2–5 implementation is authorized until dependencies and applicable gates pass.
 
 ## 4. Preview Boundary (Do Not Confuse with Production)
 

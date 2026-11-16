@@ -1,8 +1,9 @@
-import { useState, type FormEvent } from 'react';
+import { useEffect, useState, type FormEvent } from 'react';
 import { Building2, Check, ShieldCheck } from 'lucide-react';
 import type { AppLanguage, InitializeInstallationRequest } from '../../types/erp';
 import { getTranslations, translateApiError } from '../../localization/translations';
-import { ALGERIAN_LEGAL_FORMS, ALGERIAN_WILAYAS, findWilaya, formatAlgerianLegalForm } from '../../utils/algerianFormat';
+import { ALGERIAN_LEGAL_FORMS, formatAlgerianLegalForm } from '../../utils/algerianFormat';
+import { useAdministrativeReference } from '../../hooks/useAdministrativeReference';
 import { checkPasswordStrength, validateSetupRequest, type ValidationErrors } from '../../utils/validation';
 import { apiClient, ApiConnectionError, ApiError } from '../../services/apiClient';
 import { LanguageSwitcher } from '../../components/LanguageSwitcher';
@@ -27,6 +28,9 @@ export function FirstRunSetupWizard({
   onPreviewLogin,
 }: FirstRunSetupWizardProps) {
   const t = getTranslations(language);
+  const { reference, isLoading: referenceLoading, hasError: referenceError, retry: retryReference } =
+    useAdministrativeReference();
+  const wilayas = reference?.wilayas ?? [];
 
   const [form, setForm] = useState<InitializeInstallationRequest>({
     legalName: '',
@@ -57,18 +61,36 @@ export function FirstRunSetupWizard({
 
   const strength = checkPasswordStrength(form.adminPassword);
 
+  useEffect(() => {
+    if (!reference) return;
+    setForm((current) => {
+      const selected = reference.wilayas.find((wilaya) => wilaya.code === current.wilayaCode);
+      return selected && current.wilayaName !== selected.canonicalDisplayName
+        ? { ...current, wilayaName: selected.canonicalDisplayName }
+        : current;
+    });
+  }, [reference]);
+
   const handleWilayaChange = (code: string) => {
-    const w = findWilaya(code);
+    const wilaya = wilayas.find((item) => item.code === code);
+    if (!wilaya) return;
     setForm((prev) => ({
       ...prev,
       wilayaCode: code,
-      wilayaName: w ? `${w.nameAr} / ${w.nameFr}` : code,
+      wilayaName: wilaya.canonicalDisplayName,
     }));
   };
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     setSubmitError(null);
+    const selectedWilaya = wilayas.find((wilaya) => wilaya.code === form.wilayaCode);
+    if (!selectedWilaya) {
+      setSubmitError(language === 'ar'
+        ? 'تعذر تحميل مرجع الولايات الرسمي. أعد المحاولة قبل حفظ التهيئة.'
+        : 'Le référentiel officiel des wilayas est indisponible. Réessayez avant de valider.');
+      return;
+    }
     setIsSubmitting(true);
 
     try {
@@ -95,6 +117,7 @@ export function FirstRunSetupWizard({
       await apiClient.initializeInstallation(
         {
           ...form,
+          wilayaName: selectedWilaya.canonicalDisplayName,
           shareCapitalDzd: form.shareCapitalDzd ?? null,
         },
         bootstrapToken
@@ -207,15 +230,27 @@ export function FirstRunSetupWizard({
                 </FormField>
 
                 <FormField id="setup-wilaya" label={t.setup.wilaya} error={errors.wilayaCode}>
+                  {referenceError && (
+                    <div role="alert" className="mb-2 text-xs text-red-700">
+                      {language === 'ar' ? 'تعذر تحميل مرجع الولايات.' : 'Impossible de charger le référentiel des wilayas.'}
+                      <button type="button" onClick={retryReference} className="ms-2 underline">
+                        {language === 'ar' ? 'إعادة المحاولة' : 'Réessayer'}
+                      </button>
+                    </div>
+                  )}
                   <select
                     id="setup-wilaya"
                     value={form.wilayaCode}
                     onChange={(e) => handleWilayaChange(e.target.value)}
+                    disabled={!reference || referenceLoading}
                     className={inputBaseClass}
                   >
-                    {ALGERIAN_WILAYAS.map((w) => (
-                      <option key={w.code} value={w.code}>
-                        {w.code} — {language === 'ar' ? w.nameAr : w.nameFr}
+                    {!reference && <option value={form.wilayaCode}>{referenceLoading
+                      ? (language === 'ar' ? 'جارٍ تحميل الولايات…' : 'Chargement des wilayas…')
+                      : (language === 'ar' ? 'مرجع الولايات غير متاح' : 'Référentiel indisponible')}</option>}
+                    {wilayas.map((wilaya) => (
+                      <option key={wilaya.code} value={wilaya.code}>
+                        {wilaya.code} — {language === 'ar' ? wilaya.nameAr : wilaya.nameFr}
                       </option>
                     ))}
                   </select>
@@ -478,7 +513,7 @@ export function FirstRunSetupWizard({
               <p className="text-xs text-slate-500">{t.setup.singleAdminNotice}</p>
               <button
                 type="submit"
-                disabled={isSubmitting}
+                disabled={isSubmitting || !reference}
                 className="inline-flex items-center justify-center gap-2 rounded-md bg-teal-800 px-6 py-2.5 text-sm font-semibold text-white hover:bg-teal-900 transition-colors disabled:opacity-60 whitespace-nowrap shrink-0 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-teal-800"
               >
                 <Check className="w-4 h-4" aria-hidden="true" />

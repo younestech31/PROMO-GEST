@@ -6,7 +6,8 @@ import type {
 } from '../../types/erp';
 import { apiClient, ApiConnectionError, ApiError } from '../../services/apiClient';
 import { getTranslations, translateApiError } from '../../localization/translations';
-import { ALGERIAN_LEGAL_FORMS, ALGERIAN_WILAYAS, findWilaya, formatAlgerianLegalForm, formatDzd } from '../../utils/algerianFormat';
+import { ALGERIAN_LEGAL_FORMS, formatAlgerianLegalForm, formatDzd } from '../../utils/algerianFormat';
+import { useAdministrativeReference } from '../../hooks/useAdministrativeReference';
 import { FormField, inputBaseClass } from '../../components/FormField';
 
 type OrganizationProfileDraft = Omit<UpdateOrganizationProfileRequest, 'expectedConcurrencyStamp'>;
@@ -44,6 +45,9 @@ export function OrganizationProfileView({
   onUpdated,
 }: OrganizationProfileViewProps) {
   const t = getTranslations(language);
+  const { reference, isLoading: referenceLoading, hasError: referenceError, retry: retryReference } =
+    useAdministrativeReference();
+  const wilayas = reference?.wilayas ?? [];
   const [draft, setDraft] = useState<OrganizationProfileDraft>(() => toDraft(organization));
   const [isEditing, setIsEditing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
@@ -75,11 +79,12 @@ export function OrganizationProfileView({
   };
 
   const handleWilayaChange = (wilayaCode: string) => {
-    const wilaya = findWilaya(wilayaCode);
+    const wilaya = wilayas.find((item) => item.code === wilayaCode);
+    if (!wilaya) return;
     setDraft((current) => ({
       ...current,
       wilayaCode,
-      wilayaName: wilaya ? `${wilaya.nameAr} / ${wilaya.nameFr}` : wilayaCode,
+      wilayaName: wilaya.canonicalDisplayName,
     }));
   };
 
@@ -87,11 +92,19 @@ export function OrganizationProfileView({
     event.preventDefault();
     setError(null);
     setSuccess(false);
+    const selectedWilaya = wilayas.find((wilaya) => wilaya.code === draft.wilayaCode);
+    if (!selectedWilaya) {
+      setError(language === 'ar'
+        ? 'تعذر تحميل مرجع الولايات الرسمي. أعد المحاولة قبل الحفظ.'
+        : 'Le référentiel officiel des wilayas est indisponible. Réessayez avant l’enregistrement.');
+      return;
+    }
     setIsSaving(true);
 
     try {
       const updated = await apiClient.updateOrganizationProfile({
         ...draft,
+        wilayaName: selectedWilaya.canonicalDisplayName,
         expectedConcurrencyStamp: organization.concurrencyStamp ?? '',
       });
       onUpdated(updated);
@@ -249,13 +262,25 @@ export function OrganizationProfileView({
               </h2>
               <div className="mt-4 grid grid-cols-1 gap-4">
                 <FormField id="organization-wilaya" label={t.setup.wilaya}>
+                  {referenceError && (
+                    <div role="alert" className="mb-2 text-xs text-red-700">
+                      {language === 'ar' ? 'تعذر تحميل مرجع الولايات.' : 'Impossible de charger le référentiel des wilayas.'}
+                      <button type="button" onClick={retryReference} className="ms-2 underline">
+                        {language === 'ar' ? 'إعادة المحاولة' : 'Réessayer'}
+                      </button>
+                    </div>
+                  )}
                   <select
                     id="organization-wilaya"
                     value={draft.wilayaCode}
                     onChange={(event) => handleWilayaChange(event.target.value)}
+                    disabled={!reference || referenceLoading}
                     className={inputBaseClass}
                   >
-                    {ALGERIAN_WILAYAS.map((wilaya) => (
+                    {!reference && <option value={draft.wilayaCode}>{referenceLoading
+                      ? (language === 'ar' ? 'جارٍ تحميل الولايات…' : 'Chargement des wilayas…')
+                      : (language === 'ar' ? 'مرجع الولايات غير متاح' : 'Référentiel indisponible')}</option>}
+                    {wilayas.map((wilaya) => (
                       <option key={wilaya.code} value={wilaya.code}>
                         {wilaya.code} — {language === 'ar' ? wilaya.nameAr : wilaya.nameFr}
                       </option>
@@ -325,7 +350,7 @@ export function OrganizationProfileView({
             </button>
             <button
               type="submit"
-              disabled={isSaving}
+              disabled={isSaving || !reference}
               className="rounded-md bg-teal-800 px-5 py-2.5 text-sm font-semibold text-white hover:bg-teal-900 disabled:opacity-60"
             >
               {isSaving ? t.organization.savingButton : t.organization.saveButton}

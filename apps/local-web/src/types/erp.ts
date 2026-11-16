@@ -13,6 +13,23 @@ export interface SetupStatusResponse {
   requiresBootstrapToken?: boolean;
 }
 
+export interface AdministrativeWilayaDto {
+  code: string;
+  nameAr: string;
+  nameFr: string;
+  canonicalDisplayName: string;
+}
+
+export interface AdministrativeUnitsReferenceDto {
+  version: string;
+  effectiveDate: string;
+  legalSource: string;
+  communeDatasetStatus: string;
+  communeLegalBaselineCount: number;
+  communesCount: number;
+  wilayas: AdministrativeWilayaDto[];
+}
+
 export interface InitializeInstallationRequest {
   legalName: string;
   tradeName?: string;

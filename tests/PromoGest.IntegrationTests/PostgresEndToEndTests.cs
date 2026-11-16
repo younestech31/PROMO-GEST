@@ -22,6 +22,7 @@ using PromoGest.Contracts.Common;
 using PromoGest.Contracts.Projects;
 using PromoGest.Contracts.Setup;
 using PromoGest.Contracts.Organization;
+using PromoGest.Contracts.Reference;
 using PromoGest.Contracts.Users;
 using PromoGest.Domain.Entities;
 using PromoGest.Domain.Enums;
@@ -497,6 +498,36 @@ public sealed class PostgresEndToEndTests : IClassFixture<PostgreSql18Integratio
         "admin@atlasimmo.dz",
         "+213550102030",
         "AtlasAdmin#2026");
+
+    [Fact]
+    public async Task AdministrativeReference_ExposesCanonical69WilayaCatalogueWithoutAuthentication()
+    {
+        var connectionString = await _fixture.CreateIsolatedDatabaseConnectionStringAsync();
+        var tempRoot = Path.Combine(Path.GetTempPath(), $"promogest_reference_it_{Guid.NewGuid():N}");
+
+        using var factory = CreateFactory(connectionString, tempRoot);
+        using var client = factory.CreateClient(new WebApplicationFactoryClientOptions { HandleCookies = true });
+
+        var response = await client.GetAsync("/api/reference/administrative-units");
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        Assert.True(response.Headers.CacheControl?.NoStore == true);
+
+        var reference = await response.Content.ReadFromJsonAsync<AdministrativeUnitsReferenceDto>();
+        Assert.NotNull(reference);
+        Assert.Equal("2026-06-03-wilayas-69", reference!.Version);
+        Assert.Equal("2026-06-03", reference.EffectiveDate);
+        Assert.Equal("PendingOfficialVerification", reference.CommuneDatasetStatus);
+        Assert.Equal(1541, reference.CommuneLegalBaselineCount);
+        Assert.Equal(0, reference.CommunesCount);
+        Assert.Equal(69, reference.Wilayas.Count);
+        Assert.Equal(
+            Enumerable.Range(1, 69).Select(number => number.ToString("00")),
+            reference.Wilayas.Select(wilaya => wilaya.Code));
+        Assert.Equal("الجزائر", reference.Wilayas[15].NameAr);
+        Assert.Equal("Alger", reference.Wilayas[15].NameFr);
+        Assert.Equal("الأبيض سيدي الشيخ / El Abiodh Sidi Cheikh", reference.Wilayas[68].CanonicalDisplayName);
+    }
 
     [Fact]
     public async Task Migrations_Csrf_Auth_Idor_AuditImmutability_And_Restart_WorkAgainstPostgreSql18()

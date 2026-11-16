@@ -79,6 +79,25 @@ export interface OrganizationSummary {
   email: string | null;
   defaultLanguage: AppLanguage;
   currencyCode: 'DZD';
+  concurrencyStamp: string;
+}
+
+export interface UpdateOrganizationProfileRequest {
+  legalName: string;
+  tradeName: string | null;
+  legalForm: string;
+  nif: string | null;
+  nis: string | null;
+  tradeRegisterNumber: string | null;
+  taxArticleNumber: string | null;
+  shareCapitalDzd: number | null;
+  wilayaCode: string;
+  wilayaName: string;
+  address: string;
+  phone: string | null;
+  email: string | null;
+  defaultLanguage: AppLanguage;
+  expectedConcurrencyStamp: string;
 }
 
 export interface SessionResponse {

@@ -21,7 +21,7 @@
 
 ---
 
-## 2. Current Gate Status Against Baseline (main source `065d54cff4e08ed868e676d4cf3d04c715898782`; main CI #573)
+## 2. Current Gate Status Against Baseline (main source `53c50fbc0db801b9298ec731cfc44f2d4d58ff7f`; main CI #581)
 
 ### Main CI #573 — 16 November 2026
 - **Frontend/static hosting:** passed; strict TypeScript/lint, **39/39** frontend tests, SPA and ASP.NET Core static-host builds, and preview-leak checks.
@@ -29,6 +29,18 @@
 - **Migration lifecycle tests:** direct Down, fail-closed preflight (without deleting ProjectCustomer rows), and successful Up after test-data reconciliation passed.
 - **Windows:** x64 publish, machine-scoped Data Protection recovery, and PowerShell validation passed.
 - **Overall:** all three required jobs completed with `success` on main SHA `065d54cff4e08ed868e676d4cf3d04c715898782`. [Run #573](https://github.com/younestech31/PROMO-GEST/actions/runs/43865150034).
+
+### Main CI #581 — 16 November 2026
+- **Frontend/static hosting:** strict TypeScript, **40/40** frontend tests, Vite production build, ASP.NET Core static-host build and preview-leak checks passed.
+- **.NET 10:** solution build passed; Domain **34/34**, Application **20/20**.
+- **PostgreSQL 18:** Integration **30/30**, including the anonymous 69-Wilaya reference API contract test; full database/storage/Data Protection restore drill passed.
+- **Windows:** x64 publish, machine-scoped Data Protection recovery and PowerShell validation passed.
+- **Overall:** all three jobs passed on main SHA `53c50fbc0db801b9298ec731cfc44f2d4d58ff7f`. [Run #581](https://github.com/younestech31/PROMO-GEST/actions/runs/43881240365).
+
+### PR #59 — Server-owned Wilaya reference
+- Setup, organization profile and project create/update selectors consume `GET /api/reference/administrative-units` and submit server-provided canonical bilingual names.
+- PostgreSQL 18 verifies anonymous access, the 69 ordered Wilaya codes, metadata and `Cache-Control: no-store`; frontend verifies the Vite preview contract.
+- Commune dataset remains explicitly pending: `communesCount = 0`; municipality is still free text.
 
 ### Phase 1 — Party / ProjectCustomer integrity
 - **PR #55 — merged:** aligned tests with the distinct Party/ProjectCustomer IDs and correct identity-document request field; PR CI #562 and post-merge main CI #563 passed.
@@ -43,7 +55,7 @@
 - **G8:** automated checks passed (**39/39** frontend tests, TypeScript/lint, builds and preview-leak checks). Arabic RTL / French LTR browser acceptance remains Product Owner-attested from the prior Phase 0 record, not re-performed by this CI run. P0-A01 first-run/second-initialization and P0-A04 logout/session revocation remain `NOT_RUN`.
 - **G10:** Linux/Windows packaging and database/storage/Data Protection restore checks passed. Customer-site installation and production migration rehearsal remain separate.
 
-**Phase status:** Phase 0 remains `COMPLETE` by D-010 with P0-A01 and P0-A04 as accepted `NOT_RUN` exceptions. Phase 1 remains `IN_PROGRESS`: Party identity mirror retirement, database duplicate guard, and migration lifecycle tests are implemented and verified. Versioned territorial references and bounded navigation design remain. No Phase 2–5 business coding begins before applicable G1–G10 gates, Phase 1 dependencies, and legal/accounting approvals pass.
+**Phase status:** Phase 0 remains `COMPLETE` by D-010 with P0-A01 and P0-A04 as accepted `NOT_RUN` exceptions. Phase 1 remains `IN_PROGRESS`: Party identity mirror retirement, database duplicate guard, migration lifecycle tests and 69-Wilaya API-to-UI integration are verified. The complete 1,541-commune hierarchy is not loaded; official source reconciliation/import and bounded navigation design remain. No Phase 2–5 business coding begins before applicable G1–G10 gates, Phase 1 dependencies, and legal/accounting approvals pass.
 
 ## 3. Statutory / Practitioner Sign-Off Gates (Mandatory Before Phases 2, 3A, 4)
 

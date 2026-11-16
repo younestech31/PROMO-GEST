@@ -4,7 +4,7 @@
 **Last Application Runtime / Schema Source Commit:** `2fb58c5b8c9ab632b17f9785c1eebce86c885c92` (PR #56 merge; PostgreSQL project-customer identity uniqueness guard).  
 **Latest Test Source Commit:** `065d54cff4e08ed868e676d4cf3d04c715898782` (PR #57 merge; migration rollback and fail-closed preflight regression coverage).  
 **Main Commit Inspected:** `065d54cff4e08ed868e676d4cf3d04c715898782`.  
-**Latest Green PR CI:** Run **#572** / `43864361244` passed all three jobs on the PR #57 head. Post-merge main CI **#573** was still running during this documentation refresh.  
+**Latest Green Main CI:** Run **#573** / `43865150034` passed all three jobs on main SHA `065d54cff4e08ed868e676d4cf3d04c715898782`.  
 **Governing Rule:** A feature is `IMPLEMENTED_AND_VERIFIED` only when its code and applicable automated verification pass in the audited baseline. A green pipeline does not certify untested browser UX, preview parity, production installation, or legal/accounting correctness.
 
 ---
@@ -54,13 +54,13 @@
 - **PR #57 — merged:** adds direct PostgreSQL 18 regression coverage for the guard migration Down path, duplicate-data preflight rejection without data loss, and successful migration reapplication after explicit test reconciliation. PR CI #572 passed all three jobs; PostgreSQL Integration passed **29/29**.
 - **Data boundary:** PRs #55–#57 changed source/tests/docs only. They did not migrate production or Google AI Studio Cloud SQL data, alter credentials, or change runtime authorization/CSRF policy.
 
-### GitHub Actions Run #572 — 16 November 2026 (PR #57 migration lifecycle verification)
-- **PR head:** `72dad4b95b52bbe6acb539e9b0daa53757c51193`; all three jobs passed.
+### GitHub Actions Run #573 — 16 November 2026 (post-merge main verification)
+- **Main SHA:** `065d54cff4e08ed868e676d4cf3d04c715898782`; all three jobs passed. PR CI #572 passed the same migration lifecycle regression suite before merge.
 - **Domain / Application / PostgreSQL 18:** Domain **34/34**, Application **20/20**, Integration **29/29**.
 - **Additional PostgreSQL 18 coverage:** Migration #13 Down removes the two triggers; the Up preflight rejects pre-existing duplicate Party-name/phone tuples without deleting ProjectCustomer records; after explicit test reconciliation, the migration reapplies and recreates both triggers.
 - **Boundary:** the test uses a disposable database and separate provisioning, migration-owner, and runtime identities. It does not prove a migration against a real organization installation or authorize any Cloud SQL/production change.
 
-[Open CI Run #572](https://github.com/younestech31/PROMO-GEST/actions/runs/43864361244)
+[Open CI Run #573](https://github.com/younestech31/PROMO-GEST/actions/runs/43865150034)
 ### C2 Party / Customer changes merged and verified
 - **PR #35:** fixed `CS7036` by passing the actual `PartyConcurrencyStamp` returned by the customer-details response. No synthetic token or weakened concurrency check was introduced.
 - **PR #36:** captures `previousKind` before Party mutation and writes `ACCESS_DENIED` security audit events for unauthorized Party directory reads/identity changes.

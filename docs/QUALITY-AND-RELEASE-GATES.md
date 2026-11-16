@@ -21,14 +21,14 @@
 
 ---
 
-## 2. Current Gate Status Against Baseline (main source `065d54cff4e08ed868e676d4cf3d04c715898782`; PR CI #572)
+## 2. Current Gate Status Against Baseline (main source `065d54cff4e08ed868e676d4cf3d04c715898782`; main CI #573)
 
-### PR CI #572 — 16 November 2026
+### Main CI #573 — 16 November 2026
 - **Frontend/static hosting:** passed; strict TypeScript/lint, **39/39** frontend tests, SPA and ASP.NET Core static-host builds, and preview-leak checks.
 - **.NET 10 / PostgreSQL 18:** solution build with warnings as errors succeeded; Domain **34/34**, Application **20/20**, PostgreSQL 18 Integration **29/29**.
 - **Migration lifecycle tests:** direct Down, fail-closed preflight (without deleting ProjectCustomer rows), and successful Up after test-data reconciliation passed.
 - **Windows:** x64 publish, machine-scoped Data Protection recovery, and PowerShell validation passed.
-- **Overall:** all three required jobs completed with `success` on PR head `72dad4b95b52bbe6acb539e9b0daa53757c51193`. [Run #572](https://github.com/younestech31/PROMO-GEST/actions/runs/43864361244).
+- **Overall:** all three required jobs completed with `success` on main SHA `065d54cff4e08ed868e676d4cf3d04c715898782`. [Run #573](https://github.com/younestech31/PROMO-GEST/actions/runs/43865150034).
 
 ### Phase 1 — Party / ProjectCustomer integrity
 - **PR #55 — merged:** aligned tests with the distinct Party/ProjectCustomer IDs and correct identity-document request field; PR CI #562 and post-merge main CI #563 passed.

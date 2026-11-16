@@ -3,7 +3,7 @@
 **Document Role:** Dependency-ordered delivery roadmap and execution control for PROMO GEST.  
 **Last Code-Changing Source Baseline:** `065d54cff4e08ed868e676d4cf3d04c715898782` (PR #57 merge; Party identity guard migration lifecycle verification).  
 **Main Commit Inspected:** `065d54cff4e08ed868e676d4cf3d04c715898782`.  
-**Latest Green PR CI:** Run **#572** / `43864361244` — all three jobs passed on the PR #57 head. Post-merge main CI #573 was pending at the time of this document refresh.  
+**Latest Green Main CI:** Run **#573** / `43865150034` — all three jobs passed on main SHA `065d54cff4e08ed868e676d4cf3d04c715898782`.  
 **Product Rule:** Deliver complete, secure business workflows in dependency order. Do not let isolated defects, cosmetic changes, or technical administration work displace the ERP product vision.
 
 ---

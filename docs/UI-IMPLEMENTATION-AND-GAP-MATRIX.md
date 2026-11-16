@@ -77,16 +77,16 @@ Latest repository evidence at the time of this audit:
 
 **Owner-attested as passed:** Arabic RTL / French LTR desktop/mobile review for the listed real workflows; login/session/CSRF; projects and structure; customers/interactions; internal holds including cancellation/expiry; document upload/download/SHA-256; authorization/audit/concurrency/safe errors; and persistence after reload. See the owner-attested result register in `PHASE-0-MANUAL-ACCEPTANCE.md`.
 
-**Still not evidenced:** P0-A01 first-run setup against a separate empty disposable database and rejection of a second initialization; and P0-A04 logout followed by protected-route/session-revocation verification. Browser/version metadata and sanitized per-case artifacts were not attached. Navigation proposal approval is explicitly deferred to a bounded Phase 1 design review.
+**Still not evidenced:** P0-A01 first-run setup against a separate empty disposable database and rejection of a second initialization; and P0-A04 logout followed by protected-route/session-revocation verification. Browser/version metadata and sanitized per-case artifacts were not attached. P1-04 navigation design review is now recorded in D-013 as approved with modifications; implementation remains unbuilt and separately gated.
 
 ## 7. Next work by dependency order
 
-1. **Phase 0 residual exceptions:** execute P0-A01 against a separate empty disposable database and verify safe rejection of a second initialization; execute P0-A04 by signing out and proving session revocation and protected-route denial. Keep both recorded as `NOT_RUN` until real evidence exists.
+1. **Phase 0 residual exceptions:** execute P0-A01 against a separate empty disposable database and verify safe rejection of a second initialization; execute P0-A04 by signing out and proving session revocation and protected-route denial. Keep both recorded as `NOT_RUN` until real evidence exists; they remain accepted residual exceptions, not passes.
 2. **P1-01 — official commune source audit:** reconcile Law 26-06, Decrees 26-206/26-208 and authoritative government datasets for all 69 Wilaya–commune relationships. The ONS 2021 58-Wilaya reference alone is insufficient.
 3. **P1-02 — commune catalogue implementation:** remains `BLOCKED` until P1-01 is reviewed and accepted. Do not invent codes, labels, parent assignments or effective dates, and preserve historical free-text snapshots.
-4. **P1-03 — Party and Employee master-data scope:** decide the organization-wide identity/contact/identifier/representative boundaries and the separate Employee relationship before expanding the domain.
-5. **P1-04 — bounded navigation review:** compare the current shell and project modals with the three-level organization/project interaction proposal, using this refreshed source matrix; do not begin a broad redesign or weaken server-side ProjectMember authorization.
-6. **P1-05 — Phase 1 closure:** keep blocked until P1-01 through P1-04, P0-A01/P0-A04 residuals, latest CI, and applicable professional review evidence are reconciled in Notion.
+4. **P1-03 — Party and Employee master-data scope:** decision D-012 is recorded and merged in PR #68 (main CI #602); REQ-D04 is `IMPLEMENTED_AND_VERIFIED`, REQ-D05/REQ-D06 remain `PLANNED`, and Module D remains `PARTIALLY_IMPLEMENTED`.
+5. **P1-04 — bounded navigation review:** D-013 approves the three-level organization workspace → explicit project switcher → active project workspace model with modifications, as design only. The current UI remains unchanged; implement only through the independent, authorized vertical slices defined in D-013.
+6. **P1-05 — Phase 1 closure:** keep `BLOCKED` until P1-01/P1-02 dependencies, P1-03/P1-04 accepted evidence, P0-A01/P0-A04 residuals, latest CI, and applicable professional review evidence are reconciled in Notion.
 7. **Later phases:** do not start Phase 2–5 business implementation before Phase 1 closure, K-Min prerequisites, and qualified Algerian practitioner sign-offs.
 
 ## 7A. Phase 1 bounded navigation review — D-013 (16 November 2026)

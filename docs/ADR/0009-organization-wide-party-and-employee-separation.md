@@ -1,12 +1,12 @@
 # ADR 0009 — Organization-wide Party identity and Employee/User separation
 
-- **Status:** Accepted architecture direction; physical schema and migration are gated by the Gate C implementation plan.
+- **Status:** Accepted; initial Party/ProjectCustomer schema, deterministic backfill, identity-mirror retirement, and database duplicate guard are implemented. Gate C remains open for Employee and broader master-data capabilities plus representative migration/restore evidence.
 - **Date:** 15 November 2026
 - **Scope:** organization-wide identity, project-specific business roles, CRM continuity and login-account separation.
 
 ## Context
 
-PROMO GEST currently stores customer identity and contact details in the project-scoped `project_customers` table. A unique index prevents duplicates only within one project. Reservations and customer interactions retain foreign keys to those project-customer IDs.
+Before the Party foundation, PROMO GEST stored customer identity and contact details in the project-scoped `project_customers` table. The current schema now stores canonical kind/name on `parties`; `project_customers` retains project-specific contact/relationship data and its own UUID. PostgreSQL triggers preserve the project-level normalized Party-name/phone duplicate rule after removal of the transitional identity mirror columns.
 
 The current `users` table is an authentication principal with security fields and profile fields. There is no Employee master entity. The target ERP requires organization-wide customers, prospects, suppliers, contractors and employee profiles without losing project scope or exposing data across projects.
 
@@ -24,6 +24,14 @@ A direct rename of `project_customers`, global merge by name/phone, or reuse of 
 8. Keep User as the authentication/authorization principal. The User–Employee link is optional; employee records do not require accounts and technical accounts do not require employee records.
 9. Keep global Party permissions separate from project-membership and project-role permissions. A global Party search is not permission to read project interactions, reservations or files.
 10. Make schema changes additive first. No destructive rename/drop is part of the initial Party migration.
+
+## Phase 1 implementation status (16 November 2026)
+
+- Migrations `20261115100000_OrganizationWidePartyFoundation` and `20261115120000_UniqueProjectPartyCustomerLink` established Party identity and project association.
+- Migration `20261116100000_RetireProjectCustomerIdentityMirrors` retired duplicate ProjectCustomer identity columns while retaining ProjectCustomer UUIDs and relationship foreign keys.
+- Migration `20261116120000_EnforceProjectCustomerIdentityUniqueness` protects the project/name/normalized-phone rule with deferred PostgreSQL triggers, advisory locks, and a fail-closed duplicate preflight.
+- PRs #55–#57 passed PostgreSQL 18 CI; main CI #573 passed all three jobs. The implementation has not been applied to Cloud SQL or any production organization database.
+- Gate C remains open: Employee, richer Party roles/contact points/identifiers/representatives, human-reviewed merge tooling, and representative anonymized backup/restore migration rehearsal remain unimplemented or unverified.
 
 ## Consequences
 
@@ -44,7 +52,7 @@ A direct rename of `project_customers`, global merge by name/phone, or reuse of 
 ## Required evidence before production migration
 
 Follow the migration sequence and acceptance tests in [Party & Master-Data Design](../PARTY-MASTER-DATA.md). The first code PR must include:
-- additive migration and model-snapshot verification;
+- additive Party migration, a separately reviewed mirror-retirement migration, and the database-only uniqueness-guard migration; EF model-snapshot parity for entity mapping changes;
 - backfill of one Party per legacy ProjectCustomer with stable UUID mapping;
 - PostgreSQL integration and restore tests;
 - authorization tests proving cross-project isolation;

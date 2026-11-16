@@ -1028,7 +1028,8 @@ public sealed class PostgresEndToEndTests : IClassFixture<PostgreSql18Integratio
             Assert.NotNull(createdCustomer.IdentityDocument);
             Assert.Equal("building-permit.pdf", createdCustomer.IdentityDocument!.OriginalFileName);
             Assert.Empty(createdCustomer.Interactions);
-            Assert.Equal(createdCustomer.Id, createdCustomer.PartyId);
+            // Party is the organization-wide identity; ProjectCustomer is the project-scoped relationship.
+            Assert.NotEqual(createdCustomer.Id, createdCustomer.PartyId);
 
             using (var partyScope = factory.Services.CreateScope())
             {
@@ -1036,7 +1037,8 @@ public sealed class PostgresEndToEndTests : IClassFixture<PostgreSql18Integratio
                 var persistedCustomer = await db.ProjectCustomers
                     .Include(customer => customer.Party)
                     .SingleAsync(customer => customer.Id == createdCustomer.Id);
-                Assert.Equal(persistedCustomer.Id, persistedCustomer.PartyId);
+                Assert.NotEqual(persistedCustomer.Id, persistedCustomer.PartyId);
+                Assert.Equal(persistedCustomer.Party.Id, persistedCustomer.PartyId);
                 Assert.Equal(PartyKind.Person, persistedCustomer.Party.Kind);
                 Assert.Equal("ليلى بن عيسى", persistedCustomer.Party.DisplayName);
                 Assert.Equal("ليلى بن عيسى".ToUpperInvariant(), persistedCustomer.Party.NormalizedDisplayName);
@@ -2192,9 +2194,23 @@ public sealed class PostgresEndToEndTests : IClassFixture<PostgreSql18Integratio
             identityDocId = (await idUpload.Content.ReadFromJsonAsync<ProjectDocumentDto>())!.Id;
         }
 
-        var customerResp = await adminClient.PostAsJsonAsync($"/api/projects/{project.Id}/customers", new CreateProjectCustomerRequest(
-            "Individual", "Samira Buyer", null, "0550123456", "samira@example.dz", null, "fr", "WalkIn", null, identityDocId));
+        var customerResp = await adminClient.PostAsJsonAsync(
+            $"/api/projects/{project.Id}/customers",
+            new CreateProjectCustomerRequest(
+                CustomerType: "Individual",
+                DisplayName: "Samira Buyer",
+                ContactPerson: null,
+                Phone: "0550123456",
+                Email: "samira@example.dz",
+                Address: null,
+                PreferredLanguage: "fr",
+                Source: "WalkIn",
+                IdentityDocumentStoredFileId: identityDocId,
+                PartyId: null));
         Assert.Equal(HttpStatusCode.Created, customerResp.StatusCode);
+        var createdCustomer = await customerResp.Content.ReadFromJsonAsync<ProjectCustomerDto>();
+        Assert.NotNull(createdCustomer?.IdentityDocument);
+        Assert.Equal(identityDocId, createdCustomer!.IdentityDocument!.Id);
 
         // VIEWER does not hold files.read and is denied both document listing and download
         using var viewerClient = factory.CreateClient(new WebApplicationFactoryClientOptions { HandleCookies = true });

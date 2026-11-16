@@ -4,7 +4,7 @@
 **Main commit inspected:** `62ebdcb725e0ab95059e7e4abe64581976898642` (documentation-only merge PR #61).  
 **Last application runtime source commit:** `53c50fbc0db801b9298ec731cfc44f2d4d58ff7f` (PR #59; no later application-source change was found on `main`).  
 **Latest test-source commit:** `53c50fbc0db801b9298ec731cfc44f2d4d58ff7f` (PostgreSQL 18 administrative-reference endpoint regression and frontend preview-contract test).  
-**Latest documentation PR CI:** Run #584 / [43888881047](https://github.com/younestech31/PROMO-GEST/actions/runs/43888881047) passed all three jobs on PR #61 head `b1f36615f12c1186f481109431c8aa2edd0dc4ae` (documentation-only). This run is not attributed to the merge SHA.  
+**Last merged documentation PR CI:** Run #584 / [43888881047](https://github.com/younestech31/PROMO-GEST/actions/runs/43888881047) passed all three jobs on PR #61 head `b1f36615f12c1186f481109431c8aa2edd0dc4ae` (documentation-only). This run is not attributed to the merge SHA.  
 **Latest application-source CI:** Run #581 / [43881240365](https://github.com/younestech31/PROMO-GEST/actions/runs/43881240365) passed all three jobs on code SHA `53c50fbc0db801b9298ec731cfc44f2d4d58ff7f`.
 
 ## 1. Reading this matrix correctly

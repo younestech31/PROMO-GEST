@@ -1940,6 +1940,7 @@ public sealed class PostgresEndToEndTests : IClassFixture<PostgreSql18Integratio
         Assert.Equal(HttpStatusCode.Created, employeeResponse.StatusCode);
 
         using var employeeClient = factory.CreateClient(new WebApplicationFactoryClientOptions { HandleCookies = true });
+        await AttachCsrfTokenAsync(employeeClient);
         var employeeLogin = await employeeClient.PostAsJsonAsync(
             "/api/auth/login",
             new LoginRequest("org.editor", "OrgEditorPass#2026"));

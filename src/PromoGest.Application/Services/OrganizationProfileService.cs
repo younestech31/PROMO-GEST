@@ -47,17 +47,20 @@ public sealed class OrganizationProfileService
             throw new ForbiddenDomainException("AUTH_ACCOUNT_INACTIVE", "Account is inactive.");
         }
 
-        var permissions = await _userRepository.GetEffectivePermissionsAsync(actor.Id, ct);
-        if (!permissions.Contains(ManagePermission, StringComparer.OrdinalIgnoreCase))
+        if (!actor.IsSystemAdministrator)
         {
-            await RecordAccessDeniedAsync(
-                actor,
-                "User attempted to update organization profile without org.manage permission.",
-                metadata,
-                ct);
-            throw new ForbiddenDomainException(
-                "FORBIDDEN_ORGANIZATION_MANAGE",
-                "You do not have permission to manage the organization profile.");
+            var permissions = await _userRepository.GetEffectivePermissionsAsync(actor.Id, ct);
+            if (!permissions.Contains(ManagePermission, StringComparer.OrdinalIgnoreCase))
+            {
+                await RecordAccessDeniedAsync(
+                    actor,
+                    "User attempted to update organization profile without org.manage permission.",
+                    metadata,
+                    ct);
+                throw new ForbiddenDomainException(
+                    "FORBIDDEN_ORGANIZATION_MANAGE",
+                    "You do not have permission to manage the organization profile.");
+            }
         }
 
         var organization = await _installationRepository.GetOrganizationSettingsAsync(ct)

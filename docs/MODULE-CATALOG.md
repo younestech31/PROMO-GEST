@@ -2,9 +2,10 @@
 
 All 12 functional ERP domains required by PROMO GEST, mapped strictly using the 6-state taxonomy against actual inspected code, controllers, EF configurations, and tests.
 
-**Last Code-Changing Source Baseline:** `53c50fbc0db801b9298ec731cfc44f2d4d58ff7f` (PR #59 merge; server-owned 69-Wilaya reference integrated with the main forms).  
-**Main Commit Inspected:** `62ebdcb725e0ab95059e7e4abe64581976898642` (documentation-only merge PR #61; latest application-source baseline remains `53c50fbc0db801b9298ec731cfc44f2d4d58ff7f`).  
-**Last Merged Documentation PR CI:** Run **#584** / `43888881047` passed all three jobs on PR #61 head `b1f36615f12c1186f481109431c8aa2edd0dc4ae` (documentation-only; not the merge SHA). **Latest application-source CI:** Run **#581** / `43881240365` passed all three jobs on the current runtime/test baseline `53c50fbc0db801b9298ec731cfc44f2d4d58ff7f` (frontend 40/40, Domain 34/34, Application 20/20, PostgreSQL 18 Integration 30/30, restore drill, Windows x64).  
+**Last Runtime / Schema Source Baseline:** `53c50fbc0db801b9298ec731cfc44f2d4d58ff7f` (PR #59; last runtime/schema change).  
+**Latest Test-Source Merge:** `ba3106dfd24b0fca915788350e4e1166c0cbe9ce` (PR #63; PostgreSQL 18 first-run setup and logout/session-revocation regressions).  
+**Main Commit Inspected:** `a30cc898c1c6de87f83334ac453af03ba31208ce` (documentation-only PR #65 merge).  
+**Latest Test-Source CI:** Run #589 / `43900696444` passed all three jobs on PR #63 head `58dde79719db5949033363dfed1e4e9cb8b66f29` (frontend 40/40, Domain 34/34, Application 20/20, PostgreSQL 18 Integration 32/32, restore drill, Windows x64). **Latest Documentation CI:** Run #592 / `43904395690` passed all three jobs on PR #65 head `e0676155419dda46cfbd2cc8ffa9654378cabf83`.  
 **Live Preview / Manual Acceptance Evidence:** On 15 November 2026, the Product Owner confirmed the real Google AI Studio development server/API and PostgreSQL development connection operate, and owner-attested successful Arabic RTL / French LTR desktop/mobile workflows for projects, structure, customer interactions, internal holds, documents/SHA-256, authorization, audit, concurrency, safe errors, and persistence. Detailed group mapping is in `PHASE-0-MANUAL-ACCEPTANCE.md`; Phase 0 was administratively closed by owner decision D-010, with P0-A01 and P0-A04 still `NOT_RUN` as accepted residual exceptions.
 
 ---
@@ -34,8 +35,8 @@ All 12 functional ERP domains required by PROMO GEST, mapped strictly using the 
 - **Frontend surfaces:** `FirstRunSetupWizard.tsx`, `LoginScreen.tsx`, `UsersManagementView.tsx`, `AuditLogView.tsx`, `OrganizationProfileView.tsx`, and organization-level `OverviewView.tsx`.
 - **UI boundary:** technical administration links (users/audit) currently share the same shell/navigation as daily operations rather than a separate technical-admin workspace.
 - **Current Reality:**
-  - *First-Run Wizard (`IMPLEMENTED_AND_VERIFIED`):* `GET /api/setup/status`, `POST /api/setup/initialize` (enforces loopback IP or `X-PROMOGEST-SETUP-TOKEN` bootstrap guard).
-  - *Session Auth & CSRF (`IMPLEMENTED_AND_VERIFIED`):* `GET /api/auth/csrf` (intentionally `[AllowAnonymous]` bootstrap), `POST /api/auth/login`, `POST /api/auth/logout`, `GET /api/auth/me` (cookie **`promogest_session`** + `X-CSRF-TOKEN`; gates org fiscal/contact fields by `org.read` and `ConcurrencyStamp` by `org.manage`).
+  - *First-Run Wizard (`IMPLEMENTED_AND_VERIFIED`):* `GET /api/setup/status`, `POST /api/setup/initialize` (enforces loopback IP or `X-PROMOGEST-SETUP-TOKEN` bootstrap guard). PR #63 CI #589 adds fresh-PostgreSQL-18-database verification for exactly one successful initialization, safe second-attempt conflict, singleton organization/SYSTEM_ADMIN, role assignment and audit record; manual browser acceptance remains unrun.
+  - *Session Auth & CSRF (`IMPLEMENTED_AND_VERIFIED`):* `GET /api/auth/csrf` (intentionally `[AllowAnonymous]` bootstrap), `POST /api/auth/login`, `POST /api/auth/logout`, `GET /api/auth/me` (cookie **`promogest_session`** + `X-CSRF-TOKEN`; gates org fiscal/contact fields by `org.read` and `ConcurrencyStamp` by `org.manage`). PR #63 CI #589 adds server-revocation/cookie-replay and CSRF-on-logout regression coverage; manual browser logout/reload acceptance remains unrun.
   - *User & Role Management (`IMPLEMENTED_AND_VERIFIED`):* `GET/POST/PUT /api/users`, `PATCH /api/users/{id}/status`, `POST /api/users/{id}/reset-password`, `GET /api/users/roles`.
   - *Audit Trail (`IMPLEMENTED_AND_VERIFIED`):* `GET /api/audit`.
   - *Offline CLI Recovery (`IMPLEMENTED_AND_VERIFIED`):* `--unlock-admin`, `--reset-admin-password` (`Program.cs`, `AdminRecoveryService`).

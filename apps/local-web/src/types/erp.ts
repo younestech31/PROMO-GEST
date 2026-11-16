@@ -79,7 +79,7 @@ export interface OrganizationSummary {
   email: string | null;
   defaultLanguage: AppLanguage;
   currencyCode: 'DZD';
-  concurrencyStamp: string;
+  concurrencyStamp?: string;
 }
 
 export interface UpdateOrganizationProfileRequest {

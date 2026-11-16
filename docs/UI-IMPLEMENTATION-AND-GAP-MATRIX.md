@@ -1,11 +1,11 @@
 # PROMO GEST — UI Implementation & Gap Matrix
 
 **Document role:** Source-audited inventory of the current React user interface, its API-backed actions, module ownership, and the gap between today's interface and the product interaction model. This is a current-state record, not a redesign specification or browser-acceptance certificate.  
-**Main commit inspected:** `62ebdcb725e0ab95059e7e4abe64581976898642` (documentation-only merge PR #61).  
-**Last application runtime source commit:** `53c50fbc0db801b9298ec731cfc44f2d4d58ff7f` (PR #59; no later application-source change was found on `main`).  
-**Latest test-source commit:** `53c50fbc0db801b9298ec731cfc44f2d4d58ff7f` (PostgreSQL 18 administrative-reference endpoint regression and frontend preview-contract test).  
-**Last merged documentation PR CI:** Run #584 / [43888881047](https://github.com/younestech31/PROMO-GEST/actions/runs/43888881047) passed all three jobs on PR #61 head `b1f36615f12c1186f481109431c8aa2edd0dc4ae` (documentation-only). This run is not attributed to the merge SHA.  
-**Latest application-source CI:** Run #581 / [43881240365](https://github.com/younestech31/PROMO-GEST/actions/runs/43881240365) passed all three jobs on code SHA `53c50fbc0db801b9298ec731cfc44f2d4d58ff7f`.
+**Main commit inspected:** `a30cc898c1c6de87f83334ac453af03ba31208ce` (documentation-only PR #65 merge).  
+**Last application runtime source commit:** `53c50fbc0db801b9298ec731cfc44f2d4d58ff7f` (PR #59; no later runtime/schema change).  
+**Latest test-source merge:** `ba3106dfd24b0fca915788350e4e1166c0cbe9ce` (PR #63; PostgreSQL 18 setup-singleton and logout/session-revocation regressions).  
+**Latest test-source CI:** Run #589 / [43900696444](https://github.com/younestech31/PROMO-GEST/actions/runs/43900696444) passed all three jobs on PR #63 head `58dde79719db5949033363dfed1e4e9cb8b66f29` (32/32 PG18 integration tests).  
+**Latest documentation CI:** Run #592 / [43904395690](https://github.com/younestech31/PROMO-GEST/actions/runs/43904395690) passed all three jobs on PR #65 head `e0676155419dda46cfbd2cc8ffa9654378cabf83`; this run is not attributed to the later main merge SHA.
 
 ## 1. Reading this matrix correctly
 
@@ -67,22 +67,22 @@ The project directory displays actions for Structure, Customers/Prospects, Reser
 
 ## 6. Verification evidence and unverified boundaries
 
-Latest repository evidence at the time of this audit:
+Latest repository evidence:
 
-- Current `main` is `62ebdcb725e0ab95059e7e4abe64581976898642` (documentation-only PR #61 merge). The last application runtime and test-source commit remains `53c50fbc0db801b9298ec731cfc44f2d4d58ff7f` (PR #59).
-- PR #61's documentation-only head `b1f36615f12c1186f481109431c8aa2edd0dc4ae` passed all three jobs in GitHub Actions Run #584 / [43888881047](https://github.com/younestech31/PROMO-GEST/actions/runs/43888881047). Run #583 / [43884047504](https://github.com/younestech31/PROMO-GEST/actions/runs/43884047504) also passed all three jobs on the prior documentation-only main SHA `20f2e043515bd5cb164ddb2ee3b4a195f0ab86ed`.
-- Application-source CI Run #581 / [43881240365](https://github.com/younestech31/PROMO-GEST/actions/runs/43881240365) passed on `53c50fbc0db801b9298ec731cfc44f2d4d58ff7f`: frontend strict TypeScript, **40/40** frontend tests, production SPA and ASP.NET Core static-host builds, and preview-leak checks.
-- The same application-source run passed Domain **34/34**, Application **20/20**, and PostgreSQL 18 Integration **30/30**, including the 69-Wilaya endpoint contract, least-privilege database identities, and the full database/storage/Data Protection restore drill. Linux and Windows publishing plus PowerShell validation passed.
-- These CI results do not independently verify live Google AI Studio browser behavior or production installation. The Product Owner's Arabic RTL / French LTR desktop/mobile acceptance remains owner-attested in `PHASE-0-MANUAL-ACCEPTANCE.md`, not re-run by CI. P0-A01 and P0-A04 remain `NOT_RUN` and must not be described as passes.
+- Current `main` is `a30cc898c1c6de87f83334ac453af03ba31208ce` (documentation-only PR #65 merge). Last runtime/schema source remains PR #59 commit `53c50fbc0db801b9298ec731cfc44f2d4d58ff7f`; latest test-source merge is PR #63 commit `ba3106dfd24b0fca915788350e4e1166c0cbe9ce`.
+- PR #63 CI Run #589 / [43900696444](https://github.com/younestech31/PROMO-GEST/actions/runs/43900696444) passed all three jobs on tested head `58dde79719db5949033363dfed1e4e9cb8b66f29`: PostgreSQL 18 Integration **32/32**, Domain **34/34**, Application **20/20**, frontend **40/40**, restore drill, and Linux/Windows packaging.
+- PR #65 CI Run #592 / [43904395690](https://github.com/younestech31/PROMO-GEST/actions/runs/43904395690) passed all three jobs on docs-only head `e0676155419dda46cfbd2cc8ffa9654378cabf83`; no run is attributed to its merge SHA.
+- PR #63 automated tests verify the API/database portions of first-run setup and logout revocation. The manual actual-browser cases P0-A01/P0-A04 remain `NOT_RUN`; prior Arabic RTL / French LTR workflows remain Product Owner-attested, not independently re-run by these CI workflows.
+- PR #65 merged the official source-audit documentation for communes. It does not provide the complete 1,541-row crosswalk or import; `communesCount=0` and P1-01 remains In Progress.
 
 **Owner-attested as passed:** Arabic RTL / French LTR desktop/mobile review for the listed real workflows; login/session/CSRF; projects and structure; customers/interactions; internal holds including cancellation/expiry; document upload/download/SHA-256; authorization/audit/concurrency/safe errors; and persistence after reload. See the owner-attested result register in `PHASE-0-MANUAL-ACCEPTANCE.md`.
 
-**Still not evidenced:** P0-A01 first-run setup against a separate empty disposable database and rejection of a second initialization; and P0-A04 logout followed by protected-route/session-revocation verification. Browser/version metadata and sanitized per-case artifacts were not attached. Navigation proposal approval is explicitly deferred to a bounded Phase 1 design review.
+**Still not evidenced manually:** P0-A01 actual browser first-run on a separate empty database and P0-A04 actual browser logout/reload acceptance. Their API/database regression scenarios are automated and green in PR #63 CI #589, but this does not prove the browser workflow. Browser/version metadata and sanitized per-case artifacts were not attached. Navigation proposal approval is explicitly deferred to a bounded Phase 1 design review.
 
 ## 7. Next work by dependency order
 
-1. **Phase 0 residual exceptions:** execute P0-A01 against a separate empty disposable database and verify safe rejection of a second initialization; execute P0-A04 by signing out and proving session revocation and protected-route denial. Keep both recorded as `NOT_RUN` until real evidence exists.
-2. **P1-01 — official commune source audit:** reconcile Law 26-06, Decrees 26-206/26-208 and authoritative government datasets for all 69 Wilaya–commune relationships. The ONS 2021 58-Wilaya reference alone is insufficient.
+1. **Phase 0 manual residual exceptions:** the API/database tests are now green in PR #63 CI #589; execute P0-A01 in the actual browser against a separate empty disposable database and P0-A04 in the actual browser through logout/reload/protected-route denial. Keep manual acceptance `NOT_RUN` until browser evidence exists.
+2. **P1-01 — official commune source audit:** PR #65 has documented the official source hierarchy and delta limitations. Complete the immutable 1,541-row crosswalk by reconciling Law 26-06, Decrees 26-206/26-208, the JO58 territorial-register amendment and the ONS 2021 bilingual historical base; include labels/codes/parents/effective dates and qualified review. The ONS 2021 58-Wilaya reference alone is insufficient.
 3. **P1-02 — commune catalogue implementation:** remains `BLOCKED` until P1-01 is reviewed and accepted. Do not invent codes, labels, parent assignments or effective dates, and preserve historical free-text snapshots.
 4. **P1-03 — Party and Employee master-data scope:** decide the organization-wide identity/contact/identifier/representative boundaries and the separate Employee relationship before expanding the domain.
 5. **P1-04 — bounded navigation review:** compare the current shell and project modals with the three-level organization/project interaction proposal, using this refreshed source matrix; do not begin a broad redesign or weaken server-side ProjectMember authorization.

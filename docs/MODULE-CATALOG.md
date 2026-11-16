@@ -3,9 +3,9 @@
 All 12 functional ERP domains required by PROMO GEST, mapped strictly using the 6-state taxonomy against actual inspected code, controllers, EF configurations, and tests.
 
 **Last Code-Changing Source Baseline:** `23f019de7c787c0f93b5b7f0b5cec69992ff087a` (PR #48 merge; API/health no-store policy).  
-**Main Commit Inspected at Audit Start:** `432e6f8ea76bb540dd5bc69d3314c0d658805ba7` (PR #51 documentation merge).  
-**Latest Green CI at Audit Start:** Run **#546** / `43768228052` — frontend, .NET/PostgreSQL 18, and Windows jobs all passed.  
-**Live Preview / Manual Acceptance Evidence:** On 15 November 2026, the Product Owner confirmed the real Google AI Studio development server/API and PostgreSQL development connection operate, and owner-attested successful Arabic RTL / French LTR desktop/mobile workflows for projects, structure, customer interactions, internal holds, documents/SHA-256, authorization, audit, concurrency, safe errors, and persistence. Detailed group mapping is in `PHASE-0-MANUAL-ACCEPTANCE.md`; P0-A01 and P0-A04 remain unconfirmed.
+**Main Commit Inspected at Audit Start:** `5a5196d75abcdf608e708844983fad25b600e5a4` (PR #52 owner-attested Phase 0 acceptance record).  
+**Latest Green CI at Audit Start:** Run **#550** / `43772604996` — frontend, .NET/PostgreSQL 18, and Windows jobs all passed.  
+**Live Preview / Manual Acceptance Evidence:** On 15 November 2026, the Product Owner confirmed the real Google AI Studio development server/API and PostgreSQL development connection operate, and owner-attested successful Arabic RTL / French LTR desktop/mobile workflows for projects, structure, customer interactions, internal holds, documents/SHA-256, authorization, audit, concurrency, safe errors, and persistence. Detailed group mapping is in `PHASE-0-MANUAL-ACCEPTANCE.md`; Phase 0 was administratively closed by owner decision D-010, with P0-A01 and P0-A04 still `NOT_RUN` as accepted residual exceptions.
 
 ---
 

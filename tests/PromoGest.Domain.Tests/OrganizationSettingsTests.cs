@@ -92,11 +92,12 @@ public sealed class OrganizationSettingsTests
     }
 
     [Theory]
-    [InlineData(-1)]
-    [InlineData(-0.01)]
-    public void UpdateProfile_RejectsNegativeShareCapital(decimal shareCapital)
+    [InlineData(-1d)]
+    [InlineData(-0.01d)]
+    public void UpdateProfile_RejectsNegativeShareCapital(double shareCapitalValue)
     {
         var organization = CreateOrganization();
+        var shareCapital = (decimal)shareCapitalValue;
 
         var exception = Assert.Throws<DomainException>(() => organization.UpdateProfile(
             organization.LegalName,

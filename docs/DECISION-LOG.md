@@ -1,7 +1,7 @@
 # PROMO GEST — Consolidated Decision Log & Architecture Decision Records (ADRs)
 
 **Document Role:** Single repository of architectural, design, and governance decisions for PROMO GEST.  
-**Current Audit Evidence Anchor:** Latest application runtime/schema source remains PR #59 / `53c50fbc0db801b9298ec731cfc44f2d4d58ff7f`; latest regression-test source is PR #63 head `58dde79719db5949033363dfed1e4e9cb8b66f29` (PR CI #589 passed all three jobs). Latest inspected main is PR #70 merge `24d1d57bbe19102c9bbbd63bb31ca2793720d807`; PR #70 head `e1c183f0d2a4a9ab06abf72a955a6169634b73e6` passed PR CI #605 / `43912825520` (3/3 jobs). Post-merge main CI #606 / `43913437191` passed all three jobs on merge SHA `24d1d57bbe19102c9bbbd63bb31ca2793720d807`. PR #68 head `f98a21125cc45c567bb3de49e6516a085734480e` passed CI #601 (3/3); its merge `7d1b14e4...` passed main CI #602 (3/3). D-004 through D-013 are retained as current/historical evidence records.
+**Current Audit Evidence Anchor:** Latest application runtime/schema source remains PR #59 / `53c50fbc0db801b9298ec731cfc44f2d4d58ff7f`; latest regression-test source is PR #63 head `58dde79719db5949033363dfed1e4e9cb8b66f29` (PR CI #589 passed all three jobs). Latest inspected main is PR #72 merge `c920876c2d9c3233d468601e3636cf347a875924`; PR #72 final head `2ebf4be8f4080a8c104ca57dadbeaae3f4f989ba` passed PR CI #612 / `43928612284` (3/3 jobs). Post-merge main CI on the PR #72 merge SHA is not confirmed; latest confirmed main CI remains #606 / `43913437191` on parent SHA `24d1d57bbe19102c9bbbd63bb31ca2793720d807`. PR #68 head `f98a21125cc45c567bb3de49e6516a085734480e` passed CI #601 (3/3); its merge `7d1b14e4...` passed main CI #602 (3/3). D-004 through D-013 are retained as current/historical evidence records.
 
 ---
 
@@ -18,7 +18,7 @@
 | **ADR-0007** | Immutable PostgreSQL Audit Logging | Append-only `audit_logs` table protected by PostgreSQL triggers against UPDATE/DELETE/TRUNCATE. | Accepted & Implemented |
 | **ADR-0008** | Optimistic Concurrency Control (CAS) | `ConcurrencyStamp` check on mutable domain aggregates returning `409 Conflict` on stale updates. | Accepted & Implemented |
 | **ADR-0009** | Organization-Wide Party & Decoupled Employee Identity | Centralized `parties` table for counterparties, separating CRM relationships from canonical identity and decoupling future `Employee` records from optional `User` logins. | Accepted (Party identity and ProjectCustomer mirror retirement implemented; Employee/contact-point/identifier/role extensions remain planned) |
-| **ADR-0010** | Versioned Algerian Administrative Reference Data | 69 Wilayas and verified 1,541 communes with effective dates and transitional authority separation (Decrees 26-206 & 26-208). | Accepted (`PLANNED` dataset integration) |
+| **ADR-0010** | Versioned Algerian Administrative Reference Data | Verified server-owned 69-Wilaya subset; 1,541 communes is the statutory baseline, but 0 commune rows are loaded. Official commune codes are effective-dated external attributes; legal register lineage and transitional-authority separation require reconciliation. | Accepted (complete commune dataset integration remains `PLANNED`) |
 
 ---
 

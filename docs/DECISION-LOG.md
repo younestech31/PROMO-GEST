@@ -1,7 +1,7 @@
 # PROMO GEST — Consolidated Decision Log & Architecture Decision Records (ADRs)
 
 **Document Role:** Single repository of architectural, design, and governance decisions for PROMO GEST.  
-**Current Audit Evidence Anchor:** Latest application runtime source change PR #48 / `23f019de7c787c0f93b5b7f0b5cec69992ff087a`; latest test-source change PR #50 / `c26194dce5124d5d5e8d67fc5a04708346b1d5e4`; main inspected at audit start `432e6f8ea76bb540dd5bc69d3314c0d658805ba7`; latest green main CI Run #546 / `43768228052` (all three jobs passed). D-004 through D-007 are retained as historical/current evidence records.
+**Current Audit Evidence Anchor:** Latest application runtime source change PR #48 / `23f019de7c787c0f93b5b7f0b5cec69992ff087a`; latest test-source change PR #50 / `c26194dce5124d5d5e8d67fc5a04708346b1d5e4`; latest documentation/source-status commit inspected `5a5196d75abcdf608e708844983fad25b600e5a4` (PR #52); latest green main CI Run #550 / `43772604996` (all three jobs passed). D-004 through D-010 are retained as current/historical evidence records.
 
 ---
 
@@ -68,6 +68,13 @@
 - **Rationale:** The current three-level proposal is a product design reference, not implemented functionality. Phase 0 is focused on stabilization and evidenced workflow acceptance; Phase 1 owns foundation completion and product navigation alignment.
 - **Constraints:** This deferral does not authorize broad redesign, automatic project context, client-side-only project filtering, changes to project authorization, or any weakening of server-side membership enforcement. Any Phase 1 implementation must be a separately scoped vertical slice with acceptance criteria and required gates.
 - **Status:** Bounded deferral recorded under the Product Owner's explicit delegation to continue project work; no navigation UI implementation is claimed.
+
+### `D-010`: Product Owner-Directed Phase 0 Closure and Accepted Exceptions (16 November 2026)
+- **Decision:** At the Product Owner's explicit direction, administratively close Phase 0 and begin Phase 1. The owner accepts the remaining Phase 0 test exceptions as known residual risks for purposes of starting Phase 1.
+- **Accepted exceptions:** `P0-A01` (first-run setup against an empty disposable database and rejection of a second initialization) and `P0-A04` (logout/session revocation followed by protected-route denial) remain `NOT_RUN`. Missing per-case browser/version metadata and sanitized supporting artifacts also remain absent. None is relabeled `PASS`.
+- **Evidence boundary:** The successful bilingual desktop/mobile and principal workflow groups recorded in `PHASE-0-MANUAL-ACCEPTANCE.md` remain Product Owner-attested, not CI-executed or independently re-performed by engineering.
+- **Effect:** Phase 0 is `COMPLETE` by explicit Product Owner acceptance with the stated exceptions; Phase 1 is authorized to enter `IN_PROGRESS`. This administrative closure is not evidence that the two unrun checks passed and does not waive G1–G10, data-integrity, authorization, backup/restore, production-release, or practitioner sign-off requirements for later phase transitions.
+- **Follow-up:** Keep P0-A01 and P0-A04 visible in the quality/backlog register and complete them before production release or any release claim that depends on those scenarios.
 
 ## 3. Practitioner Sign-Off Register (`PLANNED`)
 - **Legal (Law 11-04 & Decree 13-431):** Awaiting formal practitioner review of reservation contracts, VSP tranches, FGCMPI escrow separation, and 15% cancellation retention.

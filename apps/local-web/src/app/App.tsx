@@ -198,8 +198,10 @@ export function App() {
           organization={session.organization}
           language={language}
           canManage={
-            session.user.isSystemAdministrator ||
-            session.user.permissions.includes('org.manage')
+            health?.previewMode !== true &&
+            Boolean(session.organization.concurrencyStamp) &&
+            (session.user.isSystemAdministrator ||
+              session.user.permissions.includes('org.manage'))
           }
           onUpdated={(organization) =>
             setSession((current) => current ? { ...current, organization } : current)

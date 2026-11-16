@@ -21,7 +21,7 @@
 
 ---
 
-## 2. Current Gate Status Against Baseline (main source `53c50fbc0db801b9298ec731cfc44f2d4d58ff7f`; main CI #581)
+## 2. Current Gate Status Against Baseline (main SHA `a30cc898c1c6de87f83334ac453af03ba31208ce`; latest test-source PR CI #589; latest docs PR CI #592)
 
 ### Main CI #573 — 16 November 2026
 - **Frontend/static hosting:** passed; strict TypeScript/lint, **39/39** frontend tests, SPA and ASP.NET Core static-host builds, and preview-leak checks.
@@ -52,10 +52,10 @@
 - **G1:** Domain **34/34** and Application **20/20** pass in main CI #581 for covered requirements.
 - **G2:** PostgreSQL 18 verifies migration Up/Down, fail-closed preflight, relationship uniqueness, concurrent duplicate rejection, Party-update collision rejection, data preservation, and model-snapshot parity. Migration #13 adds provider-specific SQL triggers without changing EF entity mapping; the model snapshot therefore has no synthetic model delta.
 - **G3–G7 and G9:** covered authorization, project scope, CSRF, structured errors, concurrency, audit immutability, and regression paths pass in the tested CI baseline.
-- **G8:** automated checks passed (**40/40** frontend tests, TypeScript strict check, builds and preview-leak checks) in main CI #581. Arabic RTL / French LTR browser acceptance remains Product Owner-attested from the prior Phase 0 record, not re-performed by this CI run. P0-A01 first-run/second-initialization and P0-A04 logout/session revocation remain `NOT_RUN`. Arabic RTL / French LTR browser acceptance remains Product Owner-attested from the prior Phase 0 record, not re-performed by this CI run. P0-A01 first-run/second-initialization and P0-A04 logout/session revocation remain `NOT_RUN`.
+- **G8:** PR #65 CI #592 passed strict TypeScript, **40/40** frontend tests, production/static-host builds and preview-leak checks. Arabic RTL / French LTR acceptance remains Product Owner-attested from the prior Phase 0 record. P0-A01 and P0-A04 automated API/database regression tests passed in PR #63 CI #589; the actual browser/manual acceptance cases remain `NOT_RUN` and require separate evidence.
 - **G10:** Linux/Windows packaging and database/storage/Data Protection restore checks passed. Customer-site installation and production migration rehearsal remain separate.
 
-**Phase status:** Phase 0 remains `COMPLETE` by D-010 with P0-A01 and P0-A04 as accepted `NOT_RUN` exceptions. Phase 1 remains `IN_PROGRESS`: Party identity mirror retirement, database duplicate guard, migration lifecycle tests and 69-Wilaya API-to-UI integration are verified. The complete 1,541-commune hierarchy is not loaded; official source reconciliation/import and bounded navigation design remain. No Phase 2–5 business coding begins before applicable G1–G10 gates, Phase 1 dependencies, and legal/accounting approvals pass.
+**Phase status:** Phase 0 remains `COMPLETE` by D-010 with P0-A01/P0-A04 manual browser checks as accepted unrun exceptions; automated PostgreSQL 18 coverage is now present and green in PR #63 CI #589 (32/32). Phase 1 remains `IN_PROGRESS`: Party identity mirror retirement, database duplicate guard, migration lifecycle tests and 69-Wilaya API-to-UI integration are verified. PR #65 merged the commune-source audit documentation, but the complete 1,541-row crosswalk/review/import is not complete (`communesCount = 0`); P1-01 remains In Progress, P1-02 Blocked, and bounded navigation design remains. No Phase 2–5 business coding begins before applicable G1–G10 gates, Phase 1 dependencies, and legal/accounting approvals pass.
 
 ## 3. Statutory / Practitioner Sign-Off Gates (Mandatory Before Phases 2, 3A, 4)
 

@@ -1,9 +1,9 @@
 # PROMO GEST — Product Milestones & Delivery Roadmap
 
 **Document Role:** Dependency-ordered delivery roadmap and execution control for PROMO GEST.  
-**Last Code-Changing Source Baseline:** `065d54cff4e08ed868e676d4cf3d04c715898782` (PR #57 merge; Party identity guard migration lifecycle verification).  
-**Main Commit Inspected:** `065d54cff4e08ed868e676d4cf3d04c715898782`.  
-**Latest Green Main CI:** Run **#573** / `43865150034` — all three jobs passed on main SHA `065d54cff4e08ed868e676d4cf3d04c715898782`.  
+**Last Code-Changing Source Baseline:** `53c50fbc0db801b9298ec731cfc44f2d4d58ff7f` (PR #59 merge; server-owned 69-Wilaya reference integration).  
+**Main Commit Inspected:** `53c50fbc0db801b9298ec731cfc44f2d4d58ff7f`.  
+**Latest Green PR CI:** Run **#580** / `43880708500` — all three jobs passed for PR #59 (frontend 40/40, .NET/PostgreSQL 18 and Windows). Post-merge main CI #581 is being revalidated.  
 **Product Rule:** Deliver complete, secure business workflows in dependency order. Do not let isolated defects, cosmetic changes, or technical administration work displace the ERP product vision.
 
 ---
@@ -13,7 +13,7 @@
 | Phase | Module Scope | Status | Primary Gate Requirements |
 |---|---|---|---|
 | **Phase 0** | Stabilization, runtime proof, and baseline correction | `COMPLETE` (owner-directed closure; D-010) | Product Owner explicitly closed Phase 0 on 16 November 2026 after attesting the principal bilingual desktop/mobile workflows. P0-A01 and P0-A04 remain `NOT_RUN` and are accepted residual exceptions, not passes. Supporting browser/version artifacts were not attached. This administrative closure authorizes Phase 1 only; it does not waive G1–G10 or production-release evidence. |
-| **Phase 1** | Foundation completion, master data, and product navigation alignment | `IN_PROGRESS` | Organization profile editing, `projects.structure.manage`, Party canonical identity, retired ProjectCustomer identity mirrors, and the PostgreSQL 18 project/name/phone duplicate guard are implemented and verified (PRs #55–#57; main CI #573). Remaining Phase 1 work: complete the official versioned 69-Wilaya / 1,541-commune reference data under ADR-0010 and conduct the bounded organization workspace → project switcher → active project workspace design review before any navigation implementation. |
+| **Phase 1** | Foundation completion, master data, and product navigation alignment | `IN_PROGRESS` | Organization profile editing, `projects.structure.manage`, Party canonical identity, retired ProjectCustomer identity mirrors, and the PostgreSQL 18 project/name/phone duplicate guard are implemented and verified (PRs #55–#57). PR #59 connects setup, organization and project Wilaya selectors to the server-owned versioned 69-Wilaya API. Remaining: reconcile and import the authoritative 1,541-commune hierarchy (still 0 loaded records) and complete the bounded organization workspace → project switcher → active project workspace design review before navigation implementation. |
 | **Phase 2** | Contracts, legal deeds, and **K-Min** | `PLANNED` | Complete K-Min metadata/archive/structured DocumentLink capabilities; implement distinct statutory reservation, VSP, and final notarial sale workflows with immutable ContractVersion; obtain qualified Algerian legal/notarial sign-off before encoding statutory rules. |
 | **Phase 3A** | DZD installments, collections, and treasury | `PLANNED` | Versioned PaymentObligation schedules, confirmed cash/bank/check receipts, allocations, refunds/reversals, separation of promoter treasury from FGCMPI escrow, and qualified legal/accounting review. |
 | **Phase 3B / 3C** | Construction works, procurement, and stock | `PLANNED` | Work lots, contractor agreements, site measurements and interim payment situations, accepted ConstructionMilestoneEvidence, supplier directory, purchase orders, and warehouse/site stock ledger. |
@@ -29,7 +29,7 @@ The next work is deliberately bounded. Do not start Phase 2–5 feature coding w
 1. **Phase 0 closure (owner decision D-010):** retain the owner-attested PASS groups for P0-A02, P0-A03, P0-A05 and P0-B–G. Keep P0-A01 and P0-A04 visibly `NOT_RUN` as accepted residual exceptions; complete them before production release or any later gate that relies on those scenarios. Do not relabel them as passed.
 2. **Product-scope map — completed as a documentation baseline:** [UI-IMPLEMENTATION-AND-GAP-MATRIX.md](UI-IMPLEMENTATION-AND-GAP-MATRIX.md) records the current React screens, API-backed actions, module ownership, implementation states, and gaps from source inspection. Keep it synchronized with future UI/API changes; it is not manual browser acceptance.
 3. **Bound navigation decision:** defer approval and implementation of `PROJECT-NAVIGATION-UX.md` to the Phase 1 design review. Keep the current UI intact in Phase 0; Phase 1 must first review the organization workspace, explicit project switcher, active project workspace, and separate technical administration as a bounded design task.
-4. **Execute Phase 1 (IN_PROGRESS):** organization profile editing, `projects.structure.manage`, Party/ProjectCustomer identity separation, PostgreSQL duplicate prevention, and guard migration lifecycle regression tests are delivered and verified. Continue with the versioned territorial reference catalogue and bounded product-navigation design review as separate reviewable slices.
+4. **Execute Phase 1 (IN_PROGRESS):** organization profile editing, `projects.structure.manage`, Party/ProjectCustomer identity separation, PostgreSQL duplicate prevention, and guard migration lifecycle regression tests are delivered and verified. PR #59 verifies the versioned 69-Wilaya reference endpoint and connects the relevant forms to it. Continue with the separately scoped official 1,541-commune data reconciliation/import and bounded product-navigation design review; do not treat the 69-Wilaya slice as completion of the commune catalogue.
 5. **Reassess release scope:** the exact first-production-release boundary remains a Product Owner decision. Do not assume that later legal/financial phases are included or excluded without a documented decision.
 
 ---

@@ -155,6 +155,22 @@ A UserRole is not an employment position. A ProjectMember assignment is not an e
 
 Existing User.FullName and account contact fields must continue to work during the transition. Their future ownership, display fallback and synchronization rules must be specified before introducing Employee; do not create an uncontrolled two-way synchronization loop between User and Party.
 
+### 3.8 Phase 1 scope decision — D-012 (16 November 2026)
+
+The current Phase 1 deliverable is deliberately limited to the existing canonical Party identity and project relationship boundary:
+- `Party` owns only canonical person/legal-entity kind, display name, normalized display name, timestamps and concurrency. It does not own global contact points, government identifiers, representatives or employment data today.
+- `ProjectCustomer` remains the project-scoped Customer/Prospect relationship and keeps its stable UUID, current contact fields, commercial status/source/language, identity-document reference and interactions. These are not copied to `Party` or synchronized across projects.
+- `User` remains the authentication/authorization principal; `ProjectMember` remains project access. Neither is an Employee record or an HR position.
+
+**Explicitly outside Phase 1:**
+1. `PartyContactPoint` — defer until a real cross-project contact use case, ownership/provenance/verification/effective-date rules and project-override policy are approved. Do not globally unique-constrain shared phones or email addresses.
+2. `PartyIdentifier` — defer all sensitive national/fiscal/registration identifier storage until lawful purpose and qualified Algerian review, encryption/key recovery, masking, separate access permissions, audit/log/search redaction, retention/correction and PG18 integrity rules are approved.
+3. `PartyRepresentative` — defer until legal/notarial workflows define authority type, represented Party, dates/status, evidence and permitted acts, with practitioner review.
+4. Generic `ProjectPartyRole` lifecycle — retain `ProjectCustomer` as the compatibility customer relationship. Do not model it as the complete supplier/contractor/consultant role system; add role-aware history only with those later business workflows.
+5. `Employee` — defer HR profile, organization/job history, employment lifecycle and optional one-to-one User link until an HR outcome, data ownership, PII boundary and dedicated permissions are specified. User may exist without Employee and Employee may exist without a login.
+
+This scope fence does not change the Party schema, ProjectCustomer contact ownership, permissions, APIs, migrations or existing data. Existing `CreateEmployeeRequest`/`UpdateEmployeeRequest` and `UserManagementService.CreateEmployeeAsync`/`UpdateEmployeeAsync` names refer to User account operations in the present code; they are not evidence of an Employee entity. No automatic identity merge, contact synchronization or Party/User linking is permitted by this decision. See D-012 in `DECISION-LOG.md`.
+
 ## 4. Matching and duplicate resolution
 
 Candidate matching can use several signals, including:

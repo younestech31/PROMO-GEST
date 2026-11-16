@@ -3,8 +3,8 @@
 **Document Role:** Single authoritative index & master entry point for the PROMO GEST local-first real estate developer ERP (*promoteur immobilier* — Algeria).  
 **Last Application Runtime Source Commit:** `53c50fbc0db801b9298ec731cfc44f2d4d58ff7f` (PR #59 merge; server-owned 69-Wilaya reference integrated into setup, organization and project forms).  
 **Latest Test-Source Commit:** `53c50fbc0db801b9298ec731cfc44f2d4d58ff7f` (PR #59 PostgreSQL 18 endpoint and preview-contract regression tests).  
-**Main Commit Inspected:** `53c50fbc0db801b9298ec731cfc44f2d4d58ff7f`.  
-**Latest Green Main CI:** GitHub Actions Run #583 / `43884047504`; all three jobs passed on documentation-only main SHA `20f2e043515bd5cb164ddb2ee3b4a195f0ab86ed`. Latest code-changing source baseline remains `53c50fbc0db801b9298ec731cfc44f2d4d58ff7f` with application CI #581 / `43881240365` all three jobs passed.  
+**Main Commit Inspected:** `62ebdcb725e0ab95059e7e4abe64581976898642` (documentation-only merge PR #61; latest application runtime/test source remains `53c50fbc0db801b9298ec731cfc44f2d4d58ff7f`).  
+**Latest Documentation PR CI:** GitHub Actions Run #584 / `43888881047`; all three jobs passed on PR #61 head `b1f36615f12c1186f481109431c8aa2edd0dc4ae` (documentation-only; not the merge SHA). Latest application-source baseline remains `53c50fbc0db801b9298ec731cfc44f2d4d58ff7f` with CI #581 / `43881240365` all three jobs passed.  
 **Governing Charter:** Local-first, on-premises per organization, PostgreSQL 18 single source of truth, single System Administrator (`SYSTEM_ADMIN`), HTTP-only `SameSite=Strict` cookie sessions (`promogest_session`) + CSRF, local filesystem storage with SHA-256 verification, Arabic RTL primary / French LTR secondary, Algerian DZD & legal context.
 
 ---

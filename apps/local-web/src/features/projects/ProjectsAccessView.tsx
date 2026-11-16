@@ -10,7 +10,8 @@ import type {
   UserDto,
 } from '../../types/erp';
 import { getTranslations, translateApiError } from '../../localization/translations';
-import { ALGERIAN_WILAYAS, findWilaya, formatDzd } from '../../utils/algerianFormat';
+import { formatDzd } from '../../utils/algerianFormat';
+import { useAdministrativeReference } from '../../hooks/useAdministrativeReference';
 import { canCreateProject, canManageProjectAccess, canManageProjects, canManageProjectStructure, canManageUsers, canReadProjectDocuments, canUploadProjectDocuments, canReadProjectCustomers, canManageProjectCustomers, canReadProjectSalesReservations, canManageProjectSalesReservations } from '../../utils/permissions';
 import { validateCreateProject, type ValidationErrors } from '../../utils/validation';
 import { apiClient, ApiError } from '../../services/apiClient';
@@ -48,8 +49,11 @@ export function ProjectsAccessView({
   onProjectsChanged,
 }: ProjectsAccessViewProps) {
   const t = getTranslations(language);
+  const { reference, isLoading: referenceLoading, hasError: referenceError, retry: retryReference } =
+    useAdministrativeReference();
+  const wilayas = reference?.wilayas ?? [];
 
-  const [projects, setProjects] = useState<ProjectDto[]>([]);
+  const [projects, setProjects = useState<ProjectDto[]>([]);
   const [users, setUsers] = useState<UserDto[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -119,18 +123,27 @@ export function ProjectsAccessView({
   }, []);
 
   const handleWilayaChange = (code: string) => {
-    const w = findWilaya(code);
-    setCreateForm((p) => ({
-      ...p,
+    const wilaya = wilayas.find((item) => item.code === code);
+    if (!wilaya) return;
+    setCreateForm((current) => ({
+      ...current,
       wilayaCode: code,
-      wilayaName: w ? `${w.nameAr} / ${w.nameFr}` : code,
+      wilayaName: wilaya.canonicalDisplayName,
     }));
   };
 
   const handleProjectSubmit = async (e: FormEvent) => {
     e.preventDefault();
     setModalError(null);
-    const validation = validateCreateProject(createForm, language);
+    const selectedWilaya = wilayas.find((wilaya) => wilaya.code === createForm.wilayaCode);
+    if (!selectedWilaya) {
+      setModalError(language === 'ar'
+        ? 'تعذر تحميل مرجع الولايات الرسمي. أعد المحاولة قبل الحفظ.'
+        : 'Le référentiel officiel des wilayas est indisponible. Réessayez avant l’enregistrement.');
+      return;
+    }
+    const canonicalForm = { ...createForm, wilayaName: selectedWilaya.canonicalDisplayName };
+    const validation = validateCreateProject(canonicalForm, language);
     setFormErrors(validation);
     if (Object.keys(validation).length > 0) return;
 
@@ -138,19 +151,19 @@ export function ProjectsAccessView({
     try {
       if (editingProject) {
         const payload: UpdateProjectRequest = {
-          nameAr: createForm.nameAr,
-          nameFr: createForm.nameFr,
-          wilayaCode: createForm.wilayaCode,
-          wilayaName: createForm.wilayaName,
-          municipality: createForm.municipality,
-          address: createForm.address,
-          landTitleReference: createForm.landTitleReference,
-          buildingPermitNumber: createForm.buildingPermitNumber,
-          buildingPermitDate: createForm.buildingPermitDate || null,
-          status: createForm.status,
-          estimatedBudgetDzd: createForm.estimatedBudgetDzd,
-          plannedBlocksCount: createForm.plannedBlocksCount,
-          plannedUnitsCount: createForm.plannedUnitsCount,
+          nameAr: canonicalForm.nameAr,
+          nameFr: canonicalForm.nameFr,
+          wilayaCode: canonicalForm.wilayaCode,
+          wilayaName: canonicalForm.wilayaName,
+          municipality: canonicalForm.municipality,
+          address: canonicalForm.address,
+          landTitleReference: canonicalForm.landTitleReference,
+          buildingPermitNumber: canonicalForm.buildingPermitNumber,
+          buildingPermitDate: canonicalForm.buildingPermitDate || null,
+          status: canonicalForm.status,
+          estimatedBudgetDzd: canonicalForm.estimatedBudgetDzd,
+          plannedBlocksCount: canonicalForm.plannedBlocksCount,
+          plannedUnitsCount: canonicalForm.plannedUnitsCount,
           expectedConcurrencyStamp: editingProject.concurrencyStamp,
         };
         const updated = await apiClient.updateProject(editingProject.id, payload);
@@ -159,8 +172,8 @@ export function ProjectsAccessView({
         onProjectsChanged?.(next);
       } else {
         const created = await apiClient.createProject({
-          ...createForm,
-          buildingPermitDate: createForm.buildingPermitDate || null,
+          ...canonicalForm,
+          buildingPermitDate: canonicalForm.buildingPermitDate || null,
         });
         const next = [created, ...projects];
         setProjects(next);
@@ -545,15 +558,27 @@ export function ProjectsAccessView({
                 </FormField>
 
                 <FormField id="prj-wilaya" label={t.projects.fieldWilaya}>
+                  {referenceError && (
+                    <div role="alert" className="mb-2 text-xs text-red-700">
+                      {language === 'ar' ? 'تعذر تحميل مرجع الولايات.' : 'Impossible de charger le référentiel des wilayas.'}
+                      <button type="button" onClick={retryReference} className="ms-2 underline">
+                        {language === 'ar' ? 'إعادة المحاولة' : 'Réessayer'}
+                      </button>
+                    </div>
+                  )}
                   <select
                     id="prj-wilaya"
                     value={createForm.wilayaCode}
                     onChange={(e) => handleWilayaChange(e.target.value)}
+                    disabled={!reference || referenceLoading}
                     className={inputBaseClass}
                   >
-                    {ALGERIAN_WILAYAS.map((w) => (
-                      <option key={w.code} value={w.code}>
-                        {w.code} — {language === 'ar' ? w.nameAr : w.nameFr}
+                    {!reference && <option value={createForm.wilayaCode}>{referenceLoading
+                      ? (language === 'ar' ? 'جارٍ تحميل الولايات…' : 'Chargement des wilayas…')
+                      : (language === 'ar' ? 'مرجع الولايات غير متاح' : 'Référentiel indisponible')}</option>}
+                    {wilayas.map((wilaya) => (
+                      <option key={wilaya.code} value={wilaya.code}>
+                        {wilaya.code} — {language === 'ar' ? wilaya.nameAr : wilaya.nameFr}
                       </option>
                     ))}
                   </select>
@@ -676,7 +701,7 @@ export function ProjectsAccessView({
                 </button>
                 <button
                   type="submit"
-                  disabled={submitting}
+                  disabled={submitting || !reference}
                   className="px-4 py-2 text-xs font-semibold rounded-md bg-teal-800 text-white hover:bg-teal-900 disabled:opacity-60"
                 >
                   {t.users.save}

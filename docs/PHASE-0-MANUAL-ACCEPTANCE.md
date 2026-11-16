@@ -229,3 +229,23 @@ The original technical exit criteria remain the engineering definition of a full
 6. The Product Owner accepts the navigation/information-architecture proposal or records a bounded decision to defer it.
 
 A prepared checklist is not evidence of execution. A green automated CI run is not a substitute for these manual browser and real-preview criteria.
+
+
+## 9. Additional automated regression evidence — 16 November 2026
+
+PR [#63](https://github.com/younestech31/PROMO-GEST/pull/63) merged the following tests into `main` (merge SHA `ba3106dfd24b0fca915788350e4e1166c0cbe9ce`):
+
+| Automated test | Verified assertions | CI result |
+|---|---|---|
+| `FirstRunSetup_OnEmptyPostgreSql18Database_InitializesExactlyOnce` | Starts from an isolated empty PostgreSQL 18 database; first setup returns 201; second setup returns 409 / `SETUP_ALREADY_INITIALIZED`; exactly one organization, one SYSTEM_ADMIN/user, one role assignment and one `SETUP_INITIALIZED` audit event remain. | PASS — PR CI #589 |
+| `Logout_RevokesServerSession_AndRejectsCurrentAndReplayedCookies` | Logout without CSRF returns 403 and session remains valid; valid logout returns 204 and clears cookie; protected `/api/auth/me` and `/api/audit` return 401; replay of the original cookie from a separate client is rejected; DB session has `IsRevoked` and `RevokedAtUtc`; one `AUTH_LOGOUT` audit event exists. | PASS — PR CI #589 |
+
+**Exact CI evidence:** [Run #589](https://github.com/younestech31/PROMO-GEST/actions/runs/43900696444), on PR head `58dde79719db5949033363dfed1e4e9cb8b66f29`. All three required jobs passed:
+- Frontend/static hosting: strict TypeScript, frontend tests, SPA and ASP.NET Core static builds, preview-leak checks.
+- .NET 10 / PostgreSQL 18: Domain **34/34**, Application **20/20**, Integration **32/32**; full database/storage/Data Protection restore drill passed.
+- Windows publish: Windows x64 publish, machine-scoped Data Protection recovery and PowerShell validation passed.
+
+[Run #592](https://github.com/younestech31/PROMO-GEST/actions/runs/43904395690) subsequently passed all three jobs on main SHA `a30cc898c1c6de87f83334ac453af03ba31208ce` after the documentation-only PR #65 merge.
+
+**Manual/automated distinction remains unchanged:** these integration tests establish server/API/database behavior but do not execute a human browser workflow. Therefore the result register above remains unchanged: P0-A01 and P0-A04 are still `NOT_RUN` for manual browser acceptance. Do not change them to `PASS` based solely on CI. The manual run still requires a dedicated non-production target, supported browser, Arabic/French × desktop/mobile profiles where applicable, and sanitized evidence with no cookies, CSRF values, credentials, or real customer data.
+

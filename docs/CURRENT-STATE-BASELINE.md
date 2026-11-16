@@ -2,11 +2,11 @@
 
 **Document Role:** Evidence-backed snapshot of the repository, not a product roadmap.  
 **Operational Roadmap:** [Notion Master Roadmap](https://app.notion.com/p/41a13e9ed3688127a157dceb9a0b655f) · [Notion Execution Backlog](https://app.notion.com/p/41a13e9ed3688121adbff807d29d4e46). Notion governs work sequencing and task tracking; this file and the current repository remain the source of implementation and verification truth.  
-**Last Application Runtime / Schema Source Commit:** `53c50fbc0db801b9298ec731cfc44f2d4d58ff7f` (PR #59 merge; server-owned 69-Wilaya reference API integrated into setup, organization and project forms).  
-**Latest Test Source Commit:** `53c50fbc0db801b9298ec731cfc44f2d4d58ff7f` (PR #59 merge; PostgreSQL 18 reference endpoint regression and frontend preview-contract test).  
-**Main Commit Inspected:** `62ebdcb725e0ab95059e7e4abe64581976898642` (documentation-only merge PR #61; latest application runtime/test source remains `53c50fbc0db801b9298ec731cfc44f2d4d58ff7f`).  
-**Last Merged Documentation PR CI:** Run **#584** / `43888881047` passed all three jobs on PR #61 head `b1f36615f12c1186f481109431c8aa2edd0dc4ae`; it is not a CI run on merge SHA `62ebdcb725e0ab95059e7e4abe64581976898642`.  
-**Latest Application-Source CI:** Run **#581** / `43881240365` passed all three jobs on application/test SHA `53c50fbc0db801b9298ec731cfc44f2d4d58ff7f`.  
+**Last Application Runtime / Schema Source Commit:** `53c50fbc0db801b9298ec731cfc44f2d4d58ff7f` (PR #59 merge; no runtime/schema changes in the subsequent PRs #63 and #65).  
+**Latest Test Source Commit:** `58dde79719db5949033363dfed1e4e9cb8b66f29` (PR #63 head; adds PostgreSQL 18 first-run setup and logout/session-revocation regression tests).  
+**Main Commit Inspected:** `a30cc898c1c6de87f83334ac453af03ba31208ce` (PR #65 source-audit documentation merge; latest application runtime remains `53c50fbc0db801b9298ec731cfc44f2d4d58ff7f`, latest test source is PR #63 head `58dde79719db5949033363dfed1e4e9cb8b66f29`).  
+**Latest Main CI:** Run **#592** / `43904395690` passed all three jobs on documentation-only main SHA `a30cc898c1c6de87f83334ac453af03ba31208ce` (PR #65 merge).  
+**Latest Application/Test CI:** PR #63 Run **#589** / `43900696444` passed all three jobs on test SHA `58dde79719db5949033363dfed1e4e9cb8b66f29`; the .NET job passed Domain **34/34**, Application **20/20**, PostgreSQL 18 Integration **32/32**, and the full restore drill. Main CI #592 subsequently passed all three jobs after the documentation-only PR #65 merge.  
 **Governing Rule:** A feature is `IMPLEMENTED_AND_VERIFIED` only when its code and applicable automated verification pass in the audited baseline. A green pipeline does not certify untested browser UX, preview parity, production installation, or legal/accounting correctness.
 
 ---
@@ -31,6 +31,17 @@
 - **Overall:** success; this run revalidated the automated baseline but did not execute manual browser acceptance. P0-A01 and P0-A04 were subsequently accepted as explicit unrun exceptions in D-010.
 
 [Open CI Run #550](https://github.com/younestech31/PROMO-GEST/actions/runs/43772604996)
+
+## 1A. Phase 0 residual regression coverage — PR #63
+
+PR #63 is merged. Its test-only change adds two PostgreSQL 18 end-to-end cases without changing runtime behavior:
+
+- `FirstRunSetup_OnEmptyPostgreSql18Database_InitializesExactlyOnce`: verifies a fresh isolated database begins empty/uninitialized, first initialization succeeds, second initialization returns `409 SETUP_ALREADY_INITIALIZED`, exactly one organization and one `SYSTEM_ADMIN` user exist, one role assignment exists, and one `SETUP_INITIALIZED` audit event is recorded.
+- `Logout_RevokesServerSession_AndRejectsCurrentAndReplayedCookies`: verifies missing-CSRF logout is rejected without revoking the session; valid logout clears the browser cookie; protected `/api/auth/me` and `/api/audit` return 401; replaying the original cookie from another client is rejected; the database session is revoked and one `AUTH_LOGOUT` audit event exists.
+
+**PR CI #589:** all three jobs passed on PR head `58dde79719db5949033363dfed1e4e9cb8b66f29`. Exact .NET results: Domain **34/34**, Application **20/20**, PostgreSQL 18 Integration **32/32**. The full database/storage/Data Protection restore drill passed, as did frontend strict TypeScript/tests/build/static-host checks and Windows x64 publish/PowerShell validation.
+
+**Boundary:** these are automated PostgreSQL/API integration tests. They do not change the manual browser result register: P0-A01 and P0-A04 remain `NOT_RUN` pending real-preview/local browser execution and sanitized evidence. No production database, Google AI Studio Cloud SQL data, credentials, or deployment was changed.
 
 ## 2. Verified CI Evidence
 

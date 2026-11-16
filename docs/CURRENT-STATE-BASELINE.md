@@ -2,10 +2,11 @@
 
 **Document Role:** Evidence-backed snapshot of the repository, not a product roadmap.  
 **Operational Roadmap:** [Notion Master Roadmap](https://app.notion.com/p/41a13e9ed3688127a157dceb9a0b655f) · [Notion Execution Backlog](https://app.notion.com/p/41a13e9ed3688121adbff807d29d4e46). Notion governs work sequencing and task tracking; this file and the current repository remain the source of implementation and verification truth.  
-**Last Application Runtime / Schema Source Commit:** `53c50fbc0db801b9298ec731cfc44f2d4d58ff7f` (PR #59 merge; no runtime/schema changes in subsequent documentation/test-only PRs #63, #65, #66, #68, #69, or #70).  
+**Last Application Runtime / Schema Source Commit:** `53c50fbc0db801b9298ec731cfc44f2d4d58ff7f` (PR #59 merge; no runtime/schema changes in subsequent documentation/test-only PRs #63, #65, #66, #68, #69, #70, #71, or #72).  
 **Latest Test Source Commit:** `58dde79719db5949033363dfed1e4e9cb8b66f29` (PR #63 head; adds PostgreSQL 18 first-run setup and logout/session-revocation regression tests).  
-**Main Commit Inspected:** `24d1d57bbe19102c9bbbd63bb31ca2793720d807` (PR #70 documentation-only merge; latest application runtime remains `53c50fbc0db801b9298ec731cfc44f2d4d58ff7f`, latest test source remains PR #63 head `58dde79719db5949033363dfed1e4e9cb8b66f29`).  
-**Latest Main CI:** Run **#606** / `43913437191` passed all three jobs on main SHA `24d1d57bbe19102c9bbbd63bb31ca2793720d807` (PR #70 merge).  
+**Main Commit Inspected:** `c920876c2d9c3233d468601e3636cf347a875924` (PR #72 documentation-only merge; latest application runtime remains `53c50fbc0db801b9298ec731cfc44f2d4d58ff7f`, latest test source remains PR #63 head `58dde79719db5949033363dfed1e4e9cb8b66f29`).  
+**Latest Main CI:** Run **#606** / `43913437191` passed all three jobs on main SHA `24d1d57bbe19102c9bbbd63bb31ca2793720d807` (PR #70 merge); no post-merge CI has been confirmed for PR #71 or PR #72.  
+**Latest Documentation PR CI:** PR #72 Run **#612** / `43928612284` passed all three jobs on PR head `2ebf4be8f4080a8c104ca57dadbeaae3f4f989ba`; PR #72 merged to main at `c920876c2d9c3233d468601e3636cf347a875924`. The run is PR-head evidence, not a post-merge run on the merge SHA.  
 **Latest Application/Test CI:** PR #63 Run **#589** / `43900696444` passed all three jobs on test SHA `58dde79719db5949033363dfed1e4e9cb8b66f29`; the .NET job passed Domain **34/34**, Application **20/20**, PostgreSQL 18 Integration **32/32**, and the full restore drill. Main CI #592 subsequently passed all three jobs after the documentation-only PR #65 merge.  
 **Governing Rule:** A feature is `IMPLEMENTED_AND_VERIFIED` only when its code and applicable automated verification pass in the audited baseline. A green pipeline does not certify untested browser UX, preview parity, production installation, or legal/accounting correctness.
 
@@ -46,6 +47,13 @@
 - PR #69 head `e6345ae4d3f3b9497ca7d16824b10a8cb5a6cd60`; PR CI #603 / `43911049988` passed all 3 jobs.
 - Merge SHA `4fdfcb2679231ff81b8756a8da6ba3045bea5288`; main CI #604 / `43911498773` passed all 3 jobs (frontend/static hosting, .NET 10 + PostgreSQL 18 least-privilege integration and restore drill, Windows x64/PowerShell).
 - The one-line change removed a duplicated D-012 bullet only. No runtime, schema, migrations, permissions, business records, production/Cloud SQL data, credentials or deployment changed.
+
+### PR #72 — Territorial register code lineage (documentation only)
+- PR #72 head `2ebf4be8f4080a8c104ca57dadbeaae3f4f989ba`; PR CI Run **#612** / `43928612284` passed all three required jobs (frontend/static hosting, .NET 10 + PostgreSQL 18 least-privilege/integration and restore drill, Windows x64 publish/PowerShell validation).
+- Merge SHA `c920876c2d9c3233d468601e3636cf347a875924`; post-merge main CI for this SHA is not confirmed in this audit.
+- Updated `REFERENCE-DATA-GOVERNANCE.md` and ADR-0010 with Decree 85-20's code lifecycle rule, and the confirmed 1985, 1986, 1998, 2021 and 2026 register instruments. The amendment inventory remains explicitly non-exhaustive; the full 1,541-row bilingual crosswalk and qualified review remain outstanding.
+- Stable internal UUID versus effective-dated official code is an application integrity decision, not a rule attributed to Decree 85-20.
+- Documentation only: no runtime, API, UI, router, schema, migration, permissions, security policy, business data, production database, Google AI Studio Cloud SQL, credentials, or deployment changed.
 
 ### Phase 1 design review — P1-04 / D-013 (PR #70 merged; design approved)
 - PR #70 head `e1c183f0d2a4a9ab06abf72a955a6169634b73e6` passed PR CI #605 / `43912825520` (all three jobs); merge SHA `24d1d57bbe19102c9bbbd63bb31ca2793720d807` passed main CI #606 / `43913437191` (all three jobs).

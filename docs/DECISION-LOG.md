@@ -19,7 +19,7 @@
 | **ADR-0008** | Optimistic Concurrency Control (CAS) | `ConcurrencyStamp` check on mutable domain aggregates returning `409 Conflict` on stale updates. | Accepted & Implemented |
 | **ADR-0009** | Organization-Wide Party & Decoupled Employee Identity | Centralized `parties` table for counterparties, separating CRM relationships from canonical identity and decoupling future `Employee` records from optional `User` logins. | Accepted (Party identity and ProjectCustomer mirror retirement implemented; Employee/contact-point/identifier/role extensions remain planned) |
 | **ADR-0010** | Versioned Algerian Administrative Reference Data | Verified server-owned 69-Wilaya subset; 1,541 communes is the statutory baseline, but 0 commune rows are loaded. Official commune codes are effective-dated external attributes; legal register lineage and transitional-authority separation require reconciliation. | Accepted (complete commune dataset integration remains `PLANNED`) |
-| **ADR-0011** | Project Estimated Budget Requires Financial Capability | EstimatedBudgetDzd read requires explicit ProjectMember.CanViewFinancials; write additionally requires projects.manage and Project Manager membership; no administrator/manager bypass. | Accepted; implementation verification pending |
+| **ADR-0011** | Project Estimated Budget Requires Financial Capability | EstimatedBudgetDzd read requires explicit ProjectMember.CanViewFinancials; write additionally requires projects.manage and Project Manager membership; no administrator/manager bypass. | Accepted; implementation merged; manual verification pending |
 
 ---
 

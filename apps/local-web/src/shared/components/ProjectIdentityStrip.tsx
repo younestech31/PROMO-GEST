@@ -1,4 +1,4 @@
-import { ArrowLeftRight, FolderKanban, MapPin, Pin, PinOff } from 'lucide-react';
+import { FolderKanban, MapPin, Pin, PinOff } from 'lucide-react';
 import type { AppLanguage, ProjectDto } from '../../types/erp';
 
 interface ProjectIdentityStripProps {
@@ -6,7 +6,6 @@ interface ProjectIdentityStripProps {
   language: AppLanguage;
   isPinned: boolean;
   onTogglePin: () => void;
-  onOpenSwitcher: () => void;
   onBrowseDirectory: () => void;
 }
 
@@ -27,7 +26,6 @@ export function ProjectIdentityStrip({
   language,
   isPinned,
   onTogglePin,
-  onOpenSwitcher,
   onBrowseDirectory,
 }: ProjectIdentityStripProps) {
   const isArabic = language === 'ar';
@@ -83,15 +81,6 @@ export function ProjectIdentityStrip({
           >
             {isPinned ? <PinOff className="h-3.5 w-3.5" aria-hidden="true" /> : <Pin className="h-3.5 w-3.5" aria-hidden="true" />}
             <span>{isPinned ? (isArabic ? 'إلغاء التثبيت' : 'Désépingler') : (isArabic ? 'تثبيت' : 'Épingler')}</span>
-          </button>
-
-          <button
-            type="button"
-            onClick={onOpenSwitcher}
-            className="inline-flex items-center gap-1.5 rounded border border-teal-700 bg-teal-800 px-3 py-1.5 text-xs font-semibold text-white hover:bg-teal-900 transition-colors"
-          >
-            <ArrowLeftRight className="h-3.5 w-3.5" aria-hidden="true" />
-            <span>{isArabic ? 'تبديل المشروع' : 'Changer de projet'}</span>
           </button>
 
           <button

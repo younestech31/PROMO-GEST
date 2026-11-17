@@ -4,6 +4,18 @@
 **Scope:** Project selection, switching, multi-project work, and project-specific navigation  
 **Applies to:** The local-first organization-wide ERP shell and project workspace
 
+## D-015 implementation refinement — one switch point and one project menu (17 November 2026)
+
+The approved D-013 model is refined to remove competing controls:
+
+- **Single project switcher:** the global ERP header is the only place that opens the project switcher, whether the user is in the organization workspace or inside an active project. Do not add separate switch buttons to the project identity strip or the active-project sidebar heading.
+- **Identity strip:** retain the project code, localized name, location and status so the active context remains visible. Keep pin/unpin and the explicit Project Directory action; neither is a project switch control.
+- **Single project menu:** keep the active-project navigation list in the persistent sidebar. Do not render a second horizontal project tab bar in the workspace content. The active route, section heading and breadcrumb remain unchanged.
+- **Unchanged safety:** URL-per-tab context, global shortcut, server-authorized switcher search, Project Directory, pinned/recent preference revalidation, unsaved-change confirmation and revoked-membership handling remain in force. The browser cannot grant itself project access.
+- **Implementation boundary:** the change is limited to React navigation presentation. No API, backend, schema, migrations, permission logic, business workflow, production, Cloud SQL, credentials or deployment changes.
+
+The code change is tracked by Notion P1-20. Automated CI is evidence for compilation and regression tests; Arabic RTL / French LTR, desktop/mobile, keyboard/focus and dirty-switch journeys require separate browser acceptance.
+
 ## Current repository implementation check — 16–17 November 2026
 
 Source inspected at main merge SHA `eff036401809bdee4c4ef9a2b9467ac863ae7f95`: ASP.NET Core 10 runtime/schema source remains unchanged; frontend architecture and navigation safeguards are under `apps/local-web/`. Post-merge main CI Run #730 passed all three jobs, but no browser walkthrough for this merge was executed.
@@ -114,7 +126,7 @@ The project identity must be visible on every project-scoped page, including mod
 - Wilaya / municipality.
 - Overall project status.
 - Current operational stage/health summary where available.
-- An obvious switch-project control.
+- Project switching is performed only by the single persistent global-header control; the identity strip does not repeat the switch action (refined by D-015).
 
 Do not identify a project by color alone. Never rely only on the project name if it may be duplicated. The unique code is essential.
 

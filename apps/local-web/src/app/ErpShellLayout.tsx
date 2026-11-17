@@ -200,16 +200,6 @@ export function ErpShellLayout({
                   {activeProject?.code ?? activeRoute.projectId}
                 </p>
               </div>
-              <button
-                type="button"
-                onClick={() => {
-                  setMobileMenuOpen(false);
-                  onOpenSwitcher();
-                }}
-                className="rounded border border-slate-700 px-1.5 py-0.5 text-[10px] text-slate-300 hover:bg-slate-800"
-              >
-                {isArabic ? 'تبديل' : 'Changer'}
-              </button>
             </div>
 
             <div className="space-y-1">

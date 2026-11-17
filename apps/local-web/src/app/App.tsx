@@ -194,7 +194,6 @@ export function AppContentRouter({
           onNavigateOrgHome={() => onNavigate(DEFAULT_APP_ROUTE)}
           onNavigateProjectsDirectory={() => onNavigate({ kind: 'org', section: 'projects' })}
           onNavigateAudit={() => onNavigate({ kind: 'admin', section: 'audit' })}
-          onOpenSwitcher={onOpenSwitcher}
           onProjectVerified={onProjectVerified}
           onProjectVerificationFailed={onProjectVerificationFailed}
           onDirtyChange={onDirtyChange}

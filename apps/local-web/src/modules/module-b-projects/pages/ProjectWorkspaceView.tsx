@@ -73,7 +73,6 @@ interface ProjectWorkspaceViewProps {
   onNavigateOrgHome: () => void;
   onNavigateProjectsDirectory: () => void;
   onNavigateAudit: () => void;
-  onOpenSwitcher: () => void;
   onProjectVerified: (project: ProjectDto) => void;
   onProjectVerificationFailed: (projectId: string) => void;
   onDirtyChange: (dirty: boolean) => void;
@@ -131,7 +130,6 @@ export function ProjectWorkspaceView({
   onNavigateOrgHome,
   onNavigateProjectsDirectory,
   onNavigateAudit,
-  onOpenSwitcher,
   onProjectVerified,
   onProjectVerificationFailed,
   onDirtyChange,
@@ -465,43 +463,8 @@ export function ProjectWorkspaceView({
         language={language}
         isPinned={isPinned}
         onTogglePin={() => onTogglePin(project.id)}
-        onOpenSwitcher={onOpenSwitcher}
         onBrowseDirectory={onNavigateProjectsDirectory}
       />
-
-      {/* Active Project Tab Bar */}
-      <nav
-        aria-label={isArabic ? 'أقسام المشروع النشط' : 'Sections du projet actif'}
-        className="flex items-center gap-1.5 overflow-x-auto rounded-lg border border-slate-200 bg-white p-2"
-      >
-        {WORKSPACE_TABS.map((tab) => {
-          const active = tab.id === section;
-          return (
-            <button
-              key={tab.id}
-              type="button"
-              onClick={() => onNavigateSection(tab.id)}
-              className={`inline-flex shrink-0 items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-semibold transition-colors whitespace-nowrap ${
-                active
-                  ? 'bg-teal-800 text-white'
-                  : 'text-slate-700 hover:bg-slate-100'
-              }`}
-            >
-              <span className="font-data text-[10px] opacity-80">{tab.moduleCode}</span>
-              <span>{isArabic ? tab.ar : tab.fr}</span>
-              {tab.planned && (
-                <span
-                  className={`rounded px-1 py-0.2 text-[9px] font-bold uppercase ${
-                    active ? 'bg-teal-950/50 text-amber-200' : 'bg-amber-50 text-amber-800 border border-amber-200'
-                  }`}
-                >
-                  {isArabic ? 'مخطط' : 'Planifié'}
-                </span>
-              )}
-            </button>
-          );
-        })}
-      </nav>
 
       {/* Section PageHeader */}
       {section !== 'reports' && (

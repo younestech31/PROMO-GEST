@@ -1343,6 +1343,27 @@ public sealed class ApplicationSecurityAndFoundationTests
         var explicitlyAuthorizedAdminRead = await projectSvc.GetProjectByIdAsync(init.SystemAdminUserId, project.Id, metadata);
         Assert.Equal(125_000_000m, explicitlyAuthorizedAdminRead.EstimatedBudgetDzd);
 
+        var adminFinanceControllerWrite = await Assert.ThrowsAsync<ForbiddenDomainException>(() =>
+            projectSvc.UpdateProjectAsync(
+                init.SystemAdminUserId,
+                project.Id,
+                financialUpdate with { EstimatedBudgetDzd = 140_000_000m, ExpectedConcurrencyStamp = explicitlyAuthorizedAdminRead.ConcurrencyStamp },
+                metadata));
+        Assert.Equal("PROJECT_FINANCIAL_ACCESS_DENIED", adminFinanceControllerWrite.Code);
+
+        await projectSvc.AssignMemberAsync(
+            init.SystemAdminUserId,
+            project.Id,
+            new AssignProjectMemberRequest(init.SystemAdminUserId, nameof(ProjectRole.ProjectManager), true, true, true, true),
+            metadata);
+        var adminProjectManagerRead = await projectSvc.GetProjectByIdAsync(init.SystemAdminUserId, project.Id, metadata);
+        var adminManagerBudgetUpdate = await projectSvc.UpdateProjectAsync(
+            init.SystemAdminUserId,
+            project.Id,
+            financialUpdate with { EstimatedBudgetDzd = 175_000_000m, ExpectedConcurrencyStamp = adminProjectManagerRead.ConcurrencyStamp },
+            metadata);
+        Assert.Equal(175_000_000m, adminManagerBudgetUpdate.EstimatedBudgetDzd);
+
         var restrictedAfterUpdate = await projectSvc.GetProjectByIdAsync(restrictedManager.Id, project.Id, metadata);
         Assert.Null(restrictedAfterUpdate.EstimatedBudgetDzd);
 

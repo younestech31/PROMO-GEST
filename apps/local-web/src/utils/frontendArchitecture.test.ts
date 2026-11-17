@@ -26,19 +26,19 @@ function walk(directory: string): string[] {
 
 function moduleSpecifiers(source: string): string[] {
   const specifiers: string[] = [];
-  const declarations = source.matchAll(/^\\s*(?:import|export)\\b[\\s\\S]*?;/gm);
+  const declarations = source.matchAll(/^\s*(?:import|export)\b[\s\S]*?;/gm);
 
   for (const declaration of declarations) {
-    const from = declaration[0].match(/\\bfrom\\s*['"]([^'"]+)['"]/);
+    const from = declaration[0].match(/\bfrom\s*['"]([^'"]+)['"]/);
     if (from) {
       specifiers.push(from[1]);
       continue;
     }
-    const sideEffect = declaration[0].match(/^\\s*import\\s*['"]([^'"]+)['"]/);
+    const sideEffect = declaration[0].match(/^\s*import\s*['"]([^'"]+)['"]/);
     if (sideEffect) specifiers.push(sideEffect[1]);
   }
 
-  for (const dynamicImport of source.matchAll(/\\bimport\\s*\\(\\s*['"]([^'"]+)['"]\\s*\\)/g)) {
+  for (const dynamicImport of source.matchAll(/\bimport\s*\(\s*['"]([^'"]+)['"]\s*\)/g)) {
     specifiers.push(dynamicImport[1]);
   }
 
@@ -108,6 +108,24 @@ function findCycle(graph: Map<string, Set<string>>): string[] | null {
   }
   return null;
 }
+
+test('moduleSpecifiers detects named, type-only, re-export, side-effect and dynamic imports', () => {
+  const fixture = [
+    "import value from '@/modules/module-a-organization';",
+    "import type { ProjectDto } from '../types/erp';",
+    "export { projectsApi } from './api/projectsApi';",
+    "import '../styles/theme.css';",
+    "void import('../lazy/LazyView');",
+  ].join('\n');
+
+  assert.deepEqual(moduleSpecifiers(fixture), [
+    '@/modules/module-a-organization',
+    '../types/erp',
+    './api/projectsApi',
+    '../styles/theme.css',
+    '../lazy/LazyView',
+  ]);
+});
 
 test('the modular frontend has one canonical registry and complete unique module ownership A-L', () => {
   assert.equal(ERP_MODULE_CATALOG, ERP_MODULE_REGISTRY);

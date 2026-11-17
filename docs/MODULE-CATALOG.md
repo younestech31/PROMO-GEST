@@ -2,9 +2,9 @@
 
 All 12 functional ERP domains required by PROMO GEST, mapped strictly using the 6-state taxonomy against actual inspected code, controllers, EF configurations, and tests.
 
-**Last ASP.NET Core / Schema Source Baseline:** `53c50fbc0db801b9298ec731cfc44f2d4d58ff7f` (PR #59 merge; server-owned 69-Wilaya reference integrated with the main forms). **Frontend base:** main SHA `9af8324dc516c7536eda33c2a487275c30e792d3`; frontend stabilization PR #81 remains open.  
-**Main Commit Inspected:** `9af8324dc516c7536eda33c2a487275c30e792d3` (base of the current frontend-only PR #81). The backend/schema source is unchanged by PR #81.  
-**Latest frontend architecture PR CI:** PR #81 head `fbc3b0cba956f2116cd213360be5f4997002f503`; Run #716 / `44078156453` passed all three jobs (66/66 frontend tests, strict TypeScript, Vite and ASP.NET Core static-host builds, .NET 10/PostgreSQL 18 checks, Windows publish/PowerShell). PR remains open and unmerged; manual browser acceptance is pending. **Latest historical documentation PR CI:** PR #79 Run #628 / `43971379730` passed all three jobs on PR head `f18e4ae884440f5024ff92f8edf14ccb02fd2b31`. **Latest test-source CI:** PR #67 Run #595 / `43907255613` passed all three jobs on test-only head `6e37abf8eb170f2c4dfc136dc481bdf7a11f22d2`. **Latest application-source CI:** Run #581 / `43881240365` passed all three jobs on runtime/schema source `53c50fbc0db801b9298ec731cfc44f2d4d58ff7f` (frontend 40/40, Domain 34/34, Application 20/20, PostgreSQL 18 Integration 30/30, restore drill, Windows x64).
+**Last ASP.NET Core / Schema Source Baseline:** `53c50fbc0db801b9298ec731cfc44f2d4d58ff7f` (PR #59 merge; server-owned 69-Wilaya reference integrated with the main forms). **Frontend main baseline:** merge SHA `eff036401809bdee4c4ef9a2b9467ac863ae7f95` (PR #81).  
+**Main Commit Inspected:** `eff036401809bdee4c4ef9a2b9467ac863ae7f95` (PR #81 merge). The backend/schema source remains `53c50fbc0db801b9298ec731cfc44f2d4d58ff7f`.  
+**Latest frontend architecture delivery:** PR #81 merged; post-merge main Run #730 / `44091044674` passed all three jobs (68/68 frontend tests, strict TypeScript, Vite and ASP.NET Core static-host builds, .NET 10/PostgreSQL 18 checks, Windows publish/PowerShell). Manual browser acceptance remains pending. **Latest historical documentation PR CI:** PR #79 Run #628 / `43971379730` passed all three jobs on PR head `f18e4ae884440f5024ff92f8edf14ccb02fd2b31`. **Latest test-source CI:** PR #67 Run #595 / `43907255613` passed all three jobs on test-only head `6e37abf8eb170f2c4dfc136dc481bdf7a11f22d2`. **Latest application-source CI:** Run #581 / `43881240365` passed all three jobs on runtime/schema source `53c50fbc0db801b9298ec731cfc44f2d4d58ff7f` (frontend 40/40, Domain 34/34, Application 20/20, PostgreSQL 18 Integration 30/30, restore drill, Windows x64).
 **Live Preview / Manual Acceptance Evidence:** On 15 November 2026, the Product Owner confirmed the real Google AI Studio development server/API and PostgreSQL development connection operate, and owner-attested successful Arabic RTL / French LTR desktop/mobile workflows for projects, structure, customer interactions, internal holds, documents/SHA-256, authorization, audit, concurrency, safe errors, and persistence. Detailed group mapping is in `PHASE-0-MANUAL-ACCEPTANCE.md`; Phase 0 was administratively closed by owner decision D-010, with P0-A01 and P0-A04 still `NOT_RUN` as accepted residual exceptions.
 
 ---
@@ -28,13 +28,14 @@ All 12 functional ERP domains required by PROMO GEST, mapped strictly using the 
 
 ---
 
-## 2. Frontend platform and module ownership — PR #81 (open; CI #716 passed)
+## 2. Frontend platform and module ownership — PR #81 (merged; main CI #730 passed)
 
 - Canonical frontend entry points: `core/api/apiClient.ts`, `core/api/csrf.ts`, `core/permissions/permissionPolicy.ts`, `core/modules/registry.ts`, `core/modules/moduleCodes.ts`, `core/modules/routeTypes.ts`, `app/routeRegistry.ts`, and `core/localization/translations.ts`.
 - Legacy `services/apiClient.ts`, CSRF utilities, `utils/permissions.ts`, `utils/moduleCatalog.ts`, `utils/navigation.ts`, `utils/workspaceGuards.ts`, and `localization/translations.ts` are explicit compatibility adapters, not alternate implementations.
-- Active screen implementations moved into owning `modules/` directories for A–E, K, L and technical administration; former feature paths remain compatibility facades while remaining consumers migrate. F–J remain planned module pages, with workflow display metadata under each module's `presentation/workflows.ts` rather than `api/`.
-- The canonical registry test verifies module codes A–L, unique ownership directories and unique sub-screen IDs. A source-level architecture test verifies single API/CSRF/route/localization implementations, tested adapters, F–J presentation/API boundaries, and explicit planned-endpoint rejection.
-- Not all shared visual components have been consolidated into `shared/components`; root-level component compatibility and migration remain a known follow-up. PR #81 automated CI passed, but desktop/mobile Arabic RTL and French LTR browser acceptance has not been performed. PR #81 is open and not merged.
+- Active screen implementations now live in owning `modules/` directories for A–E, K, L, auth, setup and technical administration; Login and first-run setup have module-owned page implementations. Former `features/`, root `components/`, `layouts/` and duplicate utility paths are compatibility facades.
+- Reusable visual components are owned by `shared/components/`; active application/module code imports that surface. F–J remain planned business capabilities, with display metadata under module `presentation/workflows.ts` rather than `api/`.
+- Architecture regression tests verify module entry points, import parsing for static/type-only/re-export/side-effect/dynamic imports, public-index-only peer dependencies, acyclic module graph, no active imports from legacy `features/`, unique shared-component/API/CSRF/localization implementations, planned endpoint rejection, and the F–J presentation/API boundary.
+- Post-merge main CI Run #730 passed, but manual Arabic RTL / French LTR desktop/mobile browser acceptance and real dirty-form interaction evidence have not been performed. Navigation remains `IMPLEMENTED_NOT_VERIFIED` for manual UX acceptance.
 
 ## 3. Detailed Module Specifications (A–L)
 
@@ -52,7 +53,7 @@ All 12 functional ERP domains required by PROMO GEST, mapped strictly using the 
 - **Target Scope (`PLANNED`):** Active session revocation UI, HR Employee master, and the complete effective-dated 1,541-commune hierarchy (`communesCount = 0`).
 
 ### B. Real Estate Projects (`IMPLEMENTED_NOT_VERIFIED` — workspace shell)
-- **Frontend surface:** `modules/module-b-projects/pages/ProjectsAccessView.tsx`, `pages/ProjectWorkspaceView.tsx`, and `components/ProjectSwitcherModal.tsx` (`Ctrl/Cmd+K` outside editable controls). Former feature/component paths are compatibility facades. PR #81 Run #716 passed strict TypeScript, frontend tests and builds; manual navigation acceptance remains outstanding.
+- **Frontend surface:** `modules/module-b-projects/pages/ProjectsAccessView.tsx`, `pages/ProjectWorkspaceView.tsx`, and `components/ProjectSwitcherModal.tsx` (`Ctrl/Cmd+K` outside editable controls). Former feature/component paths are tested compatibility facades. PR #81 is merged and post-merge main CI #730 passed; manual navigation acceptance remains outstanding.
 - **Current Reality:** `GET/POST /api/projects`, `GET/PUT /api/projects/{projectId}`, `PUT /api/projects/{projectId}/members`, `DELETE /api/projects/{projectId}/members/{userId}`. Dynamic `actualBuildingsCount`/`actualUnitsCount`, `ExpectedConcurrencyStamp` CAS protection, last-PM guard, Wilaya `01–69`. Project-access revocation clears cached stale context (`revokeProjectAccessFromState`).
 - **Target Scope (`PLANNED`):** Structured land parcel references, subdivision/viability certificates, building permits, and VSP eligibility metadata linked to local verified files.
 

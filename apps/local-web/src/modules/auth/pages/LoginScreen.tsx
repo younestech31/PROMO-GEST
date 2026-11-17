@@ -12,6 +12,7 @@ interface LoginScreenProps {
   language: AppLanguage;
   onLanguageChange: (lang: AppLanguage) => void;
   organizationName: string | null;
+  setupCompleted?: boolean;
   onLoggedIn: (session: SessionResponse) => void;
   isPreviewMode: boolean;
   onPreviewLogin: () => Promise<void>;
@@ -21,6 +22,7 @@ export function LoginScreen({
   language,
   onLanguageChange,
   organizationName,
+  setupCompleted = false,
   onLoggedIn,
   isPreviewMode,
   onPreviewLogin,
@@ -92,6 +94,15 @@ export function LoginScreen({
             <h1 className="text-xl font-bold text-slate-900">{t.auth.title}</h1>
             <p className="text-xs text-slate-500 mt-1.5 leading-relaxed">{t.auth.subtitle}</p>
           </div>
+
+          {setupCompleted && (
+            <div
+              role="status"
+              className="mb-5 rounded-md border border-teal-200 bg-teal-50 px-3.5 py-2.5 text-xs font-medium text-teal-900"
+            >
+              {t.auth.setupCompletedNotice}
+            </div>
+          )}
 
           {authError && (
             <div

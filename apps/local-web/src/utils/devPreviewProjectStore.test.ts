@@ -6,6 +6,7 @@ import type { AddressInfo } from 'node:net';
 import type { ViteDevServer } from 'vite';
 import {
   canUserAccessProjectStructure,
+  canUserViewProjectFinancials,
   changeUnitStatusInStore,
   computeProjectStructureCounts,
   createBuildingInStore,
@@ -18,6 +19,7 @@ import {
   updateProjectInStore,
   updateUnitInStore,
   withComputedStructureCounts,
+  withProjectFinancialVisibility,
 } from './devPreviewProjectStore';
 import { createPromoGestDevApiPlugin } from '../../dev-api-middleware';
 import type { ProjectDto, ProjectStructureDto, UserDto } from '../types/erp';
@@ -479,6 +481,23 @@ test('devPreviewProjectStore enforces uniqueness, area bounds, concurrency stamp
   assert.equal(updatedProject.status, 'Commercialization');
   assert.notEqual(updatedProject.concurrencyStamp, originalConcurrencyStamp);
 
+  const nullBudgetUpdate = updateProjectInStore(
+    { ...updatedProject },
+    {
+      expectedConcurrencyStamp: updatedProject.concurrencyStamp,
+      nameAr: updatedProject.nameAr,
+      nameFr: updatedProject.nameFr,
+      wilayaCode: updatedProject.wilayaCode,
+      wilayaName: updatedProject.wilayaName,
+      municipality: updatedProject.municipality,
+      status: updatedProject.status,
+      estimatedBudgetDzd: null,
+      plannedBlocksCount: updatedProject.plannedBlocksCount,
+      plannedUnitsCount: updatedProject.plannedUnitsCount,
+    }
+  );
+  assert.equal(nullBudgetUpdate.estimatedBudgetDzd, 900000000);
+
   const currentName = updatedProject.nameAr;
   assert.throws(
     () => updateProjectInStore(updatedProject, {
@@ -499,6 +518,48 @@ test('devPreviewProjectStore enforces uniqueness, area bounds, concurrency stamp
       error.code === 'PROJECT_CONCURRENCY_CONFLICT'
   );
   assert.equal(updatedProject.nameAr, currentName);
+});
+
+test('project budget preview redaction requires an explicit member capability, including for System Admin', () => {
+  const project = buildSampleProject({
+    members: [
+      {
+        id: 'financial-member',
+        userId: 'finance-user',
+        username: 'finance',
+        fullName: 'Finance',
+        roleInProject: 'FinanceController',
+        canViewFinancials: true,
+        canManageSales: false,
+        canManageConstruction: false,
+        canManageDocuments: false,
+        assignedAtUtc: '2026-11-17T00:00:00Z',
+      },
+      {
+        id: 'restricted-member',
+        userId: 'restricted-user',
+        username: 'restricted',
+        fullName: 'Restricted',
+        roleInProject: 'ProjectManager',
+        canViewFinancials: false,
+        canManageSales: true,
+        canManageConstruction: true,
+        canManageDocuments: true,
+        assignedAtUtc: '2026-11-17T00:00:00Z',
+      },
+    ],
+  });
+  const systemAdmin = { id: 'system-admin', isSystemAdministrator: true, permissions: ['projects.manage'] };
+  const restrictedManager = { id: 'restricted-user', isSystemAdministrator: false, permissions: ['projects.manage'] };
+  const financeReader = { id: 'finance-user', isSystemAdministrator: false, permissions: ['projects.read'] };
+
+  assert.equal(canUserViewProjectFinancials(systemAdmin, project), false);
+  assert.equal(withProjectFinancialVisibility(project, systemAdmin).estimatedBudgetDzd, null);
+  assert.equal(canUserViewProjectFinancials(restrictedManager, project), false);
+  assert.equal(withProjectFinancialVisibility(project, restrictedManager).estimatedBudgetDzd, null);
+  assert.equal(canUserViewProjectFinancials(financeReader, project), true);
+  assert.equal(withProjectFinancialVisibility(project, financeReader).estimatedBudgetDzd, 850000000);
+  assert.equal(project.estimatedBudgetDzd, 850000000);
 });
 
 test('Dev API middleware exposes Les Sables d Or with 3 buildings & 72 units and supports full HTTP structure CRUD', async () => {

@@ -153,3 +153,45 @@ The source reconciliation must produce a reproducible 1,541-row crosswalk with, 
 Required deterministic checks: exactly 1,541 active commune rows for the legally approved baseline; all 69 Wilayas represented; no duplicate official code within a version; no missing parent; no unintended duplicate commune; no overlapping current-parent intervals; all historical parent changes have an evidence-backed boundary; and Arabic/French variants are paired only where an authoritative source supports the pairing. Every code-prefix anomaly or cross-instrument disagreement must remain a blocking exception until the raw evidence and qualified resolution are recorded; deterministic shape checks must not silently rewrite official-source transcriptions.
 
 No commune data, schema, migration, production database, or Google AI Studio Cloud SQL data was changed by this audit. The existing free-text municipality compatibility path must remain until the complete source crosswalk, legal-effective dates and qualified review are accepted.
+
+
+### 8.4 Open-source candidate dataset audit — 17 November 2026
+
+This review evaluates the four public repositories suggested for the commune crosswalk. It is a reproducible candidate-source comparison, **not** acceptance of any repository as the legal register and not a full 1,541-row legal verification.
+
+#### Primary commune-register source
+
+The interministerial order dated **5 May 2026**, published in Official Journal No. 58 on **12 August 2026**, is the identified primary source for the amended territorial-register entries for the new Wilayas. The French text layer exposes three distinct annex columns: `COMMUNES`, `NUMEROS DE CODE`, and `SIEGES`. The annex therefore distinguishes the legal commune name, its four-digit register code, and the administrative seat; the seat must never be loaded as an alias or replacement commune name.
+
+Examples from the JO58 text extraction:
+- Wilaya 59: `Oued M’Zi` has register code `5911`, while its listed seat is `Madna El Grada`.
+- Wilaya 60: `Abdelkader Azil` has register code `6003`, while its listed seat is `Layadate`.
+- Wilaya 67: `Ouled Hellal` has register code `6708`, while its listed seat is `Kermat Chiha`.
+
+The official source is available in [JO58 French PDF](https://www.joradp.dz/FTP/JO-FRANCAIS/2026/F2026058.pdf) and [JO58 Arabic PDF](https://www.joradp.dz/FTP/jo-arabe/2026/A2026058.pdf). The relevant screenshot attempts returned `Cache miss`; the examples above remain **text-extraction observations only**, not visually verified page transcriptions. Law 26-06 in JO25 establishes the total of 69 Wilayas and 1,541 communes; Decree 26-206 in JO40 establishes the new Wilaya names and seats. The JO58 register amendment is the source identified here for the four-digit commune register codes and separate commune-seat column.
+
+#### Pinned open-source comparisons
+
+| Repository snapshot | Published structure and provenance | Audit result / permitted use |
+|---|---|---|
+| [islam-re/Algeria-wilayas](https://github.com/islam-re/Algeria-wilayas) — commit `bfb29814117d11a6a101fa07c38911f6675b748b`; JSON blob `1aba9bc954bf43328ca54081f0448f613b72604e` | MIT; nested Wilaya → commune bilingual name data. The pinned JSON contains 69 Wilaya groups and 1,541 commune-name rows. It does not provide a four-digit JO58 commune register code or a separate administrative-seat field. | Useful as a bilingual name/parent-group cross-check. Its last push was 30 July 2026, before JO58 was published on 12 August 2026; it cannot be treated as a transcription of the published JO58 annex. |
+| [riadh2002/algeria-69-wilayas-1541-communes](https://github.com/riadh2002/algeria-69-wilayas-1541-communes) — commit `5daab758b59c1421f38180b7e8bc83830a7612fc`; JSON blob `09219a9e9238b57de366f34b9d091f70d554b196` | Repository states MIT. Its NOTICE says Wilaya/commune assignment and names come from islam-re; postcodes and coordinates come from `Kenandarabeh/algeria-wilayas-communes-2026`, for which NOTICE says no licence statement is published; daira verification uses othmanus, also without a published licence statement. The file has 1,541 rows, including dataset `id`, postal code, names, daira and coordinates, but not the JO58 four-digit register code or separate seat. | Group counts match the legal 2026 counts, but upstream rights for some distributed fields are unresolved. A concrete name discrepancy needs adjudication: the Wilaya-60 row with dataset `id=131` contains Latin `Metkaouak` and Arabic `عزيل عبد القادر`, while the JO58 text extraction lists `Abdelkader Azil`, code `6003`, seat `Layadate`. Do not promote this row to canonical data based on the dataset ID or its apparent Arabic pairing. |
+| [yasserstudio/geoalgeria](https://github.com/yasserstudio/geoalgeria) — commit `0814c5f0c49908e9ccd3259b46cc01d713bcf697`; `packages/dataset/data/algeria.json` blob `326c8ebbddd45fc0225b7ed4b96706c00e56968f` | The administrative compilation (Wilayas, dairas, communes, names, postcodes and administrative codes) is declared MIT. Its dataset licence/NOTICE separately place 69 Wilaya boundary polygons, 323 OSM-derived commune-centre coordinates and OSM relation/Wikidata values under ODbL 1.0; mirrored Algérie Poste data has its own terms and is not MIT. The dataset contains 69/1,541 records. | Valuable bilingual and parent-group cross-check, but mixed licence terms must be honoured per field. The `code_commune` field is not the JO58 four-digit register code: for Aflou, the candidate record has `code_commune=319`, while the JO58 register starts Aflou's commune register codes at `5901`. It also does not provide the JO58 seat column as a separate legal field. Do not import the package wholesale or infer administrative parentage from postal prefixes. |
+| [othmanus/algeria-cities](https://github.com/othmanus/algeria-cities) | README still declares 58 Wilayas, 546 dairas and 1,541 communes; latest repository push observed 26 May 2024. No licence declaration was found in the inspected repository root. | Historical/postal or daira comparison only. Not a 2026 parent-Wilaya source and not approved for redistribution without licence review. |
+
+#### Machine comparison completed
+
+The pinned candidate data files from islam-re, riadh2002 and GeoAlgeria each contain 69 Wilaya groups and 1,541 commune records. Their group counts for the 11 newly created Wilayas agree:
+
+| Wilaya code | 59 | 60 | 61 | 62 | 63 | 64 | 65 | 66 | 67 | 68 | 69 |
+|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|
+| Commune count in each candidate | 12 | 8 | 5 | 4 | 4 | 6 | 10 | 8 | 21 | 23 | 7 |
+
+This is a **count and parent-group check only**. It does not prove row-level identity, exact Arabic/French spelling, four-digit JO58 register code, seat, legal effective date, historical lineage, source completeness, absence of all duplicates/omissions, or legal validity. The JO58 text extraction separately exposes 108 rows under the 11 new-Wilaya sections; those rows still require visual verification and source-by-source reconciliation. Matching counts cannot resolve the `Metkaouak` / `Abdelkader Azil` discrepancy or the previously recorded Chabet El Ameur `3614` vs `3514` conflict.
+
+#### Import boundary and field semantics
+
+- Treat the four-digit commune register code, external dataset ID, postal code, ONS/geographic code, OpenStreetMap relation ID, and internal PROMO GEST UUID as different fields with different provenance. Never infer a Wilaya code from the first digits of a postal code; transferred communes may keep historical postal identifiers.
+- Preserve commune name and administrative seat in separate fields. Record source spelling as observed before proposing a canonical bilingual label.
+- The new-Wilaya group-count match does not replace the outstanding full 1,541-row crosswalk, exhaustive amendment inventory, source-page visual inspection, effective-date analysis, and qualified Algerian legal/practitioner review.
+- No candidate repository has been adopted as the canonical source, and no commune row has been imported. API status remains `PendingOfficialVerification` with `communesCount = 0`. P1-01 remains `In Progress / Pending`; P1-02 remains `Blocked`.

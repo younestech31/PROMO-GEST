@@ -136,3 +136,8 @@ For every actor other than the single `SYSTEM_ADMIN`, listing and downloading a 
 This rule applies to read/list and download only. Existing upload authorization is unchanged, including the existing `ProjectManager` upload behavior. Customer identity-document (`KYC`) isolation remains a separate check requiring `customers.read`, and the `SYSTEM_ADMIN` behavior is unchanged.
 
 When a list response omits Financial documents due to missing capability, the attempt is recorded as `ACCESS_DENIED` against the project. A direct download attempt returns `PROJECT_DOCUMENT_ACCESS_DENIED` and records `ACCESS_DENIED` against the stored file. The Vite-only preview applies the same rule and audit behavior; it remains a simulator, not production authorization evidence.
+
+
+### P1-07 verification evidence
+
+Implementation and regression-test commit: `4b04bd9dcf0dec806def7780a9d0b22d52d21878`, in [PR #87](https://github.com/younestech31/PROMO-GEST/pull/87). CI [#763](https://github.com/younestech31/PROMO-GEST/actions/runs/44122602882) passed all 3 jobs on that exact commit: Domain 34/34, Application 21/21, PostgreSQL 18 Integration 32/32, Linux publish, full database/storage/Data Protection restore drill, Windows x64 publish and PowerShell validation. The PR-triggered workflow for the same SHA is being checked separately. This evidence does not establish manual installation/browser acceptance or production deployment.

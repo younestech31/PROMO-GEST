@@ -314,7 +314,7 @@ A search of the inspected JORADP material has not identified a 1996 amendment to
 | 1985 register, JO No. 44, printed p. 1069, French | `Chabet El Ameur — 3514` | Direct entry in the initial territorial-register annex. |
 | 1996 school-establishment directory, JO No. 49, printed p. 15, French | `Boumerdès (35) — Chabet El Ameur — 3514` | Independent official cross-check in a school directory; not a territorial-register amendment. |
 | 1998 register amendment, JO No. 23, printed p. 11, French | `Chabet El Ameur — 3614` | Direct conflicting transcription in the later register amendment. |
-| 1985 register, JO No. 44, printed p. 1069/1070, French | `Chihani — 3624` under El Tarf (36) | Corrects the false claim that Chihani carries code 3614. The original register prints Chihani as 3624; it does not establish a Chihani/3614 collision. |
+| 1985 register, JO No. 44, El Tarf table, French text layer | Extracted as `Chihani — 3624`; the same extraction also returns `Raml Souk — 3624` | Internally anomalous text-layer result. The row must be checked against the page image; it cannot settle whether Chihani is 3614, 3624, or a column/text-layer artifact. |
 
 The 1985 text-layer extraction prints Boumerdès codes `3513 Tidjelabine`, `3514 Chabet El Ameur`, and `3515 Thenia` consecutively. In the El Tarf table the same extraction returns `Chihani 3624` and `Raml Souk 3624`, an internally anomalous duplicate. Because the printed page has not been visually inspected, this extraction cannot establish whether `3614` belongs to Chihani, is a typesetting issue, or is a column/text-layer artifact. The earlier categorical statement that `3614` either does or does not collide with Chihani is withdrawn; this relationship remains pending visual verification.
 

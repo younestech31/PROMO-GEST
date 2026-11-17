@@ -23,7 +23,13 @@ import { useUnsavedGuard } from '../shared/hooks/useUnsavedGuard';
 import { ErpShellLayout } from './ErpShellLayout';
 import { LoginScreen, authApi } from '../modules/auth';
 import { FirstRunSetupWizard, setupApi } from '../modules/setup';
-import { OverviewView, OrganizationProfileView, TerritorialReferenceView, EmployeesPlannedView } from '../modules/module-a-organization';
+import {
+  OverviewView,
+  OrganizationProfileView,
+  TerritorialReferenceView,
+  EmployeesPlannedView,
+  canManageOrganizationProfile,
+} from '../modules/module-a-organization';
 import {
   ProjectsAccessView,
   ProjectWorkspaceView,
@@ -116,10 +122,7 @@ export function AppContentRouter({
         <OrganizationProfileView
           organization={session.organization}
           language={language}
-          canManage={Boolean(
-            session.user.isSystemAdministrator ||
-            session.user.permissions.includes('organization.manage')
-          )}
+          canManage={canManageOrganizationProfile(session.user)}
           onUpdated={(updated) => {
             session.organization = updated;
           }}

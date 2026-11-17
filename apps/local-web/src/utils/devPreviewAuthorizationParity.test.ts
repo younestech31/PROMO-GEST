@@ -551,3 +551,20 @@ test('dev preview enforces customer/reservation scopes, dual concurrency, and ca
     assert.equal(structAfter.data.buildings[0].floors[0].units[0].status, 'AvailableForSale');
   });
 });
+
+test('dev preview exposes canonical organization permissions without broadening non-admin grants', async () => {
+  await withPreviewServer(async (baseUrl) => {
+    const { adminClient, commercial } = await setupWithActors(baseUrl);
+
+    const adminSession = await adminClient.request('GET', '/api/auth/me');
+    const commercialSession = await commercial.client.request('GET', '/api/auth/me');
+
+    assert.equal(adminSession.status, 200);
+    assert.equal(commercialSession.status, 200);
+    assert.ok(adminSession.data.user.permissions.includes('org.read'));
+    assert.ok(adminSession.data.user.permissions.includes('org.manage'));
+    assert.ok(commercialSession.data.user.permissions.includes('org.read'));
+    assert.equal(commercialSession.data.user.permissions.includes('org.manage'), false);
+    assert.equal(commercialSession.data.user.permissions.includes('organization.manage'), false);
+  });
+});

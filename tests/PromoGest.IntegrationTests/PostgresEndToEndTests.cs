@@ -2426,9 +2426,46 @@ public sealed class PostgresEndToEndTests : IClassFixture<PostgreSql18Integratio
                 entry.TargetEntityType == "OrganizationSettings");
         }
 
+        // Test-only grant: production role seeding remains unchanged; the API resolves org.manage dynamically.
+        var permissionDbOptions = new DbContextOptionsBuilder<AppDbContext>()
+            .UseNpgsql(_fixture.GetMigrationConnectionString(connStr))
+            .Options;
+        await using (var permissionDb = new AppDbContext(permissionDbOptions))
+        {
+            var commercialRole = await permissionDb.Roles.SingleAsync(role => role.Code == Role.CommercialManagerCode);
+            var orgManagePermission = await permissionDb.Permissions.SingleAsync(permission => permission.Code == "org.manage");
+            Assert.False(await permissionDb.RolePermissions.AnyAsync(link =>
+                link.RoleId == commercialRole.Id && link.PermissionId == orgManagePermission.Id));
+            permissionDb.RolePermissions.Add(RolePermission.Create(commercialRole.Id, orgManagePermission.Id));
+            await permissionDb.SaveChangesAsync();
+        }
+
+        var editorSession = await employeeClient.GetFromJsonAsync<SessionResponse>("/api/auth/me");
+        Assert.NotNull(editorSession);
+        Assert.Contains("org.manage", editorSession!.User.Permissions);
+        Assert.DoesNotContain("organization.manage", editorSession.User.Permissions);
+
+        var employeeAuthorizedRequest = CreateRequest(
+            "Promotion Atlas Updated by Employee",
+            editorSession.Organization.ConcurrencyStamp,
+            "editor@atlasimmo.dz");
+        var employeeUpdateResponse = await employeeClient.PutAsJsonAsync("/api/organization", employeeAuthorizedRequest);
+        Assert.Equal(HttpStatusCode.OK, employeeUpdateResponse.StatusCode);
+        var employeeUpdatedOrganization = await employeeUpdateResponse.Content.ReadFromJsonAsync<OrganizationSummaryResponse>();
+        Assert.NotNull(employeeUpdatedOrganization);
+        Assert.Equal("Promotion Atlas Updated by Employee", employeeUpdatedOrganization!.LegalName);
+
+        using (var editorAuditScope = factory.Services.CreateScope())
+        {
+            var db = editorAuditScope.ServiceProvider.GetRequiredService<AppDbContext>();
+            Assert.Contains(await db.AuditLogs.ToListAsync(), entry =>
+                entry.EventType == "ORGANIZATION_PROFILE_UPDATED" &&
+                entry.ActorUserId == editorSession.User.Id);
+        }
+
         var authorizedRequest = CreateRequest(
             "Promotion Atlas Updated",
-            adminSession.Organization.ConcurrencyStamp,
+            employeeUpdatedOrganization.ConcurrencyStamp,
             "contact@atlasimmo.dz");
         var updateResponse = await adminClient.PutAsJsonAsync("/api/organization", authorizedRequest);
         Assert.Equal(HttpStatusCode.OK, updateResponse.StatusCode);

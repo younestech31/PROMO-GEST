@@ -7,6 +7,7 @@ const readSource = (path: string) =>
 
 const app = readSource('../app/App.tsx');
 const apiClient = readSource('../core/api/apiClient.ts');
+const translations = readSource('../core/localization/translations.ts');
 
 test('logout clears application state only after 204 or a server-confirmed 401 session check', () => {
   const start = app.indexOf('const performLogout = useCallback');
@@ -27,6 +28,10 @@ test('an unconfirmed logout keeps the authenticated UI and exposes an explicit r
   assert.match(app, /The server could not confirm revocation\. Keep the authenticated UI visible\./);
   assert.match(app, /logoutFailed && \(/);
   assert.match(app, /onAction=\{\(\) => void performLogout\(\)\}/);
+  assert.match(app, /getTranslations\(language\)\.auth\.logoutFailed/);
+  assert.match(app, /getTranslations\(language\)\.auth\.retryLogout/);
+  assert.match(translations, /retryLogout: 'إعادة المحاولة'/);
+  assert.match(translations, /retryLogout: 'Réessayer'/);
 });
 
 test('preview credentials are cleared only after successful logout or an invalid session response', () => {

@@ -840,3 +840,219 @@ test('Dev API middleware exposes Les Sables d Or with 3 buildings & 72 units and
     await new Promise<void>((resolve) => server.close(() => resolve()));
   }
 });
+
+
+test('Dev API middleware restricts project budget reads and writes to explicit CanViewFinancials project members', async () => {
+  const { server, baseUrl } = await createMiddlewareServer();
+  try {
+    const adminClient = new CookieJarFetch(baseUrl);
+    const previewSession = await adminClient.request('/api/auth/preview-session');
+    assert.equal(previewSession.status, 200);
+
+    const createUser = async (username: string, email: string, roleCode: string) => {
+      const response = await adminClient.request('/api/users', {
+        method: 'POST',
+        body: JSON.stringify({
+          username,
+          fullName: username,
+          email,
+          password: 'StrongPassword2026!',
+          preferredLanguage: 'ar',
+          roleCodes: [roleCode],
+        }),
+      });
+      assert.equal(response.status, 201);
+      return response.json as UserDto;
+    };
+
+    const financialManager = await createUser('financial.manager', 'financial.manager@demo.local', 'PROJECT_DIRECTOR');
+    const restrictedManager = await createUser('restricted.manager', 'restricted.manager@demo.local', 'PROJECT_DIRECTOR');
+    const financialReader = await createUser('financial.reader', 'financial.reader@demo.local', 'FINANCE_OFFICER');
+
+    const signIn = async (username: string) => {
+      const client = new CookieJarFetch(baseUrl);
+      await client.request('/api/auth/csrf');
+      const login = await client.request('/api/auth/login', {
+        method: 'POST',
+        body: JSON.stringify({
+          usernameOrEmail: username,
+          password: 'StrongPassword2026!',
+        }),
+      });
+      assert.equal(login.status, 200);
+      return client;
+    };
+
+    const financialManagerClient = await signIn('financial.manager');
+    const restrictedManagerClient = await signIn('restricted.manager');
+    const financialReaderClient = await signIn('financial.reader');
+
+    const createProject = await financialManagerClient.request('/api/projects', {
+      method: 'POST',
+      body: JSON.stringify({
+        code: 'PREVIEW-FIN-01',
+        nameAr: 'مشروع اختبار الصلاحية المالية',
+        nameFr: 'Projet de test des droits financiers',
+        wilayaCode: '31',
+        wilayaName: 'وهران / Oran',
+        municipality: 'Bir El Djir',
+        address: null,
+        landTitleReference: null,
+        buildingPermitNumber: null,
+        buildingPermitDate: null,
+        status: 'Planning',
+        estimatedBudgetDzd: 125000000,
+        plannedBlocksCount: 2,
+        plannedUnitsCount: 24,
+      }),
+    });
+    assert.equal(createProject.status, 201);
+    const project = createProject.json as ProjectDto;
+    assert.equal(project.estimatedBudgetDzd, 125000000);
+    assert.equal(project.members[0].userId, financialManager.id);
+    assert.equal(project.members[0].canViewFinancials, true);
+
+    const assignRestrictedManager = await adminClient.request('/api/projects/' + project.id + '/members', {
+      method: 'PUT',
+      body: JSON.stringify({
+        userId: restrictedManager.id,
+        roleInProject: 'ProjectManager',
+        canViewFinancials: false,
+        canManageSales: true,
+        canManageConstruction: true,
+        canManageDocuments: true,
+      }),
+    });
+    assert.equal(assignRestrictedManager.status, 200);
+    assert.equal(assignRestrictedManager.json.estimatedBudgetDzd, null);
+
+    const assignFinancialReader = await adminClient.request('/api/projects/' + project.id + '/members', {
+      method: 'PUT',
+      body: JSON.stringify({
+        userId: financialReader.id,
+        roleInProject: 'FinanceController',
+        canViewFinancials: true,
+        canManageSales: false,
+        canManageConstruction: false,
+        canManageDocuments: false,
+      }),
+    });
+    assert.equal(assignFinancialReader.status, 200);
+    assert.equal(assignFinancialReader.json.estimatedBudgetDzd, null);
+
+    const adminDetail = await adminClient.request('/api/projects/' + project.id);
+    assert.equal(adminDetail.status, 200);
+    assert.equal(adminDetail.json.estimatedBudgetDzd, null);
+    const adminList = await adminClient.request('/api/projects');
+    const adminListedProject = (adminList.json as ProjectDto[]).find((item) => item.id === project.id);
+    assert.ok(adminListedProject);
+    assert.equal(adminListedProject!.estimatedBudgetDzd, null);
+
+    const restrictedDetail = await restrictedManagerClient.request('/api/projects/' + project.id);
+    assert.equal(restrictedDetail.status, 200);
+    assert.equal(restrictedDetail.json.estimatedBudgetDzd, null);
+    const restrictedList = await restrictedManagerClient.request('/api/projects');
+    const restrictedListedProject = (restrictedList.json as ProjectDto[]).find((item) => item.id === project.id);
+    assert.ok(restrictedListedProject);
+    assert.equal(restrictedListedProject!.estimatedBudgetDzd, null);
+
+    const attemptedBudgetChange = await restrictedManagerClient.request('/api/projects/' + project.id, {
+      method: 'PUT',
+      body: JSON.stringify({
+        nameAr: 'تعديل غير مالي',
+        nameFr: 'Modification non financière',
+        wilayaCode: '31',
+        wilayaName: 'وهران / Oran',
+        municipality: 'Bir El Djir',
+        status: 'Planning',
+        estimatedBudgetDzd: 990000000,
+        plannedBlocksCount: 2,
+        plannedUnitsCount: 24,
+        expectedConcurrencyStamp: restrictedDetail.json.concurrencyStamp,
+      }),
+    });
+    assert.equal(attemptedBudgetChange.status, 403);
+    assert.equal(attemptedBudgetChange.json.code, 'PROJECT_FINANCIAL_ACCESS_DENIED');
+
+    const generalUpdate = await restrictedManagerClient.request('/api/projects/' + project.id, {
+      method: 'PUT',
+      body: JSON.stringify({
+        nameAr: 'تعديل غير مالي',
+        nameFr: 'Modification non financière',
+        wilayaCode: '31',
+        wilayaName: 'وهران / Oran',
+        municipality: 'Bir El Djir',
+        status: 'Planning',
+        estimatedBudgetDzd: null,
+        plannedBlocksCount: 2,
+        plannedUnitsCount: 24,
+        expectedConcurrencyStamp: restrictedDetail.json.concurrencyStamp,
+      }),
+    });
+    assert.equal(generalUpdate.status, 200);
+    assert.equal(generalUpdate.json.estimatedBudgetDzd, null);
+
+    const financialManagerRead = await financialManagerClient.request('/api/projects/' + project.id);
+    assert.equal(financialManagerRead.status, 200);
+    assert.equal(financialManagerRead.json.estimatedBudgetDzd, 125000000);
+
+    const financialManagerUpdate = await financialManagerClient.request('/api/projects/' + project.id, {
+      method: 'PUT',
+      body: JSON.stringify({
+        nameAr: 'تعديل مالي مصرح',
+        nameFr: 'Modification financière autorisée',
+        wilayaCode: '31',
+        wilayaName: 'وهران / Oran',
+        municipality: 'Bir El Djir',
+        status: 'Planning',
+        estimatedBudgetDzd: 150000000,
+        plannedBlocksCount: 2,
+        plannedUnitsCount: 24,
+        expectedConcurrencyStamp: financialManagerRead.json.concurrencyStamp,
+      }),
+    });
+    assert.equal(financialManagerUpdate.status, 200);
+    assert.equal(financialManagerUpdate.json.estimatedBudgetDzd, 150000000);
+
+    const financialReaderRead = await financialReaderClient.request('/api/projects/' + project.id);
+    assert.equal(financialReaderRead.status, 200);
+    assert.equal(financialReaderRead.json.estimatedBudgetDzd, 150000000);
+    const financialReaderWrite = await financialReaderClient.request('/api/projects/' + project.id, {
+      method: 'PUT',
+      body: JSON.stringify({
+        nameAr: 'تعديل ممنوع',
+        nameFr: 'Modification interdite',
+        wilayaCode: '31',
+        wilayaName: 'وهران / Oran',
+        municipality: 'Bir El Djir',
+        status: 'Planning',
+        estimatedBudgetDzd: 160000000,
+        plannedBlocksCount: 2,
+        plannedUnitsCount: 24,
+        expectedConcurrencyStamp: financialReaderRead.json.concurrencyStamp,
+      }),
+    });
+    assert.equal(financialReaderWrite.status, 403);
+    assert.equal(financialReaderWrite.json.code, 'FORBIDDEN_PROJECT_UPDATE');
+
+    const restrictedReadAfter = await restrictedManagerClient.request('/api/projects/' + project.id);
+    assert.equal(restrictedReadAfter.json.estimatedBudgetDzd, null);
+    const adminReadAfter = await adminClient.request('/api/projects/' + project.id);
+    assert.equal(adminReadAfter.json.estimatedBudgetDzd, null);
+
+    const auditResponse = await adminClient.request('/api/audit?limit=250');
+    assert.equal(auditResponse.status, 200);
+    assert.ok((auditResponse.json as Array<{ eventType: string; targetEntityId: string | null; actorUserId: string | null }>).some(
+      (entry) => entry.eventType === 'PROJECT_FINANCIALS_VIEWED' &&
+        entry.targetEntityId === project.id &&
+        entry.actorUserId === financialManager.id
+    ));
+    assert.ok((auditResponse.json as Array<{ eventType: string; targetEntityId: string | null; actorUserId: string | null }>).some(
+      (entry) => entry.eventType === 'ACCESS_DENIED' &&
+        entry.targetEntityId === project.id &&
+        entry.actorUserId === restrictedManager.id
+    ));
+  } finally {
+    await new Promise<void>((resolve) => server.close(() => resolve()));
+  }
+});

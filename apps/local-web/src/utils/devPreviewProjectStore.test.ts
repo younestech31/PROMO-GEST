@@ -962,6 +962,22 @@ test('Dev API middleware restricts project budget reads and writes to explicit C
     assert.ok(adminListedProject);
     assert.equal(adminListedProject!.estimatedBudgetDzd, null);
 
+    const assignAdminFinancialScope = await adminClient.request('/api/projects/' + project.id + '/members', {
+      method: 'PUT',
+      body: JSON.stringify({
+        userId: previewSession.json.user.id,
+        roleInProject: 'FinanceController',
+        canViewFinancials: true,
+        canManageSales: false,
+        canManageConstruction: false,
+        canManageDocuments: false,
+      }),
+    });
+    assert.equal(assignAdminFinancialScope.status, 200);
+    assert.equal(assignAdminFinancialScope.json.estimatedBudgetDzd, 125000000);
+    const adminAfterExplicitFinancialMembership = await adminClient.request('/api/projects/' + project.id);
+    assert.equal(adminAfterExplicitFinancialMembership.json.estimatedBudgetDzd, 125000000);
+
     const restrictedDetail = await restrictedManagerClient.request('/api/projects/' + project.id);
     assert.equal(restrictedDetail.status, 200);
     assert.equal(restrictedDetail.json.estimatedBudgetDzd, null);

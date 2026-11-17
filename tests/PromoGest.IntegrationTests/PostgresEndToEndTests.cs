@@ -1743,6 +1743,41 @@ public sealed class PostgresEndToEndTests : IClassFixture<PostgreSql18Integratio
             Assert.NotNull(adminAfterExplicitMembership);
             Assert.Equal(470_000_000m, adminAfterExplicitMembership!.EstimatedBudgetDzd);
 
+            var adminFinanceControllerWrite = await adminClient.PutAsJsonAsync(
+                $"/api/projects/{createdProject.Id}",
+                projectUpdate with
+                {
+                    EstimatedBudgetDzd = 490_000_000m,
+                    ExpectedConcurrencyStamp = adminAfterExplicitMembership.ConcurrencyStamp
+                });
+            Assert.Equal(HttpStatusCode.Forbidden, adminFinanceControllerWrite.StatusCode);
+            Assert.Contains("PROJECT_FINANCIAL_ACCESS_DENIED", await adminFinanceControllerWrite.Content.ReadAsStringAsync(), StringComparison.Ordinal);
+
+            var promoteAdminProjectMembership = await adminClient.PutAsJsonAsync(
+                $"/api/projects/{createdProject.Id}/members",
+                new AssignProjectMemberRequest(systemAdminUserId, "ProjectManager", true, true, true, true));
+            Assert.Equal(HttpStatusCode.OK, promoteAdminProjectMembership.StatusCode);
+            var adminProjectManagerBudgetRead = await adminClient.GetFromJsonAsync<ProjectDto>(
+                $"/api/projects/{createdProject.Id}");
+            Assert.NotNull(adminProjectManagerBudgetRead);
+            Assert.Equal(470_000_000m, adminProjectManagerBudgetRead!.EstimatedBudgetDzd);
+            var adminProjectManagerBudgetUpdate = await adminClient.PutAsJsonAsync(
+                $"/api/projects/{createdProject.Id}",
+                projectUpdate with
+                {
+                    EstimatedBudgetDzd = 490_000_000m,
+                    ExpectedConcurrencyStamp = adminProjectManagerBudgetRead.ConcurrencyStamp
+                });
+            Assert.Equal(HttpStatusCode.OK, adminProjectManagerBudgetUpdate.StatusCode);
+            var adminProjectManagerBudgetUpdated = await adminProjectManagerBudgetUpdate.Content.ReadFromJsonAsync<ProjectDto>();
+            Assert.NotNull(adminProjectManagerBudgetUpdated);
+            Assert.Equal(490_000_000m, adminProjectManagerBudgetUpdated!.EstimatedBudgetDzd);
+
+            var restoreAdminToFinancialReader = await adminClient.PutAsJsonAsync(
+                $"/api/projects/{createdProject.Id}/members",
+                new AssignProjectMemberRequest(systemAdminUserId, "FinanceController", true, false, false, false));
+            Assert.Equal(HttpStatusCode.OK, restoreAdminToFinancialReader.StatusCode);
+
             var directorBuildingResponse = await directorClient.PostAsJsonAsync(
                 $"{structureUrl}/buildings",
                 new CreateBuildingRequest("B", "العمارة ب", "Bâtiment B", "Planned"));

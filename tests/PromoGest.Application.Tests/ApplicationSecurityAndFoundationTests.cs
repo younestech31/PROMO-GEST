@@ -1334,6 +1334,15 @@ public sealed class ApplicationSecurityAndFoundationTests
         Assert.Equal(125_000_000m, financeReaderAfterUpdate.EstimatedBudgetDzd);
         var adminAfterUpdate = await projectSvc.GetProjectByIdAsync(init.SystemAdminUserId, project.Id, metadata);
         Assert.Null(adminAfterUpdate.EstimatedBudgetDzd);
+
+        await projectSvc.AssignMemberAsync(
+            init.SystemAdminUserId,
+            project.Id,
+            new AssignProjectMemberRequest(init.SystemAdminUserId, nameof(ProjectRole.FinanceController), true, false, false, false),
+            metadata);
+        var explicitlyAuthorizedAdminRead = await projectSvc.GetProjectByIdAsync(init.SystemAdminUserId, project.Id, metadata);
+        Assert.Equal(125_000_000m, explicitlyAuthorizedAdminRead.EstimatedBudgetDzd);
+
         var restrictedAfterUpdate = await projectSvc.GetProjectByIdAsync(restrictedManager.Id, project.Id, metadata);
         Assert.Null(restrictedAfterUpdate.EstimatedBudgetDzd);
 

@@ -51,7 +51,7 @@ export const ERP_MODULE_REGISTRY: readonly ErpModuleDefinition[] = [
       ar: 'مفعّل للمؤسسة والولايات الـ69 والمستخدمين؛ قائمة 1,541 بلدية وسجل الموظفين HR قيد التطوير.',
       fr: 'Actif pour l’organisation, 69 wilayas et comptes ; catalogue 1 541 communes et dossier RH Employés planifiés.',
     },
-    requiredPermissions: ['organization.read', 'organization.manage', 'users.manage'],
+    requiredPermissions: ['org.read', 'org.manage', 'users.manage'],
     implementedEndpoints: [
       'GET /api/setup/status',
       'POST /api/setup/initialize',

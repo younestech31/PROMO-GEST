@@ -1419,13 +1419,12 @@ public sealed class ApplicationSecurityAndFoundationTests
         Assert.Contains(store.AuditLogs, entry =>
             entry.EventType == "ACCESS_DENIED" &&
             entry.ActorUserId == init.SystemAdminUserId);
+        await Assert.ThrowsAsync<ForbiddenDomainException>(() =>
+            projectSvc.GetProjectByIdAsync(nonMember.Id, project.Id, metadata));
         Assert.Contains(store.AuditLogs, entry =>
             entry.EventType == "ACCESS_DENIED" &&
             entry.ActorUserId == nonMember.Id &&
             entry.TargetEntityId == project.Id.ToString());
-
-        await Assert.ThrowsAsync<ForbiddenDomainException>(() =>
-            projectSvc.GetProjectByIdAsync(nonMember.Id, project.Id, metadata));
     }
 
     [Fact]

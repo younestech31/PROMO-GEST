@@ -213,7 +213,7 @@ Do not attach an unredacted HAR, browser storage dump, environment file, SQL con
 - [PR #86](https://github.com/younestech31/PROMO-GEST/pull/86) (stacked on PR #85) prevents local-only logout. The app clears its session only after successful logout or a follow-up session check returns 401; an unconfirmed logout leaves the authenticated view visible with a retry action.
 - These are code/automated-test changes only. The manual result register below remains `NOT_RUN` for P0-A01 and P0-A04 until execution on a real browser against a dedicated disposable PostgreSQL 18 database, with sanitized evidence. CI does not close the manual requirements.
 
-## 7. Owner-directed Phase 0 closure — 16 November 2026 (D-010)
+## 8. Owner-directed Phase 0 closure — 16 November 2026 (D-010)
 
 The Product Owner explicitly directed that Phase 0 be considered closed for program sequencing and that Phase 1 begin. This is an owner-approved acceptance of known residual risks, not a claim that every original technical exit criterion was executed.
 
@@ -224,7 +224,7 @@ The Product Owner explicitly directed that Phase 0 be considered closed for prog
 - Phase 0 is administratively `COMPLETE` by the Product Owner's direction. The outstanding checks remain visible residual work and must be executed before production release or any release claim depending on those scenarios.
 - Phase 1 is authorized to enter `IN_PROGRESS`. D-010 does not waive G1–G10, security, data-integrity, backup/restore, or later practitioner sign-off gates.
 
-## 8. Original Phase 0 exit criteria
+## 9. Original Phase 0 exit criteria
 
 The original technical exit criteria remain the engineering definition of a fully evidenced Phase 0. The Product Owner's D-010 administrative closure above accepted the named exceptions for program sequencing; it does not assert that these criteria were all satisfied. The original criteria are:
 1. The current main CI is green for the exact main commit under review.
@@ -237,7 +237,7 @@ The original technical exit criteria remain the engineering definition of a full
 A prepared checklist is not evidence of execution. A green automated CI run is not a substitute for these manual browser and real-preview criteria.
 
 
-## 9. Additional automated regression evidence — 16 November 2026
+## 10. Additional automated regression evidence — 16 November 2026
 
 PR [#63](https://github.com/younestech31/PROMO-GEST/pull/63) merged the following tests into `main` (merge SHA `ba3106dfd24b0fca915788350e4e1166c0cbe9ce`):
 

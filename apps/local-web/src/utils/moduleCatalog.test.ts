@@ -9,6 +9,7 @@ import {
   getModuleStateLabel,
   type ModuleImplementationState,
 } from './moduleCatalog';
+import { ERP_MODULE_REGISTRY } from '../core/modules/registry';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -21,7 +22,8 @@ const CANONICAL_STATES = new Set<ModuleImplementationState>([
   'DEPRECATED',
 ]);
 
-test('module catalog covers every ERP module A through L with bilingual copy and canonical 6-state taxonomy', () => {
+test('module catalog is the canonical core registry and covers every ERP module A through L', () => {
+  assert.equal(ERP_MODULE_CATALOG, ERP_MODULE_REGISTRY);
   const codes = ERP_MODULE_CATALOG.map((m) => m.code);
   assert.deepEqual(codes, ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L']);
 
@@ -43,11 +45,11 @@ test('module catalog covers every ERP module A through L with bilingual copy and
 
 test('planned modules F–J have expected sub-screens, distinct columns/actions, and zero unapproved tax rates', () => {
   const expectedCounts: Record<'F' | 'G' | 'H' | 'I' | 'J', number> = {
-    F: 6,
-    G: 6,
-    H: 6,
+    F: 7,
+    G: 7,
+    H: 7,
     I: 6,
-    J: 5,
+    J: 6,
   };
 
   for (const code of ['F', 'G', 'H', 'I', 'J'] as const) {

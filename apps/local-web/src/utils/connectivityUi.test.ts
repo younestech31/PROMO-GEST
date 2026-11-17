@@ -6,11 +6,11 @@ const readSource = (path: string) =>
   readFileSync(new URL(path, import.meta.url), 'utf8');
 
 const app = readSource('../app/App.tsx');
-const login = readSource('../features/auth/LoginScreen.tsx');
-const setup = readSource('../features/setup/FirstRunSetupWizard.tsx');
-const layout = readSource('../layouts/ErpShellLayout.tsx');
-const overview = readSource('../features/overview/OverviewView.tsx');
-const translations = readSource('../localization/translations.ts');
+const login = readSource('../modules/auth/pages/LoginScreen.tsx');
+const setup = readSource('../modules/setup/pages/FirstRunSetupWizard.tsx');
+const layout = readSource('../app/ErpShellLayout.tsx');
+const overview = readSource('../modules/module-a-organization/pages/OverviewView.tsx');
+const translations = readSource('../core/localization/translations.ts');
 
 test('the global local-server disconnect message is absent from every main screen', () => {
   const screens = [app, login, setup, layout, overview];

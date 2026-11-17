@@ -1,6 +1,1 @@
-export {
-  canManageOrganizationProfile,
-  canManageUsers,
-  canReadPartyDirectory,
-  canViewAuditLogs,
-} from "@/core/permissions/permissionPolicy";
+export { canManageOrganizationProfile } from '@/core/permissions/permissionPolicy';

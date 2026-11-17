@@ -171,6 +171,15 @@ export function isSameRoute(a: AppRouteState, b: AppRouteState): boolean {
   return a.section === b.section;
 }
 
+/** A navigation request is blocked only when a real draft exists and the destination changes. */
+export function shouldBlockNavigation(
+  hasUnsavedChanges: boolean,
+  currentRoute: AppRouteState,
+  nextRoute: AppRouteState,
+): boolean {
+  return hasUnsavedChanges && !isSameRoute(currentRoute, nextRoute);
+}
+
 export interface ShortcutTargetLike {
   tagName?: string | null;
   isContentEditable?: boolean | null;

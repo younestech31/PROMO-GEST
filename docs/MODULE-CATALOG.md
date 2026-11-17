@@ -2,9 +2,9 @@
 
 All 12 functional ERP domains required by PROMO GEST, mapped strictly using the 6-state taxonomy against actual inspected code, controllers, EF configurations, and tests.
 
-**Last Code-Changing Source Baseline:** `53c50fbc0db801b9298ec731cfc44f2d4d58ff7f` (PR #59 merge; server-owned 69-Wilaya reference integrated with the main forms).  
-**Main Commit Inspected:** `ec5e3c62a95e35c12c3d60f8e097865b625dad05` (PR #79 documentation baseline merge; latest application-source baseline remains `53c50fbc0db801b9298ec731cfc44f2d4d58ff7f`; test-only PR #67 does not change runtime/schema).  
-**Latest documentation PR CI:** PR #79 Run **#628** / `43971379730` passed all three jobs on PR head `f18e4ae884440f5024ff92f8edf14ccb02fd2b31`; merge SHA `ec5e3c62a95e35c12c3d60f8e097865b625dad05` has no confirmed post-merge CI in this audit. Latest confirmed main CI remains #606 / `43913437191` on SHA `24d1d57bbe19102c9bbbd63bb31ca2793720d807`. **Latest test-source CI:** PR #67 Run #595 / `43907255613` passed all three jobs on test-only head `6e37abf8eb170f2c4dfc136dc481bdf7a11f22d2`. **Latest application-source CI:** Run #581 / `43881240365` passed all three jobs on runtime/schema source `53c50fbc0db801b9298ec731cfc44f2d4d58ff7f` (frontend 40/40, Domain 34/34, Application 20/20, PostgreSQL 18 Integration 30/30, restore drill, Windows x64).
+**Last ASP.NET Core / Schema Source Baseline:** `53c50fbc0db801b9298ec731cfc44f2d4d58ff7f` (PR #59 merge; server-owned 69-Wilaya reference integrated with the main forms). **Frontend base:** main SHA `9af8324dc516c7536eda33c2a487275c30e792d3`; frontend stabilization PR #81 remains open.  
+**Main Commit Inspected:** `9af8324dc516c7536eda33c2a487275c30e792d3` (base of the current frontend-only PR #81). The backend/schema source is unchanged by PR #81.  
+**Latest frontend architecture PR CI:** PR #81 head `fbc3b0cba956f2116cd213360be5f4997002f503`; Run #716 / `44078156453` passed all three jobs (66/66 frontend tests, strict TypeScript, Vite and ASP.NET Core static-host builds, .NET 10/PostgreSQL 18 checks, Windows publish/PowerShell). PR remains open and unmerged; manual browser acceptance is pending. **Latest historical documentation PR CI:** PR #79 Run #628 / `43971379730` passed all three jobs on PR head `f18e4ae884440f5024ff92f8edf14ccb02fd2b31`. **Latest test-source CI:** PR #67 Run #595 / `43907255613` passed all three jobs on test-only head `6e37abf8eb170f2c4dfc136dc481bdf7a11f22d2`. **Latest application-source CI:** Run #581 / `43881240365` passed all three jobs on runtime/schema source `53c50fbc0db801b9298ec731cfc44f2d4d58ff7f` (frontend 40/40, Domain 34/34, Application 20/20, PostgreSQL 18 Integration 30/30, restore drill, Windows x64).
 **Live Preview / Manual Acceptance Evidence:** On 15 November 2026, the Product Owner confirmed the real Google AI Studio development server/API and PostgreSQL development connection operate, and owner-attested successful Arabic RTL / French LTR desktop/mobile workflows for projects, structure, customer interactions, internal holds, documents/SHA-256, authorization, audit, concurrency, safe errors, and persistence. Detailed group mapping is in `PHASE-0-MANUAL-ACCEPTANCE.md`; Phase 0 was administratively closed by owner decision D-010, with P0-A01 and P0-A04 still `NOT_RUN` as accepted residual exceptions.
 
 ---
@@ -28,11 +28,19 @@ All 12 functional ERP domains required by PROMO GEST, mapped strictly using the 
 
 ---
 
-## 2. Detailed Module Specifications (A–L)
+## 2. Frontend platform and module ownership — PR #81 (open; CI #716 passed)
+
+- Canonical frontend entry points: `core/api/apiClient.ts`, `core/api/csrf.ts`, `core/permissions/permissionPolicy.ts`, `core/modules/registry.ts`, `core/modules/moduleCodes.ts`, `core/modules/routeTypes.ts`, `app/routeRegistry.ts`, and `core/localization/translations.ts`.
+- Legacy `services/apiClient.ts`, CSRF utilities, `utils/permissions.ts`, `utils/moduleCatalog.ts`, `utils/navigation.ts`, `utils/workspaceGuards.ts`, and `localization/translations.ts` are explicit compatibility adapters, not alternate implementations.
+- Active screen implementations moved into owning `modules/` directories for A–E, K, L and technical administration; former feature paths remain compatibility facades while remaining consumers migrate. F–J remain planned module pages, with workflow display metadata under each module's `presentation/workflows.ts` rather than `api/`.
+- The canonical registry test verifies module codes A–L, unique ownership directories and unique sub-screen IDs. A source-level architecture test verifies single API/CSRF/route/localization implementations, tested adapters, F–J presentation/API boundaries, and explicit planned-endpoint rejection.
+- Not all shared visual components have been consolidated into `shared/components`; root-level component compatibility and migration remain a known follow-up. PR #81 automated CI passed, but desktop/mobile Arabic RTL and French LTR browser acceptance has not been performed. PR #81 is open and not merged.
+
+## 3. Detailed Module Specifications (A–L)
 
 ### A. Organization, Governance & Administration (`PARTIALLY_IMPLEMENTED`)
-- **Frontend surfaces:** `FirstRunSetupWizard.tsx`, `LoginScreen.tsx`, `UsersManagementView.tsx`, `AuditLogView.tsx`, `OrganizationProfileView.tsx`, `TerritorialReferenceView.tsx`, `SystemDiagnosticsView.tsx`, and `OrganizationWorkspaceView.tsx`.
-- **UI boundary:** Route access is gated pre-render by `canAccessRoute` (`workspaceGuards.ts`); technical diagnostics live under `/admin/diagnostics`.
+- **Frontend surfaces:** the active organization/profile/overview/reference/employee-plan screens are owned by `modules/module-a-organization/pages/`; user, audit, and diagnostics screens are owned by `modules/technical-admin/pages/`. Root `features/` files are compatibility facades.
+- **UI boundary:** `app/routeRegistry.ts` is the authoritative route access registry; `utils/workspaceGuards.ts` is a tested compatibility adapter. `AppContentRouter` gates unauthorized routes before protected screens mount.
 - **Current Reality:**
   - *First-Run Wizard (`IMPLEMENTED_AND_VERIFIED`):* `GET /api/setup/status`, `POST /api/setup/initialize` (enforces loopback IP or `X-PROMOGEST-SETUP-TOKEN` bootstrap guard).
   - *Session Auth & CSRF (`IMPLEMENTED_AND_VERIFIED`):* `GET /api/auth/csrf` (intentionally `[AllowAnonymous]` bootstrap), `POST /api/auth/login`, `POST /api/auth/logout`, `GET /api/auth/me` (cookie **`promogest_session`** + `X-CSRF-TOKEN`; gates org fiscal/contact fields by `org.read` and `ConcurrencyStamp` by `org.manage`).
@@ -44,7 +52,7 @@ All 12 functional ERP domains required by PROMO GEST, mapped strictly using the 
 - **Target Scope (`PLANNED`):** Active session revocation UI, HR Employee master, and the complete effective-dated 1,541-commune hierarchy (`communesCount = 0`).
 
 ### B. Real Estate Projects (`IMPLEMENTED_NOT_VERIFIED` — workspace shell)
-- **Frontend surface:** `ProjectsAccessView.tsx` (directory), `ProjectSwitcher.tsx` (`Ctrl/Cmd+K` outside inputs), and `ProjectWorkspaceView.tsx` (`/projects/:id/*` active workspace with persistent identity strip, embedded modules, settings, and team assignment).
+- **Frontend surface:** `modules/module-b-projects/pages/ProjectsAccessView.tsx`, `pages/ProjectWorkspaceView.tsx`, and `components/ProjectSwitcherModal.tsx` (`Ctrl/Cmd+K` outside editable controls). Former feature/component paths are compatibility facades. PR #81 Run #716 passed strict TypeScript, frontend tests and builds; manual navigation acceptance remains outstanding.
 - **Current Reality:** `GET/POST /api/projects`, `GET/PUT /api/projects/{projectId}`, `PUT /api/projects/{projectId}/members`, `DELETE /api/projects/{projectId}/members/{userId}`. Dynamic `actualBuildingsCount`/`actualUnitsCount`, `ExpectedConcurrencyStamp` CAS protection, last-PM guard, Wilaya `01–69`. Project-access revocation clears cached stale context (`revokeProjectAccessFromState`).
 - **Target Scope (`PLANNED`):** Structured land parcel references, subdivision/viability certificates, building permits, and VSP eligibility metadata linked to local verified files.
 
@@ -71,6 +79,7 @@ All 12 functional ERP domains required by PROMO GEST, mapped strictly using the 
 - **Verification:** PostgreSQL 18 E2E covers create/read/list, active-hold uniqueness, cancellation and unit release, concurrent reservation race (one winner), and expiry processing; CI #544 executed the integration suite successfully and main CI #546 re-ran all required jobs successfully. The Product Owner separately owner-attested the real UI flow for hold creation, cancellation, and expiry across both languages and desktop/mobile, with persistence/reload. The Vite preview simulator (`dev-api-middleware.ts`) also mirrors `/reservations` authorization, expiry, and cancellation concurrency checks for frontend integration tests.
 
 ### F. Contracts, Commitments & Legal Deeds (`PLANNED`)
+- **Frontend/API boundary:** workflow display metadata is in `presentation/workflows.ts`; API modules contain only API contracts or explicit `MODULE_PLANNED` rejection. The Contracts page's K-Min cross-link now navigates to project documents. Legal/notarial copy is explicitly provisional pending qualified Algerian legal/notarial review.
 **Prerequisite:** Phase 0 + Phase 1 + **K-Min** Document Capabilities + **Qualified Algerian Legal/Notarial Sign-Off**.
 Promoter commitments must strictly distinguish **four separate record types** (never collapsing them into one table/status):
 
@@ -84,15 +93,19 @@ Promoter commitments must strictly distinguish **four separate record types** (n
 - **Co-Buyers, Representatives & Transfers:** Contracts must support multiple buyer `Party` rows with explicit ownership shares (`%` totaling 100%), legal-entity `PartyRepresentative` links, and audited *Cession/Transfer* / *Résiliation* workflows without overwriting historical contract versions. **Legal, VSP, and tax rules remain `PLANNED` documentation constraints until validated by Algerian legal/accounting professionals.**
 
 ### G. Installments, Collections & Treasury in DZD (`PLANNED`)
+- **Frontend/API boundary:** planned workflow display metadata is under `presentation/workflows.ts`; API calls reject as unavailable rather than returning fabricated data.
 - **Scope:** Contractual installment obligations (`PaymentObligation`), explicit cash/bank/check collections (`PaymentReceipt`), itemized allocation (`PaymentAllocation`), cashbox & bank ledgers, bounced check / cancellation `RefundOrReversal`, and buyer account statements. Never combines FGCMPI escrow deposits with unrestricted promoter bank receipts.
 
 ### H. Construction Works & Chantier Tracking (`PLANNED`)
+- **Frontend/API boundary:** planned workflow display metadata is under `presentation/workflows.ts`; API calls reject as unavailable.
 - **Scope:** Technical project lots (*gros œuvre*, CES, VRD), contractor/subcontractor contracts (`Party`), site measurements (*attachements*), interim payment situations (*décomptes*), warranty retentions, and formal **`ConstructionMilestoneEvidence`** acceptance (Draft → Submitted → UnderReview → Accepted/Rejected) driving VSP billing eligibility cleanly without a duplicate progress slider.
 
 ### I. Procurement, Suppliers & Inventory (`PLANNED`)
+- **Frontend/API boundary:** planned workflow display metadata is under `presentation/workflows.ts`; API calls reject as unavailable.
 - **Scope:** Supplier directory (`Party`), purchase requests, POs, site delivery notes, warehouse/site stock ledger (`IN`/`OUT`/`TRANSFER`), and invoice-to-delivery matching before treasury settlement.
 
 ### J. Algerian SCF Accounting & Tax (`PLANNED`)
+- **Frontend/API boundary:** planned workflow display metadata is under `presentation/workflows.ts`; API calls reject as unavailable. No statutory tax-rate assumptions are introduced.
 - **Prerequisite:** Qualified Algerian *Expert-Comptable / Commissaire aux Comptes* sign-off.
 - **Scope:** SCF Classes 1–7 chart of accounts, double-entry balanced journals (`Debit == Credit` in DZD `numeric(18,2)`), fiscal periods & locks, non-destructive reversals (*extourne*), and separated `TaxEvent` tracking (statutory VAT/IBS/TAP/IRG rules and rates remain parameterized and **never hardcoded in the UI** pending CPA approval).
 
@@ -106,13 +119,14 @@ Resolves the former catalog vs roadmap dependency conflict by splitting Module K
    - Full cross-enterprise attachment links across Procurement, Inventory, HR, and SCF vouchers; retention policies; legal hold tags; cold-storage reconciliation & bulk export bundles.
 
 ### L. Reporting, Dashboards & Control (`PARTIALLY_IMPLEMENTED`)
+- **Frontend/API boundary:** `ReportsWorkspaceView.tsx` is owned by `modules/module-l-reporting/pages/`. `reportingApi.listReports()` rejects with `MODULE_PLANNED`; it no longer fabricates a successful empty report list.
 - **Frontend surface:** `OverviewView.tsx`, `ReportsWorkspaceView.tsx`, and `AuditLogView.tsx` provide authorized organization/project summaries and recent audit trails alongside planned report column previews. Executive, financial, arrears, construction-variance, supplier, and SCF reports remain planned.
 - **Current Reality:** Live building/unit counts per project (`ProjectsAccessView`), recent audit view (`AuditLogView`).
 - **Target Scope (`PLANNED`):** Inventory & commercial pipeline reports, arrears & collection aging, physical vs financial VSP variance, supplier liabilities, and SCF trial balances/general ledgers exported offline (PDF/CSV/XLSX).
 
 ---
 
-## 3. Unified Cross-Module Financial Event Flow (`PLANNED`)
+## 4. Unified Cross-Module Financial Event Flow (`PLANNED`)
 
 > **Design Only (`PLANNED`):** None of the financial, tax, or SCF entities below exist in code yet. Exact posting rules, VAT treatment of escrow advances, and revenue recognition require **Algerian CPA & legal sign-off** before implementation.
 

@@ -3,4 +3,4 @@ export {
   canReadProjectSalesReservations,
   canManageProjectSalesReservations,
 } from './permissions';
-export { ProjectSalesReservationsModal } from '@/features/projects/ProjectSalesReservationsModal';
+export { ProjectSalesReservationsModal } from './pages/ProjectSalesReservationsModal';

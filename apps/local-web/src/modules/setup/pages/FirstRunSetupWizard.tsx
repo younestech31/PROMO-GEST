@@ -1,15 +1,14 @@
 import { useEffect, useState, type FormEvent } from 'react';
 import { Building2, Check, ShieldCheck } from 'lucide-react';
-import type { AppLanguage, InitializeInstallationRequest } from "@/types/erp";
-import { getTranslations, translateApiError } from "@/core/localization/translations";
-import { ALGERIAN_LEGAL_FORMS, formatAlgerianLegalForm } from "@/shared/utils/algerianFormat";
-import { checkPasswordStrength, validateSetupRequest, type ValidationErrors } from "@/shared/utils/validation";
-import { ApiConnectionError, ApiError } from "@/core/api/apiClient";
-import { LanguageSwitcher } from "@/shared/components/LanguageSwitcher";
-import { FormField, inputBaseClass } from "@/shared/components/FormField";
-import { PreviewAccessButton } from '../../auth';
-import { useAdministrativeReference } from '../../module-a-organization';
-import { setupApi } from '../api/setupApi';
+import type { AppLanguage, InitializeInstallationRequest } from '@/types/erp';
+import { getTranslations, translateApiError } from '@/core/localization/translations';
+import { ALGERIAN_LEGAL_FORMS, formatAlgerianLegalForm } from '@/shared/utils/algerianFormat';
+import { useAdministrativeReference } from '@/modules/module-a-organization';
+import { checkPasswordStrength, validateSetupRequest, type ValidationErrors } from '@/shared/utils/validation';
+import { apiClient, ApiConnectionError, ApiError } from '@/core/api/apiClient';
+import { LanguageSwitcher } from '@/shared/components/LanguageSwitcher';
+import { FormField, inputBaseClass } from '@/shared/components/FormField';
+import { PreviewAccessButton } from '@/modules/auth';
 
 interface FirstRunSetupWizardProps {
   language: AppLanguage;
@@ -95,7 +94,11 @@ export function FirstRunSetupWizard({
     setIsSubmitting(true);
 
     try {
-      const currentSetup = await setupApi.getSetupStatus();
+      // The preview page can outlive the API process or retain an older setup screen.
+      // Re-read the authoritative database-backed status before attempting a POST.
+      // This avoids sending a request that the embedded preview gateway may block
+      // when the installation was already completed in another browser/session.
+      const currentSetup = await apiClient.getSetupStatus();
       if (currentSetup.isInitialized) {
         setErrors({});
         await onInitialized();
@@ -111,7 +114,7 @@ export function FirstRunSetupWizard({
         return;
       }
 
-      await setupApi.initializeInstallation(
+      await apiClient.initializeInstallation(
         {
           ...form,
           wilayaName: selectedWilaya.canonicalDisplayName,
@@ -121,6 +124,8 @@ export function FirstRunSetupWizard({
       );
       await onInitialized();
     } catch (err) {
+      // A concurrent first-run request may have initialized the installation
+      // after the status check. Treat the API conflict as completed setup.
       if (err instanceof ApiError && err.code === 'SETUP_ALREADY_INITIALIZED') {
         await onInitialized();
       } else if (err instanceof ApiConnectionError) {

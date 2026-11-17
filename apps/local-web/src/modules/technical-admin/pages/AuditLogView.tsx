@@ -1,10 +1,9 @@
 import { useEffect, useState } from 'react';
 import { RefreshCw } from 'lucide-react';
-import type { AppLanguage, AuditLogDto } from "@/types/erp";
-import { getTranslations, translateApiError } from "@/core/localization/translations";
-import { formatLocalDateTime } from "@/shared/utils/algerianFormat";
-import { ApiError } from "@/core/api/apiClient";
-import { adminApi } from '../api/adminApi';
+import type { AppLanguage, AuditLogDto } from '@/types/erp';
+import { getTranslations, translateApiError } from '@/core/localization/translations';
+import { formatLocalDateTime } from '@/shared/utils/algerianFormat';
+import { apiClient, ApiError } from '@/core/api/apiClient';
 
 interface AuditLogViewProps {
   language: AppLanguage;
@@ -20,7 +19,7 @@ export function AuditLogView({ language }: AuditLogViewProps) {
     setLoading(true);
     setError(null);
     try {
-      const data = await adminApi.listAuditLogs(100);
+      const data = await apiClient.listAuditLogs(100);
       setLogs(data);
     } catch (err) {
       if (err instanceof ApiError) {

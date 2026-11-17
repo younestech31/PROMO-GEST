@@ -7,6 +7,6 @@ export {
   canUpdateProjectFinancialBudget,
 } from './permissions';
 export { getProjectWorkspaceRoute } from './routes';
-export { ProjectSwitcherModal } from '@/components/ProjectSwitcherModal';
-export { ProjectsAccessView } from '@/features/projects/ProjectsAccessView';
-export { ProjectWorkspaceView } from '@/features/projects/ProjectWorkspaceView';
+export { ProjectSwitcherModal } from './components/ProjectSwitcherModal';
+export { ProjectsAccessView } from './pages/ProjectsAccessView';
+export { ProjectWorkspaceView } from './pages/ProjectWorkspaceView';

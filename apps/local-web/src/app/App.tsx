@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import type { MutableRefObject } from 'react';
 import type { AppLanguage, HealthStatusResponse, ProjectDto, SessionResponse } from '../types/erp';
 import { ApiError, apiClient } from '../core/api/apiClient';
+import { getTranslations } from '../core/localization/translations';
 import {
   DEFAULT_APP_ROUTE,
   buildAppPath,
@@ -624,12 +625,8 @@ export function App() {
     >
       {logoutFailed && (
         <ErrorBanner
-          message={
-            language === 'ar'
-              ? 'تعذّر تأكيد تسجيل الخروج من الخادم. بقيت الجلسة نشطة؛ تحقق من الاتصال ثم أعد المحاولة.'
-              : 'Le serveur n’a pas confirmé la déconnexion. La session reste active ; vérifiez la connexion puis réessayez.'
-          }
-          actionLabel={language === 'ar' ? 'إعادة المحاولة' : 'Réessayer'}
+          message={getTranslations(language).auth.logoutFailed}
+          actionLabel={getTranslations(language).auth.retryLogout}
           onAction={() => void performLogout()}
         />
       )}

@@ -61,7 +61,7 @@ public sealed record UpdateProjectRequest(
     string? BuildingPermitNumber,
     DateOnly? BuildingPermitDate,
     string Status,
-    decimal EstimatedBudgetDzd,
+    decimal? EstimatedBudgetDzd,
     int PlannedBlocksCount,
     int PlannedUnitsCount,
     Guid ExpectedConcurrencyStamp);

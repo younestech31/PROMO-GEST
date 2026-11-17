@@ -344,3 +344,8 @@ P1-01 remains **In Progress / Verification Pending**. P1-02 remains **Blocked**.
 6. A qualified Algerian legal/practitioner review which explicitly decides the Chabet El Ameur code, the 1996/1986 lineage question, the Arabic/French pairs, seat distinctions, and any remaining source contradictions.
 
 A reviewer-ready template and illustrative source assertions are provided in `docs/reference-data/P1-01-DISCREPANCIES-FOR-SIGNOFF.md` and `docs/reference-data/P1-01-LEGAL-PROVENANCE-TEMPLATE.csv`. The CSV is **illustrative only**, not the 1,541-row canonical dataset. No commune rows are imported or authorized for import by this documentation update.
+
+
+#### Territorial change assertion ledger (17 November 2026)
+
+A bounded, machine-readable six-assertion ledger now preserves the locality transfers and commune rename identified in Decrees 92-412, 93-11, 93-12 and 06-256. See [the ledger and its field/evidence rules](reference-data/P1-01-TERRITORIAL-CHANGE-ASSERTIONS.md) and [CSV](reference-data/P1-01-TERRITORIAL-CHANGE-ASSERTIONS.csv). The rows deliberately contain no four-digit register codes, no adjudicated effective intervals, and no Arabic labels where the Arabic primary edition has not been transcribed. The French JO 03/1993 printed page 4 was visually reviewed for the 1993 assertions; the 1992/2006 entries remain text-layer evidence only. All records await Arabic-source reconciliation, exact PDF-byte SHA-256 capture and qualified practitioner review. This is not the national 1,541-row concordance and does not authorize import.

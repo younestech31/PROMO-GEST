@@ -222,9 +222,9 @@ public sealed class ProjectService
         // Resolve explicit membership for every actor. SYSTEM_ADMIN may manage general
         // project master data, but does not bypass the separate financial capability.
         var membership = await _projectRepository.GetMemberAsync(projectId, actorUserId, ct);
+        var permissions = await _userRepository.GetEffectivePermissionsAsync(actorUserId, ct);
         if (!actor.IsSystemAdministrator)
         {
-            var permissions = await _userRepository.GetEffectivePermissionsAsync(actorUserId, ct);
             var canManageProject = permissions.Contains("projects.manage", StringComparer.OrdinalIgnoreCase) &&
                 membership?.RoleInProject == ProjectRole.ProjectManager;
 
@@ -245,7 +245,12 @@ public sealed class ProjectService
         var project = await _projectRepository.GetByIdWithMembersAsync(projectId, ct)
             ?? throw new NotFoundDomainException("PROJECT_NOT_FOUND", "Project not found.");
 
-        if (request.EstimatedBudgetDzd.HasValue && membership?.CanViewFinancials != true)
+        var canUpdateFinancialBudget =
+            permissions.Contains("projects.manage", StringComparer.OrdinalIgnoreCase) &&
+            membership?.RoleInProject == ProjectRole.ProjectManager &&
+            membership.CanViewFinancials;
+
+        if (request.EstimatedBudgetDzd.HasValue && !canUpdateFinancialBudget)
         {
             await RecordAccessDeniedAsync(
                 actor,
@@ -255,7 +260,7 @@ public sealed class ProjectService
                 ct);
             throw new ForbiddenDomainException(
                 "PROJECT_FINANCIAL_ACCESS_DENIED",
-                "CanViewFinancials is required to view or update the project's estimated budget.");
+                "Updating the estimated budget requires projects.manage, ProjectManager membership, and CanViewFinancials.");
         }
 
         if (request.ExpectedConcurrencyStamp == Guid.Empty ||

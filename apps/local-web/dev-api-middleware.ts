@@ -1062,7 +1062,7 @@ export function createPromoGestDevApiPlugin(): Plugin {
           try {
             const body = await readJsonBody<UpdateProjectRequest>(req);
             const canUpdateFinancialBudget =
-              currentUser.permissions.includes('projects.manage') &&
+              getPermissions(currentUser).includes('projects.manage') &&
               membership?.roleInProject === 'ProjectManager' &&
               membership?.canViewFinancials === true;
             if (body.estimatedBudgetDzd !== null &&

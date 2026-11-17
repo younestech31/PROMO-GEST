@@ -1,7 +1,7 @@
 # PROMO GEST — Phase 0 Manual Browser & Real-API Acceptance
 
 **Document role:** Executable acceptance protocol for the remaining Phase 0 browser and real-API evidence.  
-**Execution update (15 November 2026):** The Product Owner explicitly confirmed successful completion of the bilingual desktop/mobile and real-workflow checks listed in the owner-attested record below. Those checks are recorded as `PASS` with the evidence source identified as owner attestation, not CI output or an independently collected browser artifact. `P0-A01` (fresh-database first-run setup and rejection of a second initialization) and `P0-A04` (logout/revocation) were not explicitly included in the confirmation and remain `NOT_RUN`.  
+**Execution update (17 November 2026):** The technical baseline currently inspected is main SHA `1929606e486647949b87bae5661dbd30bf3f344f`; main CI Run #737 passed after the PR #83 documentation synchronization. PR #84 (JO25/JO58 evidence-level distinction) CI Run #738 passed all three jobs. P0-A01 implementation is proposed in PR #85; P0-A04 logout-confirmation handling is proposed in stacked PR #86. Neither PR has been merged and neither supplies manual browser acceptance. The owner-attested PASS results and P0-A01/P0-A04 NOT_RUN boundary below remain unchanged.  
 **Main commit inspected at audit start:** `432e6f8ea76bb540dd5bc69d3314c0d658805ba7`.  
 **Automated baseline:** GitHub Actions Run #546 / `43768228052` passed all three jobs on that commit.  
 **Primary references:** [CURRENT-STATE-BASELINE.md](CURRENT-STATE-BASELINE.md), [QUALITY-AND-RELEASE-GATES.md](QUALITY-AND-RELEASE-GATES.md), [GOOGLE-AI-STUDIO-CLOUD-SQL.md](GOOGLE-AI-STUDIO-CLOUD-SQL.md), and [UI-IMPLEMENTATION-AND-GAP-MATRIX.md](UI-IMPLEMENTATION-AND-GAP-MATRIX.md).
@@ -87,10 +87,10 @@ Record each case as `NOT_RUN`, `PASS`, `FAIL`, or `BLOCKED`. A case passes only 
 
 | ID | Action | Expected result and evidence |
 |---|---|---|
-| P0-A01 | On a separate empty disposable database, complete first-run setup with fictional organization details and one System Administrator. | Setup succeeds once; organization identity is returned; exactly one `SYSTEM_ADMIN` exists. A second initialization is rejected safely. |
+| P0-A01 | On a separate empty disposable database, complete first-run setup with fictional organization details and one System Administrator. | Setup succeeds once; exactly one organization and one `SYSTEM_ADMIN` exist; the UI transitions to the normal login page without assuming setup issued a session cookie; the organization name/default language and a bilingual completion notice are shown. Sign in explicitly with the administrator credentials just created. A second initialization is rejected safely. |
 | P0-A02 | Open the login page in Arabic, then French; submit valid synthetic credentials. | Both languages render correctly; successful sign-in loads the authenticated shell and only the projects authorized for that actor. |
 | P0-A03 | Reload the page after login. | Session restoration is successful while the session is valid. No bearer/session token is stored in localStorage or sessionStorage. |
-| P0-A04 | Sign out, then revisit/reload an authenticated route. | Session is revoked and the user returns to login; protected API access is denied. |
+| P0-A04 | Sign out, then revisit/reload an authenticated route. Also simulate an unreachable API or rejected logout response on a disposable test session. | A confirmed logout response clears the UI session; a follow-up `/api/auth/me` returning 401 also confirms revocation. A protected API request and replay of the pre-logout cookie are denied. When logout cannot be confirmed (network error or a non-revoking error response), the UI must keep the authenticated state visible, explain that logout is unconfirmed, and offer retry; it must not simulate logout by clearing React state alone. |
 | P0-A05 | Perform a state-changing request without a valid CSRF token in a controlled test. | Request is rejected with the expected CSRF error; do not weaken or bypass the middleware to make the test pass. |
 
 For cookies, inspect attributes without copying values: production HTTPS uses the configured secure HTTP-only policy; the Google preview may apply its documented Development preview cookie policy. Never include cookie, CSRF, or authorization values in captured evidence.
@@ -207,7 +207,13 @@ Do not attach an unredacted HAR, browser storage dump, environment file, SQL con
 
 **Status provenance:** Every `PASS` in this register is based on the Product Owner's 15 November 2026 confirmation, not on a newly executed test or a CI run. The status is recorded at the workflow-group level described by the owner; no claim is made that each negative/boundary subcase in every detailed test row has a separately attached timestamp or trace. The missing artifact metadata is stated in Section 6 above.
 
-## 7. Owner-directed Phase 0 closure — 16 November 2026 (D-010)
+## 7. Implementation follow-up — 17 November 2026
+
+- [PR #85](https://github.com/younestech31/PROMO-GEST/pull/85) corrects the first-run UI handoff: successful setup returns to the normal login screen because the setup endpoint does not issue a session cookie. The user explicitly signs in with the administrator credentials created during setup. It also makes unauthenticated Arabic/French selection effective.
+- [PR #86](https://github.com/younestech31/PROMO-GEST/pull/86) (stacked on PR #85) prevents local-only logout. The app clears its session only after successful logout or a follow-up session check returns 401; an unconfirmed logout leaves the authenticated view visible with a retry action.
+- These are code/automated-test changes only. The manual result register below remains `NOT_RUN` for P0-A01 and P0-A04 until execution on a real browser against a dedicated disposable PostgreSQL 18 database, with sanitized evidence. CI does not close the manual requirements.
+
+## 8. Owner-directed Phase 0 closure — 16 November 2026 (D-010)
 
 The Product Owner explicitly directed that Phase 0 be considered closed for program sequencing and that Phase 1 begin. This is an owner-approved acceptance of known residual risks, not a claim that every original technical exit criterion was executed.
 
@@ -218,7 +224,7 @@ The Product Owner explicitly directed that Phase 0 be considered closed for prog
 - Phase 0 is administratively `COMPLETE` by the Product Owner's direction. The outstanding checks remain visible residual work and must be executed before production release or any release claim depending on those scenarios.
 - Phase 1 is authorized to enter `IN_PROGRESS`. D-010 does not waive G1–G10, security, data-integrity, backup/restore, or later practitioner sign-off gates.
 
-## 8. Original Phase 0 exit criteria
+## 9. Original Phase 0 exit criteria
 
 The original technical exit criteria remain the engineering definition of a fully evidenced Phase 0. The Product Owner's D-010 administrative closure above accepted the named exceptions for program sequencing; it does not assert that these criteria were all satisfied. The original criteria are:
 1. The current main CI is green for the exact main commit under review.
@@ -231,7 +237,7 @@ The original technical exit criteria remain the engineering definition of a full
 A prepared checklist is not evidence of execution. A green automated CI run is not a substitute for these manual browser and real-preview criteria.
 
 
-## 9. Additional automated regression evidence — 16 November 2026
+## 10. Additional automated regression evidence — 16 November 2026
 
 PR [#63](https://github.com/younestech31/PROMO-GEST/pull/63) merged the following tests into `main` (merge SHA `ba3106dfd24b0fca915788350e4e1166c0cbe9ce`):
 

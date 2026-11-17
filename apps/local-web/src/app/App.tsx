@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { MutableRefObject } from 'react';
 import type { AppLanguage, HealthStatusResponse, ProjectDto, SessionResponse } from '../types/erp';
-import { apiClient } from '../core/api/apiClient';
+import { ApiError, apiClient } from '../core/api/apiClient';
+import { getTranslations } from '../core/localization/translations';
 import {
   DEFAULT_APP_ROUTE,
   buildAppPath,
@@ -235,11 +236,13 @@ export function App() {
   const [pendingNavigation, setPendingNavigation] = useState<PendingNavigation | null>(null);
   const [navigationGuardOpen, setNavigationGuardOpen] = useState(false);
   const [savingNavigation, setSavingNavigation] = useState(false);
+  const [logoutFailed, setLogoutFailed] = useState(false);
 
   const activeRouteRef = useRef(activeRoute);
   const dirtyRef = useRef(false);
   const saveActionRef = useRef<(() => Promise<boolean>) | null>(null);
   const discardActionRef = useRef<(() => void) | null>(null);
+  const logoutInFlightRef = useRef(false);
 
   useUnsavedGuard(hasUnsavedChanges);
 
@@ -304,20 +307,44 @@ export function App() {
     setHasUnsavedChanges(dirty);
   }, []);
 
-  const performLogout = useCallback(async () => {
-    try {
-      await authApi.logout();
-    } catch {
-      // Clear the local session even when the local server is unreachable.
-    }
+  const clearLocalSession = useCallback(() => {
     dirtyRef.current = false;
     setHasUnsavedChanges(false);
     setPendingNavigation(null);
     setNavigationGuardOpen(false);
+    setLogoutFailed(false);
     setSession(null);
     setProjects([]);
     commitRoute(DEFAULT_APP_ROUTE);
   }, [commitRoute]);
+
+  const performLogout = useCallback(async () => {
+    if (logoutInFlightRef.current) return;
+    logoutInFlightRef.current = true;
+    setLogoutFailed(false);
+
+    try {
+      await authApi.logout();
+      clearLocalSession();
+    } catch {
+      // A failed response may be ambiguous (for example, the server committed the
+      // revocation but the response was lost). Verify the cookie against the server.
+      try {
+        await authApi.getSession();
+        // The session is still valid, so do not present a local-only logout.
+        setLogoutFailed(true);
+      } catch (verificationError) {
+        if (verificationError instanceof ApiError && verificationError.status === 401) {
+          clearLocalSession();
+        } else {
+          // The server could not confirm revocation. Keep the authenticated UI visible.
+          setLogoutFailed(true);
+        }
+      }
+    } finally {
+      logoutInFlightRef.current = false;
+    }
+  }, [clearLocalSession]);
 
   const requestLogout = useCallback(() => {
     if (dirtyRef.current) {
@@ -596,6 +623,14 @@ export function App() {
       onLanguageChange={handleLanguageChange}
       onLogout={requestLogout}
     >
+      {logoutFailed && (
+        <ErrorBanner
+          message={getTranslations(language).auth.logoutFailed}
+          actionLabel={getTranslations(language).auth.retryLogout}
+          onAction={() => void performLogout()}
+        />
+      )}
+
       <AppContentRouter
         session={session}
         language={language}

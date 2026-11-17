@@ -172,7 +172,7 @@ export async function requestJson<T>(url: string, init?: RequestInit, isRetry = 
     previewSessionToken = token;
   }
 
-  if (url === '/api/auth/logout') {
+  if ((url === '/api/auth/logout' && response.ok) || (url === '/api/auth/me' && response.status === 401)) {
     previewSessionToken = null;
   }
 

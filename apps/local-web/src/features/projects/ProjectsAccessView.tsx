@@ -12,7 +12,7 @@ import type {
 import { getTranslations, translateApiError } from '../../localization/translations';
 import { formatDzd } from '../../utils/algerianFormat';
 import { useAdministrativeReference } from '../../hooks/useAdministrativeReference';
-import { canCreateProject, canManageProjectAccess, canManageProjects, canManageProjectStructure, canManageUsers, canReadProjectDocuments, canUploadProjectDocuments, canReadProjectCustomers, canManageProjectCustomers, canReadProjectSalesReservations, canManageProjectSalesReservations } from '../../utils/permissions';
+import { canCreateProject, canManageProjectAccess, canManageProjects, canManageProjectStructure, canManageUsers, canReadProjectDocuments, canUploadProjectDocuments, canReadProjectCustomers, canManageProjectCustomers, canReadProjectSalesReservations, canManageProjectSalesReservations, canViewProjectFinancials } from '../../utils/permissions';
 import { validateCreateProject, type ValidationErrors } from '../../utils/validation';
 import { apiClient, ApiError } from '../../services/apiClient';
 import { FormField, inputBaseClass } from '../../components/FormField';
@@ -95,6 +95,10 @@ export function ProjectsAccessView({
     canManageDocuments: true,
   });
 
+  const canEditProjectBudget = editingProject
+    ? canViewProjectFinancials(currentUser, editingProject)
+    : !currentUser.isSystemAdministrator;
+
   const loadData = async () => {
     setLoading(true);
     setError(null);
@@ -161,7 +165,7 @@ export function ProjectsAccessView({
           buildingPermitNumber: canonicalForm.buildingPermitNumber,
           buildingPermitDate: canonicalForm.buildingPermitDate || null,
           status: canonicalForm.status,
-          estimatedBudgetDzd: canonicalForm.estimatedBudgetDzd,
+          estimatedBudgetDzd: canEditProjectBudget ? canonicalForm.estimatedBudgetDzd : null,
           plannedBlocksCount: canonicalForm.plannedBlocksCount,
           plannedUnitsCount: canonicalForm.plannedUnitsCount,
           expectedConcurrencyStamp: editingProject.concurrencyStamp,
@@ -173,6 +177,7 @@ export function ProjectsAccessView({
       } else {
         const created = await apiClient.createProject({
           ...canonicalForm,
+          estimatedBudgetDzd: canEditProjectBudget ? canonicalForm.estimatedBudgetDzd : 0,
           buildingPermitDate: canonicalForm.buildingPermitDate || null,
         });
         const next = [created, ...projects];
@@ -233,7 +238,7 @@ export function ProjectsAccessView({
       buildingPermitNumber: project.buildingPermitNumber ?? '',
       buildingPermitDate: project.buildingPermitDate ?? '',
       status: project.status,
-      estimatedBudgetDzd: project.estimatedBudgetDzd,
+      estimatedBudgetDzd: project.estimatedBudgetDzd ?? 0,
       plannedBlocksCount: project.plannedBlocksCount,
       plannedUnitsCount: project.plannedUnitsCount,
     });
@@ -394,7 +399,7 @@ export function ProjectsAccessView({
                     </td>
                     <td className="py-3 px-4 text-xs text-slate-700">{statusLabel(p.status)}</td>
                     <td className="py-3 px-4 text-end font-data text-slate-900">
-                      {formatDzd(p.estimatedBudgetDzd, language)}
+                      {p.estimatedBudgetDzd === null ? '—' : formatDzd(p.estimatedBudgetDzd, language)}
                     </td>
                     <td className="py-3 px-4 text-end font-data text-slate-700">
                       {p.members.length}
@@ -598,6 +603,7 @@ export function ProjectsAccessView({
                   />
                 </FormField>
 
+                {canEditProjectBudget && (
                 <FormField
                   id="prj-budget"
                   label={t.projects.fieldBudgetDzd}
@@ -616,6 +622,7 @@ export function ProjectsAccessView({
                     className={`${inputBaseClass} font-data`}
                   />
                 </FormField>
+                )}
 
                 <FormField id="prj-blocks" label={t.projects.fieldBlocks}>
                   <input

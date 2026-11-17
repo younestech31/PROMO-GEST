@@ -51,6 +51,7 @@ export interface TranslationBundle {
     signOut: string;
     localServerBadge: string;
     sessionNotice: string;
+    setupCompletedNotice: string;
   };
   nav: {
     overview: string;
@@ -268,6 +269,7 @@ const AR: TranslationBundle = {
     signOut: 'تسجيل الخروج',
     localServerBadge: 'خادم محلي مستقل · DZD',
     sessionNotice: 'محمي بقفل تلقائي بعد 5 محاولات فاشلة وتحديد معدل الطلبات.',
+    setupCompletedNotice: 'اكتملت تهيئة المؤسسة وإنشاء حساب مدير النظام. سجّل الدخول الآن ببيانات الحساب الذي أنشأته.',
   },
   nav: {
     overview: 'مساحة المؤسسة',
@@ -485,6 +487,7 @@ const FR: TranslationBundle = {
     signOut: 'Déconnexion',
     localServerBadge: 'Serveur Local · DZD',
     sessionNotice: 'Protégé par verrouillage automatique après 5 échecs et limitation de débit.',
+    setupCompletedNotice: 'L’organisation est initialisée et le compte Administrateur Système est créé. Connectez-vous avec les identifiants que vous venez de définir.',
   },
   nav: {
     overview: 'Espace Organisation',

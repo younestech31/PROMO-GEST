@@ -1724,6 +1724,15 @@ public sealed class PostgresEndToEndTests : IClassFixture<PostgreSql18Integratio
             Assert.NotNull(administratorBudgetRead);
             Assert.Null(administratorBudgetRead!.EstimatedBudgetDzd);
 
+            var explicitlyGrantAdminFinancialScope = await adminClient.PutAsJsonAsync(
+                $"/api/projects/{createdProject.Id}/members",
+                new AssignProjectMemberRequest(initialized.SystemAdminUserId, "FinanceController", true, false, false, false));
+            Assert.Equal(HttpStatusCode.OK, explicitlyGrantAdminFinancialScope.StatusCode);
+            var adminAfterExplicitMembership = await adminClient.GetFromJsonAsync<ProjectDto>(
+                $"/api/projects/{createdProject.Id}");
+            Assert.NotNull(adminAfterExplicitMembership);
+            Assert.Equal(470_000_000m, adminAfterExplicitMembership!.EstimatedBudgetDzd);
+
             var directorBuildingResponse = await directorClient.PostAsJsonAsync(
                 $"{structureUrl}/buildings",
                 new CreateBuildingRequest("B", "العمارة ب", "Bâtiment B", "Planned"));

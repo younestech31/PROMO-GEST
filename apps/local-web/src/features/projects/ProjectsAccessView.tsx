@@ -15,6 +15,7 @@ import { useAdministrativeReference } from '../../hooks/useAdministrativeReferen
 import { canCreateProject, canManageProjectAccess, canManageProjects, canManageProjectStructure, canManageUsers, canReadProjectDocuments, canUploadProjectDocuments, canReadProjectCustomers, canManageProjectCustomers, canReadProjectSalesReservations, canManageProjectSalesReservations, canUpdateProjectFinancialBudget } from '../../utils/permissions';
 import { validateCreateProject, type ValidationErrors } from '../../utils/validation';
 import { apiClient, ApiError } from '../../services/apiClient';
+import { ConfirmDialog } from '../../components/StateViews';
 import { FormField, inputBaseClass } from '../../components/FormField';
 import { ProjectStructureModal } from './ProjectStructureModal';
 import { ProjectDocumentsModal } from './ProjectDocumentsModal';
@@ -26,6 +27,7 @@ interface ProjectsAccessViewProps {
   language: AppLanguage;
   onProjectsChanged?: (projects: ProjectDto[]) => void;
   onOpenProjectWorkspace?: (projectId: string) => void;
+  onDirtyChange?: (dirty: boolean) => void;
 }
 
 const PROJECT_ROLES = [
@@ -49,6 +51,7 @@ export function ProjectsAccessView({
   language,
   onProjectsChanged,
   onOpenProjectWorkspace,
+  onDirtyChange,
 }: ProjectsAccessViewProps) {
   const t = getTranslations(language);
   const { reference, isLoading: referenceLoading, hasError: referenceError, retry: retryReference } =
@@ -98,6 +101,30 @@ export function ProjectsAccessView({
     canManageConstruction: false,
     canManageDocuments: true,
   });
+  const [hasProjectFormEdits, setHasProjectFormEdits] = useState(false);
+  const [childModalDirty, setChildModalDirty] = useState(false);
+  const [confirmDiscardOpen, setConfirmDiscardOpen] = useState(false);
+
+  const isAnyDirty = (createOpen && hasProjectFormEdits) || childModalDirty;
+
+  useEffect(() => {
+    onDirtyChange?.(isAnyDirty);
+  }, [isAnyDirty, onDirtyChange]);
+
+  useEffect(() => {
+    return () => {
+      onDirtyChange?.(false);
+    };
+  }, [onDirtyChange]);
+
+  const requestCloseCreateModal = () => {
+    if (hasProjectFormEdits) {
+      setConfirmDiscardOpen(true);
+      return;
+    }
+    setCreateOpen(false);
+    setEditingProject(null);
+  };
 
   const canEditProjectBudget = editingProject
     ? canUpdateProjectFinancialBudget(currentUser, editingProject)
@@ -211,6 +238,7 @@ export function ProjectsAccessView({
 
       setCreateOpen(false);
       setEditingProject(null);
+      setHasProjectFormEdits(false);
       setCreateForm({
         code: '',
         nameAr: '',
@@ -268,6 +296,7 @@ export function ProjectsAccessView({
     });
     setFormErrors({});
     setModalError(null);
+    setHasProjectFormEdits(false);
     setCreateOpen(true);
   };
 
@@ -333,6 +362,7 @@ export function ProjectsAccessView({
               setEditingProject(null);
               setFormErrors({});
               setModalError(null);
+              setHasProjectFormEdits(false);
               setCreateForm({
                 code: '',
                 nameAr: '',
@@ -699,7 +729,7 @@ export function ProjectsAccessView({
               <button
                 type="button"
                 aria-label={t.users.cancel}
-                onClick={() => { setCreateOpen(false); setEditingProject(null); }}
+                onClick={requestCloseCreateModal}
                 className="p-1.5 rounded text-slate-500 hover:bg-slate-100"
               >
                 <X className="w-4 h-4" />
@@ -712,7 +742,7 @@ export function ProjectsAccessView({
               </div>
             )}
 
-            <form onSubmit={handleProjectSubmit} noValidate className="mt-4 space-y-4">
+            <form onSubmit={handleProjectSubmit} onChange={() => setHasProjectFormEdits(true)} noValidate className="mt-4 space-y-4">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <FormField id="prj-code" label={t.projects.fieldCode} error={formErrors.code}>
                   <input
@@ -902,7 +932,7 @@ export function ProjectsAccessView({
               <div className="pt-4 border-t border-slate-100 flex justify-end gap-3">
                 <button
                   type="button"
-                  onClick={() => { setCreateOpen(false); setEditingProject(null); }}
+                  onClick={requestCloseCreateModal}
                   className="px-4 py-2 text-xs font-semibold rounded-md border border-slate-200 text-slate-700 hover:bg-slate-100"
                 >
                   {t.users.cancel}
@@ -925,8 +955,10 @@ export function ProjectsAccessView({
         <ProjectStructureModal
           project={structureProject}
           language={language}
+          onDirtyChange={setChildModalDirty}
           onClose={() => {
             setStructureProject(null);
+            setChildModalDirty(false);
             void loadData();
           }}
         />
@@ -1121,7 +1153,8 @@ export function ProjectsAccessView({
           project={documentsProject}
           language={language}
           canUpload={canUploadProjectDocuments(currentUser, documentsProject)}
-          onClose={() => setDocumentsProject(null)}
+          onDirtyChange={setChildModalDirty}
+          onClose={() => { setDocumentsProject(null); setChildModalDirty(false); }}
         />
       )}
       {customersProject && (
@@ -1131,7 +1164,8 @@ export function ProjectsAccessView({
           canManage={canManageProjectCustomers(currentUser, customersProject)}
           canReadPartyDirectory={currentUser.isSystemAdministrator || currentUser.permissions.includes('parties.directory.read')}
           canManagePartyIdentity={currentUser.isSystemAdministrator || currentUser.permissions.includes('parties.identity.manage')}
-          onClose={() => setCustomersProject(null)}
+          onDirtyChange={setChildModalDirty}
+          onClose={() => { setCustomersProject(null); setChildModalDirty(false); }}
         />
       )}
       {reservationsProject && (
@@ -1139,9 +1173,29 @@ export function ProjectsAccessView({
           project={reservationsProject}
           language={language}
           canManage={canManageProjectSalesReservations(currentUser, reservationsProject)}
-          onClose={() => setReservationsProject(null)}
+          onDirtyChange={setChildModalDirty}
+          onClose={() => { setReservationsProject(null); setChildModalDirty(false); }}
         />
       )}
+
+      <ConfirmDialog
+        open={confirmDiscardOpen}
+        title={language === 'ar' ? 'تغييرات غير محفوظة' : 'Modifications non enregistrées'}
+        message={
+          language === 'ar'
+            ? 'لديك بيانات غير محفوظة في نموذج المشروع. هل تريد تجاهلها وإغلاق النافذة؟'
+            : 'Vous avez des modifications non enregistrées dans le formulaire projet. Voulez-vous les abandonner ?'
+        }
+        confirmLabel={language === 'ar' ? 'تجاهل وإغلاق' : 'Abandonner et fermer'}
+        cancelLabel={language === 'ar' ? 'البقاء في النموذج' : 'Continuer l’édition'}
+        onConfirm={() => {
+          setConfirmDiscardOpen(false);
+          setHasProjectFormEdits(false);
+          setCreateOpen(false);
+          setEditingProject(null);
+        }}
+        onCancel={() => setConfirmDiscardOpen(false)}
+      />
     </div>
   );
 }

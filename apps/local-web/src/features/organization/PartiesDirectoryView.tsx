@@ -1,23 +1,25 @@
-import { useState, type FormEvent } from 'react';
+import { useEffect, useState, type FormEvent } from 'react';
 import { Info, LoaderCircle, Pencil, Search, ShieldCheck, Users2, X } from 'lucide-react';
 import type { AppLanguage, AuthenticatedUser, PartyDirectoryItemDto } from '../../types/erp';
 import { apiClient, ApiError } from '../../services/apiClient';
 import { translateApiError } from '../../localization/translations';
 import { canManagePartyIdentity, canReadPartyDirectory } from '../../utils/permissions';
 import { PageHeader } from '../../components/PageHeader';
-import { EmptyState, ErrorBanner } from '../../components/StateViews';
+import { ConfirmDialog, EmptyState, ErrorBanner } from '../../components/StateViews';
 import { FormField, inputBaseClass } from '../../components/FormField';
 
 interface PartiesDirectoryViewProps {
   currentUser: AuthenticatedUser;
   language: AppLanguage;
   onNavigateHome: () => void;
+  onDirtyChange?: (dirty: boolean) => void;
 }
 
 export function PartiesDirectoryView({
   currentUser,
   language,
   onNavigateHome,
+  onDirtyChange,
 }: PartiesDirectoryViewProps) {
   const isArabic = language === 'ar';
   const canRead = canReadPartyDirectory(currentUser);
@@ -35,6 +37,31 @@ export function PartiesDirectoryView({
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
   const [saveSuccess, setSaveSuccess] = useState<string | null>(null);
+  const [confirmDiscardOpen, setConfirmDiscardOpen] = useState(false);
+
+  const isEditorDirty = Boolean(
+    editingParty &&
+      (editKind !== (editingParty.kind === 'LegalEntity' ? 'LegalEntity' : 'Person') ||
+        editDisplayName !== editingParty.displayName)
+  );
+
+  useEffect(() => {
+    onDirtyChange?.(isEditorDirty);
+  }, [isEditorDirty, onDirtyChange]);
+
+  useEffect(() => {
+    return () => {
+      onDirtyChange?.(false);
+    };
+  }, [onDirtyChange]);
+
+  const requestCloseEditor = () => {
+    if (isEditorDirty) {
+      setConfirmDiscardOpen(true);
+      return;
+    }
+    setEditingParty(null);
+  };
 
   const handleSearch = async (event?: FormEvent) => {
     event?.preventDefault();
@@ -114,7 +141,7 @@ export function PartiesDirectoryView({
         }
         language={language}
         moduleCode="D"
-        moduleState="PARTIAL"
+        moduleState="PARTIALLY_IMPLEMENTED"
         breadcrumbs={[
           { label: isArabic ? 'مساحة المؤسسة' : 'Organisation', onClick: onNavigateHome },
           { label: isArabic ? 'دليل الأطراف' : 'Tiers' },
@@ -277,7 +304,7 @@ export function PartiesDirectoryView({
               <button
                 type="button"
                 aria-label={isArabic ? 'إغلاق' : 'Fermer'}
-                onClick={() => setEditingParty(null)}
+                onClick={requestCloseEditor}
                 className="p-1.5 rounded text-slate-500 hover:bg-slate-100"
               >
                 <X className="w-4 h-4" />
@@ -317,7 +344,7 @@ export function PartiesDirectoryView({
               <div className="pt-4 border-t border-slate-100 flex justify-end gap-3">
                 <button
                   type="button"
-                  onClick={() => setEditingParty(null)}
+                  onClick={requestCloseEditor}
                   className="px-4 py-2 text-xs font-semibold rounded-md border border-slate-200 text-slate-700 hover:bg-slate-100"
                 >
                   {isArabic ? 'إلغاء' : 'Annuler'}
@@ -334,6 +361,23 @@ export function PartiesDirectoryView({
           </div>
         </div>
       )}
+
+      <ConfirmDialog
+        open={confirmDiscardOpen}
+        title={isArabic ? 'تغييرات غير محفوظة' : 'Modifications non enregistrées'}
+        message={
+          isArabic
+            ? 'لديك تعديلات غير محفوظة على هوية الطرف. هل تريد تجاهلها وإغلاق النافذة؟'
+            : 'Vous avez des modifications non enregistrées sur l’identité du tiers. Voulez-vous les abandonner ?'
+        }
+        confirmLabel={isArabic ? 'تجاهل وإغلاق' : 'Abandonner et fermer'}
+        cancelLabel={isArabic ? 'البقاء في النموذج' : 'Continuer l’édition'}
+        onConfirm={() => {
+          setConfirmDiscardOpen(false);
+          setEditingParty(null);
+        }}
+        onCancel={() => setConfirmDiscardOpen(false)}
+      />
     </div>
   );
 }

@@ -12,6 +12,7 @@ import type {
 } from '../../types/erp';
 import { apiClient, ApiError } from '../../services/apiClient';
 import { translateApiError } from '../../localization/translations';
+import { ConfirmDialog } from '../../components/StateViews';
 
 interface ProjectCustomerRegistryModalProps {
   project: ProjectDto;
@@ -21,6 +22,7 @@ interface ProjectCustomerRegistryModalProps {
   canManagePartyIdentity: boolean;
   mode?: 'modal' | 'embedded';
   onClose?: () => void;
+  onDirtyChange?: (dirty: boolean) => void;
 }
 
 interface CustomerFormState {
@@ -107,6 +109,7 @@ export function ProjectCustomerRegistryModal({
   canManagePartyIdentity,
   mode = 'modal',
   onClose,
+  onDirtyChange,
 }: ProjectCustomerRegistryModalProps) {
   const isArabic = language === 'ar';
   const [subView, setSubView] = useState<'registry' | 'pipelinePlanned'>('registry');
@@ -117,6 +120,7 @@ export function ProjectCustomerRegistryModal({
   const [saving, setSaving] = useState(false);
   const [interactionSaving, setInteractionSaving] = useState(false);
   const [showForm, setShowForm] = useState(false);
+  const [hasFormEdits, setHasFormEdits] = useState(false);
   const [editing, setEditing] = useState(false);
   const [form, setForm] = useState<CustomerFormState>(() => emptyForm(language));
   const [partyQuery, setPartyQuery] = useState('');
@@ -128,6 +132,44 @@ export function ProjectCustomerRegistryModal({
   const [interactionSummary, setInteractionSummary] = useState('');
   const [nextFollowUp, setNextFollowUp] = useState('');
   const [error, setError] = useState<string | null>(null);
+  const [pendingAction, setPendingAction] = useState<
+    | { kind: 'close' }
+    | { kind: 'subView'; target: 'registry' | 'pipelinePlanned' }
+    | null
+  >(null);
+
+  const isDirty =
+    (showForm && hasFormEdits) ||
+    interactionSubject.trim() !== '' ||
+    interactionSummary.trim() !== '' ||
+    nextFollowUp.trim() !== '';
+
+  useEffect(() => {
+    onDirtyChange?.(isDirty);
+  }, [isDirty, onDirtyChange]);
+
+  useEffect(() => {
+    return () => {
+      onDirtyChange?.(false);
+    };
+  }, [onDirtyChange]);
+
+  const requestClose = () => {
+    if (isDirty) {
+      setPendingAction({ kind: 'close' });
+      return;
+    }
+    onClose?.();
+  };
+
+  const requestSwitchSubView = (target: 'registry' | 'pipelinePlanned') => {
+    if (target === subView) return;
+    if (isDirty) {
+      setPendingAction({ kind: 'subView', target });
+      return;
+    }
+    setSubView(target);
+  };
 
   const loadCustomers = useCallback(async () => {
     setLoading(true);
@@ -160,6 +202,7 @@ export function ProjectCustomerRegistryModal({
       const result = await apiClient.getProjectCustomer(project.id, customerId);
       setDetails(result);
       setShowForm(false);
+      setHasFormEdits(false);
       setEditing(false);
     } catch (err) {
       setError(errorText(err, language));
@@ -172,6 +215,7 @@ export function ProjectCustomerRegistryModal({
     setPartyResults([]);
     setSelectedParty(null);
     setEditing(false);
+    setHasFormEdits(false);
     setShowForm(true);
     setError(null);
   };
@@ -195,6 +239,7 @@ export function ProjectCustomerRegistryModal({
       identityDocumentStoredFileId: details.identityDocument?.id ?? '',
     });
     setEditing(true);
+    setHasFormEdits(false);
     setShowForm(true);
     setError(null);
   };
@@ -221,6 +266,7 @@ export function ProjectCustomerRegistryModal({
 
   const chooseParty = (party: PartyDirectoryItemDto) => {
     setSelectedParty(party);
+    setHasFormEdits(true);
     setForm((current) => ({
       ...current,
       partyId: party.id,
@@ -232,6 +278,7 @@ export function ProjectCustomerRegistryModal({
 
   const clearSelectedParty = () => {
     setSelectedParty(null);
+    setHasFormEdits(true);
     setForm((current) => ({ ...current, partyId: '' }));
   };
 
@@ -272,6 +319,7 @@ export function ProjectCustomerRegistryModal({
 
       setDetails(saved);
       setShowForm(false);
+      setHasFormEdits(false);
       setEditing(false);
       await loadCustomers();
     } catch (err) {
@@ -335,7 +383,7 @@ export function ProjectCustomerRegistryModal({
         <div className="flex flex-wrap gap-1.5 border-b border-slate-200 px-4 pt-3 bg-slate-50/70">
           <button
             type="button"
-            onClick={() => setSubView('registry')}
+            onClick={() => requestSwitchSubView('registry')}
             className={`px-3 py-2 text-xs font-semibold border-b-2 transition-colors ${
               subView === 'registry'
                 ? 'border-teal-800 text-teal-900 bg-white rounded-t'
@@ -346,7 +394,7 @@ export function ProjectCustomerRegistryModal({
           </button>
           <button
             type="button"
-            onClick={() => setSubView('pipelinePlanned')}
+            onClick={() => requestSwitchSubView('pipelinePlanned')}
             className={`px-3 py-2 text-xs font-semibold border-b-2 transition-colors ${
               subView === 'pipelinePlanned'
                 ? 'border-teal-800 text-teal-900 bg-white rounded-t'
@@ -424,14 +472,14 @@ export function ProjectCustomerRegistryModal({
 
             <section className="min-w-0 space-y-4 rounded-md border border-slate-200 p-3 sm:p-4">
               {showForm ? (
-                <form onSubmit={submitCustomer} className="space-y-3">
+                <form onSubmit={submitCustomer} onChange={() => setHasFormEdits(true)} className="space-y-3">
                   <div className="flex items-center justify-between gap-3">
                     <h3 className="text-sm font-bold text-slate-900">
                       {editing
                         ? (isArabic ? 'تعديل بيانات الزبون' : 'Modifier le client')
                         : (isArabic ? 'إضافة زبون أو مهتم' : 'Ajouter un client ou prospect')}
                     </h3>
-                    <button type="button" onClick={() => setShowForm(false)} className="text-xs text-slate-500 hover:underline">
+                    <button type="button" onClick={() => { setShowForm(false); setHasFormEdits(false); }} className="text-xs text-slate-500 hover:underline">
                       {isArabic ? 'إلغاء' : 'Annuler'}
                     </button>
                   </div>
@@ -574,7 +622,7 @@ export function ProjectCustomerRegistryModal({
                   </label>
 
                   <div className="flex justify-end gap-2 border-t border-slate-100 pt-3">
-                    <button type="button" onClick={() => setShowForm(false)} className="rounded border border-slate-200 px-4 py-2 text-xs font-medium text-slate-700 hover:bg-slate-50">
+                    <button type="button" onClick={() => { setShowForm(false); setHasFormEdits(false); }} className="rounded border border-slate-200 px-4 py-2 text-xs font-medium text-slate-700 hover:bg-slate-50">
                       {isArabic ? 'إلغاء' : 'Annuler'}
                     </button>
                     <button type="submit" disabled={saving} className="rounded bg-teal-800 px-4 py-2 text-xs font-semibold text-white hover:bg-teal-900 disabled:opacity-50">
@@ -700,40 +748,76 @@ export function ProjectCustomerRegistryModal({
     </>
   );
 
+  const discardConfirmDialog = (
+    <ConfirmDialog
+      open={pendingAction !== null}
+      title={isArabic ? 'تغييرات غير محفوظة' : 'Modifications non enregistrées'}
+      message={
+        isArabic
+          ? 'لديك بيانات أو متابعة غير محفوظة في نموذج الزبائن. هل تريد تجاهلها والمتابعة؟'
+          : 'Vous avez des modifications ou un suivi non enregistré dans le registre clients. Voulez-vous les abandonner ?'
+      }
+      confirmLabel={isArabic ? 'تجاهل والمتابعة' : 'Abandonner et continuer'}
+      cancelLabel={isArabic ? 'البقاء في النموذج' : 'Rester sur le formulaire'}
+      onConfirm={() => {
+        const next = pendingAction;
+        setPendingAction(null);
+        setShowForm(false);
+        setHasFormEdits(false);
+        setEditing(false);
+        setInteractionSubject('');
+        setInteractionSummary('');
+        setNextFollowUp('');
+        if (next?.kind === 'close') {
+          onClose?.();
+        } else if (next?.kind === 'subView') {
+          setSubView(next.target);
+        }
+      }}
+      onCancel={() => setPendingAction(null)}
+    />
+  );
+
   if (mode === 'embedded') {
     return (
-      <div className="bg-white border border-slate-200 rounded-lg overflow-hidden" dir={isArabic ? 'rtl' : 'ltr'}>
-        {registryContent}
-      </div>
+      <>
+        <div className="bg-white border border-slate-200 rounded-lg overflow-hidden" dir={isArabic ? 'rtl' : 'ltr'}>
+          {registryContent}
+        </div>
+        {discardConfirmDialog}
+      </>
     );
   }
 
   return (
-    <div
-      className="fixed inset-0 z-[75] flex items-center justify-center bg-slate-950/50 p-3 sm:p-5"
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby="project-customers-title"
-      dir={isArabic ? 'rtl' : 'ltr'}
-    >
-      <div className="flex max-h-[94vh] w-full max-w-6xl flex-col overflow-hidden rounded-lg border border-slate-200 bg-white shadow-xl">
-        <header className="flex items-start justify-between gap-4 border-b border-slate-200 px-5 py-4">
-          <div className="min-w-0">
-            <div className="flex items-center gap-2 text-teal-800">
-              <UserRound className="h-5 w-5 shrink-0" aria-hidden="true" />
-              <h2 id="project-customers-title" className="text-base font-bold text-slate-900">{title}</h2>
+    <>
+      <div
+        className="fixed inset-0 z-[75] flex items-center justify-center bg-slate-950/50 p-3 sm:p-5"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="project-customers-title"
+        dir={isArabic ? 'rtl' : 'ltr'}
+      >
+        <div className="flex max-h-[94vh] w-full max-w-6xl flex-col overflow-hidden rounded-lg border border-slate-200 bg-white shadow-xl">
+          <header className="flex items-start justify-between gap-4 border-b border-slate-200 px-5 py-4">
+            <div className="min-w-0">
+              <div className="flex items-center gap-2 text-teal-800">
+                <UserRound className="h-5 w-5 shrink-0" aria-hidden="true" />
+                <h2 id="project-customers-title" className="text-base font-bold text-slate-900">{title}</h2>
+              </div>
+              <p className="mt-1 truncate text-xs text-slate-500">
+                <span className="font-data">{project.code}</span> · {isArabic ? project.nameAr : project.nameFr}
+              </p>
             </div>
-            <p className="mt-1 truncate text-xs text-slate-500">
-              <span className="font-data">{project.code}</span> · {isArabic ? project.nameAr : project.nameFr}
-            </p>
-          </div>
-          <button type="button" onClick={onClose} aria-label={isArabic ? 'إغلاق' : 'Fermer'} className="rounded p-1.5 text-slate-500 hover:bg-slate-100">
-            <X className="h-4 w-4" aria-hidden="true" />
-          </button>
-        </header>
+            <button type="button" onClick={requestClose} aria-label={isArabic ? 'إغلاق' : 'Fermer'} className="rounded p-1.5 text-slate-500 hover:bg-slate-100">
+              <X className="h-4 w-4" aria-hidden="true" />
+            </button>
+          </header>
 
-        {registryContent}
+          {registryContent}
+        </div>
       </div>
-    </div>
+      {discardConfirmDialog}
+    </>
   );
 }

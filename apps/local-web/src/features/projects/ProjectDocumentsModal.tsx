@@ -3,6 +3,7 @@ import { Download, FileText, LoaderCircle, Upload, X } from 'lucide-react';
 import type { AppLanguage, ProjectDocumentDto, ProjectDto } from '../../types/erp';
 import { apiClient, ApiError } from '../../services/apiClient';
 import { translateApiError } from '../../localization/translations';
+import { ConfirmDialog } from '../../components/StateViews';
 
 interface ProjectDocumentsModalProps {
   project: ProjectDto;
@@ -10,6 +11,7 @@ interface ProjectDocumentsModalProps {
   canUpload: boolean;
   mode?: 'modal' | 'embedded';
   onClose?: () => void;
+  onDirtyChange?: (dirty: boolean) => void;
 }
 
 const MAX_DOCUMENT_BYTES = 25 * 1024 * 1024;
@@ -50,6 +52,7 @@ export function ProjectDocumentsModal({
   canUpload,
   mode = 'modal',
   onClose,
+  onDirtyChange,
 }: ProjectDocumentsModalProps) {
   const isArabic = language === 'ar';
   const [subView, setSubView] = useState<'vault' | 'metadataPlanned' | 'linksPlanned' | 'retentionPlanned'>('vault');
@@ -61,6 +64,48 @@ export function ProjectDocumentsModal({
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [downloadingId, setDownloadingId] = useState<string | null>(null);
+  const [pendingAction, setPendingAction] = useState<
+    | { kind: 'close' }
+    | { kind: 'subView'; target: 'vault' | 'metadataPlanned' | 'linksPlanned' | 'retentionPlanned' }
+    | null
+  >(null);
+
+  const isDirty = canUpload && (selectedFile !== null || description.trim() !== '' || category !== 'Other');
+
+  useEffect(() => {
+    onDirtyChange?.(isDirty);
+  }, [isDirty, onDirtyChange]);
+
+  useEffect(() => {
+    return () => {
+      onDirtyChange?.(false);
+    };
+  }, [onDirtyChange]);
+
+  const resetUploadDraft = () => {
+    setSelectedFile(null);
+    setDescription('');
+    setCategory('Other');
+    const input = document.getElementById('project-document-file') as HTMLInputElement | null;
+    if (input) input.value = '';
+  };
+
+  const requestClose = () => {
+    if (isDirty) {
+      setPendingAction({ kind: 'close' });
+      return;
+    }
+    onClose?.();
+  };
+
+  const requestSwitchSubView = (target: 'vault' | 'metadataPlanned' | 'linksPlanned' | 'retentionPlanned') => {
+    if (target === subView) return;
+    if (isDirty) {
+      setPendingAction({ kind: 'subView', target });
+      return;
+    }
+    setSubView(target);
+  };
 
   const loadDocuments = useCallback(async () => {
     setDocuments([]);
@@ -150,15 +195,15 @@ export function ProjectDocumentsModal({
       {mode === 'embedded' && (
         <div className="flex flex-wrap gap-1.5 border-b border-slate-200 px-4 pt-3 bg-slate-50/70">
           {[
-            { id: 'vault' as const, ar: 'وثائق المشروع (SHA-256)', fr: 'Documents projet (SHA-256)' },
-            { id: 'metadataPlanned' as const, ar: 'البيانات الوصفية والوسوم (مخطط)', fr: 'Métadonnées (Planifié)' },
+            { id: 'vault' as const, ar: 'وثائق المشروع (رفع/عرض/تنزيل)', fr: 'Documents projet (dépôt/lecture/téléchargement)' },
+            { id: 'metadataPlanned' as const, ar: 'تحرير البيانات الوصفية والأرشفة المرنة (مخطط)', fr: 'Édition métadonnées & archivage souple (Planifié)' },
             { id: 'linksPlanned' as const, ar: 'الروابط المهيكلة DocumentLink (مخطط)', fr: 'Liens DocumentLink (Planifié)' },
             { id: 'retentionPlanned' as const, ar: 'سياسات الحفظ K-Full (مخطط)', fr: 'Rétention K-Full (Planifié)' },
           ].map((tab) => (
             <button
               key={tab.id}
               type="button"
-              onClick={() => setSubView(tab.id)}
+              onClick={() => requestSwitchSubView(tab.id)}
               className={`px-3 py-2 text-xs font-semibold border-b-2 transition-colors whitespace-nowrap ${
                 subView === tab.id
                   ? 'border-teal-800 text-teal-900 bg-white rounded-t'
@@ -176,15 +221,15 @@ export function ProjectDocumentsModal({
           <div className="rounded-md border border-amber-200 bg-amber-50/70 p-4 text-amber-950 space-y-1.5">
             <div className="font-bold">
               {subView === 'metadataPlanned'
-                ? (isArabic ? 'تعديل البيانات الوصفية والوسوم — مخطط' : 'Édition des métadonnées & indexation — Planifié')
+                ? (isArabic ? 'تحديث البيانات الوصفية والوسوم والأرشفة المرنة — مخطط' : 'Mise à jour des métadonnées, indexation & archivage souple — Planifié')
                 : subView === 'linksPlanned'
                   ? (isArabic ? 'الربط المهيكل بالسجلات التجارية والهندسية (DocumentLink) — مخطط' : 'Liens structurés vers contrats, lots et chantiers (DocumentLink) — Planifié')
                   : (isArabic ? 'سياسات الاحتفاظ والأرشيف القانوني (K-Full) — مخطط' : 'Politiques de rétention et archivage probant (K-Full) — Planifié')}
             </div>
             <p className="leading-relaxed">
               {isArabic
-                ? 'طبقة K-Min الحالية مفعّلة بالكامل لرفع الوثائق والتحقق التلقائي من بصمة SHA-256 وتنزيلها بأمان. هذه الامتدادات ستُضاف عند ربط الوحدات القانونية والأشغال.'
-                : 'Le socle K-Min est actif pour le dépôt sécurisé, la vérification SHA-256 et le téléchargement. Ces extensions seront activées lors de l’ouverture des modules Contrats et Chantiers.'}
+                ? 'طبقة K-Min الحالية مفعّلة لرفع وثائق المشروع وعرضها وتنزيلها والتحقق التلقائي من بصمة SHA-256. تحرير البيانات الوصفية بعد الرفع والأرشفة المرنة (soft-archive) والروابط المهيكلة DocumentLink وسياسات الحفظ K-Full ما زالت مخططة للمرحلة القادمة.'
+                : 'Le socle K-Min actif couvre le dépôt, la consultation, le téléchargement sécurisé et le contrôle SHA-256 des documents. L’édition des métadonnées après dépôt, l’archivage souple (soft-archive), les liens DocumentLink et les politiques K-Full restent planifiés.'}
             </p>
           </div>
         </div>
@@ -333,55 +378,86 @@ export function ProjectDocumentsModal({
     </>
   );
 
+  const discardConfirmDialog = (
+    <ConfirmDialog
+      open={pendingAction !== null}
+      title={isArabic ? 'تغييرات غير محفوظة' : 'Modifications non enregistrées'}
+      message={
+        isArabic
+          ? 'اخترت ملفاً أو أدخلت بيانات وثيقة لم تُرفع بعد. هل تريد تجاهلها والمتابعة؟'
+          : 'Un fichier sélectionné ou une description n’a pas encore été téléversé. Voulez-vous l’abandonner ?'
+      }
+      confirmLabel={isArabic ? 'تجاهل والمتابعة' : 'Abandonner et continuer'}
+      cancelLabel={isArabic ? 'البقاء في النموذج' : 'Rester sur le formulaire'}
+      onConfirm={() => {
+        const next = pendingAction;
+        setPendingAction(null);
+        resetUploadDraft();
+        if (next?.kind === 'close') {
+          onClose?.();
+        } else if (next?.kind === 'subView') {
+          setSubView(next.target);
+        }
+      }}
+      onCancel={() => setPendingAction(null)}
+    />
+  );
+
   if (mode === 'embedded') {
     return (
-      <div className="bg-white border border-slate-200 rounded-lg overflow-hidden" dir={isArabic ? 'rtl' : 'ltr'}>
-        {documentsBody}
-      </div>
+      <>
+        <div className="bg-white border border-slate-200 rounded-lg overflow-hidden" dir={isArabic ? 'rtl' : 'ltr'}>
+          {documentsBody}
+        </div>
+        {discardConfirmDialog}
+      </>
     );
   }
 
   return (
-    <div
-      className="fixed inset-0 z-[70] flex items-center justify-center bg-slate-950/50 p-3 sm:p-5"
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby="project-documents-title"
-      dir={isArabic ? 'rtl' : 'ltr'}
-    >
-      <div className="flex max-h-[92vh] w-full max-w-4xl flex-col overflow-hidden rounded-lg border border-slate-200 bg-white shadow-xl">
-        <div className="flex items-start justify-between gap-4 border-b border-slate-200 px-5 py-4">
-          <div className="min-w-0">
-            <div className="flex items-center gap-2 text-teal-800">
-              <FileText className="h-5 w-5 shrink-0" aria-hidden="true" />
-              <h2 id="project-documents-title" className="text-base font-bold text-slate-900">{title}</h2>
+    <>
+      <div
+        className="fixed inset-0 z-[70] flex items-center justify-center bg-slate-950/50 p-3 sm:p-5"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="project-documents-title"
+        dir={isArabic ? 'rtl' : 'ltr'}
+      >
+        <div className="flex max-h-[92vh] w-full max-w-4xl flex-col overflow-hidden rounded-lg border border-slate-200 bg-white shadow-xl">
+          <div className="flex items-start justify-between gap-4 border-b border-slate-200 px-5 py-4">
+            <div className="min-w-0">
+              <div className="flex items-center gap-2 text-teal-800">
+                <FileText className="h-5 w-5 shrink-0" aria-hidden="true" />
+                <h2 id="project-documents-title" className="text-base font-bold text-slate-900">{title}</h2>
+              </div>
+              <p className="mt-1 truncate text-xs text-slate-500">
+                <span className="font-data">{project.code}</span> · {isArabic ? project.nameAr : project.nameFr}
+              </p>
             </div>
-            <p className="mt-1 truncate text-xs text-slate-500">
-              <span className="font-data">{project.code}</span> · {isArabic ? project.nameAr : project.nameFr}
-            </p>
+            <button
+              type="button"
+              onClick={requestClose}
+              aria-label={closeLabel}
+              className="rounded p-1.5 text-slate-500 hover:bg-slate-100"
+            >
+              <X className="h-4 w-4" aria-hidden="true" />
+            </button>
           </div>
-          <button
-            type="button"
-            onClick={onClose}
-            aria-label={closeLabel}
-            className="rounded p-1.5 text-slate-500 hover:bg-slate-100"
-          >
-            <X className="h-4 w-4" aria-hidden="true" />
-          </button>
-        </div>
 
-        {documentsBody}
+          {documentsBody}
 
-        <div className="flex justify-end border-t border-slate-200 px-5 py-3">
-          <button
-            type="button"
-            onClick={onClose}
-            className="rounded border border-slate-200 px-4 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50"
-          >
-            {isArabic ? 'إغلاق' : 'Fermer'}
-          </button>
+          <div className="flex justify-end border-t border-slate-200 px-5 py-3">
+            <button
+              type="button"
+              onClick={requestClose}
+              className="rounded border border-slate-200 px-4 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50"
+            >
+              {isArabic ? 'إغلاق' : 'Fermer'}
+            </button>
+          </div>
         </div>
       </div>
-    </div>
+      {discardConfirmDialog}
+    </>
   );
 }

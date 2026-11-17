@@ -1,0 +1,93 @@
+import { createPlannedEndpointRejection } from "@/core/api/apiClient";
+
+export const ACCOUNTING_SUB_WORKFLOWS = [
+  {
+    id: 'chart-of-accounts',
+    label: { ar: 'دليل الحسابات SCF', fr: 'Plan de comptes SCF' },
+    state: 'PLANNED' as const,
+    description: { ar: 'إدارة مدونة الحسابات وفق النظام المحاسبي المالي الجزائري (الأصناف 1 إلى 7).', fr: 'Paramétrage des comptes auxiliaires et analytiques selon les classes 1 à 7 du SCF.' },
+    columns: [
+      { ar: 'رقم الحساب SCF', fr: 'N° compte SCF' },
+      { ar: 'التسمية الرسمية', fr: 'Intitulé officiel' },
+      { ar: 'الصنف', fr: 'Classe (1-7)' },
+      { ar: 'طبيعة الرصيد', fr: 'Sens du solde' },
+      { ar: 'الحالة', fr: 'Statut' },
+    ],
+    disabledActions: [{ ar: 'ضبط قواعد التوجيه SCF (مخطط)', fr: 'Configurer schéma SCF (Planifié)' }],
+  },
+  {
+    id: 'journals',
+    label: { ar: 'اليوميات المحاسبية', fr: 'Journaux comptables' },
+    state: 'PLANNED' as const,
+    description: { ar: 'تصنيف اليوميات المساعدة (البنك، الصندوق، المبيعات، المشتريات، العمليات المتنوعة).', fr: 'Journaux auxiliaires (Banque, Caisse, Ventes, Achats, OD) rattachés au grand livre.' },
+    columns: [
+      { ar: 'رمز اليومية', fr: 'Code journal' },
+      { ar: 'التسمية', fr: 'Intitulé' },
+      { ar: 'الطبيعة', fr: 'Type' },
+      { ar: 'عدد القيود المرحلة', fr: 'Écritures validées' },
+      { ar: 'الحالة', fr: 'Statut' },
+    ],
+    disabledActions: [{ ar: 'إضافة يومية فرعية (مخطط)', fr: 'Créer journal auxiliaire (Planifié)' }],
+  },
+  {
+    id: 'entries',
+    label: { ar: 'القيود المزدوجة (المدين = الدائن)', fr: 'Écritures comptables (Débit = Crédit)' },
+    state: 'PLANNED' as const,
+    description: { ar: 'الترحيل المتوازن التلقائي واليدوي المرتبط بالمستندات الأصلية بالدينار دون أي ترحيل غير متوازن.', fr: 'Écritures comptables équilibrées (Débit = Crédit) adossées aux pièces probantes DZD.' },
+    columns: [
+      { ar: 'اليومية', fr: 'Journal' },
+      { ar: 'رقم القيد / المرجع', fr: 'N° pièce' },
+      { ar: 'الحساب SCF', fr: 'Compte SCF' },
+      { ar: 'المدين (دج)', fr: 'Débit (DZD)' },
+      { ar: 'الدائن (دج)', fr: 'Crédit (DZD)' },
+      { ar: 'الفترة المحاسبية', fr: 'Période' },
+    ],
+    disabledActions: [{ ar: 'تقييد حركة محاسبية (مخطط)', fr: 'Passer écriture SCF (Planifié)' }],
+  },
+  {
+    id: 'periods',
+    label: { ar: 'الفترات المالية', fr: 'Périodes comptables' },
+    state: 'PLANNED' as const,
+    description: { ar: 'تهيئة السنوات والفترات المحاسبية الشهرية وضبط صلاحيات التقييد عليها.', fr: 'Ouverture et paramétrage des exercices et périodes mensuelles.' },
+    columns: [
+      { ar: 'السنة المالية', fr: 'Exercice' },
+      { ar: 'الفترة', fr: 'Période' },
+      { ar: 'من / إلى', fr: 'Début / Fin' },
+      { ar: 'وضعية الفتح', fr: 'Statut ouverture' },
+    ],
+    disabledActions: [{ ar: 'فتح فترة محاسبية (مخطط)', fr: 'Ouvrir période comptable (Planifié)' }],
+  },
+  {
+    id: 'period-close',
+    label: { ar: 'جاهزية وإقفال الفترة', fr: 'Contrôle & clôture de période' },
+    state: 'PLANNED' as const,
+    description: { ar: 'التحقق من توازن اليوميات ومطابقة الوصولات والفواتير قبل القفل النهائي غير الرجعي.', fr: 'Contrôle d’équilibre, lettrage et verrouillage irréversible des périodes.' },
+    columns: [
+      { ar: 'الفترة', fr: 'Période' },
+      { ar: 'توازن المدين/الدائن', fr: 'Équilibre Débit/Crédit' },
+      { ar: 'تسوية الخزينة والمطابقة', fr: 'Rapprochement trésorerie' },
+      { ar: 'اعتماد المحاسب', fr: 'Visa Expert-Comptable' },
+      { ar: 'حالة الإقفال', fr: 'Statut clôture' },
+    ],
+    disabledActions: [{ ar: 'إقفال الفترة المحاسبية (مخطط)', fr: 'Clôturer période (Planifié)' }],
+  },
+  {
+    id: 'tax-reports',
+    label: { ar: 'الجباية والقوائم المالية SCF', fr: 'Fiscalité paramétrable & états SCF' },
+    state: 'PLANNED' as const,
+    description: { ar: 'تحضير التصريحات الجبائية والقوائم المالية (Bilan / TCR) وفق نسب يعتمدها الخبير المحاسبي دون أرقام ثابتة.', fr: 'Préparation des déclarations fiscales et états financiers (Bilan / TCR) selon barèmes validés par le CPA.' },
+    columns: [
+      { ar: 'نوع التصريح / البيان', fr: 'Nature (G50 / TVA / Bilan / TCR)' },
+      { ar: 'الفترة الجبائية', fr: 'Période fiscale' },
+      { ar: 'الوعاء الخاضع (دج)', fr: 'Base imposable (DZD)' },
+      { ar: 'التعريفة المعتمدة', fr: 'Barème CPA configuré' },
+      { ar: 'اعتماد المحاسب', fr: 'Visa CPA' },
+    ],
+    disabledActions: [{ ar: 'تحضير جدول G50 / القوائم بعد الاعتماد (مخطط)', fr: 'Préparer état G50 / SCF (Planifié)' }],
+  },
+] as const;
+
+export const accountingApi = {
+  listAccounting: (_projectId: string): Promise<never> =>
+    createPlannedEndpointRejection('GET /api/projects/:projectId/accounting', 'J-Accounting'),
+};

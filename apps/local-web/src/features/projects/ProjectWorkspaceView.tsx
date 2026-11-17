@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState, type FormEvent } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent, type MutableRefObject } from 'react';
 import {
   Building2,
   CalendarClock,
@@ -45,6 +45,7 @@ import {
   canUpdateProjectFinancialBudget,
 } from '../../utils/permissions';
 import { validateCreateProject, type ValidationErrors } from '../../utils/validation';
+import { getModuleDefinition, getModuleStateLabel, type ModuleCode } from '../../utils/moduleCatalog';
 import { PageHeader } from '../../components/PageHeader';
 import { EmptyState, ErrorBanner, LoadingSkeleton } from '../../components/StateViews';
 import { ProjectIdentityStrip, formatProjectStatus } from '../../components/ProjectIdentityStrip';
@@ -53,7 +54,11 @@ import { ProjectStructureModal } from './ProjectStructureModal';
 import { ProjectCustomerRegistryModal } from './ProjectCustomerRegistryModal';
 import { ProjectSalesReservationsModal } from './ProjectSalesReservationsModal';
 import { ProjectDocumentsModal } from './ProjectDocumentsModal';
-import { PlannedProjectModuleView } from './PlannedProjectModuleView';
+import { ContractsModulePage } from '../../modules/module-f-contracts';
+import { FinanceModulePage } from '../../modules/module-g-finance';
+import { ConstructionModulePage } from '../../modules/module-h-construction';
+import { ProcurementModulePage } from '../../modules/module-i-procurement';
+import { AccountingModulePage } from '../../modules/module-j-accounting';
 import { ReportsWorkspaceView } from '../reports/ReportsWorkspaceView';
 
 interface ProjectWorkspaceViewProps {
@@ -71,6 +76,7 @@ interface ProjectWorkspaceViewProps {
   onProjectVerified: (project: ProjectDto) => void;
   onProjectVerificationFailed: (projectId: string) => void;
   onDirtyChange: (dirty: boolean) => void;
+  saveActionRef?: MutableRefObject<(() => Promise<boolean>) | null>;
 }
 
 const PROJECT_ROLES = [
@@ -127,6 +133,7 @@ export function ProjectWorkspaceView({
   onProjectVerified,
   onProjectVerificationFailed,
   onDirtyChange,
+  saveActionRef,
 }: ProjectWorkspaceViewProps) {
   const isArabic = language === 'ar';
   const t = getTranslations(language);
@@ -137,6 +144,7 @@ export function ProjectWorkspaceView({
   const [project, setProject] = useState<ProjectDto | null>(null);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
+  const [embeddedDirty, setEmbeddedDirty] = useState(false);
 
   // Settings & team state
   const [users, setUsers] = useState<UserDto[]>([]);
@@ -157,6 +165,17 @@ export function ProjectWorkspaceView({
   const [teamError, setTeamError] = useState<string | null>(null);
   const [savingTeam, setSavingTeam] = useState(false);
 
+  const currentUserRef = useRef(currentUser);
+  currentUserRef.current = currentUser;
+  const languageRef = useRef(language);
+  languageRef.current = language;
+  const onProjectVerifiedRef = useRef(onProjectVerified);
+  onProjectVerifiedRef.current = onProjectVerified;
+  const onProjectVerificationFailedRef = useRef(onProjectVerificationFailed);
+  onProjectVerificationFailedRef.current = onProjectVerificationFailed;
+  const onDirtyChangeRef = useRef(onDirtyChange);
+  onDirtyChangeRef.current = onDirtyChange;
+
   const syncSettingsDraft = useCallback((p: ProjectDto) => {
     setEditForm({
       nameAr: p.nameAr,
@@ -174,61 +193,70 @@ export function ProjectWorkspaceView({
       plannedUnitsCount: p.plannedUnitsCount,
       expectedConcurrencyStamp: p.concurrencyStamp,
     });
-    onDirtyChange(false);
-  }, [onDirtyChange]);
-
-  const loadProject = useCallback(async () => {
-    setLoading(true);
-    setLoadError(null);
-    try {
-      const verified = await apiClient.getProject(projectId);
-      setProject(verified);
-      syncSettingsDraft(verified);
-      onProjectVerified(verified);
-
-      if (canManageUsers(currentUser)) {
-        try {
-          const userList = await apiClient.listUsers();
-          const activeEmployees = userList.filter((u) => !u.isSystemAdministrator && u.isActive);
-          setUsers(activeEmployees);
-          setMemberForm((prev) => ({
-            ...prev,
-            userId: prev.userId || activeEmployees[0]?.id || '',
-          }));
-        } catch {
-          setUsers([]);
-        }
-      }
-    } catch (err) {
-      setProject(null);
-      onDirtyChange(false);
-      onProjectVerificationFailed(projectId);
-      if (err instanceof ApiError) {
-        setLoadError(translateApiError(err.code, err.message, language));
-      } else {
-        setLoadError(
-          isArabic
-            ? 'تعذر التحقق من صلاحية الوصول إلى هذا المشروع أو المشروع غير موجود.'
-            : 'Impossible de vérifier l’accès à ce projet ou projet introuvable.'
-        );
-      }
-    } finally {
-      setLoading(false);
-    }
-  }, [projectId, currentUser, language, isArabic, syncSettingsDraft, onProjectVerified, onProjectVerificationFailed, onDirtyChange]);
+    onDirtyChangeRef.current(false);
+  }, []);
 
   useEffect(() => {
+    let cancelled = false;
+    const loadProject = async () => {
+      setLoading(true);
+      setLoadError(null);
+      setEmbeddedDirty(false);
+      try {
+        const verified = await apiClient.getProject(projectId);
+        if (cancelled) return;
+        setProject(verified);
+        syncSettingsDraft(verified);
+        onProjectVerifiedRef.current(verified);
+
+        if (canManageUsers(currentUserRef.current)) {
+          try {
+            const userList = await apiClient.listUsers();
+            if (cancelled) return;
+            const activeEmployees = userList.filter((u) => !u.isSystemAdministrator && u.isActive);
+            setUsers(activeEmployees);
+            setMemberForm((prev) => ({
+              ...prev,
+              userId: prev.userId || activeEmployees[0]?.id || '',
+            }));
+          } catch {
+            if (!cancelled) setUsers([]);
+          }
+        }
+      } catch (err) {
+        if (cancelled) return;
+        setProject(null);
+        onDirtyChangeRef.current(false);
+        onProjectVerificationFailedRef.current(projectId);
+        if (err instanceof ApiError) {
+          setLoadError(translateApiError(err.code, err.message, languageRef.current));
+        } else {
+          setLoadError(
+            languageRef.current === 'ar'
+              ? 'تعذر التحقق من صلاحية الوصول إلى هذا المشروع أو المشروع غير موجود.'
+              : 'Impossible de vérifier l’accès à ce projet ou projet introuvable.'
+          );
+        }
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    };
+
     void loadProject();
     return () => {
-      onDirtyChange(false);
+      cancelled = true;
+      onDirtyChangeRef.current(false);
+      if (saveActionRef) {
+        saveActionRef.current = null;
+      }
     };
-  }, [loadProject, onDirtyChange]);
+  }, [projectId, syncSettingsDraft, saveActionRef]);
 
   const refreshProjectSilently = async () => {
     try {
       const updated = await apiClient.getProject(projectId);
       setProject(updated);
-      onProjectVerified(updated);
+      onProjectVerifiedRef.current(updated);
     } catch {
       // Ignore silent refresh error; primary actions surface errors explicitly
     }
@@ -257,12 +285,19 @@ export function ProjectWorkspaceView({
   }, [project, editForm, canEditMasterData, canEditBudget]);
 
   useEffect(() => {
-    onDirtyChange(section === 'settings' && isSettingsDirty);
-  }, [section, isSettingsDirty, onDirtyChange]);
+    setEmbeddedDirty(false);
+  }, [section]);
 
-  const handleSaveSettings = async (event: FormEvent) => {
-    event.preventDefault();
-    if (!project || !editForm) return;
+  const overallDirty =
+    (section === 'settings' && isSettingsDirty) ||
+    (['structure', 'customers', 'reservations', 'documents'].includes(section) && embeddedDirty);
+
+  useEffect(() => {
+    onDirtyChangeRef.current(overallDirty);
+  }, [overallDirty]);
+
+  const saveSettings = useCallback(async (): Promise<boolean> => {
+    if (!project || !editForm) return false;
     setSaveError(null);
     setSaveMessage(null);
 
@@ -273,7 +308,7 @@ export function ProjectWorkspaceView({
           ? 'تعذر تحميل مرجع الولايات الرسمي. أعد المحاولة قبل الحفظ.'
           : 'Le référentiel officiel des wilayas est indisponible. Réessayez avant l’enregistrement.'
       );
-      return;
+      return false;
     }
 
     const validation = validateCreateProject(
@@ -296,7 +331,7 @@ export function ProjectWorkspaceView({
       language
     );
     setFormErrors(validation);
-    if (Object.keys(validation).length > 0) return;
+    if (Object.keys(validation).length > 0) return false;
 
     setSavingSettings(true);
     try {
@@ -309,19 +344,31 @@ export function ProjectWorkspaceView({
       });
       setProject(updated);
       syncSettingsDraft(updated);
-      onProjectVerified(updated);
+      onProjectVerifiedRef.current(updated);
       setSaveMessage(
         isArabic ? 'تم حفظ إعدادات المشروع بنجاح.' : 'Les paramètres du projet ont été enregistrés.'
       );
+      return true;
     } catch (err) {
       setSaveError(
         err instanceof ApiError
           ? translateApiError(err.code, err.message, language)
           : (isArabic ? 'فشل تحديث إعدادات المشروع.' : 'Échec de la mise à jour du projet.')
       );
+      return false;
     } finally {
       setSavingSettings(false);
     }
+  }, [canEditBudget, editForm, isArabic, language, project, syncSettingsDraft, wilayas]);
+
+  useEffect(() => {
+    if (!saveActionRef) return;
+    saveActionRef.current = section === 'settings' && isSettingsDirty ? saveSettings : null;
+  }, [section, isSettingsDirty, saveActionRef, saveSettings]);
+
+  const handleSaveSettings = async (event: FormEvent) => {
+    event.preventDefault();
+    await saveSettings();
   };
 
   const handleAssignMember = async (event: FormEvent) => {
@@ -452,7 +499,7 @@ export function ProjectWorkspaceView({
           subtitle={`${project.code} · ${isArabic ? project.nameAr : project.nameFr}`}
           language={language}
           moduleCode={activeTabMeta.moduleCode}
-          moduleState={activeTabMeta.planned ? 'PLANNED' : section === 'documents' ? 'PARTIAL' : 'IMPLEMENTED'}
+          moduleState={getModuleDefinition(activeTabMeta.moduleCode as ModuleCode).state}
           breadcrumbs={[
             { label: isArabic ? 'المؤسسة' : 'Organisation', onClick: onNavigateOrgHome },
             { label: isArabic ? 'المشاريع' : 'Projets', onClick: onNavigateProjectsDirectory },
@@ -550,18 +597,21 @@ export function ProjectWorkspaceView({
               </h3>
               <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-2.5">
                 {[
-                  { id: 'structure' as const, icon: Layers3, ar: 'ج. الهيكل والوحدات', fr: 'C. Structure & Lots', active: true },
-                  { id: 'customers' as const, icon: UsersRound, ar: 'د. الزبائن والمهتمون', fr: 'D. Clients & CRM', active: true },
-                  { id: 'reservations' as const, icon: CalendarClock, ar: 'هـ. الحجوزات الداخلية', fr: 'E. Réservations', active: true },
-                  { id: 'documents' as const, icon: FileText, ar: 'ك. الوثائق SHA-256', fr: 'K. Documents', active: true },
-                  { id: 'contracts' as const, icon: FileSignature, ar: 'و. العقود (مخطط)', fr: 'F. Contrats (Planifié)', active: false },
-                  { id: 'finance' as const, icon: Coins, ar: 'ز. التحصيل (مخطط)', fr: 'G. Finances (Planifié)', active: false },
-                  { id: 'construction' as const, icon: HardHat, ar: 'ح. الأشغال (مخطط)', fr: 'H. Chantier (Planifié)', active: false },
-                  { id: 'procurement' as const, icon: Package, ar: 'ط. المشتريات (مخطط)', fr: 'I. Achats (Planifié)', active: false },
-                  { id: 'accounting' as const, icon: Scale, ar: 'ي. المحاسبة SCF (مخطط)', fr: 'J. Comptabilité (Planifié)', active: false },
-                  { id: 'settings' as const, icon: Settings, ar: 'ب. الإعدادات والفريق', fr: 'B. Paramètres & Équipe', active: true },
+                  { id: 'structure' as const, moduleCode: 'C' as ModuleCode, icon: Layers3, ar: 'ج. الهيكل والوحدات', fr: 'C. Structure & Lots' },
+                  { id: 'customers' as const, moduleCode: 'D' as ModuleCode, icon: UsersRound, ar: 'د. الزبائن والمهتمون', fr: 'D. Clients & CRM' },
+                  { id: 'reservations' as const, moduleCode: 'E' as ModuleCode, icon: CalendarClock, ar: 'هـ. الحجوزات الداخلية', fr: 'E. Réservations' },
+                  { id: 'documents' as const, moduleCode: 'K' as ModuleCode, icon: FileText, ar: 'ك. الوثائق SHA-256', fr: 'K. Documents' },
+                  { id: 'contracts' as const, moduleCode: 'F' as ModuleCode, icon: FileSignature, ar: 'و. العقود', fr: 'F. Contrats' },
+                  { id: 'finance' as const, moduleCode: 'G' as ModuleCode, icon: Coins, ar: 'ز. التحصيل', fr: 'G. Finances' },
+                  { id: 'construction' as const, moduleCode: 'H' as ModuleCode, icon: HardHat, ar: 'ح. الأشغال', fr: 'H. Chantier' },
+                  { id: 'procurement' as const, moduleCode: 'I' as ModuleCode, icon: Package, ar: 'ط. المشتريات', fr: 'I. Achats' },
+                  { id: 'accounting' as const, moduleCode: 'J' as ModuleCode, icon: Scale, ar: 'ي. المحاسبة SCF', fr: 'J. Comptabilité' },
+                  { id: 'settings' as const, moduleCode: 'B' as ModuleCode, icon: Settings, ar: 'ب. الإعدادات والفريق', fr: 'B. Paramètres & Équipe' },
                 ].map((item) => {
                   const Icon = item.icon;
+                  const state = getModuleDefinition(item.moduleCode).state;
+                  const isPlanned = state === 'PLANNED';
+                  const isPartial = state === 'PARTIALLY_IMPLEMENTED';
                   return (
                     <button
                       key={item.id}
@@ -570,11 +620,15 @@ export function ProjectWorkspaceView({
                       className="flex items-center justify-between gap-2 rounded-md border border-slate-200 px-3 py-2.5 text-start text-xs font-semibold text-slate-800 hover:border-teal-700 hover:bg-slate-50 transition-colors"
                     >
                       <span className="flex items-center gap-2 min-w-0">
-                        <Icon className={`h-4 w-4 shrink-0 ${item.active ? 'text-teal-800' : 'text-amber-700'}`} aria-hidden="true" />
+                        <Icon className={`h-4 w-4 shrink-0 ${isPlanned ? 'text-amber-700' : 'text-teal-800'}`} aria-hidden="true" />
                         <span className="truncate">{isArabic ? item.ar : item.fr}</span>
                       </span>
-                      <span className={`text-[10px] font-medium ${item.active ? 'text-emerald-700' : 'text-amber-800'}`}>
-                        {item.active ? (isArabic ? 'مفعّل' : 'Actif') : (isArabic ? 'مخطط' : 'Planifié')}
+                      <span
+                        className={`text-[10px] font-medium shrink-0 ${
+                          isPlanned ? 'text-amber-800' : isPartial ? 'text-amber-800' : 'text-emerald-700'
+                        }`}
+                      >
+                        {getModuleStateLabel(state, language)}
                       </span>
                     </button>
                   );
@@ -591,6 +645,7 @@ export function ProjectWorkspaceView({
           language={language}
           mode="embedded"
           onStructureChanged={() => void refreshProjectSilently()}
+          onDirtyChange={setEmbeddedDirty}
         />
       )}
 
@@ -603,6 +658,7 @@ export function ProjectWorkspaceView({
             canReadPartyDirectory={canReadPartyDirectory(currentUser)}
             canManagePartyIdentity={canManagePartyIdentity(currentUser)}
             mode="embedded"
+            onDirtyChange={setEmbeddedDirty}
           />
         ) : (
           <ErrorBanner
@@ -622,6 +678,7 @@ export function ProjectWorkspaceView({
             language={language}
             canManage={canManageProjectSalesReservations(currentUser, project)}
             mode="embedded"
+            onDirtyChange={setEmbeddedDirty}
           />
         ) : (
           <ErrorBanner
@@ -634,17 +691,24 @@ export function ProjectWorkspaceView({
         )
       )}
 
-      {(section === 'contracts' ||
-        section === 'finance' ||
-        section === 'construction' ||
-        section === 'procurement' ||
-        section === 'accounting') && (
-        <PlannedProjectModuleView
-          section={section}
-          project={project}
-          language={language}
-          onGoToDocuments={() => onNavigateSection('documents')}
-        />
+      {section === 'contracts' && (
+        <ContractsModulePage projectId={project.id} language={language} />
+      )}
+
+      {section === 'finance' && (
+        <FinanceModulePage projectId={project.id} language={language} />
+      )}
+
+      {section === 'construction' && (
+        <ConstructionModulePage projectId={project.id} language={language} />
+      )}
+
+      {section === 'procurement' && (
+        <ProcurementModulePage projectId={project.id} language={language} />
+      )}
+
+      {section === 'accounting' && (
+        <AccountingModulePage projectId={project.id} language={language} />
       )}
 
       {section === 'documents' && (
@@ -654,6 +718,7 @@ export function ProjectWorkspaceView({
             language={language}
             canUpload={canUploadProjectDocuments(currentUser, project)}
             mode="embedded"
+            onDirtyChange={setEmbeddedDirty}
           />
         ) : (
           <ErrorBanner

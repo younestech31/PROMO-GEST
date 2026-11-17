@@ -9,6 +9,7 @@ import type {
 } from '../../types/erp';
 import { apiClient, ApiError } from '../../services/apiClient';
 import { translateApiError } from '../../localization/translations';
+import { ConfirmDialog } from '../../components/StateViews';
 
 interface ProjectSalesReservationsModalProps {
   project: ProjectDto;
@@ -16,6 +17,7 @@ interface ProjectSalesReservationsModalProps {
   canManage: boolean;
   mode?: 'modal' | 'embedded';
   onClose?: () => void;
+  onDirtyChange?: (dirty: boolean) => void;
 }
 
 const fieldClass = 'w-full rounded border border-slate-300 bg-white px-3 py-2 text-xs text-slate-900 outline-none focus:border-teal-700 focus:ring-1 focus:ring-teal-700';
@@ -56,6 +58,7 @@ export function ProjectSalesReservationsModal({
   canManage,
   mode = 'modal',
   onClose,
+  onDirtyChange,
 }: ProjectSalesReservationsModalProps) {
   const isArabic = language === 'ar';
   const [reservations, setReservations] = useState<ProjectSalesReservationDto[]>([]);
@@ -67,8 +70,30 @@ export function ProjectSalesReservationsModal({
   const [unitId, setUnitId] = useState('');
   const [customerId, setCustomerId] = useState('');
   const [expiresAtLocal, setExpiresAtLocal] = useState(defaultExpiryLocal);
+  const [hasFormEdits, setHasFormEdits] = useState(false);
   const [cancelTarget, setCancelTarget] = useState<ProjectSalesReservationDto | null>(null);
   const [cancelReason, setCancelReason] = useState('');
+  const [confirmDiscardOpen, setConfirmDiscardOpen] = useState(false);
+
+  const isDirty = canManage && (hasFormEdits || cancelTarget !== null || cancelReason.trim() !== '');
+
+  useEffect(() => {
+    onDirtyChange?.(isDirty);
+  }, [isDirty, onDirtyChange]);
+
+  useEffect(() => {
+    return () => {
+      onDirtyChange?.(false);
+    };
+  }, [onDirtyChange]);
+
+  const requestClose = () => {
+    if (isDirty) {
+      setConfirmDiscardOpen(true);
+      return;
+    }
+    onClose?.();
+  };
 
   const loadData = useCallback(async () => {
     setLoading(true);
@@ -123,6 +148,7 @@ export function ProjectSalesReservationsModal({
         expiresAtUtc: expiresAtUtc.toISOString(),
       });
       setExpiresAtLocal(defaultExpiryLocal());
+      setHasFormEdits(false);
       await loadData();
     } catch (submitError) {
       setError(errorText(submitError, language));
@@ -168,7 +194,7 @@ export function ProjectSalesReservationsModal({
             <form onSubmit={submitReservation} className="grid grid-cols-1 items-end gap-3 rounded-md border border-slate-200 p-3 md:grid-cols-[1fr_1fr_1fr_auto]">
               <label className={labelClass}>
                 <span>{isArabic ? 'الوحدة المتاحة *' : 'Unité disponible *'}</span>
-                <select className={fieldClass} required value={unitId} onChange={(event) => setUnitId(event.target.value)}>
+                <select className={fieldClass} required value={unitId} onChange={(event) => { setUnitId(event.target.value); setHasFormEdits(true); }}>
                   <option value="">{isArabic ? 'اختر الوحدة' : 'Choisir une unité'}</option>
                   {units.map((unit) => (
                     <option key={unit.id} value={unit.id}>
@@ -179,7 +205,7 @@ export function ProjectSalesReservationsModal({
               </label>
               <label className={labelClass}>
                 <span>{isArabic ? 'الزبون / المهتم *' : 'Client / prospect *'}</span>
-                <select className={fieldClass} required value={customerId} onChange={(event) => setCustomerId(event.target.value)}>
+                <select className={fieldClass} required value={customerId} onChange={(event) => { setCustomerId(event.target.value); setHasFormEdits(true); }}>
                   <option value="">{isArabic ? 'اختر الزبون' : 'Choisir un client'}</option>
                   {customers.map((customer) => (
                     <option key={customer.id} value={customer.id}>{customer.displayName} · {customer.status}</option>
@@ -193,7 +219,7 @@ export function ProjectSalesReservationsModal({
                   type="datetime-local"
                   required
                   value={expiresAtLocal}
-                  onChange={(event) => setExpiresAtLocal(event.target.value)}
+                  onChange={(event) => { setExpiresAtLocal(event.target.value); setHasFormEdits(true); }}
                 />
               </label>
               <button
@@ -308,40 +334,68 @@ export function ProjectSalesReservationsModal({
     </div>
   );
 
+  const discardConfirmDialog = (
+    <ConfirmDialog
+      open={confirmDiscardOpen}
+      title={isArabic ? 'تغييرات غير محفوظة' : 'Modifications non enregistrées'}
+      message={
+        isArabic
+          ? 'لديك تعديلات غير محفوظة على نموذج الحجز أو الإلغاء. هل تريد تجاهلها وإغلاق النافذة؟'
+          : 'Vous avez des modifications non enregistrées sur le formulaire de réservation ou d’annulation. Voulez-vous les abandonner ?'
+      }
+      confirmLabel={isArabic ? 'تجاهل وإغلاق' : 'Abandonner et fermer'}
+      cancelLabel={isArabic ? 'البقاء في النموذج' : 'Continuer l’édition'}
+      onConfirm={() => {
+        setConfirmDiscardOpen(false);
+        setHasFormEdits(false);
+        setCancelTarget(null);
+        setCancelReason('');
+        onClose?.();
+      }}
+      onCancel={() => setConfirmDiscardOpen(false)}
+    />
+  );
+
   if (mode === 'embedded') {
     return (
-      <div className="bg-white border border-slate-200 rounded-lg overflow-hidden" dir={isArabic ? 'rtl' : 'ltr'}>
-        {reservationsContent}
-      </div>
+      <>
+        <div className="bg-white border border-slate-200 rounded-lg overflow-hidden" dir={isArabic ? 'rtl' : 'ltr'}>
+          {reservationsContent}
+        </div>
+        {discardConfirmDialog}
+      </>
     );
   }
 
   return (
-    <div
-      className="fixed inset-0 z-[76] flex items-center justify-center bg-slate-950/50 p-3 sm:p-5"
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby="project-reservations-title"
-      dir={isArabic ? 'rtl' : 'ltr'}
-    >
-      <div className="flex max-h-[94vh] w-full max-w-5xl flex-col overflow-hidden rounded-lg border border-slate-200 bg-white shadow-xl">
-        <header className="flex items-start justify-between gap-4 border-b border-slate-200 px-5 py-4">
-          <div className="min-w-0">
-            <div className="flex items-center gap-2 text-teal-800">
-              <CalendarClock className="h-5 w-5 shrink-0" aria-hidden="true" />
-              <h2 id="project-reservations-title" className="text-base font-bold text-slate-900">{title}</h2>
+    <>
+      <div
+        className="fixed inset-0 z-[76] flex items-center justify-center bg-slate-950/50 p-3 sm:p-5"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="project-reservations-title"
+        dir={isArabic ? 'rtl' : 'ltr'}
+      >
+        <div className="flex max-h-[94vh] w-full max-w-5xl flex-col overflow-hidden rounded-lg border border-slate-200 bg-white shadow-xl">
+          <header className="flex items-start justify-between gap-4 border-b border-slate-200 px-5 py-4">
+            <div className="min-w-0">
+              <div className="flex items-center gap-2 text-teal-800">
+                <CalendarClock className="h-5 w-5 shrink-0" aria-hidden="true" />
+                <h2 id="project-reservations-title" className="text-base font-bold text-slate-900">{title}</h2>
+              </div>
+              <p className="mt-1 truncate text-xs text-slate-500">
+                <span className="font-data">{project.code}</span> · {isArabic ? project.nameAr : project.nameFr}
+              </p>
             </div>
-            <p className="mt-1 truncate text-xs text-slate-500">
-              <span className="font-data">{project.code}</span> · {isArabic ? project.nameAr : project.nameFr}
-            </p>
-          </div>
-          <button type="button" onClick={onClose} aria-label={isArabic ? 'إغلاق' : 'Fermer'} className="rounded p-1.5 text-slate-500 hover:bg-slate-100">
-            <X className="h-4 w-4" aria-hidden="true" />
-          </button>
-        </header>
+            <button type="button" onClick={requestClose} aria-label={isArabic ? 'إغلاق' : 'Fermer'} className="rounded p-1.5 text-slate-500 hover:bg-slate-100">
+              <X className="h-4 w-4" aria-hidden="true" />
+            </button>
+          </header>
 
-        {reservationsContent}
+          {reservationsContent}
+        </div>
       </div>
-    </div>
+      {discardConfirmDialog}
+    </>
   );
 }

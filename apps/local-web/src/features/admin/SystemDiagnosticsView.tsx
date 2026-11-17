@@ -22,7 +22,7 @@ export function SystemDiagnosticsView({ language, health }: SystemDiagnosticsVie
         }
         language={language}
         moduleCode="A"
-        moduleState="IMPLEMENTED"
+        moduleState="IMPLEMENTED_NOT_VERIFIED"
       />
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-5">

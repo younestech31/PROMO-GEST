@@ -1,4 +1,4 @@
-import { useEffect, useState, type FormEvent } from 'react';
+import { useCallback, useEffect, useMemo, useState, type FormEvent, type MutableRefObject } from 'react';
 import type {
   AppLanguage,
   OrganizationSummary,
@@ -17,6 +17,8 @@ interface OrganizationProfileViewProps {
   language: AppLanguage;
   canManage: boolean;
   onUpdated: (organization: OrganizationSummary) => void;
+  onDirtyChange?: (dirty: boolean) => void;
+  saveActionRef?: MutableRefObject<(() => Promise<boolean>) | null>;
 }
 
 function toDraft(organization: OrganizationSummary): OrganizationProfileDraft {
@@ -43,6 +45,8 @@ export function OrganizationProfileView({
   language,
   canManage,
   onUpdated,
+  onDirtyChange,
+  saveActionRef,
 }: OrganizationProfileViewProps) {
   const t = getTranslations(language);
   const { reference, isLoading: referenceLoading, hasError: referenceError, retry: retryReference } =
@@ -57,6 +61,39 @@ export function OrganizationProfileView({
   useEffect(() => {
     setDraft(toDraft(organization));
   }, [organization]);
+
+  const isDirty = useMemo(() => {
+    if (!isEditing) return false;
+    const baseline = toDraft(organization);
+    return (
+      draft.legalName !== baseline.legalName ||
+      (draft.tradeName ?? null) !== (baseline.tradeName ?? null) ||
+      draft.legalForm !== baseline.legalForm ||
+      (draft.nif ?? null) !== (baseline.nif ?? null) ||
+      (draft.nis ?? null) !== (baseline.nis ?? null) ||
+      (draft.tradeRegisterNumber ?? null) !== (baseline.tradeRegisterNumber ?? null) ||
+      (draft.taxArticleNumber ?? null) !== (baseline.taxArticleNumber ?? null) ||
+      (draft.shareCapitalDzd ?? null) !== (baseline.shareCapitalDzd ?? null) ||
+      draft.wilayaCode !== baseline.wilayaCode ||
+      draft.address !== baseline.address ||
+      (draft.phone ?? null) !== (baseline.phone ?? null) ||
+      (draft.email ?? null) !== (baseline.email ?? null) ||
+      draft.defaultLanguage !== baseline.defaultLanguage
+    );
+  }, [isEditing, draft, organization]);
+
+  useEffect(() => {
+    onDirtyChange?.(isDirty);
+  }, [isDirty, onDirtyChange]);
+
+  useEffect(() => {
+    return () => {
+      onDirtyChange?.(false);
+      if (saveActionRef) {
+        saveActionRef.current = null;
+      }
+    };
+  }, [onDirtyChange, saveActionRef]);
 
   const updateField = <K extends keyof OrganizationProfileDraft>(
     key: K,
@@ -88,8 +125,7 @@ export function OrganizationProfileView({
     }));
   };
 
-  const handleSave = async (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
+  const saveProfile = useCallback(async (): Promise<boolean> => {
     setError(null);
     setSuccess(false);
     const selectedWilaya = wilayas.find((wilaya) => wilaya.code === draft.wilayaCode);
@@ -97,7 +133,7 @@ export function OrganizationProfileView({
       setError(language === 'ar'
         ? 'تعذر تحميل مرجع الولايات الرسمي. أعد المحاولة قبل الحفظ.'
         : 'Le référentiel officiel des wilayas est indisponible. Réessayez avant l’enregistrement.');
-      return;
+      return false;
     }
     setIsSaving(true);
 
@@ -110,6 +146,7 @@ export function OrganizationProfileView({
       onUpdated(updated);
       setIsEditing(false);
       setSuccess(true);
+      return true;
     } catch (cause) {
       if (cause instanceof ApiError) {
         setError(translateApiError(cause.code, cause.message, language));
@@ -118,9 +155,20 @@ export function OrganizationProfileView({
       } else {
         setError(t.operationTemporarilyUnavailable);
       }
+      return false;
     } finally {
       setIsSaving(false);
     }
+  }, [draft, language, onUpdated, organization.concurrencyStamp, t.operationTemporarilyUnavailable, wilayas]);
+
+  useEffect(() => {
+    if (!saveActionRef) return;
+    saveActionRef.current = isEditing && isDirty ? saveProfile : null;
+  }, [isEditing, isDirty, saveActionRef, saveProfile]);
+
+  const handleSave = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    await saveProfile();
   };
 
   return (

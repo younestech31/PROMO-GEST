@@ -28,11 +28,17 @@ export function ModuleStateTag({
   moduleCode?: string;
 }) {
   const tone =
-    state === 'IMPLEMENTED'
+    state === 'IMPLEMENTED_AND_VERIFIED'
       ? 'border-emerald-200 bg-emerald-50 text-emerald-800'
-      : state === 'PARTIAL'
-        ? 'border-teal-200 bg-teal-50 text-teal-900'
-        : 'border-amber-200 bg-amber-50 text-amber-900';
+      : state === 'IMPLEMENTED_NOT_VERIFIED'
+        ? 'border-sky-200 bg-sky-50 text-sky-900'
+        : state === 'PARTIALLY_IMPLEMENTED'
+          ? 'border-teal-200 bg-teal-50 text-teal-900'
+          : state === 'BLOCKED'
+            ? 'border-rose-200 bg-rose-50 text-rose-900'
+            : state === 'DEPRECATED'
+              ? 'border-slate-300 bg-slate-100 text-slate-700'
+              : 'border-amber-200 bg-amber-50 text-amber-900';
 
   return (
     <span

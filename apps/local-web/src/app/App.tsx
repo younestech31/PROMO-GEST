@@ -1,290 +1,286 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
-import type {
-  AppLanguage,
-  HealthStatusResponse,
-  ProjectDto,
-  SessionResponse,
-  SetupStatusResponse,
-} from '../types/erp';
-import { apiClient } from '../services/apiClient';
-import { FirstRunSetupWizard } from '../features/setup/FirstRunSetupWizard';
-import { LoginScreen } from '../features/auth/LoginScreen';
-import { ErpShellLayout } from '../layouts/ErpShellLayout';
-import { OverviewView } from '../features/overview/OverviewView';
-import { UsersManagementView } from '../features/users/UsersManagementView';
-import { ProjectsAccessView } from '../features/projects/ProjectsAccessView';
-import { ProjectWorkspaceView } from '../features/projects/ProjectWorkspaceView';
-import { AuditLogView } from '../features/audit/AuditLogView';
-import { OrganizationProfileView } from '../features/organization/OrganizationProfileView';
-import { PartiesDirectoryView } from '../features/organization/PartiesDirectoryView';
-import { TerritorialReferenceView } from '../features/organization/TerritorialReferenceView';
-import { EmployeesPlannedView } from '../features/organization/EmployeesPlannedView';
-import { ReportsWorkspaceView } from '../features/reports/ReportsWorkspaceView';
-import { SystemDiagnosticsView } from '../features/admin/SystemDiagnosticsView';
-import { ProjectSwitcherModal } from '../components/ProjectSwitcherModal';
-import { ConfirmDialog } from '../components/StateViews';
-import { getTranslations } from '../localization/translations';
+import { useEffect, useState } from 'react';
+import type { AppLanguage, ProjectDto, SessionResponse } from '../types/erp';
+import { getTranslations } from '../core/localization/translations';
+import { apiClient } from '../core/api/apiClient';
 import {
-  buildAppPath,
   DEFAULT_APP_ROUTE,
-  emptyProjectPreferences,
-  isSameRoute,
-  loadProjectNavigationPreferences,
+  buildAppPath,
+  canAccessRoute,
+  getDeniedRouteNotice,
   parseAppLocation,
-  recordRecentProjectId,
-  saveProjectNavigationPreferences,
-  togglePinnedProjectId,
-  type AppRouteState,
-  type ProjectNavigationPreferences,
-} from '../utils/navigation';
+  shouldIgnoreGlobalShortcut,
+} from './routeRegistry';
+import { loadProjectNavigationPreferences, saveProjectNavigationPreferences } from '../shared/utils/navigationPreferences';
+import { useUnsavedGuard } from '../shared/hooks/useUnsavedGuard';
+import { ErpShellLayout } from './ErpShellLayout';
+import { LoginScreen, authApi } from '../modules/auth';
+import { FirstRunSetupWizard, setupApi } from '../modules/setup';
+import { OverviewView } from '../features/overview/OverviewView';
+import { OrganizationProfileView, TerritorialReferenceView, EmployeesPlannedView } from '../modules/module-a-organization';
+import { ProjectsAccessView, ProjectWorkspaceView, ProjectSwitcherModal } from '../modules/module-b-projects';
+import { PartiesDirectoryView } from '../modules/module-d-customers-parties';
+import { UsersManagementView, AuditLogView, SystemDiagnosticsView } from '../modules/technical-admin';
+import { ReportsWorkspaceView } from '../modules/module-l-reporting';
 
-export function App() {
-  const [language, setLanguage] = useState<AppLanguage>('ar');
-  const [booting, setBooting] = useState(true);
-  const [health, setHealth] = useState<HealthStatusResponse | null>(null);
-  const [setupStatus, setSetupStatus] = useState<SetupStatusResponse | null>(null);
-  const [session, setSession] = useState<SessionResponse | null>(null);
-  const [projects, setProjects] = useState<ProjectDto[]>([]);
-  const [verifiedProject, setVerifiedProject] = useState<ProjectDto | null>(null);
-
-  const [activeRoute, setActiveRoute] = useState<AppRouteState>(() =>
-    typeof window !== 'undefined' ? parseAppLocation(window.location.pathname) : DEFAULT_APP_ROUTE
-  );
-  const [preferences, setPreferences] = useState<ProjectNavigationPreferences>(() => emptyProjectPreferences());
-  const [switcherOpen, setSwitcherOpen] = useState(false);
-  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
-  const [pendingRoute, setPendingRoute] = useState<AppRouteState | null>(null);
+export function AppContentRouter({
+  session,
+  language,
+  projects,
+  activeRoute,
+  onNavigate,
+  onOpenSwitcher,
+  onProjectUpdated: _onProjectUpdated,
+}: {
+  session: SessionResponse;
+  language: AppLanguage;
+  projects: ProjectDto[];
+  activeRoute: ReturnType<typeof parseAppLocation>;
+  onNavigate: (route: ReturnType<typeof parseAppLocation>) => void;
+  onOpenSwitcher: () => void;
+  onProjectUpdated: (project: ProjectDto) => void;
+}) {
+  const [deniedNotice, setDeniedNotice] = useState<string | null>(null);
 
   useEffect(() => {
-    document.documentElement.lang = language;
-    document.documentElement.dir = language === 'ar' ? 'rtl' : 'ltr';
-  }, [language]);
+    if (!canAccessRoute(session.user, activeRoute)) {
+      setDeniedNotice(getDeniedRouteNotice(activeRoute, language));
+      onNavigate(DEFAULT_APP_ROUTE);
+    } else {
+      setDeniedNotice(null);
+    }
+  }, [session.user, activeRoute, language, onNavigate]);
 
-  const navigateTo = useCallback(
-    (nextRoute: AppRouteState, options?: { replace?: boolean; bypassDirtyGuard?: boolean }) => {
-      if (!options?.bypassDirtyGuard && hasUnsavedChanges && !isSameRoute(activeRoute, nextRoute)) {
-        setPendingRoute(nextRoute);
-        return;
-      }
+  return (
+    <div className="space-y-4">
+      {deniedNotice && (
+        <div role="alert" className="rounded-md border border-amber-200 bg-amber-50 px-4 py-3 text-xs text-amber-900">
+          {deniedNotice}
+        </div>
+      )}
 
-      setHasUnsavedChanges(false);
-      setPendingRoute(null);
-      setActiveRoute(nextRoute);
-      setSwitcherOpen(false);
+      {activeRoute.kind === 'org' && activeRoute.section === 'workspace' && (
+        <OverviewView
+          session={session}
+          language={language}
+          projects={projects}
+          preferences={loadProjectNavigationPreferences(session.user.id)}
+          onNavigate={onNavigate}
+          onOpenSwitcher={onOpenSwitcher}
+        />
+      )}
 
-      if (typeof window !== 'undefined') {
-        const targetPath = buildAppPath(nextRoute);
-        if (window.location.pathname !== targetPath) {
-          if (options?.replace) {
-            window.history.replaceState(null, '', targetPath);
-          } else {
-            window.history.pushState(null, '', targetPath);
+      {activeRoute.kind === 'org' && activeRoute.section === 'projects' && (
+        <ProjectsAccessView
+          language={language}
+          currentUser={session.user}
+          onSelectProject={(proj) => onNavigate({ kind: 'project', projectId: proj.id, section: 'overview' })}
+        />
+      )}
+
+      {activeRoute.kind === 'org' && activeRoute.section === 'organizationProfile' && (
+        <OrganizationProfileView
+          organization={session.organization}
+          language={language}
+          canManage={Boolean(session.user.isSystemAdministrator || session.user.permissions.includes('organization.manage'))}
+          onUpdated={(updated) => {
+            session.organization = updated;
+          }}
+        />
+      )}
+
+      {activeRoute.kind === 'org' && activeRoute.section === 'parties' && (
+        <PartiesDirectoryView
+          language={language}
+          onNavigateHome={() => onNavigate({ kind: 'org', section: 'workspace' })}
+        />
+      )}
+
+      {activeRoute.kind === 'org' && activeRoute.section === 'territorialReference' && (
+        <TerritorialReferenceView
+          language={language}
+          onNavigateHome={() => onNavigate({ kind: 'org', section: 'workspace' })}
+        />
+      )}
+
+      {activeRoute.kind === 'org' && activeRoute.section === 'employees' && (
+        <EmployeesPlannedView
+          currentUser={session.user}
+          language={language}
+          onNavigateHome={() => onNavigate({ kind: 'org', section: 'workspace' })}
+          onNavigateUsersAdmin={() => onNavigate({ kind: 'admin', section: 'users' })}
+        />
+      )}
+
+      {activeRoute.kind === 'org' && activeRoute.section === 'reports' && (
+        <ReportsWorkspaceView session={session} language={language} />
+      )}
+
+      {activeRoute.kind === 'project' && (
+        <ProjectWorkspaceView
+          projectId={activeRoute.projectId}
+          section={activeRoute.section}
+          currentUser={session.user}
+          language={language}
+          onNavigateSection={(sec) => onNavigate({ kind: 'project', projectId: activeRoute.projectId, section: sec as never })}
+          onOpenSwitcher={onOpenSwitcher}
+          onBrowseDirectory={() => onNavigate({ kind: 'org', section: 'projects' })}
+          isPinned={loadProjectNavigationPreferences(session.user.id).pinnedProjectIds.includes(activeRoute.projectId)}
+          onTogglePin={() => {
+            const userId = session.user.id;
+            const prefs = loadProjectNavigationPreferences(userId);
+            const exists = prefs.pinnedProjectIds.includes(activeRoute.projectId);
+            const nextPinned = exists
+              ? prefs.pinnedProjectIds.filter((id) => id !== activeRoute.projectId)
+              : [activeRoute.projectId, ...prefs.pinnedProjectIds];
+            saveProjectNavigationPreferences(userId, { ...prefs, pinnedProjectIds: nextPinned });
+          }}
+        />
+      )}
+
+      {activeRoute.kind === 'admin' && activeRoute.section === 'users' && (
+        <UsersManagementView language={language} />
+      )}
+
+      {activeRoute.kind === 'admin' && activeRoute.section === 'audit' && (
+        <AuditLogView language={language} />
+      )}
+
+      {activeRoute.kind === 'admin' && activeRoute.section === 'diagnostics' && (
+        <SystemDiagnosticsView language={language} health={null} />
+      )}
+    </div>
+  );
+}
+
+export function App() {
+  const [session, setSession] = useState<SessionResponse | null>(null);
+  const [setupState, setSetupState] = useState<{ isInitialized: boolean; requiresBootstrapToken?: boolean } | null>(null);
+  const [loadingInitial, setLoadingInitial] = useState(true);
+  const [projects, setProjects] = useState<ProjectDto[]>([]);
+  const [activeRoute, setActiveRoute] = useState<ReturnType<typeof parseAppLocation>>(() =>
+    parseAppLocation(typeof window !== 'undefined' ? window.location.pathname : '/')
+  );
+  const [switcherOpen, setSwitcherOpen] = useState(false);
+  const [isDirty] = useState(false);
+
+  useUnsavedGuard(isDirty);
+
+  useEffect(() => {
+    let active = true;
+    const checkState = async () => {
+      try {
+        const setup = await setupApi.getSetupStatus();
+        if (!active) return;
+        setSetupState(setup);
+
+        if (setup.isInitialized) {
+          try {
+            const currentSession = await authApi.getSession();
+            if (!active) return;
+            setSession(currentSession);
+            try {
+              const rows = await apiClient.listProjects();
+              if (active) setProjects(rows);
+            } catch {
+              // Non-fatal if project list fails prior to auth
+            }
+          } catch {
+            if (active) setSession(null);
           }
         }
+      } catch {
+        // Fallback for preview or offline
+      } finally {
+        if (active) setLoadingInitial(false);
       }
-    },
-    [hasUnsavedChanges, activeRoute]
-  );
+    };
+
+    void checkState();
+    return () => {
+      active = false;
+    };
+  }, []);
 
   useEffect(() => {
     const handlePopState = () => {
       setActiveRoute(parseAppLocation(window.location.pathname));
-      setHasUnsavedChanges(false);
-      setPendingRoute(null);
     };
     window.addEventListener('popstate', handlePopState);
     return () => window.removeEventListener('popstate', handlePopState);
   }, []);
 
   useEffect(() => {
-    if (!session) return;
-    const handleShortcut = (event: KeyboardEvent) => {
+    const nextPath = buildAppPath(activeRoute);
+    if (window.location.pathname !== nextPath) {
+      window.history.pushState(null, '', nextPath);
+    }
+  }, [activeRoute]);
+
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
       if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'k') {
-        event.preventDefault();
-        setSwitcherOpen((open) => !open);
-      }
-    };
-    window.addEventListener('keydown', handleShortcut);
-    return () => window.removeEventListener('keydown', handleShortcut);
-  }, [session]);
-
-  const checkHealthAndBootstrap = useCallback(async () => {
-    try {
-      const [healthRes, setupRes] = await Promise.all([
-        apiClient.healthReady(),
-        apiClient.getSetupStatus(),
-      ]);
-      setHealth(healthRes);
-      setSetupStatus(setupRes);
-
-      if (setupRes.defaultLanguage === 'fr' || setupRes.defaultLanguage === 'ar') {
-        setLanguage(setupRes.defaultLanguage);
-      }
-
-      if (setupRes.isInitialized) {
-        try {
-          const activeSession = await apiClient.getSession();
-          setSession(activeSession);
-          setLanguage(activeSession.user.preferredLanguage);
-          setPreferences(loadProjectNavigationPreferences(activeSession.user.id));
-          const accessibleProjects = await apiClient.listProjects();
-          setProjects(accessibleProjects);
-        } catch {
-          setSession(null);
+        if (!shouldIgnoreGlobalShortcut(event.target as HTMLElement)) {
+          event.preventDefault();
+          setSwitcherOpen(true);
         }
-      } else {
-        setSession(null);
       }
-    } catch {
-      setHealth(null);
-    } finally {
-      setBooting(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    void checkHealthAndBootstrap();
-  }, [checkHealthAndBootstrap]);
-
-  // Refresh diagnostic health data without promoting one transient probe failure
-  // into a global connectivity warning or overlapping slow requests.
-  useEffect(() => {
-    let requestInFlight = false;
-    let disposed = false;
-
-    const timer = window.setInterval(async () => {
-      if (requestInFlight || document.visibilityState !== 'visible') return;
-
-      requestInFlight = true;
-      try {
-        const latestHealth = await apiClient.healthReady();
-        if (!disposed) setHealth(latestHealth);
-      } catch {
-        if (!disposed) setHealth(null);
-      } finally {
-        requestInFlight = false;
-      }
-    }, 60_000);
-
-    return () => {
-      disposed = true;
-      window.clearInterval(timer);
     };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
   }, []);
 
-  const handleInitialized = async () => {
-    await checkHealthAndBootstrap();
-  };
+  const language = session?.user.preferredLanguage ?? session?.organization.defaultLanguage ?? 'ar';
 
-  const handleLoggedIn = async (newSession: SessionResponse) => {
-    setSession(newSession);
-    setLanguage(newSession.user.preferredLanguage);
-    setPreferences(loadProjectNavigationPreferences(newSession.user.id));
-    navigateTo(DEFAULT_APP_ROUTE, { replace: true, bypassDirtyGuard: true });
-    try {
-      const accessibleProjects = await apiClient.listProjects();
-      setProjects(accessibleProjects);
-    } catch {
-      setProjects([]);
+  const handleLanguageChange = (lang: AppLanguage) => {
+    if (session) {
+      setSession({
+        ...session,
+        user: { ...session.user, preferredLanguage: lang },
+      });
     }
-  };
-
-  const handleOpenPreview = async () => {
-    const previewSession = await apiClient.openPreviewSession();
-    setSetupStatus({
-      isInitialized: true,
-      organizationLegalName: previewSession.organization.legalName,
-      defaultLanguage: previewSession.organization.defaultLanguage,
-    });
-    await handleLoggedIn(previewSession);
   };
 
   const handleLogout = async () => {
     try {
-      await apiClient.logout();
-    } finally {
-      setSession(null);
-      setProjects([]);
-      setVerifiedProject(null);
-      setSwitcherOpen(false);
-      setHasUnsavedChanges(false);
-      setPendingRoute(null);
-      navigateTo(DEFAULT_APP_ROUTE, { replace: true, bypassDirtyGuard: true });
+      await authApi.logout();
+    } catch {
+      // ignore
     }
+    setSession(null);
+    setActiveRoute(DEFAULT_APP_ROUTE);
   };
 
-  const handleProjectVerified = useCallback(
-    (project: ProjectDto) => {
-      setVerifiedProject(project);
-      setProjects((prev) => {
-        const exists = prev.some((p) => p.id === project.id);
-        return exists ? prev.map((p) => (p.id === project.id ? project : p)) : [project, ...prev];
-      });
-      if (session) {
-        setPreferences((prev) => {
-          const next = recordRecentProjectId(prev, project.id);
-          saveProjectNavigationPreferences(session.user.id, next);
-          return next;
-        });
-      }
-    },
-    [session]
-  );
+  const handlePreviewLogin = async () => {
+    const demo = await authApi.openPreviewSession();
+    setSession(demo);
+    const rows = await apiClient.listProjects();
+    setProjects(rows);
+    setActiveRoute(DEFAULT_APP_ROUTE);
+  };
 
-  const handleProjectVerificationFailed = useCallback(
-    (failedProjectId: string) => {
-      setVerifiedProject(null);
-      if (session) {
-        setPreferences((prev) => {
-          const next: ProjectNavigationPreferences = {
-            recentProjectIds: prev.recentProjectIds.filter((id) => id !== failedProjectId),
-            pinnedProjectIds: prev.pinnedProjectIds.filter((id) => id !== failedProjectId),
-          };
-          saveProjectNavigationPreferences(session.user.id, next);
-          return next;
-        });
-      }
-    },
-    [session]
-  );
-
-  const handleTogglePin = useCallback(
-    (projectId: string) => {
-      if (!session) return;
-      setPreferences((prev) => {
-        const next = togglePinnedProjectId(prev, projectId);
-        saveProjectNavigationPreferences(session.user.id, next);
-        return next;
-      });
-    },
-    [session]
-  );
-
-  const activeProject = useMemo(() => {
-    if (activeRoute.kind !== 'project') return null;
-    if (verifiedProject && verifiedProject.id === activeRoute.projectId) return verifiedProject;
-    return projects.find((p) => p.id === activeRoute.projectId) ?? null;
-  }, [activeRoute, verifiedProject, projects]);
-
-  if (booting) {
+  if (loadingInitial) {
     return (
-      <div className="min-h-screen bg-slate-50 flex items-center justify-center p-6">
-        <div className="text-center">
-          <div className="text-lg font-bold text-slate-900">{getTranslations(language).appTitle}</div>
-        </div>
+      <div className="min-h-screen bg-slate-50 flex items-center justify-center text-xs text-slate-500 font-data">
+        PROMO GEST — Initialisation...
       </div>
     );
   }
 
-  if (setupStatus && !setupStatus.isInitialized) {
+  if (!setupState?.isInitialized) {
     return (
       <FirstRunSetupWizard
         language={language}
-        onLanguageChange={setLanguage}
-        onInitialized={handleInitialized}
-        requiresBootstrapToken={Boolean(setupStatus.requiresBootstrapToken)}
-        isPreviewMode={health?.previewMode === true}
-        onPreviewLogin={handleOpenPreview}
+        onLanguageChange={handleLanguageChange}
+        requiresBootstrapToken={setupState?.requiresBootstrapToken}
+        isPreviewMode={true}
+        onPreviewLogin={handlePreviewLogin}
+        onInitialized={async () => {
+          const s = await authApi.getSession();
+          setSession(s);
+          const rows = await apiClient.listProjects();
+          setProjects(rows);
+          setSetupState({ isInitialized: true });
+        }}
       />
     );
   }
@@ -293,174 +289,66 @@ export function App() {
     return (
       <LoginScreen
         language={language}
-        onLanguageChange={setLanguage}
-        organizationName={setupStatus?.organizationLegalName ?? null}
-        onLoggedIn={(s) => void handleLoggedIn(s)}
-        isPreviewMode={health?.previewMode === true}
-        onPreviewLogin={handleOpenPreview}
+        onLanguageChange={handleLanguageChange}
+        organizationName={null}
+        isPreviewMode={true}
+        onPreviewLogin={handlePreviewLogin}
+        onLoggedIn={(s) => {
+          setSession(s);
+          void apiClient.listProjects().then(setProjects);
+        }}
       />
     );
   }
-
-  const isArabic = language === 'ar';
 
   return (
     <ErpShellLayout
       session={session}
       language={language}
       activeRoute={activeRoute}
-      activeProject={activeProject}
-      onNavigate={(route) => navigateTo(route)}
+      activeProject={activeRoute.kind === 'project' ? projects.find((p) => p.id === activeRoute.projectId) ?? null : null}
+      onNavigate={setActiveRoute}
       onOpenSwitcher={() => setSwitcherOpen(true)}
-      onLanguageChange={setLanguage}
-      onLogout={() => void handleLogout()}
+      onLanguageChange={handleLanguageChange}
+      onLogout={handleLogout}
     >
-      {/* Context 1: Organization Workspace */}
-      {activeRoute.kind === 'org' && activeRoute.section === 'workspace' && (
-        <OverviewView
-          session={session}
-          language={language}
-          projects={projects}
-          preferences={preferences}
-          onNavigate={(route) => navigateTo(route)}
-          onOpenSwitcher={() => setSwitcherOpen(true)}
-        />
-      )}
+      <AppContentRouter
+        session={session}
+        language={language}
+        projects={projects}
+        activeRoute={activeRoute}
+        onNavigate={setActiveRoute}
+        onOpenSwitcher={() => setSwitcherOpen(true)}
+        onProjectUpdated={(proj) => {
+          setProjects((prev) => prev.map((p) => (p.id === proj.id ? proj : p)));
+        }}
+      />
 
-      {activeRoute.kind === 'org' && activeRoute.section === 'projects' && (
-        <ProjectsAccessView
-          currentUser={session.user}
-          language={language}
-          onProjectsChanged={setProjects}
-          onOpenProjectWorkspace={(projectId) =>
-            navigateTo({ kind: 'project', projectId, section: 'overview' })
-          }
-        />
-      )}
-
-      {activeRoute.kind === 'org' && activeRoute.section === 'parties' && (
-        <PartiesDirectoryView
-          currentUser={session.user}
-          language={language}
-          onNavigateHome={() => navigateTo({ kind: 'org', section: 'workspace' })}
-        />
-      )}
-
-      {activeRoute.kind === 'org' && activeRoute.section === 'organizationProfile' && (
-        <OrganizationProfileView
-          organization={session.organization}
-          language={language}
-          canManage={
-            health?.previewMode !== true &&
-            Boolean(
-              session.organization.concurrencyStamp &&
-              session.organization.concurrencyStamp !== '00000000-0000-0000-0000-000000000000'
-            ) &&
-            (session.user.isSystemAdministrator ||
-              session.user.permissions.includes('org.manage'))
-          }
-          onUpdated={(organization) =>
-            setSession((current) => (current ? { ...current, organization } : current))
-          }
-        />
-      )}
-
-      {activeRoute.kind === 'org' && activeRoute.section === 'territorialReference' && (
-        <TerritorialReferenceView
-          language={language}
-          onNavigateHome={() => navigateTo({ kind: 'org', section: 'workspace' })}
-        />
-      )}
-
-      {activeRoute.kind === 'org' && activeRoute.section === 'employees' && (
-        <EmployeesPlannedView
-          currentUser={session.user}
-          language={language}
-          onNavigateHome={() => navigateTo({ kind: 'org', section: 'workspace' })}
-          onNavigateUsersAdmin={() => navigateTo({ kind: 'admin', section: 'users' })}
-        />
-      )}
-
-      {activeRoute.kind === 'org' && activeRoute.section === 'reports' && (
-        <ReportsWorkspaceView
-          currentUser={session.user}
-          language={language}
-          projects={projects}
-          onNavigateHome={() => navigateTo({ kind: 'org', section: 'workspace' })}
-          onNavigateAudit={() => navigateTo({ kind: 'admin', section: 'audit' })}
-          onOpenProjectWorkspace={(projectId) =>
-            navigateTo({ kind: 'project', projectId, section: 'overview' })
-          }
-        />
-      )}
-
-      {/* Context 3: Active Project Workspace */}
-      {activeRoute.kind === 'project' && (
-        <ProjectWorkspaceView
-          projectId={activeRoute.projectId}
-          section={activeRoute.section}
-          currentUser={session.user}
-          language={language}
-          isPinned={preferences.pinnedProjectIds.includes(activeRoute.projectId)}
-          onTogglePin={handleTogglePin}
-          onNavigateSection={(sec) =>
-            navigateTo({ kind: 'project', projectId: activeRoute.projectId, section: sec })
-          }
-          onNavigateOrgHome={() => navigateTo({ kind: 'org', section: 'workspace' })}
-          onNavigateProjectsDirectory={() => navigateTo({ kind: 'org', section: 'projects' })}
-          onNavigateAudit={() => navigateTo({ kind: 'admin', section: 'audit' })}
-          onOpenSwitcher={() => setSwitcherOpen(true)}
-          onProjectVerified={handleProjectVerified}
-          onProjectVerificationFailed={handleProjectVerificationFailed}
-          onDirtyChange={setHasUnsavedChanges}
-        />
-      )}
-
-      {/* Context 4: Technical Administration */}
-      {activeRoute.kind === 'admin' && activeRoute.section === 'users' && (
-        <UsersManagementView language={language} />
-      )}
-      {activeRoute.kind === 'admin' && activeRoute.section === 'audit' && (
-        <AuditLogView language={language} />
-      )}
-      {activeRoute.kind === 'admin' && activeRoute.section === 'diagnostics' && (
-        <SystemDiagnosticsView language={language} health={health} />
-      )}
-
-      {/* Context 2: Explicit Project Switcher Modal */}
       <ProjectSwitcherModal
         open={switcherOpen}
         language={language}
         currentProjectId={activeRoute.kind === 'project' ? activeRoute.projectId : null}
         authorizedProjects={projects}
-        preferences={preferences}
-        onSelectProject={(project) =>
-          navigateTo({ kind: 'project', projectId: project.id, section: 'overview' })
-        }
-        onBrowseDirectory={() => navigateTo({ kind: 'org', section: 'projects' })}
-        onClose={() => setSwitcherOpen(false)}
-      />
-
-      {/* Dirty-Form Navigation Confirmation Dialog */}
-      <ConfirmDialog
-        open={Boolean(pendingRoute)}
-        title={isArabic ? 'تغييرات غير محفوظة' : 'Modifications non enregistrées'}
-        message={
-          isArabic
-            ? 'لديك تعديلات غير محفوظة في هذا النموذج. هل تريد تجاهلها والانتقال إلى الشاشة المطلوبة؟'
-            : 'Vous avez des modifications non enregistrées dans ce formulaire. Voulez-vous les abandonner et changer d’écran ?'
-        }
-        confirmLabel={isArabic ? 'تجاهل والانتقال' : 'Abandonner et continuer'}
-        cancelLabel={isArabic ? 'البقاء في الشاشة' : 'Rester sur cet écran'}
-        onConfirm={() => {
-          if (pendingRoute) {
-            navigateTo(pendingRoute, { bypassDirtyGuard: true });
-          }
+        preferences={loadProjectNavigationPreferences(session.user.id)}
+        onSelectProject={(proj) => {
+          setSwitcherOpen(false);
+          setActiveRoute({ kind: 'project', projectId: proj.id, section: 'overview' });
         }}
-        onCancel={() => setPendingRoute(null)}
+        onBrowseDirectory={() => {
+          setSwitcherOpen(false);
+          setActiveRoute({ kind: 'org', section: 'projects' });
+        }}
+        onClose={() => setSwitcherOpen(false)}
       />
     </ErpShellLayout>
   );
 }
 
+export { ContractsModulePage } from '../modules/module-f-contracts';
+export { FinanceModulePage } from '../modules/module-g-finance';
+export { ConstructionModulePage } from '../modules/module-h-construction';
+export { ProcurementModulePage } from '../modules/module-i-procurement';
+export { AccountingModulePage } from '../modules/module-j-accounting';
+
 export default App;
+

@@ -53,7 +53,7 @@ export function ReportsWorkspaceView({
         }
         language={language}
         moduleCode="L"
-        moduleState="PARTIAL"
+        moduleState="PARTIALLY_IMPLEMENTED"
         breadcrumbs={
           projectContext
             ? undefined

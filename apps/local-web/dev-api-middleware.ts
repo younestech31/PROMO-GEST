@@ -218,7 +218,121 @@ function sendJson(
   res.end(JSON.stringify(body));
 }
 
-export function createPromoGestDevApiPlugin(): Plugin {
+interface ParsedMultipartFile {
+  fieldName: string;
+  fileName: string;
+  contentType: string;
+  content: Buffer;
+}
+
+interface ParsedMultipartBody {
+  fields: Record<string, string>;
+  files: Record<string, ParsedMultipartFile>;
+}
+
+const MAX_DOCUMENT_BYTES = 25 * 1024 * 1024;
+const ALLOWED_DOCUMENT_CATEGORIES = new Set([
+  'Permits',
+  'Plans',
+  'Legal',
+  'LandAndTitle',
+  'Financial',
+  'Engineering',
+  'Commercial',
+  'Correspondence',
+  'Other',
+]);
+const ALLOWED_DOCUMENT_EXTENSIONS = new Set([
+  '.pdf',
+  '.png',
+  '.jpg',
+  '.jpeg',
+  '.webp',
+  '.doc',
+  '.docx',
+  '.xls',
+  '.xlsx',
+  '.txt',
+  '.csv',
+]);
+
+async function readRawBody(req: IncomingMessage, maxBytes: number): Promise<Buffer> {
+  const chunks: Buffer[] = [];
+  let total = 0;
+  for await (const chunk of req) {
+    const buf = Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk);
+    total += buf.length;
+    if (total > maxBytes) {
+      throw new DevPreviewStoreError(400, 'DOCUMENT_TOO_LARGE', 'File exceeds the maximum allowed size of 25 MB.');
+    }
+    chunks.push(buf);
+  }
+  return Buffer.concat(chunks);
+}
+
+function parseMultipartFormData(body: Buffer, contentTypeHeader: string | undefined): ParsedMultipartBody | null {
+  if (!contentTypeHeader) return null;
+  const boundaryMatch = contentTypeHeader.match(/boundary=(?:"([^"]+)"|([^;\s]+))/i);
+  const boundary = boundaryMatch?.[1] ?? boundaryMatch?.[2];
+  if (!boundary) return null;
+
+  const boundaryBuf = Buffer.from(`--${boundary}`, 'latin1');
+  const headerSepBuf = Buffer.from('\r\n\r\n', 'latin1');
+  const fields: Record<string, string> = {};
+  const files: Record<string, ParsedMultipartFile> = {};
+
+  let offset = body.indexOf(boundaryBuf);
+  while (offset >= 0) {
+    const afterBoundary = offset + boundaryBuf.length;
+    if (body[afterBoundary] === 0x2d && body[afterBoundary + 1] === 0x2d) {
+      break;
+    }
+    const partStart =
+      body[afterBoundary] === 0x0d && body[afterBoundary + 1] === 0x0a
+        ? afterBoundary + 2
+        : afterBoundary;
+    const nextBoundary = body.indexOf(boundaryBuf, partStart);
+    if (nextBoundary < 0) break;
+
+    let partEnd = nextBoundary;
+    if (partEnd >= partStart + 2 && body[partEnd - 2] === 0x0d && body[partEnd - 1] === 0x0a) {
+      partEnd -= 2;
+    }
+
+    const headerSep = body.indexOf(headerSepBuf, partStart);
+    if (headerSep >= 0 && headerSep < partEnd) {
+      const headersText = body.subarray(partStart, headerSep).toString('utf8');
+      const payload = body.subarray(headerSep + 4, partEnd);
+      const dispMatch = headersText.match(
+        /content-disposition:\s*[^\r\n]*\bname="([^"]+)"(?:;\s*filename="([^"]*)")?/i
+      );
+      if (dispMatch) {
+        const fieldName = dispMatch[1];
+        const fileName = dispMatch[2];
+        if (fileName !== undefined) {
+          const typeMatch = headersText.match(/content-type:\s*([^\r\n]+)/i);
+          files[fieldName] = {
+            fieldName,
+            fileName: fileName.replace(/^.*[\\/]/, ''),
+            contentType: typeMatch?.[1]?.trim() || 'application/octet-stream',
+            content: Buffer.from(payload),
+          };
+        } else {
+          fields[fieldName] = payload.toString('utf8');
+        }
+      }
+    }
+    offset = nextBoundary;
+  }
+
+  return { fields, files };
+}
+
+export function createPromoGestDevMiddleware(): (
+  req: IncomingMessage,
+  res: ServerResponse,
+  next: () => void
+) => Promise<void> {
   let organization: OrganizationSummary | null = null;
   const users: StoredUserRecord[] = [];
   const sessions: StoredSession[] = [];
@@ -227,7 +341,7 @@ export function createPromoGestDevApiPlugin(): Plugin {
   const parties: PartyDirectoryItemDto[] = [];
   const projectCustomers = new Map<string, ProjectCustomerDto[]>();
   const projectReservations = new Map<string, ProjectSalesReservationDto[]>();
-  const projectDocuments = new Map<string, Array<{ meta: ProjectDocumentDto; content: string }>>();
+  const projectDocuments = new Map<string, Array<{ meta: ProjectDocumentDto; content: Buffer }>>();
   const auditLogs: AuditLogDto[] = [];
   const csrfSecret = crypto.randomBytes(32);
 
@@ -518,6 +632,7 @@ export function createPromoGestDevApiPlugin(): Plugin {
       },
     ]);
     projectReservations.set(lesSablesId, []);
+    const demoDocContent = Buffer.from('PROMO GEST DEMO DOCUMENT PLACEHOLDER\n', 'utf8');
     projectDocuments.set(lesSablesId, [
       {
         meta: {
@@ -526,13 +641,13 @@ export function createPromoGestDevApiPlugin(): Plugin {
           category: 'Permits',
           description: 'مرجع تجريبي لرخصة البناء / Référence démo permis de construire',
           contentType: 'text/plain',
-          sizeBytes: 64,
-          sha256Checksum: crypto.createHash('sha256').update('PROMO GEST DEMO DOCUMENT PLACEHOLDER').digest('hex'),
+          sizeBytes: demoDocContent.byteLength,
+          sha256Checksum: crypto.createHash('sha256').update(demoDocContent).digest('hex'),
           uploadedByUserId: admin.id,
           uploadedByFullName: admin.fullName,
           createdAtUtc: nowIso,
         },
-        content: 'PROMO GEST DEMO DOCUMENT PLACEHOLDER\n',
+        content: demoDocContent,
       },
     ]);
 
@@ -548,10 +663,7 @@ export function createPromoGestDevApiPlugin(): Plugin {
     return admin;
   }
 
-  return {
-    name: 'promogest-dev-api-contract',
-    configureServer(server) {
-      server.middlewares.use(async (req, res, next) => {
+  return async (req, res, next) => {
         const rawUrl = req.url ?? '/';
         const parsedUrl = new URL(rawUrl, 'http://localhost:3000');
         const pathname = parsedUrl.pathname;
@@ -1576,33 +1688,90 @@ export function createPromoGestDevApiPlugin(): Plugin {
           return sendJson(res, 200, toProjectResponse(project, currentUser));
         }
 
-        // Parties Directory (Preview contract mirror)
+        // Parties Directory (Preview contract parity with ASP.NET Core 10)
         if (method === 'GET' && pathname === '/api/parties') {
           if (!currentUser.isSystemAdministrator && !getPermissions(currentUser).includes('parties.directory.read')) {
-            return sendJson(res, 403, { code: 'FORBIDDEN_PARTY_DIRECTORY', message: 'Forbidden.' });
+            addAudit(
+              'ACCESS_DENIED',
+              'Security',
+              `User '${currentUser.username}' attempted unauthorized party directory search.`,
+              currentUser,
+              'Party'
+            );
+            return sendJson(res, 403, {
+              code: 'PARTY_DIRECTORY_ACCESS_DENIED',
+              message: 'Party directory search permission is required.',
+            });
           }
-          const query = (parsedUrl.searchParams.get('query') ?? '').trim().toLowerCase();
-          if (query.length < 2) {
-            return sendJson(res, 400, { code: 'VALIDATION_ERROR', message: 'Query must be at least 2 characters.' });
+          const normalizedQuery = (parsedUrl.searchParams.get('query') ?? '').trim().replace(/\s+/g, ' ');
+          if (normalizedQuery.length < 2 || normalizedQuery.length > 100) {
+            return sendJson(res, 400, {
+              code: 'PARTY_SEARCH_QUERY_INVALID',
+              message: 'Party search query must be between 2 and 100 characters.',
+            });
           }
-          const matches = parties.filter((party) => party.displayName.toLowerCase().includes(query));
+          const lowerQuery = normalizedQuery.toLowerCase();
+          const matches = parties
+            .filter((party) => party.displayName.toLowerCase().includes(lowerQuery))
+            .slice(0, 25);
           return sendJson(res, 200, matches, { 'Cache-Control': 'no-store' });
         }
 
         const updatePartyMatch = pathname.match(/^\/api\/parties\/([^/]+)$/);
         if (method === 'PUT' && updatePartyMatch) {
-          if (!currentUser.isSystemAdministrator && !getPermissions(currentUser).includes('parties.identity.manage')) {
-            return sendJson(res, 403, { code: 'FORBIDDEN_PARTY_IDENTITY_MANAGE', message: 'Forbidden.' });
-          }
           const partyId = decodeURIComponent(updatePartyMatch[1]);
+          if (!currentUser.isSystemAdministrator && !getPermissions(currentUser).includes('parties.identity.manage')) {
+            addAudit(
+              'ACCESS_DENIED',
+              'Security',
+              `User '${currentUser.username}' attempted unauthorized party identity update.`,
+              currentUser,
+              'Party',
+              partyId
+            );
+            return sendJson(res, 403, {
+              code: 'PARTY_IDENTITY_MANAGE_REQUIRED',
+              message: 'Managing shared party identities requires the parties.identity.manage permission.',
+            });
+          }
           const party = parties.find((p) => p.id === partyId);
           if (!party) return sendJson(res, 404, { code: 'PARTY_NOT_FOUND', message: 'Party not found.' });
+
           const body = await readJsonBody<{ kind: string; displayName: string; concurrencyStamp: string }>(req);
-          if (!body.concurrencyStamp || body.concurrencyStamp !== party.concurrencyStamp) {
-            return sendJson(res, 409, { code: 'CONCURRENCY_CONFLICT', message: 'Party concurrency conflict.' });
+          if (body.kind !== 'Person' && body.kind !== 'LegalEntity') {
+            return sendJson(res, 400, {
+              code: 'PARTY_KIND_INVALID',
+              message: 'Party kind must be Person or LegalEntity.',
+            });
           }
-          party.kind = body.kind === 'LegalEntity' ? 'LegalEntity' : 'Person';
-          party.displayName = body.displayName.trim();
+          const normalizedDisplayName = String(body.displayName ?? '').trim();
+          if (!normalizedDisplayName || normalizedDisplayName.length > 200) {
+            return sendJson(res, 400, {
+              code: 'VALIDATION_ERROR',
+              message: 'Party display name must be between 1 and 200 characters.',
+            });
+          }
+          if (!body.concurrencyStamp || body.concurrencyStamp !== party.concurrencyStamp) {
+            return sendJson(res, 409, {
+              code: 'PARTY_CONCURRENCY_CONFLICT',
+              message: 'Party concurrency conflict.',
+            });
+          }
+          const duplicateParty = parties.some(
+            (other) =>
+              other.id !== party.id &&
+              other.kind === body.kind &&
+              other.displayName.trim().toLowerCase() === normalizedDisplayName.toLowerCase()
+          );
+          if (duplicateParty) {
+            return sendJson(res, 409, {
+              code: 'PARTY_IDENTITY_CONFLICT',
+              message: 'Another party with the same kind and display name already exists.',
+            });
+          }
+
+          party.kind = body.kind;
+          party.displayName = normalizedDisplayName;
           party.concurrencyStamp = crypto.randomUUID();
           for (const list of projectCustomers.values()) {
             for (const c of list) {
@@ -1613,157 +1782,681 @@ export function createPromoGestDevApiPlugin(): Plugin {
               }
             }
           }
+          addAudit(
+            'PARTY_IDENTITY_UPDATED',
+            'Info',
+            `Updated party '${party.displayName}' (${party.kind}).`,
+            currentUser,
+            'Party',
+            party.id
+          );
           return sendJson(res, 200, party);
         }
 
-        // Project Customers (Preview contract mirror)
-        const authorizeProjectScope = (rawId: string): ProjectDto | null => {
+        // Shared project-scoped access helpers (matching ASP.NET Core 10)
+        const currentPerms = getPermissions(currentUser);
+        const canAccessDocumentCategory = (
+          member: ProjectDto['members'][number] | undefined,
+          category: string,
+          isUpload: boolean
+        ): boolean => {
+          if (currentUser.isSystemAdministrator || member?.roleInProject === 'ProjectManager') {
+            return ALLOWED_DOCUMENT_CATEGORIES.has(category);
+          }
+          switch (category) {
+            case 'Financial':
+              return Boolean(member?.canViewFinancials);
+            case 'Commercial':
+              return Boolean(member?.canManageSales);
+            case 'Engineering':
+            case 'Plans':
+              return isUpload
+                ? Boolean(member?.canManageConstruction)
+                : Boolean(member?.canManageConstruction || member?.canManageDocuments);
+            case 'Legal':
+            case 'LandAndTitle':
+              return Boolean(member?.canManageDocuments);
+            case 'Permits':
+            case 'Correspondence':
+            case 'Other':
+              return true;
+            default:
+              return false;
+          }
+        };
+
+        const authorizeProjectCustomerScope = (
+          rawId: string,
+          writeMode: boolean
+        ): { project: ProjectDto; member: ProjectDto['members'][number] | undefined } | null => {
           const id = decodeURIComponent(rawId);
           const project = projects.find((p) => p.id === id);
           if (!project) {
-            sendJson(res, 404, { code: 'PROJECT_NOT_FOUND', message: 'Project not found.' });
+            if (currentUser.isSystemAdministrator) {
+              sendJson(res, 404, { code: 'PROJECT_NOT_FOUND', message: 'Project not found.' });
+              return null;
+            }
+            addAudit(
+              'ACCESS_DENIED',
+              'Security',
+              `User '${currentUser.username}' attempted customer ${writeMode ? 'write' : 'read'} on inaccessible project '${id}'.`,
+              currentUser,
+              'Project',
+              id
+            );
+            sendJson(res, 403, {
+              code: writeMode ? 'FORBIDDEN_PROJECT_CUSTOMER_WRITE' : 'PROJECT_CUSTOMER_ACCESS_DENIED',
+              message: 'Project customer access denied.',
+            });
             return null;
           }
-          if (!currentUser.isSystemAdministrator && !project.members.some((m) => m.userId === currentUser.id)) {
-            sendJson(res, 403, { code: 'PROJECT_ACCESS_DENIED', message: 'Project access denied.' });
+          const member = project.members.find((m) => m.userId === currentUser.id);
+          const allowed = currentUser.isSystemAdministrator || (
+            Boolean(member) &&
+            currentPerms.includes('customers.read') &&
+            (!writeMode ||
+              ((member!.canManageSales || member!.roleInProject === 'ProjectManager') &&
+                currentPerms.includes('customers.manage')))
+          );
+          if (!allowed) {
+            addAudit(
+              'ACCESS_DENIED',
+              'Security',
+              `User '${currentUser.username}' attempted unauthorized customer ${writeMode ? 'write' : 'read'} on project '${project.code}'.`,
+              currentUser,
+              'Project',
+              project.id
+            );
+            sendJson(res, 403, {
+              code: writeMode ? 'FORBIDDEN_PROJECT_CUSTOMER_WRITE' : 'PROJECT_CUSTOMER_ACCESS_DENIED',
+              message: writeMode
+                ? 'Customer management permission and sales/manager project membership are required.'
+                : 'Customer read permission and project membership are required.',
+            });
             return null;
           }
-          return project;
+          return { project, member };
         };
 
+        const authorizeProjectReservationScope = (
+          rawId: string,
+          writeMode: boolean
+        ): { project: ProjectDto; member: ProjectDto['members'][number] | undefined } | null => {
+          const id = decodeURIComponent(rawId);
+          const project = projects.find((p) => p.id === id);
+          if (!project) {
+            if (currentUser.isSystemAdministrator) {
+              sendJson(res, 404, { code: 'PROJECT_NOT_FOUND', message: 'Project not found.' });
+              return null;
+            }
+            addAudit(
+              'ACCESS_DENIED',
+              'Security',
+              `User '${currentUser.username}' attempted reservation ${writeMode ? 'write' : 'read'} on inaccessible project '${id}'.`,
+              currentUser,
+              'Project',
+              id
+            );
+            sendJson(res, 403, {
+              code: writeMode ? 'FORBIDDEN_PROJECT_RESERVATION_WRITE' : 'PROJECT_RESERVATION_ACCESS_DENIED',
+              message: 'Project reservation access denied.',
+            });
+            return null;
+          }
+          const member = project.members.find((m) => m.userId === currentUser.id);
+          const allowed = currentUser.isSystemAdministrator || (
+            Boolean(member) &&
+            currentPerms.includes('sales.reservations.read') &&
+            currentPerms.includes('customers.read') &&
+            (!writeMode ||
+              ((member!.canManageSales || member!.roleInProject === 'ProjectManager') &&
+                currentPerms.includes('sales.reservations.manage')))
+          );
+          if (!allowed) {
+            addAudit(
+              'ACCESS_DENIED',
+              'Security',
+              `User '${currentUser.username}' attempted unauthorized reservation ${writeMode ? 'write' : 'read'} on project '${project.code}'.`,
+              currentUser,
+              'Project',
+              project.id
+            );
+            sendJson(res, 403, {
+              code: writeMode ? 'FORBIDDEN_PROJECT_RESERVATION_WRITE' : 'PROJECT_RESERVATION_ACCESS_DENIED',
+              message: writeMode
+                ? 'Sales reservation management permission and sales/manager membership are required.'
+                : 'Sales reservation read permission, customer read permission, and project membership are required.',
+            });
+            return null;
+          }
+          return { project, member };
+        };
+
+        const authorizeProjectDocumentScope = (
+          rawId: string,
+          uploadMode: boolean
+        ): { project: ProjectDto; member: ProjectDto['members'][number] | undefined } | null => {
+          const id = decodeURIComponent(rawId);
+          const project = projects.find((p) => p.id === id);
+          if (!project) {
+            if (currentUser.isSystemAdministrator) {
+              sendJson(res, 404, { code: 'PROJECT_NOT_FOUND', message: 'Project not found.' });
+              return null;
+            }
+            addAudit(
+              'ACCESS_DENIED',
+              'Security',
+              `User '${currentUser.username}' attempted document ${uploadMode ? 'upload' : 'access'} on inaccessible project '${id}'.`,
+              currentUser,
+              'Project',
+              id
+            );
+            sendJson(res, 403, {
+              code: uploadMode ? 'PROJECT_DOCUMENT_UPLOAD_DENIED' : 'PROJECT_DOCUMENT_ACCESS_DENIED',
+              message: 'Project document access denied.',
+            });
+            return null;
+          }
+          const member = project.members.find((m) => m.userId === currentUser.id);
+          const allowed = currentUser.isSystemAdministrator || (
+            Boolean(member) &&
+            currentPerms.includes('files.read') &&
+            (!uploadMode || (member!.canManageDocuments && currentPerms.includes('files.write')))
+          );
+          if (!allowed) {
+            addAudit(
+              'ACCESS_DENIED',
+              'Security',
+              `User '${currentUser.username}' attempted unauthorized document ${uploadMode ? 'upload' : 'access'} on project '${project.code}'.`,
+              currentUser,
+              'Project',
+              project.id
+            );
+            sendJson(res, 403, {
+              code: uploadMode ? 'PROJECT_DOCUMENT_UPLOAD_DENIED' : 'PROJECT_DOCUMENT_ACCESS_DENIED',
+              message: uploadMode
+                ? 'Document upload requires files.write, files.read, and project CanManageDocuments capability.'
+                : 'Document access requires files.read and project membership.',
+            });
+            return null;
+          }
+          return { project, member };
+        };
+
+        const canReadDocumentMetadataForCustomers =
+          currentUser.isSystemAdministrator || currentPerms.includes('files.read');
+
+        const redactCustomerDto = (c: ProjectCustomerDto): ProjectCustomerDto =>
+          canReadDocumentMetadataForCustomers ? c : { ...c, identityDocument: null };
+
+        // Project Customers
         const customersListMatch = pathname.match(/^\/api\/projects\/([^/]+)\/customers$/);
         if (customersListMatch && method === 'GET') {
-          const project = authorizeProjectScope(customersListMatch[1]);
-          if (!project) return;
-          const rows = projectCustomers.get(project.id) ?? [];
-          return sendJson(res, 200, rows.map((c) => ({
-            id: c.id,
-            partyId: c.partyId,
-            customerType: c.customerType,
-            displayName: c.displayName,
-            contactPerson: c.contactPerson,
-            phone: c.phone,
-            email: c.email,
-            status: c.status,
-            source: c.source,
-            updatedAtUtc: c.updatedAtUtc,
-            interactionCount: c.interactions.length,
-            hasIdentityDocument: Boolean(c.identityDocument),
-            concurrencyStamp: c.concurrencyStamp,
-          })));
+          const scope = authorizeProjectCustomerScope(customersListMatch[1], false);
+          if (!scope) return;
+          const rows = projectCustomers.get(scope.project.id) ?? [];
+          addAudit(
+            'PROJECT_CUSTOMERS_LISTED',
+            'Info',
+            `Listed ${rows.length} customer(s) in project '${scope.project.code}'.`,
+            currentUser,
+            'Project',
+            scope.project.id
+          );
+          return sendJson(
+            res,
+            200,
+            rows.map((c) => ({
+              id: c.id,
+              partyId: c.partyId,
+              customerType: c.customerType,
+              displayName: c.displayName,
+              contactPerson: c.contactPerson,
+              phone: c.phone,
+              email: c.email,
+              status: c.status,
+              source: c.source,
+              updatedAtUtc: c.updatedAtUtc,
+              interactionCount: c.interactions.length,
+              hasIdentityDocument: canReadDocumentMetadataForCustomers && Boolean(c.identityDocument),
+              concurrencyStamp: c.concurrencyStamp,
+            }))
+          );
         }
 
         if (customersListMatch && method === 'POST') {
-          const project = authorizeProjectScope(customersListMatch[1]);
-          if (!project) return;
+          const scope = authorizeProjectCustomerScope(customersListMatch[1], true);
+          if (!scope) return;
           const body = await readJsonBody<any>(req);
+          const customerType = body.customerType === 'LegalEntity' ? 'LegalEntity' : body.customerType === 'Individual' ? 'Individual' : null;
+          if (!customerType) {
+            return sendJson(res, 400, { code: 'VALIDATION_ERROR', message: 'Invalid customerType.' });
+          }
+          const phone = String(body.phone ?? '').trim();
+          const requestedDisplayName = String(body.displayName ?? '').trim();
+          if (!phone || (!body.partyId && !requestedDisplayName)) {
+            return sendJson(res, 400, { code: 'VALIDATION_ERROR', message: 'Display name and phone are required.' });
+          }
+          const list = projectCustomers.get(scope.project.id) ?? [];
+
+          let party: PartyDirectoryItemDto | undefined;
+          if (body.partyId) {
+            if (!currentUser.isSystemAdministrator && !currentPerms.includes('parties.directory.read')) {
+              addAudit(
+                'ACCESS_DENIED',
+                'Security',
+                `User '${currentUser.username}' attempted to link existing party '${body.partyId}' without parties.directory.read.`,
+                currentUser,
+                'Party',
+                String(body.partyId)
+              );
+              return sendJson(res, 403, {
+                code: 'PARTY_DIRECTORY_ACCESS_DENIED',
+                message: 'Party directory read permission is required to link an existing shared party.',
+              });
+            }
+            party = parties.find((p) => p.id === body.partyId);
+            if (!party) {
+              return sendJson(res, 404, { code: 'PARTY_NOT_FOUND', message: 'Party not found.' });
+            }
+            const expectedCustomerType = party.kind === 'LegalEntity' ? 'LegalEntity' : 'Individual';
+            if (expectedCustomerType !== customerType) {
+              return sendJson(res, 400, {
+                code: 'PARTY_IDENTITY_MISMATCH',
+                message: 'Customer type does not match the linked party kind.',
+              });
+            }
+            if (list.some((c) => c.partyId === party!.id)) {
+              return sendJson(res, 409, {
+                code: 'CUSTOMER_PARTY_ALREADY_LINKED',
+                message: 'This shared party is already linked as a customer in this project.',
+              });
+            }
+          }
+
+          if (
+            list.some(
+              (c) =>
+                c.phone.trim().toLowerCase() === phone.toLowerCase() ||
+                (requestedDisplayName && c.displayName.trim().toLowerCase() === requestedDisplayName.toLowerCase())
+            )
+          ) {
+            return sendJson(res, 409, {
+              code: 'CUSTOMER_DUPLICATE',
+              message: 'A customer with the same name or phone already exists in this project.',
+            });
+          }
+
+          let identityDocument: ProjectCustomerDto['identityDocument'] = null;
+          if (body.identityDocumentStoredFileId) {
+            if (!canReadDocumentMetadataForCustomers) {
+              addAudit(
+                'ACCESS_DENIED',
+                'Security',
+                `User '${currentUser.username}' attempted to attach identity document '${body.identityDocumentStoredFileId}' without files.read.`,
+                currentUser,
+                'StoredFile',
+                String(body.identityDocumentStoredFileId)
+              );
+              return sendJson(res, 403, {
+                code: 'CUSTOMER_IDENTITY_DOCUMENT_ACCESS_DENIED',
+                message: 'Viewing or linking KYC identity documents requires files.read permission.',
+              });
+            }
+            const docEntry = (projectDocuments.get(scope.project.id) ?? []).find(
+              (d) => d.meta.id === body.identityDocumentStoredFileId
+            );
+            if (!docEntry) {
+              return sendJson(res, 404, { code: 'DOCUMENT_NOT_FOUND', message: 'Referenced document not found.' });
+            }
+            if (!canAccessDocumentCategory(scope.member, docEntry.meta.category, false)) {
+              addAudit(
+                'ACCESS_DENIED',
+                'Security',
+                `User '${currentUser.username}' attempted to link forbidden document category '${docEntry.meta.category}' as KYC identity document.`,
+                currentUser,
+                'StoredFile',
+                docEntry.meta.id
+              );
+              return sendJson(res, 403, {
+                code: 'PROJECT_DOCUMENT_ACCESS_DENIED',
+                message: 'Document category access denied.',
+              });
+            }
+            identityDocument = {
+              id: docEntry.meta.id,
+              originalFileName: docEntry.meta.originalFileName,
+              category: docEntry.meta.category,
+              sizeBytes: docEntry.meta.sizeBytes,
+            };
+          }
+
           const nowIso = new Date().toISOString();
-          let party = body.partyId ? parties.find((p) => p.id === body.partyId) : undefined;
           if (!party) {
+            const desiredKind = customerType === 'LegalEntity' ? 'LegalEntity' : 'Person';
             party = {
               id: crypto.randomUUID(),
-              kind: body.customerType === 'LegalEntity' ? 'LegalEntity' : 'Person',
-              displayName: String(body.displayName ?? '').trim(),
+              kind: desiredKind,
+              displayName: requestedDisplayName,
               concurrencyStamp: crypto.randomUUID(),
             };
             parties.push(party);
           }
+
           const created: ProjectCustomerDto = {
             id: crypto.randomUUID(),
             partyId: party.id,
             partyConcurrencyStamp: party.concurrencyStamp,
-            projectId: project.id,
-            customerType: body.customerType ?? 'Individual',
+            projectId: scope.project.id,
+            customerType,
             displayName: party.displayName,
-            contactPerson: body.contactPerson ?? null,
-            phone: String(body.phone ?? '').trim(),
-            email: body.email ?? null,
-            address: body.address ?? null,
+            contactPerson: body.contactPerson?.trim() || null,
+            phone,
+            email: body.email?.trim() || null,
+            address: body.address?.trim() || null,
             preferredLanguage: body.preferredLanguage === 'fr' ? 'fr' : 'ar',
             source: body.source ?? 'WalkIn',
             status: 'Prospect',
-            identityDocument: null,
+            identityDocument,
             interactions: [],
             createdAtUtc: nowIso,
             updatedAtUtc: nowIso,
             concurrencyStamp: crypto.randomUUID(),
           };
-          const list = projectCustomers.get(project.id) ?? [];
           list.unshift(created);
-          projectCustomers.set(project.id, list);
-          return sendJson(res, 201, created);
+          projectCustomers.set(scope.project.id, list);
+          addAudit(
+            'PROJECT_CUSTOMER_CREATED',
+            'Info',
+            `Created customer '${created.displayName}' in project '${scope.project.code}'.`,
+            currentUser,
+            'ProjectCustomer',
+            created.id
+          );
+          return sendJson(res, 201, redactCustomerDto(created));
         }
 
         const customerDetailMatch = pathname.match(/^\/api\/projects\/([^/]+)\/customers\/([^/]+)$/);
         if (customerDetailMatch && method === 'GET') {
-          const project = authorizeProjectScope(customerDetailMatch[1]);
-          if (!project) return;
-          const item = (projectCustomers.get(project.id) ?? []).find((c) => c.id === decodeURIComponent(customerDetailMatch[2]));
+          const scope = authorizeProjectCustomerScope(customerDetailMatch[1], false);
+          if (!scope) return;
+          const item = (projectCustomers.get(scope.project.id) ?? []).find(
+            (c) => c.id === decodeURIComponent(customerDetailMatch[2])
+          );
           if (!item) return sendJson(res, 404, { code: 'CUSTOMER_NOT_FOUND', message: 'Customer not found.' });
-          return sendJson(res, 200, item);
+          addAudit(
+            'PROJECT_CUSTOMER_VIEWED',
+            'Info',
+            `Viewed customer '${item.displayName}' in project '${scope.project.code}'.`,
+            currentUser,
+            'ProjectCustomer',
+            item.id
+          );
+          return sendJson(res, 200, redactCustomerDto(item));
         }
 
         if (customerDetailMatch && method === 'PUT') {
-          const project = authorizeProjectScope(customerDetailMatch[1]);
-          if (!project) return;
-          const item = (projectCustomers.get(project.id) ?? []).find((c) => c.id === decodeURIComponent(customerDetailMatch[2]));
+          const scope = authorizeProjectCustomerScope(customerDetailMatch[1], true);
+          if (!scope) return;
+          const list = projectCustomers.get(scope.project.id) ?? [];
+          const item = list.find((c) => c.id === decodeURIComponent(customerDetailMatch[2]));
           if (!item) return sendJson(res, 404, { code: 'CUSTOMER_NOT_FOUND', message: 'Customer not found.' });
           const body = await readJsonBody<any>(req);
+
           if (body.concurrencyStamp !== item.concurrencyStamp) {
             return sendJson(res, 409, { code: 'CONCURRENCY_CONFLICT', message: 'Concurrency conflict.' });
           }
-          item.contactPerson = body.contactPerson ?? null;
-          item.phone = String(body.phone ?? item.phone).trim();
-          item.email = body.email ?? null;
-          item.address = body.address ?? null;
+
+          const party = item.partyId ? parties.find((p) => p.id === item.partyId) : undefined;
+          if (!party || body.partyConcurrencyStamp !== party.concurrencyStamp) {
+            return sendJson(res, 409, {
+              code: 'PARTY_CONCURRENCY_CONFLICT',
+              message: 'Shared party concurrency conflict.',
+            });
+          }
+
+          const nextPhone = String(body.phone ?? item.phone).trim();
+          const nextDisplayName = String(body.displayName ?? item.displayName).trim();
+          const nextCustomerType =
+            body.customerType === 'LegalEntity'
+              ? 'LegalEntity'
+              : body.customerType === 'Individual'
+                ? 'Individual'
+                : item.customerType;
+          if (!nextPhone || !nextDisplayName) {
+            return sendJson(res, 400, { code: 'VALIDATION_ERROR', message: 'Display name and phone are required.' });
+          }
+
+          if (
+            list.some(
+              (other) =>
+                other.id !== item.id &&
+                (other.phone.trim().toLowerCase() === nextPhone.toLowerCase() ||
+                  other.displayName.trim().toLowerCase() === nextDisplayName.toLowerCase())
+            )
+          ) {
+            return sendJson(res, 409, {
+              code: 'CUSTOMER_DUPLICATE',
+              message: 'Another customer with the same name or phone already exists in this project.',
+            });
+          }
+
+          const identityChanged = nextDisplayName !== item.displayName || nextCustomerType !== item.customerType;
+          if (identityChanged) {
+            if (!currentUser.isSystemAdministrator && !currentPerms.includes('parties.identity.manage')) {
+              addAudit(
+                'ACCESS_DENIED',
+                'Security',
+                `User '${currentUser.username}' attempted shared party identity edit without parties.identity.manage.`,
+                currentUser,
+                'Party',
+                party.id
+              );
+              return sendJson(res, 403, {
+                code: 'PARTY_IDENTITY_MANAGE_REQUIRED',
+                message: 'Changing customer display name or legal type requires parties.identity.manage permission.',
+              });
+            }
+            const nextPartyKind = nextCustomerType === 'LegalEntity' ? 'LegalEntity' : 'Person';
+            if (
+              parties.some(
+                (other) =>
+                  other.id !== party.id &&
+                  other.kind === nextPartyKind &&
+                  other.displayName.trim().toLowerCase() === nextDisplayName.toLowerCase()
+              )
+            ) {
+              return sendJson(res, 409, {
+                code: 'PARTY_IDENTITY_CONFLICT',
+                message: 'Another shared party with the same kind and display name already exists.',
+              });
+            }
+            party.kind = nextPartyKind;
+            party.displayName = nextDisplayName;
+            party.concurrencyStamp = crypto.randomUUID();
+            for (const pList of projectCustomers.values()) {
+              for (const linked of pList) {
+                if (linked.partyId === party.id) {
+                  linked.displayName = party.displayName;
+                  linked.customerType = nextPartyKind === 'Person' ? 'Individual' : 'LegalEntity';
+                  linked.partyConcurrencyStamp = party.concurrencyStamp;
+                }
+              }
+            }
+            addAudit(
+              'PARTY_IDENTITY_UPDATED',
+              'Info',
+              `Updated shared party '${party.displayName}' via customer edit.`,
+              currentUser,
+              'Party',
+              party.id
+            );
+          }
+
+          const requestedDocId = body.identityDocumentStoredFileId ?? null;
+          if (!canReadDocumentMetadataForCustomers) {
+            if (requestedDocId) {
+              addAudit(
+                'ACCESS_DENIED',
+                'Security',
+                `User '${currentUser.username}' attempted to modify customer KYC identity document without files.read.`,
+                currentUser,
+                'StoredFile',
+                String(requestedDocId)
+              );
+              return sendJson(res, 403, {
+                code: 'CUSTOMER_IDENTITY_DOCUMENT_ACCESS_DENIED',
+                message: 'Linking KYC identity documents requires files.read permission.',
+              });
+            }
+            // Preserve existing hidden identity document reference when caller lacks files.read
+          } else if (requestedDocId !== (item.identityDocument?.id ?? null)) {
+            if (!requestedDocId) {
+              item.identityDocument = null;
+            } else {
+              const docEntry = (projectDocuments.get(scope.project.id) ?? []).find(
+                (d) => d.meta.id === requestedDocId
+              );
+              if (!docEntry) {
+                return sendJson(res, 404, { code: 'DOCUMENT_NOT_FOUND', message: 'Referenced document not found.' });
+              }
+              if (!canAccessDocumentCategory(scope.member, docEntry.meta.category, false)) {
+                addAudit(
+                  'ACCESS_DENIED',
+                  'Security',
+                  `User '${currentUser.username}' attempted to link forbidden document category '${docEntry.meta.category}' as KYC identity document.`,
+                  currentUser,
+                  'StoredFile',
+                  docEntry.meta.id
+                );
+                return sendJson(res, 403, {
+                  code: 'PROJECT_DOCUMENT_ACCESS_DENIED',
+                  message: 'Document category access denied.',
+                });
+              }
+              item.identityDocument = {
+                id: docEntry.meta.id,
+                originalFileName: docEntry.meta.originalFileName,
+                category: docEntry.meta.category,
+                sizeBytes: docEntry.meta.sizeBytes,
+              };
+            }
+          }
+
+          item.contactPerson = body.contactPerson?.trim() || null;
+          item.phone = nextPhone;
+          item.email = body.email?.trim() || null;
+          item.address = body.address?.trim() || null;
           item.preferredLanguage = body.preferredLanguage === 'fr' ? 'fr' : 'ar';
           item.source = body.source ?? item.source;
           item.status = body.status ?? item.status;
           item.updatedAtUtc = new Date().toISOString();
           item.concurrencyStamp = crypto.randomUUID();
-          return sendJson(res, 200, item);
+          addAudit(
+            'PROJECT_CUSTOMER_UPDATED',
+            'Info',
+            `Updated customer '${item.displayName}' in project '${scope.project.code}'.`,
+            currentUser,
+            'ProjectCustomer',
+            item.id
+          );
+          return sendJson(res, 200, redactCustomerDto(item));
         }
 
         const customerInteractionMatch = pathname.match(/^\/api\/projects\/([^/]+)\/customers\/([^/]+)\/interactions$/);
         if (customerInteractionMatch && method === 'POST') {
-          const project = authorizeProjectScope(customerInteractionMatch[1]);
-          if (!project) return;
-          const item = (projectCustomers.get(project.id) ?? []).find((c) => c.id === decodeURIComponent(customerInteractionMatch[2]));
+          const scope = authorizeProjectCustomerScope(customerInteractionMatch[1], true);
+          if (!scope) return;
+          const item = (projectCustomers.get(scope.project.id) ?? []).find(
+            (c) => c.id === decodeURIComponent(customerInteractionMatch[2])
+          );
           if (!item) return sendJson(res, 404, { code: 'CUSTOMER_NOT_FOUND', message: 'Customer not found.' });
           const body = await readJsonBody<any>(req);
+          const subject = String(body.subject ?? '').trim();
+          const summary = String(body.summary ?? '').trim();
+          if (!subject || !summary) {
+            return sendJson(res, 400, { code: 'VALIDATION_ERROR', message: 'Subject and summary are required.' });
+          }
           const interaction = {
             id: crypto.randomUUID(),
             type: String(body.type ?? 'Call'),
-            subject: String(body.subject ?? '').trim(),
-            summary: String(body.summary ?? '').trim(),
+            subject,
+            summary,
             occurredAtUtc: new Date().toISOString(),
             nextFollowUpAtUtc: body.nextFollowUpAtUtc ?? null,
             createdByFullName: currentUser.fullName,
           };
           item.interactions.unshift(interaction);
           item.updatedAtUtc = new Date().toISOString();
+          addAudit(
+            'PROJECT_CUSTOMER_INTERACTION_ADDED',
+            'Info',
+            `Added ${interaction.type} interaction for '${item.displayName}' in project '${scope.project.code}'.`,
+            currentUser,
+            'ProjectCustomer',
+            item.id
+          );
           return sendJson(res, 201, interaction);
         }
 
-        // Internal Reservations (Preview contract mirror)
+        // Internal Reservations (Preview contract parity with ASP.NET Core 10)
         const reservationsMatch = pathname.match(/^\/api\/projects\/([^/]+)\/reservations$/);
         if (reservationsMatch && method === 'GET') {
-          const project = authorizeProjectScope(reservationsMatch[1]);
-          if (!project) return;
-          return sendJson(res, 200, projectReservations.get(project.id) ?? []);
+          const scope = authorizeProjectReservationScope(reservationsMatch[1], false);
+          if (!scope) return;
+          const rows = projectReservations.get(scope.project.id) ?? [];
+          addAudit(
+            'PROJECT_RESERVATIONS_LISTED',
+            'Info',
+            `Listed ${rows.length} internal reservation(s) in project '${scope.project.code}'.`,
+            currentUser,
+            'Project',
+            scope.project.id
+          );
+          return sendJson(res, 200, rows);
         }
 
         if (reservationsMatch && method === 'POST') {
-          const project = authorizeProjectScope(reservationsMatch[1]);
-          if (!project) return;
+          const scope = authorizeProjectReservationScope(reservationsMatch[1], true);
+          if (!scope) return;
           const body = await readJsonBody<{ propertyUnitId: string; projectCustomerId: string; expiresAtUtc: string }>(req);
-          const structure = getProjectStructure(projectStructures, project.id);
-          const unit = structure.buildings.flatMap((b) => b.floors).flatMap((f) => f.units).find((u) => u.id === body.propertyUnitId);
-          const customer = (projectCustomers.get(project.id) ?? []).find((c) => c.id === body.projectCustomerId);
-          if (!unit || !customer || unit.status !== 'AvailableForSale') {
-            return sendJson(res, 400, { code: 'RESERVATION_INVALID', message: 'Unit must be available and customer must belong to project.' });
+          const expiresMs = Date.parse(body.expiresAtUtc ?? '');
+          if (Number.isNaN(expiresMs) || expiresMs <= Date.now()) {
+            return sendJson(res, 400, {
+              code: 'RESERVATION_EXPIRY_INVALID',
+              message: 'Reservation expiry must be a valid future timestamp.',
+            });
           }
-          const rawStruct = projectStructures.get(project.id);
+
+          const structure = getProjectStructure(projectStructures, scope.project.id);
+          const unit = structure.buildings
+            .flatMap((b) => b.floors)
+            .flatMap((f) => f.units)
+            .find((u) => u.id === body.propertyUnitId);
+          if (!unit) {
+            return sendJson(res, 404, { code: 'PROPERTY_UNIT_NOT_FOUND', message: 'Property unit not found.' });
+          }
+          if (unit.status !== 'AvailableForSale') {
+            return sendJson(res, 409, {
+              code: 'RESERVATION_UNIT_UNAVAILABLE',
+              message: 'Only units in AvailableForSale status can receive an internal reservation hold.',
+            });
+          }
+
+          const customer = (projectCustomers.get(scope.project.id) ?? []).find(
+            (c) => c.id === body.projectCustomerId
+          );
+          if (!customer) {
+            return sendJson(res, 404, { code: 'CUSTOMER_NOT_FOUND', message: 'Project customer not found.' });
+          }
+          if (customer.status === 'Archived') {
+            return sendJson(res, 400, {
+              code: 'RESERVATION_CUSTOMER_ARCHIVED',
+              message: 'Archived customers cannot hold a new reservation.',
+            });
+          }
+
+          const rawStruct = projectStructures.get(scope.project.id);
           for (const b of rawStruct?.buildings ?? []) {
             for (const f of b.floors) {
               const target = f.units.find((u) => u.id === unit.id);
@@ -1774,18 +2467,18 @@ export function createPromoGestDevApiPlugin(): Plugin {
             }
           }
           const nowIso = new Date().toISOString();
-          const list = projectReservations.get(project.id) ?? [];
+          const list = projectReservations.get(scope.project.id) ?? [];
           const created: ProjectSalesReservationDto = {
             id: crypto.randomUUID(),
-            projectId: project.id,
+            projectId: scope.project.id,
             propertyUnitId: unit.id,
             unitNumber: unit.unitNumber,
             projectCustomerId: customer.id,
             customerName: customer.displayName,
-            reservationNumber: `HOLD-${project.code}-${String(list.length + 1).padStart(3, '0')}`,
+            reservationNumber: `HOLD-${scope.project.code}-${String(list.length + 1).padStart(3, '0')}`,
             status: 'Active',
             reservedAtUtc: nowIso,
-            expiresAtUtc: body.expiresAtUtc,
+            expiresAtUtc: new Date(expiresMs).toISOString(),
             closedAtUtc: null,
             closedByUserId: null,
             closeReason: null,
@@ -1794,54 +2487,214 @@ export function createPromoGestDevApiPlugin(): Plugin {
             concurrencyStamp: crypto.randomUUID(),
           };
           list.unshift(created);
-          projectReservations.set(project.id, list);
+          projectReservations.set(scope.project.id, list);
+          addAudit(
+            'PROJECT_RESERVATION_CREATED',
+            'Info',
+            `Created internal hold '${created.reservationNumber}' for unit '${unit.unitNumber}'.`,
+            currentUser,
+            'ProjectSalesReservation',
+            created.id
+          );
           return sendJson(res, 201, created);
         }
 
         const cancelResMatch = pathname.match(/^\/api\/projects\/([^/]+)\/reservations\/([^/]+)\/cancel$/);
         if (cancelResMatch && method === 'POST') {
-          const project = authorizeProjectScope(cancelResMatch[1]);
-          if (!project) return;
-          const list = projectReservations.get(project.id) ?? [];
+          const scope = authorizeProjectReservationScope(cancelResMatch[1], true);
+          if (!scope) return;
+          const list = projectReservations.get(scope.project.id) ?? [];
           const resItem = list.find((r) => r.id === decodeURIComponent(cancelResMatch[2]));
           if (!resItem) return sendJson(res, 404, { code: 'RESERVATION_NOT_FOUND', message: 'Reservation not found.' });
           const body = await readJsonBody<{ reason: string; expectedConcurrencyStamp: string }>(req);
+          const trimmedReason = String(body.reason ?? '').trim();
+          if (!trimmedReason) {
+            return sendJson(res, 400, {
+              code: 'RESERVATION_CANCEL_REASON_REQUIRED',
+              message: 'Cancellation reason is required.',
+            });
+          }
           if (body.expectedConcurrencyStamp !== resItem.concurrencyStamp) {
             return sendJson(res, 409, { code: 'CONCURRENCY_CONFLICT', message: 'Concurrency conflict.' });
           }
+          if (resItem.status !== 'Active' || new Date(resItem.expiresAtUtc).getTime() <= Date.now()) {
+            return sendJson(res, 409, {
+              code: 'RESERVATION_EXPIRY_REACHED',
+              message: 'Only active, unexpired reservations can be cancelled.',
+            });
+          }
+
+          const rawStruct = projectStructures.get(scope.project.id);
+          let targetUnit: { status: string; concurrencyStamp: string } | undefined;
+          for (const b of rawStruct?.buildings ?? []) {
+            for (const f of b.floors) {
+              const found = f.units.find((u) => u.id === resItem.propertyUnitId);
+              if (found) targetUnit = found;
+            }
+          }
+          if (!targetUnit || targetUnit.status !== 'Reserved') {
+            return sendJson(res, 409, {
+              code: 'RESERVATION_UNIT_STATE_MISMATCH',
+              message: 'Linked unit is no longer in Reserved status.',
+            });
+          }
+
+          targetUnit.status = 'AvailableForSale';
+          targetUnit.concurrencyStamp = crypto.randomUUID();
           resItem.status = 'Cancelled';
-          resItem.closeReason = body.reason;
+          resItem.closeReason = trimmedReason;
           resItem.closedAtUtc = new Date().toISOString();
           resItem.closedByUserId = currentUser.id;
           resItem.concurrencyStamp = crypto.randomUUID();
-          const rawStruct = projectStructures.get(project.id);
-          for (const b of rawStruct?.buildings ?? []) {
-            for (const f of b.floors) {
-              const target = f.units.find((u) => u.id === resItem.propertyUnitId);
-              if (target && target.status === 'Reserved') {
-                target.status = 'AvailableForSale';
-                target.concurrencyStamp = crypto.randomUUID();
-              }
-            }
-          }
+          addAudit(
+            'PROJECT_RESERVATION_CANCELLED',
+            'Info',
+            `Cancelled internal hold '${resItem.reservationNumber}' on unit '${resItem.unitNumber}'.`,
+            currentUser,
+            'ProjectSalesReservation',
+            resItem.id
+          );
           return sendJson(res, 200, resItem);
         }
 
-        // Project Documents (Preview contract mirror)
+        // Project Documents (Preview contract parity with ASP.NET Core 10)
+        const isCustomerIdentityDoc = (projectId: string, docId: string): boolean =>
+          (projectCustomers.get(projectId) ?? []).some((c) => c.identityDocument?.id === docId);
+
         const docsMatch = pathname.match(/^\/api\/projects\/([^/]+)\/documents$/);
         if (docsMatch && method === 'GET') {
-          const project = authorizeProjectScope(docsMatch[1]);
-          if (!project) return;
-          const docs = (projectDocuments.get(project.id) ?? []).map((d) => d.meta);
+          const scope = authorizeProjectDocumentScope(docsMatch[1], false);
+          if (!scope) return;
+          const canReadCustomers =
+            currentUser.isSystemAdministrator ||
+            (Boolean(scope.member) && currentPerms.includes('customers.read'));
+          const docs = (projectDocuments.get(scope.project.id) ?? [])
+            .filter(
+              (d) =>
+                canAccessDocumentCategory(scope.member, d.meta.category, false) &&
+                (!isCustomerIdentityDoc(scope.project.id, d.meta.id) || canReadCustomers)
+            )
+            .map((d) => d.meta);
           return sendJson(res, 200, docs, { 'Cache-Control': 'no-store' });
+        }
+
+        if (docsMatch && method === 'POST') {
+          const scope = authorizeProjectDocumentScope(docsMatch[1], true);
+          if (!scope) return;
+          try {
+            const rawBody = await readRawBody(req, MAX_DOCUMENT_BYTES + 1024 * 1024);
+            const parsed = parseMultipartFormData(rawBody, req.headers['content-type']);
+            if (!parsed) {
+              return sendJson(res, 400, { code: 'VALIDATION_ERROR', message: 'Expected multipart/form-data payload.' });
+            }
+            const file = parsed.files.file;
+            if (!file || file.content.byteLength === 0) {
+              return sendJson(res, 400, { code: 'DOCUMENT_EMPTY', message: 'An uploaded non-empty file is required.' });
+            }
+            if (file.content.byteLength > MAX_DOCUMENT_BYTES) {
+              return sendJson(res, 400, { code: 'DOCUMENT_TOO_LARGE', message: 'File exceeds maximum allowed size of 25 MB.' });
+            }
+            const extMatch = file.fileName.toLowerCase().match(/(\.[a-z0-9]+)$/);
+            const ext = extMatch?.[1] ?? '';
+            if (!ALLOWED_DOCUMENT_EXTENSIONS.has(ext)) {
+              return sendJson(res, 400, {
+                code: 'DOCUMENT_EXTENSION_NOT_ALLOWED',
+                message: `Extension '${ext || '(none)'}' is not allowed.`,
+              });
+            }
+            const category = (parsed.fields.category ?? '').trim();
+            if (!ALLOWED_DOCUMENT_CATEGORIES.has(category)) {
+              return sendJson(res, 400, {
+                code: 'DOCUMENT_CATEGORY_INVALID',
+                message: 'Invalid document category.',
+              });
+            }
+            if (!canAccessDocumentCategory(scope.member, category, true)) {
+              addAudit(
+                'ACCESS_DENIED',
+                'Security',
+                `User '${currentUser.username}' attempted unauthorized document upload into category '${category}' on project '${scope.project.code}'.`,
+                currentUser,
+                'Project',
+                scope.project.id
+              );
+              return sendJson(res, 403, {
+                code: 'PROJECT_DOCUMENT_CATEGORY_FORBIDDEN',
+                message: `You do not have permission to upload documents in category '${category}'.`,
+              });
+            }
+
+            const description = (parsed.fields.description ?? '').trim() || null;
+            const nowIso = new Date().toISOString();
+            const meta: ProjectDocumentDto = {
+              id: crypto.randomUUID(),
+              originalFileName: file.fileName || `document${ext}`,
+              category,
+              description,
+              contentType: file.contentType,
+              sizeBytes: file.content.byteLength,
+              sha256Checksum: crypto.createHash('sha256').update(file.content).digest('hex'),
+              uploadedByUserId: currentUser.id,
+              uploadedByFullName: currentUser.fullName,
+              createdAtUtc: nowIso,
+            };
+            const existingDocs = projectDocuments.get(scope.project.id) ?? [];
+            existingDocs.unshift({ meta, content: file.content });
+            projectDocuments.set(scope.project.id, existingDocs);
+            addAudit(
+              'PROJECT_DOCUMENT_UPLOADED',
+              'Info',
+              `Uploaded document '${meta.originalFileName}' (${meta.category}, ${meta.sizeBytes} bytes) to project '${scope.project.code}'.`,
+              currentUser,
+              'StoredFile',
+              meta.id
+            );
+            return sendJson(res, 201, meta);
+          } catch (err) {
+            if (err instanceof DevPreviewStoreError) {
+              return sendJson(res, err.status, { code: err.code, message: err.message });
+            }
+            throw err;
+          }
         }
 
         const docDownloadMatch = pathname.match(/^\/api\/projects\/([^/]+)\/documents\/([^/]+)\/download$/);
         if (docDownloadMatch && method === 'GET') {
-          const project = authorizeProjectScope(docDownloadMatch[1]);
-          if (!project) return;
-          const entry = (projectDocuments.get(project.id) ?? []).find((d) => d.meta.id === decodeURIComponent(docDownloadMatch[2]));
+          const scope = authorizeProjectDocumentScope(docDownloadMatch[1], false);
+          if (!scope) return;
+          const docId = decodeURIComponent(docDownloadMatch[2]);
+          const entry = (projectDocuments.get(scope.project.id) ?? []).find((d) => d.meta.id === docId);
           if (!entry) return sendJson(res, 404, { code: 'DOCUMENT_NOT_FOUND', message: 'Document not found.' });
+
+          const canReadCustomers =
+            currentUser.isSystemAdministrator ||
+            (Boolean(scope.member) && currentPerms.includes('customers.read'));
+          if (
+            !canAccessDocumentCategory(scope.member, entry.meta.category, false) ||
+            (isCustomerIdentityDoc(scope.project.id, entry.meta.id) && !canReadCustomers)
+          ) {
+            addAudit(
+              'ACCESS_DENIED',
+              'Security',
+              `User '${currentUser.username}' attempted unauthorized download of document '${entry.meta.originalFileName}' (${entry.meta.category}).`,
+              currentUser,
+              'StoredFile',
+              entry.meta.id
+            );
+            return sendJson(res, 403, {
+              code: 'PROJECT_DOCUMENT_ACCESS_DENIED',
+              message: 'You do not have permission to download this document.',
+            });
+          }
+
+          addAudit(
+            'PROJECT_DOCUMENT_DOWNLOADED',
+            'Info',
+            `Downloaded document '${entry.meta.originalFileName}' from project '${scope.project.code}'.`,
+            currentUser,
+            'StoredFile',
+            entry.meta.id
+          );
           res.statusCode = 200;
           res.setHeader('Content-Type', entry.meta.contentType);
           res.setHeader('Content-Disposition', `attachment; filename="${entry.meta.originalFileName}"`);
@@ -1860,7 +2713,15 @@ export function createPromoGestDevApiPlugin(): Plugin {
         }
 
         return sendJson(res, 404, { code: 'ENDPOINT_NOT_FOUND', message: 'Endpoint not found.' });
-      });
+  };
+}
+
+export function createPromoGestDevApiPlugin(): Plugin {
+  const middleware = createPromoGestDevMiddleware();
+  return {
+    name: 'promogest-dev-api-contract',
+    configureServer(server) {
+      server.middlewares.use(middleware);
     },
   };
 }

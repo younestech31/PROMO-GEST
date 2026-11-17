@@ -43,7 +43,7 @@ export function TerritorialReferenceView({
         }
         language={language}
         moduleCode="A"
-        moduleState="PARTIAL"
+        moduleState="PARTIALLY_IMPLEMENTED"
         breadcrumbs={[
           { label: isArabic ? 'مساحة المؤسسة' : 'Organisation', onClick: onNavigateHome },
           { label: isArabic ? 'المرجع الإقليمي' : 'Référentiel territorial' },

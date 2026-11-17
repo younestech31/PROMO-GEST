@@ -1,18 +1,20 @@
 # PROMO GEST — Project Navigation & Active Context UX
 
-**Status:** Reviewed and approved with modifications by D-013 (design only; not implementation)  
+**Status:** Design approved (D-013); frontend navigation shell & audit stabilization (`apps/local-web`) `IMPLEMENTED_NOT_VERIFIED` pending branch/PR CI and formal acceptance  
 **Scope:** Project selection, switching, multi-project work, and project-specific navigation  
 **Applies to:** The local-first organization-wide ERP shell and project workspace
 
-## Current repository implementation check — 16 November 2026
+## Current repository implementation check — 16–17 November 2026
 
-Source inspected: latest application runtime/schema source remains PR #59 commit `53c50fbc0db801b9298ec731cfc44f2d4d58ff7f`; documentation-only main base inspected for D-013 is PR #69 merge `4fdfcb2679231ff81b8756a8da6ba3045bea5288` (PR #69 CI #603 passed; post-merge main CI #604 verifies this base).
+Source inspected: ASP.NET Core 10 runtime/schema source remains unchanged on the repository baseline; frontend shell construction and audit stabilization were executed inside `apps/local-web/`.
 
-The current React application has five top-level in-memory route states: `overview`, `projects`, `users`, `audit`, and `organization`. The authenticated shell keeps organization identity visible and exposes a project directory. `ProjectsAccessView.tsx` opens structure, customer registry, internal-hold, and document workflows in project-specific modals from each directory row. The modal headers show project code and name.
+The React application now implements the three-level URL-routed navigation shell (`App.tsx`, `navigation.ts`, `ErpShellLayout.tsx`, `ProjectSwitcher.tsx`, `ProjectWorkspaceView.tsx`, `OrganizationWorkspaceView.tsx`, `PartiesDirectoryView.tsx`, `TerritorialReferenceView.tsx`, `ReportsWorkspaceView.tsx`, `SystemDiagnosticsView.tsx`, `PlannedProjectModuleView.tsx`) plus stabilization guards (`workspaceGuards.ts`):
+- Direct URL access to `/admin/users`, `/admin/audit`, `/admin/diagnostics`, and `/organization/parties` checks `canAccessRoute` prior to mounting any restricted view and redirects unauthorized actors to `/projects` with a bilingual notice.
+- All editable forms and modals (`OrganizationProfileView`, `PartiesDirectoryView`, `UsersManagementView`, `ProjectsAccessView`, `ProjectWorkspaceView`, `ProjectStructureModal`, `ProjectCustomerRegistryModal`, `ProjectSalesReservationsModal`, `ProjectDocumentsModal`) guard unsaved edits across tab switches, modal closes, internal sub-tabs, logout, `popstate` (restoring URL before confirming), and `beforeunload`, with an optional Save & Continue flow where supported.
+- Project-access revocation clears cached stale state and `recentProjectIds`/`pinnedProjectIds` (`revokeProjectAccessFromState`), returns to `/projects` with notice, and `ProjectWorkspaceView` stabilizes callbacks so project fetches run only when `projectId` changes.
+- `Ctrl/Cmd+K` for `ProjectSwitcher` ignores editable inputs (`INPUT`, `TEXTAREA`, `SELECT`, `contentEditable`).
 
-The source does **not** yet implement a dedicated persistent project switcher, a route-addressable active project workspace, or a persistent project identity strip across project pages. User/role management, audit viewing, and system-health diagnostics are currently reachable in the same application shell/overview as operational project work; a distinct technical-administration workspace is not present. Organization profile supports authorized updates through `org.manage` with `ExpectedConcurrencyStamp` concurrency handling; it is not read-only.
-
-This is a source-code inspection, not manual browser acceptance. For the exact screen/API/module mapping and implementation boundaries, see [UI-IMPLEMENTATION-AND-GAP-MATRIX.md](UI-IMPLEMENTATION-AND-GAP-MATRIX.md). D-013 approves the three-level model with explicit modifications and guardrails. Approval is for the design only: no project switcher, route-addressable active workspace, new API, or navigation UI implementation is claimed. Each implementation slice requires its own Notion task, focused PR, relevant G1–G10 checks and real browser acceptance.
+This navigation UI remains `IMPLEMENTED_NOT_VERIFIED` until pushed on a branch/PR, verified in GitHub Actions CI, and formally accepted against the live ASP.NET Core 10 + PostgreSQL 18 stack (blocked on PR/CI here because `.git` is absent in the sandbox). Backend permissions, API scoping, and PostgreSQL membership checks remain untouched and authoritative.
 
 ## D-013 review outcome — approved with modifications (design only)
 

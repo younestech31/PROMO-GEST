@@ -1,4 +1,4 @@
-import { useEffect, useState, type FormEvent } from 'react';
+import { useEffect, useMemo, useState, type FormEvent } from 'react';
 import { KeyRound, Plus, ShieldCheck, UserCheck, UserMinus, UserPen, X } from 'lucide-react';
 import type {
   AppLanguage,
@@ -12,12 +12,14 @@ import { formatLocalDateTime } from '../../utils/algerianFormat';
 import { checkPasswordStrength, PASSWORD_MAX_LENGTH, validateCreateEmployee, type ValidationErrors } from '../../utils/validation';
 import { apiClient, ApiError } from '../../services/apiClient';
 import { FormField, inputBaseClass } from '../../components/FormField';
+import { ConfirmDialog } from '../../components/StateViews';
 
 interface UsersManagementViewProps {
   language: AppLanguage;
+  onDirtyChange?: (dirty: boolean) => void;
 }
 
-export function UsersManagementView({ language }: UsersManagementViewProps) {
+export function UsersManagementView({ language, onDirtyChange }: UsersManagementViewProps) {
   const t = getTranslations(language);
 
   const [users, setUsers] = useState<UserDto[]>([]);
@@ -49,6 +51,71 @@ export function UsersManagementView({ language }: UsersManagementViewProps) {
   const [formErrors, setFormErrors] = useState<ValidationErrors>({});
   const [modalError, setModalError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const [pendingCloseModal, setPendingCloseModal] = useState<'create' | 'edit' | 'reset' | null>(null);
+
+  const isCreateDirty = useMemo(() => {
+    if (!createOpen) return false;
+    return (
+      createForm.username.trim() !== '' ||
+      createForm.fullName.trim() !== '' ||
+      createForm.email.trim() !== '' ||
+      (createForm.phone ?? '').trim() !== '' ||
+      createForm.password !== '' ||
+      createForm.preferredLanguage !== language ||
+      createForm.roleCodes.length !== 1 ||
+      createForm.roleCodes[0] !== 'COMMERCIAL_MANAGER'
+    );
+  }, [createOpen, createForm, language]);
+
+  const isEditDirty = useMemo(() => {
+    if (!editingUser) return false;
+    const origRoles = [...editingUser.roleCodes].sort().join(',');
+    const curRoles = [...editForm.roleCodes].sort().join(',');
+    return (
+      editForm.fullName !== editingUser.fullName ||
+      editForm.email !== editingUser.email ||
+      (editForm.phone ?? '') !== (editingUser.phone ?? '') ||
+      editForm.preferredLanguage !== editingUser.preferredLanguage ||
+      curRoles !== origRoles
+    );
+  }, [editingUser, editForm]);
+
+  const isResetDirty = Boolean(resetUser && newPassword !== '');
+  const anyDirty = isCreateDirty || isEditDirty || isResetDirty;
+
+  useEffect(() => {
+    onDirtyChange?.(anyDirty);
+  }, [anyDirty, onDirtyChange]);
+
+  useEffect(() => {
+    return () => {
+      onDirtyChange?.(false);
+    };
+  }, [onDirtyChange]);
+
+  const requestCloseCreate = () => {
+    if (isCreateDirty) {
+      setPendingCloseModal('create');
+      return;
+    }
+    setCreateOpen(false);
+  };
+
+  const requestCloseEdit = () => {
+    if (isEditDirty) {
+      setPendingCloseModal('edit');
+      return;
+    }
+    setEditingUser(null);
+  };
+
+  const requestCloseReset = () => {
+    if (isResetDirty) {
+      setPendingCloseModal('reset');
+      return;
+    }
+    setResetUser(null);
+  };
 
   const loadData = async () => {
     setLoading(true);
@@ -358,7 +425,7 @@ export function UsersManagementView({ language }: UsersManagementViewProps) {
               <button
                 type="button"
                 aria-label={t.users.cancel}
-                onClick={() => setCreateOpen(false)}
+                onClick={requestCloseCreate}
                 className="p-1.5 rounded text-slate-500 hover:bg-slate-100"
               >
                 <X className="w-4 h-4" />
@@ -483,7 +550,7 @@ export function UsersManagementView({ language }: UsersManagementViewProps) {
               <div className="pt-4 border-t border-slate-100 flex justify-end gap-3">
                 <button
                   type="button"
-                  onClick={() => setCreateOpen(false)}
+                  onClick={requestCloseCreate}
                   className="px-4 py-2 text-xs font-semibold rounded-md border border-slate-200 text-slate-700 hover:bg-slate-100"
                 >
                   {t.users.cancel}
@@ -517,7 +584,7 @@ export function UsersManagementView({ language }: UsersManagementViewProps) {
               <button
                 type="button"
                 aria-label={t.users.cancel}
-                onClick={() => setEditingUser(null)}
+                onClick={requestCloseEdit}
                 className="p-1.5 rounded text-slate-500 hover:bg-slate-100"
               >
                 <X className="w-4 h-4" />
@@ -583,7 +650,7 @@ export function UsersManagementView({ language }: UsersManagementViewProps) {
               <div className="pt-4 border-t border-slate-100 flex justify-end gap-3">
                 <button
                   type="button"
-                  onClick={() => setEditingUser(null)}
+                  onClick={requestCloseEdit}
                   className="px-4 py-2 text-xs font-semibold rounded-md border border-slate-200 text-slate-700 hover:bg-slate-100"
                 >
                   {t.users.cancel}
@@ -617,7 +684,7 @@ export function UsersManagementView({ language }: UsersManagementViewProps) {
               <button
                 type="button"
                 aria-label={t.users.cancel}
-                onClick={() => setResetUser(null)}
+                onClick={requestCloseReset}
                 className="p-1.5 rounded text-slate-500 hover:bg-slate-100"
               >
                 <X className="w-4 h-4" />
@@ -649,7 +716,7 @@ export function UsersManagementView({ language }: UsersManagementViewProps) {
               <div className="pt-4 border-t border-slate-100 flex justify-end gap-3">
                 <button
                   type="button"
-                  onClick={() => setResetUser(null)}
+                  onClick={requestCloseReset}
                   className="px-4 py-2 text-xs font-semibold rounded-md border border-slate-200 text-slate-700 hover:bg-slate-100"
                 >
                   {t.users.cancel}
@@ -666,6 +733,39 @@ export function UsersManagementView({ language }: UsersManagementViewProps) {
           </div>
         </div>
       )}
+
+      <ConfirmDialog
+        open={pendingCloseModal !== null}
+        title={language === 'ar' ? 'تغييرات غير محفوظة' : 'Modifications non enregistrées'}
+        message={
+          language === 'ar'
+            ? 'لديك بيانات غير محفوظة في هذا النموذج. هل تريد تجاهلها وإغلاق النافذة؟'
+            : 'Vous avez des données non enregistrées dans ce formulaire. Voulez-vous les abandonner et fermer ?'
+        }
+        confirmLabel={language === 'ar' ? 'تجاهل وإغلاق' : 'Abandonner et fermer'}
+        cancelLabel={language === 'ar' ? 'البقاء في النموذج' : 'Continuer l’édition'}
+        onConfirm={() => {
+          if (pendingCloseModal === 'create') {
+            setCreateOpen(false);
+            setCreateForm({
+              username: '',
+              fullName: '',
+              email: '',
+              phone: '',
+              password: '',
+              preferredLanguage: language,
+              roleCodes: ['COMMERCIAL_MANAGER'],
+            });
+          } else if (pendingCloseModal === 'edit') {
+            setEditingUser(null);
+          } else if (pendingCloseModal === 'reset') {
+            setResetUser(null);
+            setNewPassword('');
+          }
+          setPendingCloseModal(null);
+        }}
+        onCancel={() => setPendingCloseModal(null)}
+      />
     </div>
   );
 }

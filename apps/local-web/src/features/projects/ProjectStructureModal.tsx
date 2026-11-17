@@ -11,6 +11,7 @@ import type {
 import { getTranslations, translateApiError } from '../../localization/translations';
 import { apiClient, ApiError } from '../../services/apiClient';
 import { FormField, inputBaseClass } from '../../components/FormField';
+import { ConfirmDialog } from '../../components/StateViews';
 
 interface ProjectStructureModalProps {
   project: ProjectDto;
@@ -18,6 +19,7 @@ interface ProjectStructureModalProps {
   mode?: 'modal' | 'embedded';
   onClose?: () => void;
   onStructureChanged?: () => void;
+  onDirtyChange?: (dirty: boolean) => void;
 }
 
 const BUILDING_STATUSES = [
@@ -61,6 +63,7 @@ export function ProjectStructureModal({
   mode = 'modal',
   onClose,
   onStructureChanged,
+  onDirtyChange,
 }: ProjectStructureModalProps) {
   const t = getTranslations(language);
   const labels = t.projects;
@@ -107,6 +110,55 @@ export function ProjectStructureModal({
     netAreaSquareMeters: '',
     roomsCount: '',
   });
+  const [buildingEdited, setBuildingEdited] = useState(false);
+  const [floorEdited, setFloorEdited] = useState(false);
+  const [unitEdited, setUnitEdited] = useState(false);
+  const [editUnitEdited, setEditUnitEdited] = useState(false);
+  const [pendingAction, setPendingAction] = useState<
+    | { kind: 'close' }
+    | { kind: 'subView'; target: 'registry' | 'unitFilePlanned' }
+    | null
+  >(null);
+
+  const isDirty =
+    (showBuildingForm && buildingEdited) ||
+    (showFloorForm && floorEdited) ||
+    (showUnitForm && unitEdited) ||
+    (Boolean(editingUnitId) && editUnitEdited);
+
+  useEffect(() => {
+    onDirtyChange?.(isDirty);
+  }, [isDirty, onDirtyChange]);
+
+  useEffect(() => {
+    return () => {
+      onDirtyChange?.(false);
+    };
+  }, [onDirtyChange]);
+
+  const clearAllEdits = () => {
+    setBuildingEdited(false);
+    setFloorEdited(false);
+    setUnitEdited(false);
+    setEditUnitEdited(false);
+  };
+
+  const requestClose = () => {
+    if (isDirty) {
+      setPendingAction({ kind: 'close' });
+      return;
+    }
+    onClose?.();
+  };
+
+  const requestSwitchSubView = (target: 'registry' | 'unitFilePlanned') => {
+    if (target === subView) return;
+    if (isDirty) {
+      setPendingAction({ kind: 'subView', target });
+      return;
+    }
+    setSubView(target);
+  };
 
   const loadStructure = async () => {
     setLoading(true);
@@ -171,6 +223,7 @@ export function ProjectStructureModal({
         }
       }
       setBuildingForm({ code: '', nameAr: '', nameFr: '', status: 'Planned' });
+      setBuildingEdited(false);
       setEditingBuildingId(null);
       setShowBuildingForm(false);
     } catch (err) {
@@ -217,6 +270,7 @@ export function ProjectStructureModal({
         if (createdFloor) setSelectedFloorId(createdFloor.id);
       }
       setFloorForm({ floorNumber: 0, nameAr: '', nameFr: '' });
+      setFloorEdited(false);
       setEditingFloorId(null);
       setShowFloorForm(false);
     } catch (err) {
@@ -240,9 +294,12 @@ export function ProjectStructureModal({
       nameFr: building.nameFr,
       status: building.status,
     });
+    setBuildingEdited(false);
     setEditingFloorId(null);
     setShowFloorForm(false);
+    setFloorEdited(false);
     setShowUnitForm(false);
+    setUnitEdited(false);
     setShowBuildingForm(true);
     setError(null);
   };
@@ -254,9 +311,12 @@ export function ProjectStructureModal({
       nameAr: floor.nameAr,
       nameFr: floor.nameFr,
     });
+    setFloorEdited(false);
     setShowBuildingForm(false);
+    setBuildingEdited(false);
     setShowFloorForm(true);
     setShowUnitForm(false);
+    setUnitEdited(false);
     setError(null);
   };
 
@@ -293,6 +353,7 @@ export function ProjectStructureModal({
         netAreaSquareMeters: '',
         roomsCount: '',
       });
+      setUnitEdited(false);
       setShowUnitForm(false);
     } catch (err) {
       showMutationError(err, 'فشل إضافة الوحدة العقارية.', 'Échec de l’ajout de l’unité immobilière.');
@@ -303,6 +364,7 @@ export function ProjectStructureModal({
 
   const beginEditUnit = (unit: PropertyUnitDto) => {
     setEditingUnitId(unit.id);
+    setEditUnitEdited(false);
     setEditUnitForm({
       unitNumber: unit.unitNumber,
       unitType: unit.unitType,
@@ -339,6 +401,7 @@ export function ProjectStructureModal({
       );
       setStructure(result);
       onStructureChanged?.();
+      setEditUnitEdited(false);
       setEditingUnitId(null);
     } catch (err) {
       showMutationError(err, 'تعذر حفظ تعديلات الوحدة.', 'Impossible d’enregistrer les modifications de l’unité.');
@@ -400,7 +463,7 @@ export function ProjectStructureModal({
         <div className="flex flex-wrap gap-1.5 border-b border-slate-200 px-4 pt-3 bg-slate-50/70">
           <button
             type="button"
-            onClick={() => setSubView('registry')}
+            onClick={() => requestSwitchSubView('registry')}
             className={`px-3 py-2 text-xs font-semibold border-b-2 transition-colors ${
               subView === 'registry'
                 ? 'border-teal-800 text-teal-900 bg-white rounded-t'
@@ -411,7 +474,7 @@ export function ProjectStructureModal({
           </button>
           <button
             type="button"
-            onClick={() => setSubView('unitFilePlanned')}
+            onClick={() => requestSwitchSubView('unitFilePlanned')}
             className={`px-3 py-2 text-xs font-semibold border-b-2 transition-colors ${
               subView === 'unitFilePlanned'
                 ? 'border-teal-800 text-teal-900 bg-white rounded-t'
@@ -462,6 +525,7 @@ export function ProjectStructureModal({
                   onClick={() => {
                     setEditingBuildingId(null);
                     setBuildingForm({ code: '', nameAr: '', nameFr: '', status: 'Planned' });
+                    setBuildingEdited(false);
                     setShowBuildingForm((value) => !value);
                   }}
                   className="inline-flex items-center gap-1 rounded border border-slate-200 px-2 py-1 text-xs text-slate-700 hover:bg-slate-50"
@@ -472,7 +536,11 @@ export function ProjectStructureModal({
               </div>
 
               {showBuildingForm && (
-                <form onSubmit={handleCreateBuilding} className="p-3 space-y-3 border-b border-slate-100 bg-slate-50/70">
+                <form
+                  onSubmit={handleCreateBuilding}
+                  onChange={() => setBuildingEdited(true)}
+                  className="p-3 space-y-3 border-b border-slate-100 bg-slate-50/70"
+                >
                   <FormField id="structure-building-code" label={labels.buildingCode}>
                     <input
                       id="structure-building-code"
@@ -515,7 +583,7 @@ export function ProjectStructureModal({
                     </select>
                   </FormField>
                   <div className="flex justify-end gap-2">
-                    <button type="button" onClick={() => { setShowBuildingForm(false); setEditingBuildingId(null); }} className="text-xs px-3 py-2 border rounded border-slate-200">
+                    <button type="button" onClick={() => { setShowBuildingForm(false); setEditingBuildingId(null); setBuildingEdited(false); }} className="text-xs px-3 py-2 border rounded border-slate-200">
                       {t.users.cancel}
                     </button>
                     <button type="submit" disabled={submitting} className="text-xs px-3 py-2 rounded bg-teal-800 text-white disabled:opacity-60">
@@ -580,6 +648,7 @@ export function ProjectStructureModal({
                     onClick={() => {
                       setEditingFloorId(null);
                       setFloorForm({ floorNumber: 0, nameAr: '', nameFr: '' });
+                      setFloorEdited(false);
                       setShowFloorForm((value) => !value);
                     }}
                     className="inline-flex items-center gap-1 rounded border border-slate-200 px-2 py-1 text-xs text-slate-700 hover:bg-slate-50"
@@ -595,7 +664,11 @@ export function ProjectStructureModal({
               ) : (
                 <>
                   {showFloorForm && (
-                    <form onSubmit={handleCreateFloor} className="p-3 space-y-3 border-b border-slate-100 bg-slate-50/70">
+                    <form
+                      onSubmit={handleCreateFloor}
+                      onChange={() => setFloorEdited(true)}
+                      className="p-3 space-y-3 border-b border-slate-100 bg-slate-50/70"
+                    >
                       <FormField id="structure-floor-number" label={labels.floorNumber}>
                         <input
                           id="structure-floor-number"
@@ -627,7 +700,7 @@ export function ProjectStructureModal({
                         />
                       </FormField>
                       <div className="flex justify-end gap-2">
-                        <button type="button" onClick={() => { setShowFloorForm(false); setEditingFloorId(null); }} className="text-xs px-3 py-2 border rounded border-slate-200">{language === 'ar' ? 'إلغاء' : 'Annuler'}</button>
+                        <button type="button" onClick={() => { setShowFloorForm(false); setEditingFloorId(null); setFloorEdited(false); }} className="text-xs px-3 py-2 border rounded border-slate-200">{language === 'ar' ? 'إلغاء' : 'Annuler'}</button>
                         <button type="submit" disabled={submitting} className="text-xs px-3 py-2 rounded bg-teal-800 text-white disabled:opacity-60">{editingFloorId ? labels.saveFloor : labels.addFloor}</button>
                       </div>
                     </form>
@@ -678,7 +751,7 @@ export function ProjectStructureModal({
                 {selectedFloor && (
                   <button
                     type="button"
-                    onClick={() => setShowUnitForm((value) => !value)}
+                    onClick={() => { setUnitEdited(false); setShowUnitForm((value) => !value); }}
                     className="inline-flex items-center gap-1 rounded border border-slate-200 px-2 py-1 text-xs text-slate-700 hover:bg-slate-50"
                   >
                     <Plus className="w-3.5 h-3.5" />
@@ -695,7 +768,7 @@ export function ProjectStructureModal({
               ) : (
                 <>
                   {showUnitForm && (
-                    <form onSubmit={handleCreateUnit} className="p-3 space-y-3 border-b border-slate-100 bg-slate-50/70">
+                    <form onSubmit={handleCreateUnit} onChange={() => setUnitEdited(true)} className="p-3 space-y-3 border-b border-slate-100 bg-slate-50/70">
                       <FormField id="structure-unit-number" label={labels.unitNumber}>
                         <input
                           id="structure-unit-number"
@@ -769,7 +842,7 @@ export function ProjectStructureModal({
                         />
                       </FormField>
                       <div className="flex justify-end gap-2">
-                        <button type="button" onClick={() => setShowUnitForm(false)} className="text-xs px-3 py-2 border rounded border-slate-200">{language === 'ar' ? 'إلغاء' : 'Annuler'}</button>
+                        <button type="button" onClick={() => { setShowUnitForm(false); setUnitEdited(false); }} className="text-xs px-3 py-2 border rounded border-slate-200">{language === 'ar' ? 'إلغاء' : 'Annuler'}</button>
                         <button type="submit" disabled={submitting} className="text-xs px-3 py-2 rounded bg-teal-800 text-white disabled:opacity-60">{labels.addUnit}</button>
                       </div>
                     </form>
@@ -780,7 +853,7 @@ export function ProjectStructureModal({
                     ) : selectedFloor.units.map((unit) => (
                       <div key={unit.id} className="rounded-md border border-slate-100 px-3 py-3 space-y-2">
                         {editingUnitId === unit.id ? (
-                          <form onSubmit={(event) => void handleUpdateUnit(event, unit)} className="space-y-3">
+                          <form onSubmit={(event) => void handleUpdateUnit(event, unit)} onChange={() => setEditUnitEdited(true)} className="space-y-3">
                             <FormField id={`edit-unit-number-${unit.id}`} label={labels.unitNumber}>
                               <input
                                 id={`edit-unit-number-${unit.id}`}
@@ -842,7 +915,7 @@ export function ProjectStructureModal({
                               />
                             </FormField>
                             <div className="flex justify-end gap-2">
-                              <button type="button" disabled={submitting} onClick={() => setEditingUnitId(null)} className="text-xs px-3 py-2 border rounded border-slate-200">
+                              <button type="button" disabled={submitting} onClick={() => { setEditingUnitId(null); setEditUnitEdited(false); }} className="text-xs px-3 py-2 border rounded border-slate-200">
                                 {t.users.cancel}
                               </button>
                               <button type="submit" disabled={submitting} className="text-xs px-3 py-2 rounded bg-teal-800 text-white disabled:opacity-60">
@@ -909,50 +982,87 @@ export function ProjectStructureModal({
     </>
   );
 
+  const discardConfirmDialog = (
+    <ConfirmDialog
+      open={pendingAction !== null}
+      title={language === 'ar' ? 'تغييرات غير محفوظة' : 'Modifications non enregistrées'}
+      message={
+        language === 'ar'
+          ? 'لديك تعديلات غير محفوظة على نموذج الهيكل العقاري. هل تريد تجاهلها والمتابعة؟'
+          : 'Vous avez des modifications non enregistrées sur la structure immobilière. Voulez-vous les abandonner ?'
+      }
+      confirmLabel={language === 'ar' ? 'تجاهل والمتابعة' : 'Abandonner et continuer'}
+      cancelLabel={language === 'ar' ? 'البقاء في النموذج' : 'Rester sur le formulaire'}
+      onConfirm={() => {
+        const next = pendingAction;
+        setPendingAction(null);
+        clearAllEdits();
+        setShowBuildingForm(false);
+        setShowFloorForm(false);
+        setShowUnitForm(false);
+        setEditingBuildingId(null);
+        setEditingFloorId(null);
+        setEditingUnitId(null);
+        if (next?.kind === 'close') {
+          onClose?.();
+        } else if (next?.kind === 'subView') {
+          setSubView(next.target);
+        }
+      }}
+      onCancel={() => setPendingAction(null)}
+    />
+  );
+
   if (mode === 'embedded') {
     return (
-      <div className="bg-white border border-slate-200 rounded-lg overflow-hidden">
-        {structureBody}
-      </div>
+      <>
+        <div className="bg-white border border-slate-200 rounded-lg overflow-hidden">
+          {structureBody}
+        </div>
+        {discardConfirmDialog}
+      </>
     );
   }
 
   return (
-    <div
-      className="fixed inset-0 z-[60] bg-slate-950/60 flex items-center justify-center p-3 sm:p-5"
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby="project-structure-title"
-    >
-      <div className="bg-white w-full max-w-7xl max-h-[94vh] rounded-xl shadow-2xl flex flex-col overflow-hidden">
-        <div className="px-5 py-4 border-b border-slate-200 flex items-center justify-between gap-4">
-          <div className="min-w-0">
-            <h2 id="project-structure-title" className="font-bold text-slate-900">
-              {labels.structureTitle}
-            </h2>
-            <p className="text-xs text-slate-500 mt-1 truncate">
-              <span className="font-data">{project.code}</span> ·{' '}
-              {language === 'ar' ? project.nameAr : project.nameFr}
-            </p>
+    <>
+      <div
+        className="fixed inset-0 z-[60] bg-slate-950/60 flex items-center justify-center p-3 sm:p-5"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="project-structure-title"
+      >
+        <div className="bg-white w-full max-w-7xl max-h-[94vh] rounded-xl shadow-2xl flex flex-col overflow-hidden">
+          <div className="px-5 py-4 border-b border-slate-200 flex items-center justify-between gap-4">
+            <div className="min-w-0">
+              <h2 id="project-structure-title" className="font-bold text-slate-900">
+                {labels.structureTitle}
+              </h2>
+              <p className="text-xs text-slate-500 mt-1 truncate">
+                <span className="font-data">{project.code}</span> ·{' '}
+                {language === 'ar' ? project.nameAr : project.nameFr}
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={requestClose}
+              aria-label={language === 'ar' ? 'إغلاق' : 'Fermer'}
+              className="p-2 rounded-md text-slate-500 hover:bg-slate-100 shrink-0"
+            >
+              <X className="w-5 h-5" aria-hidden="true" />
+            </button>
           </div>
-          <button
-            type="button"
-            onClick={onClose}
-            aria-label={language === 'ar' ? 'إغلاق' : 'Fermer'}
-            className="p-2 rounded-md text-slate-500 hover:bg-slate-100 shrink-0"
-          >
-            <X className="w-5 h-5" aria-hidden="true" />
-          </button>
-        </div>
 
-        {structureBody}
+          {structureBody}
 
-        <div className="px-5 py-3 border-t border-slate-200 flex justify-end">
-          <button type="button" onClick={onClose} className="px-4 py-2 rounded-md border border-slate-200 text-sm text-slate-700 hover:bg-slate-50">
-            {language === 'ar' ? 'إغلاق' : 'Fermer'}
-          </button>
+          <div className="px-5 py-3 border-t border-slate-200 flex justify-end">
+            <button type="button" onClick={requestClose} className="px-4 py-2 rounded-md border border-slate-200 text-sm text-slate-700 hover:bg-slate-50">
+              {language === 'ar' ? 'إغلاق' : 'Fermer'}
+            </button>
+          </div>
         </div>
       </div>
-    </div>
+      {discardConfirmDialog}
+    </>
   );
 }

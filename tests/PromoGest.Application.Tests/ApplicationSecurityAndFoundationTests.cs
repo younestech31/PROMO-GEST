@@ -1229,11 +1229,11 @@ public sealed class ApplicationSecurityAndFoundationTests
             metadata);
         var financialReader = await userSvc.CreateEmployeeAsync(
             init.SystemAdminUserId,
-            new CreateEmployeeRequest("finance.reader", "Financial Reader", "finance.reader@elbahdja.dz", null, "StrongPass123", "fr", new[] { Role.ViewerCode }),
+            new CreateEmployeeRequest("finance.reader", "Financial Reader", "finance.reader@elbahdja.dz", null, "StrongPass123", "fr", new[] { Role.ProjectDirectorCode }),
             metadata);
         var nonMember = await userSvc.CreateEmployeeAsync(
             init.SystemAdminUserId,
-            new CreateEmployeeRequest("no.project", "No Project", "no.project@elbahdja.dz", null, "StrongPass123", "fr", new[] { Role.ViewerCode }),
+            new CreateEmployeeRequest("no.project", "No Project", "no.project@elbahdja.dz", null, "StrongPass123", "fr", new[] { Role.ProjectDirectorCode }),
             metadata);
 
         var project = await projectSvc.CreateProjectAsync(

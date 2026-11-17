@@ -1800,7 +1800,15 @@ export function createPromoGestDevMiddleware(): (
           category: string,
           isUpload: boolean
         ): boolean => {
-          if (currentUser.isSystemAdministrator || member?.roleInProject === 'ProjectManager') {
+          if (currentUser.isSystemAdministrator) {
+            return ALLOWED_DOCUMENT_CATEGORIES.has(category);
+          }
+          // Financial reads always require the explicit capability, even for a ProjectManager.
+          // Preserve the current ProjectManager upload rule.
+          if (category === 'Financial' && !isUpload) {
+            return Boolean(member?.canViewFinancials);
+          }
+          if (member?.roleInProject === 'ProjectManager') {
             return ALLOWED_DOCUMENT_CATEGORIES.has(category);
           }
           switch (category) {
@@ -2568,7 +2576,21 @@ export function createPromoGestDevMiddleware(): (
           const canReadCustomers =
             currentUser.isSystemAdministrator ||
             (Boolean(scope.member) && currentPerms.includes('customers.read'));
-          const docs = (projectDocuments.get(scope.project.id) ?? [])
+          const projectDocs = projectDocuments.get(scope.project.id) ?? [];
+          if (
+            projectDocs.some((d) => d.meta.category === 'Financial') &&
+            !canAccessDocumentCategory(scope.member, 'Financial', false)
+          ) {
+            addAudit(
+              'ACCESS_DENIED',
+              'Security',
+              `User '${currentUser.username}' attempted unauthorized Financial document listing on project '${scope.project.code}'.`,
+              currentUser,
+              'Project',
+              scope.project.id
+            );
+          }
+          const docs = projectDocs
             .filter(
               (d) =>
                 canAccessDocumentCategory(scope.member, d.meta.category, false) &&

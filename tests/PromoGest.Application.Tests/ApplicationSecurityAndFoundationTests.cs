@@ -1932,6 +1932,63 @@ public sealed class ApplicationSecurityAndFoundationTests
             var commDownload = await docSvc.GetDownloadAsync(commUser.Id, project.Id, disguisedIdDoc.Id, meta);
             await using var commContent = commDownload.Content;
             Assert.Equal("passport-other.txt", commDownload.FileName);
+
+            // A ProjectManager does not inherit Financial read access from the role alone.
+            await projectSvc.AssignMemberAsync(
+                init.SystemAdminUserId,
+                project.Id,
+                new AssignProjectMemberRequest(siteUser.Id, nameof(ProjectRole.ProjectManager), false, true, true, true),
+                meta);
+            var managerFinancialListDenied = await docSvc.ListAsync(siteUser.Id, project.Id, meta);
+            Assert.DoesNotContain(managerFinancialListDenied, item => item.Id == financialDoc.Id);
+            Assert.Contains(store.AuditLogs, entry =>
+                entry.EventType == "ACCESS_DENIED" &&
+                entry.ActorUserId == siteUser.Id &&
+                entry.TargetEntityType == "Project" &&
+                entry.TargetEntityId == project.Id.ToString());
+            var managerFinancialDownloadDenied = await Assert.ThrowsAsync<ForbiddenDomainException>(() =>
+                docSvc.GetDownloadAsync(siteUser.Id, project.Id, financialDoc.Id, meta));
+            Assert.Equal("PROJECT_DOCUMENT_ACCESS_DENIED", managerFinancialDownloadDenied.Code);
+
+            // P1-07 is read-only: preserve existing ProjectManager Financial upload behavior.
+            var managerUploadedFinancialDoc = await UploadTextAsync(siteUser.Id, "pm-upload.txt", "Financial");
+            var adminDocumentList = await docSvc.ListAsync(init.SystemAdminUserId, project.Id, meta);
+            Assert.Contains(adminDocumentList, item => item.Id == managerUploadedFinancialDoc.Id);
+
+            // Granting the explicit capability restores Financial list and download access.
+            await projectSvc.AssignMemberAsync(
+                init.SystemAdminUserId,
+                project.Id,
+                new AssignProjectMemberRequest(siteUser.Id, nameof(ProjectRole.ProjectManager), true, true, true, true),
+                meta);
+            var managerFinancialListAllowed = await docSvc.ListAsync(siteUser.Id, project.Id, meta);
+            Assert.Contains(managerFinancialListAllowed, item => item.Id == financialDoc.Id);
+            Assert.Contains(managerFinancialListAllowed, item => item.Id == managerUploadedFinancialDoc.Id);
+            var managerFinancialDownloadAllowed = await docSvc.GetDownloadAsync(siteUser.Id, project.Id, financialDoc.Id, meta);
+            await using var managerFinancialContent = managerFinancialDownloadAllowed.Content;
+            Assert.Equal("budget.txt", managerFinancialDownloadAllowed.FileName);
+
+            // A user with files.read but without membership cannot list or download these documents.
+            var outsiderUser = await userSvc.CreateEmployeeAsync(
+                init.SystemAdminUserId,
+                new CreateEmployeeRequest("finance.outsider", "Finance Outsider", "finance.outsider@elbahdja.dz", null, "StrongPass123", "fr", new[] { Role.FinanceOfficerCode }),
+                meta);
+            await Assert.ThrowsAsync<ForbiddenDomainException>(() => docSvc.ListAsync(outsiderUser.Id, project.Id, meta));
+            await Assert.ThrowsAsync<ForbiddenDomainException>(() =>
+                docSvc.GetDownloadAsync(outsiderUser.Id, project.Id, financialDoc.Id, meta));
+
+            // Membership in another project does not permit cross-project document lookup (IDOR).
+            var otherProject = await projectSvc.CreateProjectAsync(
+                init.SystemAdminUserId,
+                new CreateProjectRequest("PRJ-DOC-OTHER", "مشروع ثان", "Second Project", "31", "Oran", "Bir El Djir", null, null, null, null, "Planning", 0m, 1, 2),
+                meta);
+            await projectSvc.AssignMemberAsync(
+                init.SystemAdminUserId,
+                otherProject.Id,
+                new AssignProjectMemberRequest(siteUser.Id, nameof(ProjectRole.ProjectManager), true, true, true, true),
+                meta);
+            await Assert.ThrowsAsync<NotFoundDomainException>(() =>
+                docSvc.GetDownloadAsync(siteUser.Id, otherProject.Id, financialDoc.Id, meta));
         }
         finally
         {

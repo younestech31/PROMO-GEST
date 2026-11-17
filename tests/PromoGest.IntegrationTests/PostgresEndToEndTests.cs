@@ -1029,6 +1029,62 @@ public sealed class PostgresEndToEndTests : IClassFixture<PostgreSql18Integratio
                     entry.TargetEntityType == "StoredFile");
             }
 
+            // P1-07: Financial documents are readable only with explicit CanViewFinancials membership.
+            var financialDocumentId = Guid.Empty;
+            var financialDocumentBytes = System.Text.Encoding.UTF8.GetBytes("Financial document data - PG18");
+            using (var financialUpload = new MultipartFormDataContent())
+            {
+                financialUpload.Add(new ByteArrayContent(financialDocumentBytes), "file", "project-budget.txt");
+                financialUpload.Add(new StringContent("Financial"), "category");
+                var financialUploadResponse = await adminClient.PostAsync(
+                    $"/api/projects/{createdProject.Id}/documents",
+                    financialUpload);
+                Assert.Equal(HttpStatusCode.Created, financialUploadResponse.StatusCode);
+                var financialDocument = await financialUploadResponse.Content.ReadFromJsonAsync<ProjectDocumentDto>();
+                Assert.NotNull(financialDocument);
+                financialDocumentId = financialDocument!.Id;
+            }
+
+            var financeEmployeeResponse = await adminClient.PostAsJsonAsync(
+                "/api/users",
+                new CreateEmployeeRequest(
+                    "finance.documents",
+                    "Finance Documents",
+                    "finance.documents@atlasimmo.dz",
+                    null,
+                    "FinanceDocuments#2026",
+                    "fr",
+                    new[] { Role.FinanceOfficerCode }));
+            Assert.Equal(HttpStatusCode.Created, financeEmployeeResponse.StatusCode);
+            var financeDocumentUser = await financeEmployeeResponse.Content.ReadFromJsonAsync<UserDto>();
+            Assert.NotNull(financeDocumentUser);
+            using var financeDocumentClient = factory.CreateClient(new WebApplicationFactoryClientOptions { HandleCookies = true });
+            await AttachCsrfTokenAsync(financeDocumentClient);
+            var financeDocumentLogin = await financeDocumentClient.PostAsJsonAsync(
+                "/api/auth/login",
+                new LoginRequest("finance.documents", "FinanceDocuments#2026"));
+            Assert.Equal(HttpStatusCode.OK, financeDocumentLogin.StatusCode);
+            await AttachCsrfTokenAsync(financeDocumentClient);
+            var financeMembershipResponse = await adminClient.PutAsJsonAsync(
+                $"/api/projects/{createdProject.Id}/members",
+                new AssignProjectMemberRequest(financeDocumentUser!.Id, "FinanceController", true, false, false, false));
+            Assert.Equal(HttpStatusCode.OK, financeMembershipResponse.StatusCode);
+            var financeDocumentList = await financeDocumentClient.GetFromJsonAsync<List<ProjectDocumentDto>>(
+                $"/api/projects/{createdProject.Id}/documents");
+            Assert.NotNull(financeDocumentList);
+            Assert.Contains(financeDocumentList!, item => item.Id == financialDocumentId);
+            var financeDocumentDownload = await financeDocumentClient.GetAsync(
+                $"/api/projects/{createdProject.Id}/documents/{financialDocumentId}/download");
+            Assert.Equal(HttpStatusCode.OK, financeDocumentDownload.StatusCode);
+            Assert.Equal(financialDocumentBytes, await financeDocumentDownload.Content.ReadAsByteArrayAsync());
+
+            using (var adminFinancialDownload = await adminClient.GetAsync(
+                $"/api/projects/{createdProject.Id}/documents/{financialDocumentId}/download"))
+            {
+                Assert.Equal(HttpStatusCode.OK, adminFinancialDownload.StatusCode);
+                Assert.Equal(financialDocumentBytes, await adminFinancialDownload.Content.ReadAsByteArrayAsync());
+            }
+
             // Reject unsupported extensions before writing any bytes to the local storage root.
             using (var invalidDocumentUpload = new MultipartFormDataContent())
             {
@@ -1139,6 +1195,9 @@ public sealed class PostgresEndToEndTests : IClassFixture<PostgreSql18Integratio
             Assert.Equal(HttpStatusCode.NotFound, foreignProjectCustomerResponse.StatusCode);
             var foreignProjectDocumentError = await foreignProjectCustomerResponse.Content.ReadFromJsonAsync<ApiErrorResponse>();
             Assert.Equal("CUSTOMER_IDENTITY_DOCUMENT_NOT_FOUND", foreignProjectDocumentError!.Code);
+            var crossProjectFinancialDownload = await adminClient.GetAsync(
+                $"/api/projects/{otherProject.Id}/documents/{financialDocumentId}/download");
+            Assert.Equal(HttpStatusCode.NotFound, crossProjectFinancialDownload.StatusCode);
 
             var sharedPartyCustomerResponse = await adminClient.PostAsJsonAsync(
                 $"/api/projects/{otherProject.Id}/customers",
@@ -1666,6 +1725,23 @@ public sealed class PostgresEndToEndTests : IClassFixture<PostgreSql18Integratio
             Assert.NotNull(projectAfterManagerAssignment);
             Assert.Null(projectAfterManagerAssignment!.EstimatedBudgetDzd);
 
+            var managerFinancialDocumentsDenied = await directorClient.GetFromJsonAsync<List<ProjectDocumentDto>>(
+                $"/api/projects/{createdProject.Id}/documents");
+            Assert.NotNull(managerFinancialDocumentsDenied);
+            Assert.DoesNotContain(managerFinancialDocumentsDenied!, item => item.Id == financialDocumentId);
+            var managerFinancialDownloadDenied = await directorClient.GetAsync(
+                $"/api/projects/{createdProject.Id}/documents/{financialDocumentId}/download");
+            Assert.Equal(HttpStatusCode.Forbidden, managerFinancialDownloadDenied.StatusCode);
+            using (var deniedFinancialAuditScope = factory.Services.CreateScope())
+            {
+                var db = deniedFinancialAuditScope.ServiceProvider.GetRequiredService<AppDbContext>();
+                Assert.Contains(await db.AuditLogs.ToListAsync(), entry =>
+                    entry.EventType == "ACCESS_DENIED" &&
+                    entry.ActorUserId == directorCreatedUserId &&
+                    entry.TargetEntityType == "Project" &&
+                    entry.TargetEntityId == createdProject.Id.ToString());
+            }
+
             var directorReadWithoutFinancials = await directorClient.GetFromJsonAsync<ProjectDto>(
                 $"/api/projects/{createdProject.Id}");
             Assert.NotNull(directorReadWithoutFinancials);
@@ -1701,6 +1777,15 @@ public sealed class PostgresEndToEndTests : IClassFixture<PostgreSql18Integratio
             var adminAssignmentResponse = await grantFinancials.Content.ReadFromJsonAsync<ProjectDto>();
             Assert.NotNull(adminAssignmentResponse);
             Assert.Null(adminAssignmentResponse!.EstimatedBudgetDzd);
+
+            var managerFinancialDocumentsAllowed = await directorClient.GetFromJsonAsync<List<ProjectDocumentDto>>(
+                $"/api/projects/{createdProject.Id}/documents");
+            Assert.NotNull(managerFinancialDocumentsAllowed);
+            Assert.Contains(managerFinancialDocumentsAllowed!, item => item.Id == financialDocumentId);
+            var managerFinancialDownloadAllowed = await directorClient.GetAsync(
+                $"/api/projects/{createdProject.Id}/documents/{financialDocumentId}/download");
+            Assert.Equal(HttpStatusCode.OK, managerFinancialDownloadAllowed.StatusCode);
+            Assert.Equal(financialDocumentBytes, await managerFinancialDownloadAllowed.Content.ReadAsByteArrayAsync());
 
             var directorBudgetRead = await directorClient.GetFromJsonAsync<ProjectDto>(
                 $"/api/projects/{createdProject.Id}");
@@ -1861,6 +1946,9 @@ public sealed class PostgresEndToEndTests : IClassFixture<PostgreSql18Integratio
             var deniedDocumentDownload = await employeeClient.GetAsync(
                 $"/api/projects/{createdProject.Id}/documents/{uploadedDocumentId}/download");
             Assert.Equal(HttpStatusCode.Forbidden, deniedDocumentDownload.StatusCode);
+            var deniedFinancialDocumentDownload = await employeeClient.GetAsync(
+                $"/api/projects/{createdProject.Id}/documents/{financialDocumentId}/download");
+            Assert.Equal(HttpStatusCode.Forbidden, deniedFinancialDocumentDownload.StatusCode);
             using (var deniedDocumentUpload = new MultipartFormDataContent())
             {
                 deniedDocumentUpload.Add(new ByteArrayContent(new byte[] { 0x25, 0x50, 0x44, 0x46 }), "file", "denied.pdf");

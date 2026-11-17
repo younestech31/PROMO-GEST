@@ -40,9 +40,18 @@ This is an evidence pack for review, not legal advice and not a substitute for t
 
 **Current proposed treatment:** preserve both official source assertions verbatim. Treat `3514` as the stronger candidate because it appears in the original register and the 1996 official directory; do not make it canonical until the qualified reviewer accepts the full legal chain and verifies the 1998 Arabic and French page images.
 
-**Important extraction caveat:** the JO No. 44/1985 text layer currently returns `Chihani 3624` and also `Raml Souk 3624` in the El Tarf table. This duplicate is internally anomalous. Without visual inspection, it cannot establish whether the code for Chihani is 3614, 3624, or an extraction/layout artifact. Therefore neither “3614 collides with Chihani” nor “3614 does not collide with Chihani” is accepted as a fact. Visually inspect the exact source table before using that comparison.
+**Updated extraction and cross-check caveat:** the JO No. 44/1985 text layer returns `Chihani 3624` and `Raml Souk 3624`. The ONS *Code Géographique National* text layer shows Chihani as W.=36/C.=14 (derived 3614) and Raml Souk as W.=36/C.=24 (derived 3624), consistent with the owner's separately reported visual reading of Chihani as 3614. This suggests a JO44 extraction/order anomaly, but it does not prove what the original page image shows. The ONS file itself has a material edition-date conflict: its cover says `JUIN 2021`, while its introduction cites an order dated 12 September 2021. Its pages 49–50 were not visually reviewed and the exact PDF bytes/hash are unavailable. Do not claim the primary image has been resolved, and do not treat the ONS cross-check as a legal amendment.
 
 Local or operational lists that sequentially renumber Boumerdès communes and show Chabet El Ameur as `3513` are not accepted as the territorial-register code. The 1985 text layer assigns `3513` to Tidjelabine and `3514` to Chabet El Ameur.
+
+### Additional official code cross-check — ONS table (qualified)
+
+The ONS *Code Géographique National* text layer lists:
+- Boumerdès: `CHAABET EL AMEUR`, W.=35, C.=14 (derived 3514), Arabic `شعبة العامر`, printed p. 49;
+- El Tarf: `CHIHANI`, W.=36, C.=14 (derived 3614), Arabic `شحاني`, printed p. 50;
+- El Tarf: `RAML SOUK`, W.=36, C.=24 (derived 3624), Arabic `رمل السوق`, printed p. 50.
+
+The W./C. composition follows Article 3 of Decree 85-20. This later official table supports 3514 for Chabet and the owner's reported 3614 reading for Chihani, and distinguishes Raml Souk as 3624. It remains a cross-check, not a register amendment. Its cover is dated June 2021 while its introduction cites the 12 September 2021 register order; resolve this publication/version-date conflict. The ONS page images and exact PDF hash remain outstanding. Full evidence and row-by-row treatment are in `P1-01-CODE-LINEAGE-CROSSCHECKS.md` and `.csv`.
 
 ## 4. JO58 — table scope and parsing risk
 

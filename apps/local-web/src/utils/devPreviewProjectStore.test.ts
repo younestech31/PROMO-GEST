@@ -550,11 +550,25 @@ test('project budget preview redaction requires an explicit member capability, i
     ],
   });
   const systemAdmin = { id: 'system-admin', isSystemAdministrator: true, permissions: ['projects.manage'] };
+  const explicitlyAssignedAdmin = { ...project, members: [...project.members, {
+    id: 'admin-financial-member',
+    userId: systemAdmin.id,
+    username: 'system-admin',
+    fullName: 'System Admin',
+    roleInProject: 'FinanceController',
+    canViewFinancials: true,
+    canManageSales: false,
+    canManageConstruction: false,
+    canManageDocuments: false,
+    assignedAtUtc: '2026-11-17T00:00:00Z',
+  }] };
   const restrictedManager = { id: 'restricted-user', isSystemAdministrator: false, permissions: ['projects.manage'] };
   const financeReader = { id: 'finance-user', isSystemAdministrator: false, permissions: ['projects.read'] };
 
   assert.equal(canUserViewProjectFinancials(systemAdmin, project), false);
   assert.equal(withProjectFinancialVisibility(project, systemAdmin).estimatedBudgetDzd, null);
+  assert.equal(canUserViewProjectFinancials(systemAdmin, explicitlyAssignedAdmin), true);
+  assert.equal(withProjectFinancialVisibility(explicitlyAssignedAdmin, systemAdmin).estimatedBudgetDzd, 850000000);
   assert.equal(canUserViewProjectFinancials(restrictedManager, project), false);
   assert.equal(withProjectFinancialVisibility(project, restrictedManager).estimatedBudgetDzd, null);
   assert.equal(canUserViewProjectFinancials(financeReader, project), true);

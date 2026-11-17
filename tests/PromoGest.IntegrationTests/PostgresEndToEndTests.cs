@@ -1724,9 +1724,19 @@ public sealed class PostgresEndToEndTests : IClassFixture<PostgreSql18Integratio
             Assert.NotNull(administratorBudgetRead);
             Assert.Null(administratorBudgetRead!.EstimatedBudgetDzd);
 
+            Guid systemAdminUserId;
+            using (var adminScope = factory.Services.CreateScope())
+            {
+                var db = adminScope.ServiceProvider.GetRequiredService<AppDbContext>();
+                systemAdminUserId = await db.Users
+                    .Where(user => user.IsSystemAdministrator)
+                    .Select(user => user.Id)
+                    .SingleAsync();
+            }
+
             var explicitlyGrantAdminFinancialScope = await adminClient.PutAsJsonAsync(
                 $"/api/projects/{createdProject.Id}/members",
-                new AssignProjectMemberRequest(initialized.SystemAdminUserId, "FinanceController", true, false, false, false));
+                new AssignProjectMemberRequest(systemAdminUserId, "FinanceController", true, false, false, false));
             Assert.Equal(HttpStatusCode.OK, explicitlyGrantAdminFinancialScope.StatusCode);
             var adminAfterExplicitMembership = await adminClient.GetFromJsonAsync<ProjectDto>(
                 $"/api/projects/{createdProject.Id}");

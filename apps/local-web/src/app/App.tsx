@@ -24,11 +24,6 @@ import { LoginScreen, authApi } from '../modules/auth';
 import { FirstRunSetupWizard, setupApi } from '../modules/setup';
 import { OverviewView, OrganizationProfileView, TerritorialReferenceView, EmployeesPlannedView } from '../modules/module-a-organization';
 import {
-  OrganizationProfileView,
-  TerritorialReferenceView,
-  EmployeesPlannedView,
-} from '../modules/module-a-organization';
-import {
   ProjectsAccessView,
   ProjectWorkspaceView,
   ProjectSwitcherModal,
@@ -105,10 +100,10 @@ export function AppContentRouter({
 
       {activeRoute.kind === 'org' && activeRoute.section === 'projects' && (
         <ProjectsAccessView
-          language={language}
           currentUser={session.user}
-          onSelectProject={(project) =>
-            onNavigate({ kind: 'project', projectId: project.id, section: 'overview' })
+          language={language}
+          onOpenProjectWorkspace={(projectId) =>
+            onNavigate({ kind: 'project', projectId, section: 'overview' })
           }
         />
       )}
@@ -131,6 +126,7 @@ export function AppContentRouter({
 
       {activeRoute.kind === 'org' && activeRoute.section === 'parties' && (
         <PartiesDirectoryView
+          currentUser={session.user}
           language={language}
           onNavigateHome={() => onNavigate({ kind: 'org', section: 'workspace' })}
           onDirtyChange={onDirtyChange}
@@ -154,7 +150,16 @@ export function AppContentRouter({
       )}
 
       {activeRoute.kind === 'org' && activeRoute.section === 'reports' && (
-        <ReportsWorkspaceView session={session} language={language} />
+        <ReportsWorkspaceView
+          currentUser={session.user}
+          language={language}
+          projects={projects}
+          onNavigateHome={() => onNavigate(DEFAULT_APP_ROUTE)}
+          onNavigateAudit={() => onNavigate({ kind: 'admin', section: 'audit' })}
+          onOpenProjectWorkspace={(projectId) =>
+            onNavigate({ kind: 'project', projectId, section: 'overview' })
+          }
+        />
       )}
 
       {activeRoute.kind === 'project' && (

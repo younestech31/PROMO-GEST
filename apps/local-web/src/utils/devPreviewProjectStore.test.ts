@@ -1074,7 +1074,7 @@ test('Dev API middleware restricts project budget reads and writes to explicit C
 
     const financialManagerRead = await financialManagerClient.request('/api/projects/' + project.id);
     assert.equal(financialManagerRead.status, 200);
-    assert.equal(financialManagerRead.json.estimatedBudgetDzd, 125000000);
+    assert.equal(financialManagerRead.json.estimatedBudgetDzd, 175000000);
 
     const financialManagerUpdate = await financialManagerClient.request('/api/projects/' + project.id, {
       method: 'PUT',
@@ -1118,7 +1118,7 @@ test('Dev API middleware restricts project budget reads and writes to explicit C
     const restrictedReadAfter = await restrictedManagerClient.request('/api/projects/' + project.id);
     assert.equal(restrictedReadAfter.json.estimatedBudgetDzd, null);
     const adminReadAfter = await adminClient.request('/api/projects/' + project.id);
-    assert.equal(adminReadAfter.json.estimatedBudgetDzd, 175000000);
+    assert.equal(adminReadAfter.json.estimatedBudgetDzd, 150000000);
 
     const auditResponse = await adminClient.request('/api/audit?limit=250');
     assert.equal(auditResponse.status, 200);

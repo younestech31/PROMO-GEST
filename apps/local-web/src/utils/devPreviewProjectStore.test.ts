@@ -580,6 +580,7 @@ test('Dev API middleware exposes Les Sables d Or with 3 buildings & 72 units and
     const lesSables = (projectsRes.json as ProjectDto[]).find((p) => p.code === 'DEMO-16-001');
     assert.ok(lesSables, 'Expected DEMO-16-001 Les Sables demo project to exist');
     assert.ok(lesSables.nameAr.includes('إقامة الرمال الذهبية'));
+    assert.equal(lesSables.estimatedBudgetDzd, null, 'SYSTEM_ADMIN has no implicit project financial capability');
     assert.equal(lesSables.plannedBlocksCount, 3);
     assert.equal(lesSables.plannedUnitsCount, 72);
     assert.equal(lesSables.actualBuildingsCount, 3);
@@ -620,7 +621,7 @@ test('Dev API middleware exposes Les Sables d Or with 3 buildings & 72 units and
         buildingPermitNumber: lesSables.buildingPermitNumber,
         buildingPermitDate: lesSables.buildingPermitDate,
         status: 'Commercialization',
-        estimatedBudgetDzd: 920000000,
+        estimatedBudgetDzd: null,
         plannedBlocksCount: 3,
         plannedUnitsCount: 72,
       }),
@@ -630,6 +631,7 @@ test('Dev API middleware exposes Les Sables d Or with 3 buildings & 72 units and
     assert.notEqual(updateProjectRes.json.concurrencyStamp, lesSables.concurrencyStamp);
     assert.equal(updateProjectRes.json.actualBuildingsCount, 3);
     assert.equal(updateProjectRes.json.actualUnitsCount, 72);
+    assert.equal(updateProjectRes.json.estimatedBudgetDzd, null);
 
     const stalePreviewUpdate = await adminClient.request(`/api/projects/${lesSables.id}`, {
       method: 'PUT',
@@ -644,7 +646,7 @@ test('Dev API middleware exposes Les Sables d Or with 3 buildings & 72 units and
         buildingPermitNumber: lesSables.buildingPermitNumber,
         buildingPermitDate: lesSables.buildingPermitDate,
         status: 'Planning',
-        estimatedBudgetDzd: 1,
+        estimatedBudgetDzd: null,
         plannedBlocksCount: 1,
         plannedUnitsCount: 1,
         expectedConcurrencyStamp: lesSables.concurrencyStamp,
@@ -763,6 +765,7 @@ test('Dev API middleware exposes Les Sables d Or with 3 buildings & 72 units and
     const lesSablesAfter = (projectsAfter.json as ProjectDto[]).find((p) => p.id === lesSables.id)!;
     assert.equal(lesSablesAfter.actualBuildingsCount, 4);
     assert.equal(lesSablesAfter.actualUnitsCount, 73);
+    assert.equal(lesSablesAfter.estimatedBudgetDzd, null);
 
     // 8. Create an unauthorized employee and verify structure access controls
     const createEmp = await adminClient.request('/api/users', {

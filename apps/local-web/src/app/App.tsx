@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { MutableRefObject } from 'react';
-import type { AppLanguage, ProjectDto, SessionResponse } from '../types/erp';
+import type { AppLanguage, HealthStatusResponse, ProjectDto, SessionResponse } from '../types/erp';
 import { apiClient } from '../core/api/apiClient';
 import {
   DEFAULT_APP_ROUTE,
@@ -44,6 +44,7 @@ type PendingNavigation =
 interface AppContentRouterProps {
   session: SessionResponse;
   language: AppLanguage;
+  health: HealthStatusResponse | null;
   projects: ProjectDto[];
   activeRoute: AppRouteState;
   onNavigate: (route: AppRouteState) => void;
@@ -58,6 +59,7 @@ interface AppContentRouterProps {
 export function AppContentRouter({
   session,
   language,
+  health,
   projects,
   activeRoute,
   onNavigate,
@@ -205,7 +207,7 @@ export function AppContentRouter({
       )}
 
       {activeRoute.kind === 'admin' && activeRoute.section === 'diagnostics' && (
-        <SystemDiagnosticsView language={language} health={null} />
+        <SystemDiagnosticsView language={language} health={health} />
       )}
     </div>
   );
@@ -213,6 +215,8 @@ export function AppContentRouter({
 
 export function App() {
   const [session, setSession] = useState<SessionResponse | null>(null);
+  const [health, setHealth] = useState<HealthStatusResponse | null>(null);
+  const requestInFlight = useRef(false);
   const [setupState, setSetupState] = useState<{
     isInitialized: boolean;
     requiresBootstrapToken?: boolean;
@@ -234,6 +238,40 @@ export function App() {
   const discardActionRef = useRef<(() => void) | null>(null);
 
   useUnsavedGuard(hasUnsavedChanges);
+
+  // Keep technical diagnostics current without creating a global disconnected state.
+  // Requests pause while the tab is hidden and never overlap.
+  useEffect(() => {
+    let mounted = true;
+
+    const pollHealth = async () => {
+      if (document.visibilityState !== 'visible' || requestInFlight.current) return;
+
+      requestInFlight.current = true;
+      try {
+        const result = await apiClient.healthReady();
+        if (mounted) setHealth(result);
+      } catch {
+        if (mounted) setHealth(null);
+      } finally {
+        requestInFlight.current = false;
+      }
+    };
+
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') void pollHealth();
+    };
+
+    void pollHealth();
+    const intervalId = window.setInterval(() => void pollHealth(), 60_000);
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+
+    return () => {
+      mounted = false;
+      window.clearInterval(intervalId);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
+  }, []);
 
   useEffect(() => {
     activeRouteRef.current = activeRoute;
@@ -544,6 +582,7 @@ export function App() {
       <AppContentRouter
         session={session}
         language={language}
+        health={health}
         projects={projects}
         activeRoute={activeRoute}
         onNavigate={requestNavigation}

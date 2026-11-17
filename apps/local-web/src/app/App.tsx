@@ -221,7 +221,10 @@ export function App() {
   const [setupState, setSetupState] = useState<{
     isInitialized: boolean;
     requiresBootstrapToken?: boolean;
+    organizationLegalName?: string | null;
   } | null>(null);
+  const [unauthenticatedLanguage, setUnauthenticatedLanguage] = useState<AppLanguage>('ar');
+  const [setupCompletedNotice, setSetupCompletedNotice] = useState(false);
   const [loadingInitial, setLoadingInitial] = useState(true);
   const [projects, setProjects] = useState<ProjectDto[]>([]);
   const [activeRoute, setActiveRoute] = useState<AppRouteState>(() =>
@@ -424,6 +427,7 @@ export function App() {
         const setup = await setupApi.getSetupStatus();
         if (!active) return;
         setSetupState(setup);
+        if (setup.defaultLanguage) setUnauthenticatedLanguage(setup.defaultLanguage);
 
         if (setup.isInitialized) {
           try {
@@ -496,13 +500,13 @@ export function App() {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, []);
 
-  const language =
-    session?.user.preferredLanguage ??
-    session?.organization.defaultLanguage ??
-    'ar';
+  const language = session?.user.preferredLanguage ?? unauthenticatedLanguage;
 
   const handleLanguageChange = (nextLanguage: AppLanguage) => {
-    if (!session) return;
+    if (!session) {
+      setUnauthenticatedLanguage(nextLanguage);
+      return;
+    }
     setSession({
       ...session,
       user: { ...session.user, preferredLanguage: nextLanguage },
@@ -511,18 +515,25 @@ export function App() {
 
   const handlePreviewLogin = async () => {
     const demoSession = await authApi.openPreviewSession();
-    setSession(demoSession);
+    setSession({
+      ...demoSession,
+      user: { ...demoSession.user, preferredLanguage: unauthenticatedLanguage },
+    });
+    setSetupCompletedNotice(false);
     const authorizedProjects = await apiClient.listProjects();
     setProjects(authorizedProjects);
     commitRoute(DEFAULT_APP_ROUTE);
   };
 
-  const handleInitialized = async () => {
-    const currentSession = await authApi.getSession();
-    setSession(currentSession);
-    const authorizedProjects = await apiClient.listProjects();
-    setProjects(authorizedProjects);
-    setSetupState({ isInitialized: true });
+  const handleInitialized = async (defaultLanguage: AppLanguage, organizationLegalName: string) => {
+    // Setup creates the administrator account but deliberately does not issue an authenticated session.
+    // Move to the normal login screen instead of calling /auth/me without a session cookie.
+    setSession(null);
+    setProjects([]);
+    setSetupState({ isInitialized: true, organizationLegalName });
+    setUnauthenticatedLanguage(defaultLanguage);
+    setSetupCompletedNotice(true);
+    commitRoute(DEFAULT_APP_ROUTE);
   };
 
   if (loadingInitial) {
@@ -551,11 +562,16 @@ export function App() {
       <LoginScreen
         language={language}
         onLanguageChange={handleLanguageChange}
-        organizationName={null}
+        organizationName={setupState.organizationLegalName ?? null}
+        setupCompleted={setupCompletedNotice}
         isPreviewMode={true}
         onPreviewLogin={handlePreviewLogin}
         onLoggedIn={(newSession) => {
-          setSession(newSession);
+          setSession({
+            ...newSession,
+            user: { ...newSession.user, preferredLanguage: unauthenticatedLanguage },
+          });
+          setSetupCompletedNotice(false);
           void apiClient.listProjects().then(setProjects);
         }}
       />

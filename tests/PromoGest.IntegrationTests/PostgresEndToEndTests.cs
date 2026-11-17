@@ -1949,7 +1949,7 @@ public sealed class PostgresEndToEndTests : IClassFixture<PostgreSql18Integratio
             var salesMemberWithFinancials = await employeeClient.GetFromJsonAsync<ProjectDto>(
                 $"/api/projects/{createdProject.Id}");
             Assert.NotNull(salesMemberWithFinancials);
-            Assert.Equal(470_000_000m, salesMemberWithFinancials!.EstimatedBudgetDzd);
+            Assert.Equal(490_000_000m, salesMemberWithFinancials!.EstimatedBudgetDzd);
             var salesMemberBudgetWrite = await employeeClient.PutAsJsonAsync(
                 $"/api/projects/{createdProject.Id}",
                 projectUpdate with

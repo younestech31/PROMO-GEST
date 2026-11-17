@@ -1238,9 +1238,11 @@ public sealed class ApplicationSecurityAndFoundationTests
             "إدارة بيانات المشروع",
             "Gérer les données du projet",
             clock.UtcNow);
+        var systemAdminRole = store.Roles.Single(role => role.Code == Role.SystemAdminCode);
         store.Roles.Add(projectDirectorRole);
         store.Permissions.Add(projectsManagePermission);
         store.RolePermissions.Add(RolePermission.Create(projectDirectorRole.Id, projectsManagePermission.Id));
+        store.RolePermissions.Add(RolePermission.Create(systemAdminRole.Id, projectsManagePermission.Id));
 
         var financialManager = await userSvc.CreateEmployeeAsync(
             init.SystemAdminUserId,

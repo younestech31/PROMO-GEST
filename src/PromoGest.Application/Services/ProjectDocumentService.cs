@@ -69,9 +69,30 @@ public sealed class ProjectDocumentService
         RequestMetadata metadata,
         CancellationToken ct = default)
     {
-        var (actor, _, membership, permissions) = await RequireProjectAccessAsync(
+        var (actor, project, membership, permissions) = await RequireProjectAccessAsync(
             actorUserId, projectId, canWrite: false, metadata, ct);
         var files = await _documentRepository.ListProjectDocumentsAsync(projectId, ct);
+
+        // A filtered Financial document is still a sensitive-read denial and must be audited.
+        if (files.Any(item => string.Equals(item.File.Category, "Financial", StringComparison.Ordinal)) &&
+            !CanAccessCategory(actor.IsSystemAdministrator, membership, forUpload: false, "Financial"))
+        {
+            await _auditWriter.WriteAsync(
+                AuditLog.Record(
+                    _clock.UtcNow,
+                    actor.Id,
+                    actor.Username,
+                    "ACCESS_DENIED",
+                    AuditSeverity.Security,
+                    "Project",
+                    project.Id.ToString(),
+                    $"Unauthorized project financial-document list attempt by '{actor.Username}' on project '{project.Code}'.",
+                    JsonSerializer.Serialize(new { projectId = project.Id, category = "Financial", operation = "list" }),
+                    metadata.IpAddress,
+                    metadata.UserAgent),
+                ct);
+            await _documentRepository.SaveChangesAsync(ct);
+        }
         var canReadCustomerIdentity = CanReadCustomerIdentityDocuments(actor, permissions);
         var identityDocIds = canReadCustomerIdentity
             ? (IReadOnlySet<Guid>)new HashSet<Guid>()
@@ -386,6 +407,11 @@ public sealed class ProjectDocumentService
 
         if (membership is null)
             return false;
+
+        // Financial reads require the explicit capability, including for ProjectManagers.
+        // Upload behavior remains unchanged.
+        if (!forUpload && string.Equals(category, "Financial", StringComparison.Ordinal))
+            return membership.CanViewFinancials;
 
         if (membership.RoleInProject == ProjectRole.ProjectManager)
             return true;

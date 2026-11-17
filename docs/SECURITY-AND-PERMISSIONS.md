@@ -127,3 +127,17 @@ For all non-`SYSTEM_ADMIN` users, holding an organization role permission is **n
    - Returning a non-null project estimated budget on list/detail reads writes `PROJECT_FINANCIALS_VIEWED`; denied budget updates write `ACCESS_DENIED`. Successful project create/update events remain `PROJECT_CREATED` / `PROJECT_UPDATED`.
    - **Resolved — PR #36:** `PartyDirectoryService.EnsurePermissionAsync` writes the denial audit through `IAuditWriter` before throwing `ForbiddenDomainException`. `UpdateIdentityAsync` captures `previousKind` before mutating the canonical Party. `ApplicationSecurityAndFoundationTests` covers `PartyDirectory_DeniedPermissionsAreSecurityAuditedBeforeRejecting` and `PartyDirectory_UpdateIdentityAudit_UsesOriginalKindBeforeMutation`; the project-customer denial path is also covered. This is not a remaining Phase 0 defect.
 5. **Planned Future Role & Permission Scope (`PLANNED`):** Finance treasury approval (`FINANCE_OFFICER`), Chantier situation verification (`SITE_ENGINEER`), notarial contract verification (`LEGAL_OFFICER`), and SCF journal posting/period close will introduce dedicated permissions enforced strictly with SoD before Phases 2–4.
+
+
+## P1-07 — Financial project-document read authorization
+
+For every actor other than the single `SYSTEM_ADMIN`, listing and downloading a project document whose category is `Financial` requires an explicit project membership with `CanViewFinancials = true`. The `ProjectManager` project role does not bypass this read requirement. This is aligned with ADR-0011, which requires an explicit `CanViewFinancials` capability for financial project data.
+
+This rule applies to read/list and download only. Existing upload authorization is unchanged, including the existing `ProjectManager` upload behavior. Customer identity-document (`KYC`) isolation remains a separate check requiring `customers.read`, and the `SYSTEM_ADMIN` behavior is unchanged.
+
+When a list response omits Financial documents due to missing capability, the attempt is recorded as `ACCESS_DENIED` against the project. A direct download attempt returns `PROJECT_DOCUMENT_ACCESS_DENIED` and records `ACCESS_DENIED` against the stored file. The Vite-only preview applies the same rule and audit behavior; it remains a simulator, not production authorization evidence.
+
+
+### P1-07 verification evidence
+
+Implementation and regression-test commit: `4b04bd9dcf0dec806def7780a9d0b22d52d21878`, in [PR #87](https://github.com/younestech31/PROMO-GEST/pull/87). CI [#763](https://github.com/younestech31/PROMO-GEST/actions/runs/44122602882) passed all 3 jobs on that exact commit: Domain 34/34, Application 21/21, PostgreSQL 18 Integration 32/32, Linux publish, full database/storage/Data Protection restore drill, Windows x64 publish and PowerShell validation. The PR-triggered workflow for the same SHA is being checked separately. This evidence does not establish manual installation/browser acceptance or production deployment.

@@ -154,6 +154,7 @@ async function setupWithActors(baseUrl: string) {
   const finance = await createEmployee('finance1', ['FINANCE_OFFICER']);
   const legal = await createEmployee('legal1', ['LEGAL_OFFICER']);
   const engineer = await createEmployee('engineer1', ['SITE_ENGINEER']);
+  const projectManager = await createEmployee('projectmanager1', ['PROJECT_DIRECTOR']);
 
   const projRes = await adminClient.request('POST', '/api/projects', {
     code: 'PRJ-01',
@@ -236,8 +237,14 @@ async function setupWithActors(baseUrl: string) {
     canManageConstruction: true,
     canManageDocuments: false,
   });
+  await assignMember(projectManager.user.id, 'ProjectManager', {
+    canViewFinancials: false,
+    canManageSales: true,
+    canManageConstruction: true,
+    canManageDocuments: true,
+  });
 
-  return { adminClient, commercial, finance, legal, engineer, projectId, unitId };
+  return { adminClient, commercial, finance, legal, engineer, projectManager, projectId, unitId };
 }
 
 test('dev preview enforces parties read/manage permissions, query normalization, and party concurrency', async () => {
@@ -303,7 +310,7 @@ test('dev preview enforces parties read/manage permissions, query normalization,
 
 test('dev preview enforces document upload integrity, category scoping, and KYC document isolation across users', async () => {
   await withPreviewServer(async (baseUrl) => {
-    const { adminClient, commercial, finance, projectId } = await setupWithActors(baseUrl);
+    const { adminClient, commercial, finance, projectManager, projectId } = await setupWithActors(baseUrl);
 
     const makeMultipart = (filename: string, content: Buffer, category: string, description = '') => {
       const form = new FormData();
@@ -360,6 +367,54 @@ test('dev preview enforces document upload integrity, category scoping, and KYC 
     );
     assert.equal(commDownloadFin.status, 403);
     assert.equal(commDownloadFin.data.code, 'PROJECT_DOCUMENT_ACCESS_DENIED');
+
+    // ProjectManager membership does not bypass the explicit Financial read capability.
+    const managerDocsDenied = await projectManager.client.request('GET', `/api/projects/${projectId}/documents`);
+    assert.equal(managerDocsDenied.status, 200);
+    assert.equal(managerDocsDenied.data.some((d: any) => d.id === finUpload.data.id), false);
+    const managerDownloadDenied = await projectManager.client.request(
+      'GET',
+      `/api/projects/${projectId}/documents/${finUpload.data.id}/download`
+    );
+    assert.equal(managerDownloadDenied.status, 403);
+    assert.equal(managerDownloadDenied.data.code, 'PROJECT_DOCUMENT_ACCESS_DENIED');
+
+    // Keep the existing ProjectManager upload capability unchanged by this read-only fix.
+    const managerFinancialUpload = await projectManager.client.request(
+      'POST',
+      `/api/projects/${projectId}/documents`,
+      makeMultipart('manager-budget.txt', Buffer.from('manager upload'), 'Financial'),
+      true
+    );
+    assert.equal(managerFinancialUpload.status, 201);
+
+    const denialAudit = await adminClient.request('GET', '/api/audit?limit=100');
+    assert.ok(denialAudit.data.some((entry: any) =>
+      entry.eventType === 'ACCESS_DENIED' && entry.actorUserId === projectManager.user.id
+    ));
+
+    const grantManagerFinancials = await adminClient.request(
+      'PUT',
+      `/api/projects/${projectId}/members`,
+      {
+        userId: projectManager.user.id,
+        roleInProject: 'ProjectManager',
+        canViewFinancials: true,
+        canManageSales: true,
+        canManageConstruction: true,
+        canManageDocuments: true,
+      }
+    );
+    assert.equal(grantManagerFinancials.status, 200);
+    const managerDocsAllowed = await projectManager.client.request('GET', `/api/projects/${projectId}/documents`);
+    assert.equal(managerDocsAllowed.status, 200);
+    assert.equal(managerDocsAllowed.data.some((d: any) => d.id === finUpload.data.id), true);
+    const managerDownloadAllowed = await projectManager.client.request(
+      'GET',
+      `/api/projects/${projectId}/documents/${finUpload.data.id}/download`
+    );
+    assert.equal(managerDownloadAllowed.status, 200);
+    assert.deepEqual(managerDownloadAllowed.buffer, finPayload);
 
     // Commercial uploads Legal KYC scan (Legal requires canManageDocuments=true) and attaches to customer
     const kycBytes = Buffer.from('CNI-SCAN-BYTES-12345');

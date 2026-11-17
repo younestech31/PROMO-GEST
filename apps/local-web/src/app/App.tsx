@@ -107,6 +107,7 @@ export function AppContentRouter({
           onOpenProjectWorkspace={(projectId) =>
             onNavigate({ kind: 'project', projectId, section: 'overview' })
           }
+          onDirtyChange={onDirtyChange}
         />
       )}
 

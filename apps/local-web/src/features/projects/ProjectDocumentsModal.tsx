@@ -8,7 +8,8 @@ interface ProjectDocumentsModalProps {
   project: ProjectDto;
   language: AppLanguage;
   canUpload: boolean;
-  onClose: () => void;
+  mode?: 'modal' | 'embedded';
+  onClose?: () => void;
 }
 
 const MAX_DOCUMENT_BYTES = 25 * 1024 * 1024;
@@ -47,9 +48,11 @@ export function ProjectDocumentsModal({
   project,
   language,
   canUpload,
+  mode = 'modal',
   onClose,
 }: ProjectDocumentsModalProps) {
   const isArabic = language === 'ar';
+  const [subView, setSubView] = useState<'vault' | 'metadataPlanned' | 'linksPlanned' | 'retentionPlanned'>('vault');
   const [documents, setDocuments] = useState<ProjectDocumentDto[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
@@ -142,35 +145,50 @@ export function ProjectDocumentsModal({
   const title = isArabic ? 'وثائق المشروع' : 'Documents du projet';
   const closeLabel = isArabic ? 'إغلاق' : 'Fermer';
 
-  return (
-    <div
-      className="fixed inset-0 z-[70] flex items-center justify-center bg-slate-950/50 p-3 sm:p-5"
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby="project-documents-title"
-      dir={isArabic ? 'rtl' : 'ltr'}
-    >
-      <div className="flex max-h-[92vh] w-full max-w-4xl flex-col overflow-hidden rounded-lg border border-slate-200 bg-white shadow-xl">
-        <div className="flex items-start justify-between gap-4 border-b border-slate-200 px-5 py-4">
-          <div className="min-w-0">
-            <div className="flex items-center gap-2 text-teal-800">
-              <FileText className="h-5 w-5 shrink-0" aria-hidden="true" />
-              <h2 id="project-documents-title" className="text-base font-bold text-slate-900">{title}</h2>
+  const documentsBody = (
+    <>
+      {mode === 'embedded' && (
+        <div className="flex flex-wrap gap-1.5 border-b border-slate-200 px-4 pt-3 bg-slate-50/70">
+          {[
+            { id: 'vault' as const, ar: 'وثائق المشروع (SHA-256)', fr: 'Documents projet (SHA-256)' },
+            { id: 'metadataPlanned' as const, ar: 'البيانات الوصفية والوسوم (مخطط)', fr: 'Métadonnées (Planifié)' },
+            { id: 'linksPlanned' as const, ar: 'الروابط المهيكلة DocumentLink (مخطط)', fr: 'Liens DocumentLink (Planifié)' },
+            { id: 'retentionPlanned' as const, ar: 'سياسات الحفظ K-Full (مخطط)', fr: 'Rétention K-Full (Planifié)' },
+          ].map((tab) => (
+            <button
+              key={tab.id}
+              type="button"
+              onClick={() => setSubView(tab.id)}
+              className={`px-3 py-2 text-xs font-semibold border-b-2 transition-colors whitespace-nowrap ${
+                subView === tab.id
+                  ? 'border-teal-800 text-teal-900 bg-white rounded-t'
+                  : 'border-transparent text-slate-600 hover:text-slate-900'
+              }`}
+            >
+              {isArabic ? tab.ar : tab.fr}
+            </button>
+          ))}
+        </div>
+      )}
+
+      {mode === 'embedded' && subView !== 'vault' ? (
+        <div className="p-5 text-xs text-slate-600">
+          <div className="rounded-md border border-amber-200 bg-amber-50/70 p-4 text-amber-950 space-y-1.5">
+            <div className="font-bold">
+              {subView === 'metadataPlanned'
+                ? (isArabic ? 'تعديل البيانات الوصفية والوسوم — مخطط' : 'Édition des métadonnées & indexation — Planifié')
+                : subView === 'linksPlanned'
+                  ? (isArabic ? 'الربط المهيكل بالسجلات التجارية والهندسية (DocumentLink) — مخطط' : 'Liens structurés vers contrats, lots et chantiers (DocumentLink) — Planifié')
+                  : (isArabic ? 'سياسات الاحتفاظ والأرشيف القانوني (K-Full) — مخطط' : 'Politiques de rétention et archivage probant (K-Full) — Planifié')}
             </div>
-            <p className="mt-1 truncate text-xs text-slate-500">
-              <span className="font-data">{project.code}</span> · {isArabic ? project.nameAr : project.nameFr}
+            <p className="leading-relaxed">
+              {isArabic
+                ? 'طبقة K-Min الحالية مفعّلة بالكامل لرفع الوثائق والتحقق التلقائي من بصمة SHA-256 وتنزيلها بأمان. هذه الامتدادات ستُضاف عند ربط الوحدات القانونية والأشغال.'
+                : 'Le socle K-Min est actif pour le dépôt sécurisé, la vérification SHA-256 et le téléchargement. Ces extensions seront activées lors de l’ouverture des modules Contrats et Chantiers.'}
             </p>
           </div>
-          <button
-            type="button"
-            onClick={onClose}
-            aria-label={closeLabel}
-            className="rounded p-1.5 text-slate-500 hover:bg-slate-100"
-          >
-            <X className="h-4 w-4" aria-hidden="true" />
-          </button>
         </div>
-
+      ) : (
         <div className="flex-1 space-y-5 overflow-y-auto p-5">
           {error && (
             <div role="alert" className="rounded border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-800">
@@ -311,6 +329,48 @@ export function ProjectDocumentsModal({
             )}
           </section>
         </div>
+      )}
+    </>
+  );
+
+  if (mode === 'embedded') {
+    return (
+      <div className="bg-white border border-slate-200 rounded-lg overflow-hidden" dir={isArabic ? 'rtl' : 'ltr'}>
+        {documentsBody}
+      </div>
+    );
+  }
+
+  return (
+    <div
+      className="fixed inset-0 z-[70] flex items-center justify-center bg-slate-950/50 p-3 sm:p-5"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="project-documents-title"
+      dir={isArabic ? 'rtl' : 'ltr'}
+    >
+      <div className="flex max-h-[92vh] w-full max-w-4xl flex-col overflow-hidden rounded-lg border border-slate-200 bg-white shadow-xl">
+        <div className="flex items-start justify-between gap-4 border-b border-slate-200 px-5 py-4">
+          <div className="min-w-0">
+            <div className="flex items-center gap-2 text-teal-800">
+              <FileText className="h-5 w-5 shrink-0" aria-hidden="true" />
+              <h2 id="project-documents-title" className="text-base font-bold text-slate-900">{title}</h2>
+            </div>
+            <p className="mt-1 truncate text-xs text-slate-500">
+              <span className="font-data">{project.code}</span> · {isArabic ? project.nameAr : project.nameFr}
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={onClose}
+            aria-label={closeLabel}
+            className="rounded p-1.5 text-slate-500 hover:bg-slate-100"
+          >
+            <X className="h-4 w-4" aria-hidden="true" />
+          </button>
+        </div>
+
+        {documentsBody}
 
         <div className="flex justify-end border-t border-slate-200 px-5 py-3">
           <button

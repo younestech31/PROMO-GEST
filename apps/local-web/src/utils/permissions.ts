@@ -122,3 +122,16 @@ export function canManageProjectSalesReservations(user: AuthenticatedUser | null
     hasPermission(user, 'sales.reservations.manage') &&
     hasPermission(user, 'customers.read');
 }
+
+export function canReadPartyDirectory(user: AuthenticatedUser | null): boolean {
+  return hasPermission(user, 'parties.directory.read');
+}
+
+export function canManagePartyIdentity(user: AuthenticatedUser | null): boolean {
+  return hasPermission(user, 'parties.identity.manage');
+}
+
+export function canViewTechnicalAdmin(user: AuthenticatedUser | null): boolean {
+  if (!user || !user.isActive) return false;
+  return user.isSystemAdministrator || canManageUsers(user) || canViewAuditLogs(user);
+}

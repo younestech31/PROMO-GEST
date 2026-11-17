@@ -1,5 +1,5 @@
 import { useEffect, useState, type FormEvent } from 'react';
-import { CalendarClock, FileText, FolderPlus, KeyRound, Layers3, Pencil, ShieldAlert, Trash2, Users, UsersRound, X } from 'lucide-react';
+import { ArrowUpRight, CalendarClock, FileText, FolderPlus, KeyRound, Layers3, Pencil, Search, ShieldAlert, Trash2, Users, UsersRound, X } from 'lucide-react';
 import type {
   AppLanguage,
   AssignProjectMemberRequest,
@@ -25,6 +25,7 @@ interface ProjectsAccessViewProps {
   currentUser: AuthenticatedUser;
   language: AppLanguage;
   onProjectsChanged?: (projects: ProjectDto[]) => void;
+  onOpenProjectWorkspace?: (projectId: string) => void;
 }
 
 const PROJECT_ROLES = [
@@ -47,6 +48,7 @@ export function ProjectsAccessView({
   currentUser,
   language,
   onProjectsChanged,
+  onOpenProjectWorkspace,
 }: ProjectsAccessViewProps) {
   const t = getTranslations(language);
   const { reference, isLoading: referenceLoading, hasError: referenceError, retry: retryReference } =
@@ -57,6 +59,8 @@ export function ProjectsAccessView({
   const [users, setUsers] = useState<UserDto[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [statusFilter, setStatusFilter] = useState('');
 
   const [createOpen, setCreateOpen] = useState(false);
   const [editingProject, setEditingProject] = useState<ProjectDto | null>(null);
@@ -99,13 +103,22 @@ export function ProjectsAccessView({
     ? canUpdateProjectFinancialBudget(currentUser, editingProject)
     : !currentUser.isSystemAdministrator;
 
-  const loadData = async () => {
+  const loadData = async (filters?: { q?: string; status?: string }) => {
     setLoading(true);
     setError(null);
+    const activeQ = filters ? filters.q : searchQuery;
+    const activeStatus = filters ? filters.status : statusFilter;
+    const hasFilter = Boolean(activeQ?.trim() || activeStatus?.trim());
     try {
-      const projectList = await apiClient.listProjects();
+      const projectList = await apiClient.listProjects(
+        hasFilter
+          ? { q: activeQ?.trim() || undefined, status: activeStatus?.trim() || undefined }
+          : undefined
+      );
       setProjects(projectList);
-      onProjectsChanged?.(projectList);
+      if (!hasFilter) {
+        onProjectsChanged?.(projectList);
+      }
 
       if (canManageUsers(currentUser)) {
         const userList = await apiClient.listUsers();
@@ -125,6 +138,17 @@ export function ProjectsAccessView({
   useEffect(() => {
     void loadData();
   }, []);
+
+  const handleFilterSubmit = (e: FormEvent) => {
+    e.preventDefault();
+    void loadData({ q: searchQuery, status: statusFilter });
+  };
+
+  const handleResetFilters = () => {
+    setSearchQuery('');
+    setStatusFilter('');
+    void loadData({ q: '', status: '' });
+  };
 
   const handleWilayaChange = (code: string) => {
     const wilaya = wilayas.find((item) => item.code === code);
@@ -340,6 +364,64 @@ export function ProjectsAccessView({
         <span>{t.projects.projectGuardNotice}</span>
       </div>
 
+      {/* Server-backed search & status filter */}
+      <form
+        onSubmit={handleFilterSubmit}
+        className="rounded-lg border border-slate-200 bg-white p-3.5 flex flex-col md:flex-row gap-3 items-stretch md:items-center"
+      >
+        <div className="relative flex-1">
+          <Search
+            className={`w-4 h-4 text-slate-400 absolute top-2.5 ${language === 'ar' ? 'right-3' : 'left-3'}`}
+            aria-hidden="true"
+          />
+          <input
+            type="search"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            placeholder={
+              language === 'ar'
+                ? 'بحث في الخادم برمز المشروع أو الاسم أو الولاية أو البلدية...'
+                : 'Recherche serveur par code, nom, wilaya ou commune...'
+            }
+            className={`${inputBaseClass} ${language === 'ar' ? 'pr-9' : 'pl-9'}`}
+          />
+        </div>
+
+        <select
+          aria-label={t.projects.tableStatus}
+          value={statusFilter}
+          onChange={(e) => {
+            const nextStatus = e.target.value;
+            setStatusFilter(nextStatus);
+            void loadData({ q: searchQuery, status: nextStatus });
+          }}
+          className={`${inputBaseClass} md:w-56`}
+        >
+          <option value="">{language === 'ar' ? 'كل الحالات' : 'Tous les statuts'}</option>
+          {PROJECT_STATUSES.map((s) => (
+            <option key={s.code} value={s.code}>{language === 'ar' ? s.ar : s.fr}</option>
+          ))}
+        </select>
+
+        <div className="flex items-center gap-2 shrink-0">
+          <button
+            type="submit"
+            className="rounded-md bg-slate-800 px-3.5 py-2 text-xs font-semibold text-white hover:bg-slate-900"
+          >
+            {language === 'ar' ? 'تصفية' : 'Filtrer'}
+          </button>
+          {(searchQuery || statusFilter) && (
+            <button
+              type="button"
+              onClick={handleResetFilters}
+              className="rounded-md border border-slate-200 px-3 py-2 text-xs font-medium text-slate-700 hover:bg-slate-50"
+            >
+              {language === 'ar' ? 'مسح' : 'Réinitialiser'}
+            </button>
+          )}
+        </div>
+      </form>
+
       {error && (
         <div role="alert" className="rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">
           {error}
@@ -359,126 +441,245 @@ export function ProjectsAccessView({
             <p className="text-xs text-slate-500 mt-1 max-w-md mx-auto">{t.projects.emptyBody}</p>
           </div>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm text-start border-collapse">
-              <thead>
-                <tr className="border-b border-slate-200 bg-slate-50 text-xs font-semibold text-slate-600">
-                  <th className="py-3 px-4 text-start">{t.projects.tableCode}</th>
-                  <th className="py-3 px-4 text-start">{t.projects.tableName}</th>
-                  <th className="py-3 px-4 text-start">{t.projects.tableLocation}</th>
-                  <th className="py-3 px-4 text-start">{t.projects.tableStatus}</th>
-                  <th className="py-3 px-4 text-end">{t.projects.tableBudget}</th>
-                  <th className="py-3 px-4 text-end">{t.projects.tableMembers}</th>
-                  <th className="py-3 px-4 text-end">{t.users.tableActions}</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100">
-                {projects.map((p) => (
-                  <tr key={p.id} className="hover:bg-slate-50/80 transition-colors">
-                    <td className="py-3 px-4 font-data font-semibold text-slate-900">{p.code}</td>
-                    <td className="py-3 px-4">
-                      <div className="font-medium text-slate-900">
-                        {language === 'ar' ? p.nameAr : p.nameFr}
-                      </div>
-                      <div className="mt-1 text-xs text-slate-600">
-                        <span className="font-data">{p.actualBuildingsCount}</span>{' '}
-                        {language === 'ar' ? 'عمارات مسجلة' : 'bâtiments enregistrés'} ·{' '}
-                        <span className="font-data">{p.actualUnitsCount}</span>{' '}
-                        {language === 'ar' ? 'وحدات عقارية مسجلة' : 'unités immobilières enregistrées'}
-                      </div>
-                      <div className="mt-0.5 text-[11px] text-slate-400">
-                        {language === 'ar' ? 'المخطط:' : 'Prévu :'}{' '}
-                        <span className="font-data">{p.plannedBlocksCount}</span>{' '}
-                        {language === 'ar' ? 'عمارات' : 'bâtiments'} ·{' '}
-                        <span className="font-data">{p.plannedUnitsCount}</span>{' '}
-                        {language === 'ar' ? 'وحدات' : 'unités'}
-                      </div>
-                    </td>
-                    <td className="py-3 px-4 text-xs text-slate-700">
-                      {p.wilayaCode} {p.wilayaName} — {p.municipality}
-                    </td>
-                    <td className="py-3 px-4 text-xs text-slate-700">{statusLabel(p.status)}</td>
-                    <td className="py-3 px-4 text-end font-data text-slate-900">
-                      {p.estimatedBudgetDzd === null ? '—' : formatDzd(p.estimatedBudgetDzd, language)}
-                    </td>
-                    <td className="py-3 px-4 text-end font-data text-slate-700">
-                      {p.members.length}
-                    </td>
-                    <td className="py-3 px-4 text-end">
-                      <div className="inline-flex items-center justify-end gap-2">
-                        {canManageProjectStructure(currentUser, p) && (
-                          <button
-                            type="button"
-                            onClick={() => setStructureProject(p)}
-                            className="inline-flex items-center gap-1.5 rounded border border-slate-200 px-2.5 py-1 text-xs font-medium text-slate-700 hover:bg-slate-100 whitespace-nowrap"
-                          >
-                            <Layers3 className="w-3.5 h-3.5" aria-hidden="true" />
-                            <span>{t.projects.structureButton}</span>
-                          </button>
-                        )}
-                        {canReadProjectCustomers(currentUser, p) && (
-                          <button
-                            type="button"
-                            onClick={() => setCustomersProject(p)}
-                            className="inline-flex items-center gap-1.5 rounded border border-slate-200 px-2.5 py-1 text-xs font-medium text-slate-700 hover:bg-slate-100 whitespace-nowrap"
-                          >
-                            <UsersRound className="w-3.5 h-3.5" aria-hidden="true" />
-                            <span>{language === 'ar' ? 'الزبائن والمهتمون' : 'Clients & prospects'}</span>
-                          </button>
-                        )}
-                        {canReadProjectSalesReservations(currentUser, p) && (
-                          <button
-                            type="button"
-                            onClick={() => setReservationsProject(p)}
-                            className="inline-flex items-center gap-1.5 rounded border border-slate-200 px-2.5 py-1 text-xs font-medium text-slate-700 hover:bg-slate-100 whitespace-nowrap"
-                          >
-                            <CalendarClock className="w-3.5 h-3.5" aria-hidden="true" />
-                            <span>{language === 'ar' ? 'الحجوزات' : 'Réservations'}</span>
-                          </button>
-                        )}
-                        {canReadProjectDocuments(currentUser, p) && (
-                          <button
-                            type="button"
-                            onClick={() => setDocumentsProject(p)}
-                            className="inline-flex items-center gap-1.5 rounded border border-slate-200 px-2.5 py-1 text-xs font-medium text-slate-700 hover:bg-slate-100 whitespace-nowrap"
-                          >
-                            <FileText className="w-3.5 h-3.5" aria-hidden="true" />
-                            <span>{language === 'ar' ? 'وثائق المشروع' : 'Documents'}</span>
-                          </button>
-                        )}
-                        {canManageProjects(currentUser, p) && (
-                          <button
-                            type="button"
-                            onClick={() => openEditProject(p)}
-                            className="inline-flex items-center gap-1.5 rounded border border-slate-200 px-2.5 py-1 text-xs font-medium text-slate-700 hover:bg-slate-100 whitespace-nowrap"
-                          >
-                            <Pencil className="w-3.5 h-3.5" aria-hidden="true" />
-                            <span>{t.projects.editButton}</span>
-                          </button>
-                        )}
-                        {canManageProjectAccess(currentUser, p) && (
+          <>
+            <div className="md:hidden divide-y divide-slate-100">
+              {projects.map((p) => (
+                <div key={p.id} className="p-4 space-y-3">
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="min-w-0">
+                      {onOpenProjectWorkspace ? (
                         <button
                           type="button"
-                          onClick={() => {
-                            setAccessProject(p);
-                            setModalError(null);
-                            if (users.length > 0 && !memberForm.userId) {
-                              setMemberForm((mf) => ({ ...mf, userId: users[0].id }));
-                            }
-                          }}
-                          className="inline-flex items-center gap-1.5 rounded border border-slate-200 px-2.5 py-1 text-xs font-medium text-slate-700 hover:bg-slate-100 whitespace-nowrap"
+                          onClick={() => onOpenProjectWorkspace(p.id)}
+                          className="font-data text-xs font-bold text-teal-900 hover:underline whitespace-nowrap"
+                          dir="ltr"
                         >
-                          <KeyRound className="w-3.5 h-3.5" aria-hidden="true" />
-                          <span>{t.projects.manageAccess}</span>
+                          {p.code}
                         </button>
+                      ) : (
+                        <span className="font-data text-xs font-bold text-slate-900 whitespace-nowrap" dir="ltr">
+                          {p.code}
+                        </span>
                       )}
+                      <div className="font-bold text-slate-900 mt-0.5">
+                        {language === 'ar' ? p.nameAr : p.nameFr}
                       </div>
-                    </td>
+                    </div>
+                    <span className="rounded border border-slate-200 bg-slate-50 px-2 py-0.5 text-[11px] font-medium text-slate-700 whitespace-nowrap shrink-0">
+                      {statusLabel(p.status)}
+                    </span>
+                  </div>
+
+                  <div className="text-xs text-slate-600 space-y-1">
+                    <div>{p.wilayaCode} {p.wilayaName} — {p.municipality}</div>
+                    <div>
+                      <span className="font-data">{p.actualBuildingsCount}</span>{' '}
+                      {language === 'ar' ? 'عمارات' : 'bâtiments'} ·{' '}
+                      <span className="font-data">{p.actualUnitsCount}</span>{' '}
+                      {language === 'ar' ? 'وحدات' : 'unités'}
+                    </div>
+                  </div>
+
+                  <div className="flex flex-wrap gap-1.5 pt-1">
+                    {onOpenProjectWorkspace && (
+                      <button
+                        type="button"
+                        onClick={() => onOpenProjectWorkspace(p.id)}
+                        className="inline-flex items-center gap-1 rounded bg-teal-800 px-2.5 py-1.5 text-xs font-semibold text-white hover:bg-teal-900 whitespace-nowrap"
+                      >
+                        <span>{language === 'ar' ? 'فتح المساحة' : 'Ouvrir l’espace'}</span>
+                        <ArrowUpRight className="w-3.5 h-3.5" aria-hidden="true" />
+                      </button>
+                    )}
+                    {canManageProjectStructure(currentUser, p) && (
+                      <button
+                        type="button"
+                        onClick={() => setStructureProject(p)}
+                        className="inline-flex items-center gap-1 rounded border border-slate-200 px-2.5 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-100 whitespace-nowrap"
+                      >
+                        <Layers3 className="w-3.5 h-3.5" aria-hidden="true" />
+                        <span>{t.projects.structureButton}</span>
+                      </button>
+                    )}
+                    {canReadProjectCustomers(currentUser, p) && (
+                      <button
+                        type="button"
+                        onClick={() => setCustomersProject(p)}
+                        className="inline-flex items-center gap-1 rounded border border-slate-200 px-2.5 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-100 whitespace-nowrap"
+                      >
+                        <UsersRound className="w-3.5 h-3.5" aria-hidden="true" />
+                        <span>{language === 'ar' ? 'الزبائن والمهتمون' : 'Clients & prospects'}</span>
+                      </button>
+                    )}
+                    {canReadProjectSalesReservations(currentUser, p) && (
+                      <button
+                        type="button"
+                        onClick={() => setReservationsProject(p)}
+                        className="inline-flex items-center gap-1 rounded border border-slate-200 px-2.5 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-100 whitespace-nowrap"
+                      >
+                        <CalendarClock className="w-3.5 h-3.5" aria-hidden="true" />
+                        <span>{language === 'ar' ? 'الحجوزات' : 'Réservations'}</span>
+                      </button>
+                    )}
+                    {canReadProjectDocuments(currentUser, p) && (
+                      <button
+                        type="button"
+                        onClick={() => setDocumentsProject(p)}
+                        className="inline-flex items-center gap-1 rounded border border-slate-200 px-2.5 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-100 whitespace-nowrap"
+                      >
+                        <FileText className="w-3.5 h-3.5" aria-hidden="true" />
+                        <span>{language === 'ar' ? 'وثائق المشروع' : 'Documents'}</span>
+                      </button>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            <div className="hidden md:block overflow-x-auto">
+              <table className="w-full text-sm text-start border-collapse">
+                <thead>
+                  <tr className="border-b border-slate-200 bg-slate-50 text-xs font-semibold text-slate-600">
+                    <th className="py-3 px-4 text-start whitespace-nowrap">{t.projects.tableCode}</th>
+                    <th className="py-3 px-4 text-start">{t.projects.tableName}</th>
+                    <th className="py-3 px-4 text-start">{t.projects.tableLocation}</th>
+                    <th className="py-3 px-4 text-start whitespace-nowrap">{t.projects.tableStatus}</th>
+                    <th className="py-3 px-4 text-end whitespace-nowrap">{t.projects.tableBudget}</th>
+                    <th className="py-3 px-4 text-end whitespace-nowrap">{t.projects.tableMembers}</th>
+                    <th className="py-3 px-4 text-end">{t.users.tableActions}</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+                </thead>
+                <tbody className="divide-y divide-slate-100">
+                  {projects.map((p) => (
+                    <tr key={p.id} className="hover:bg-slate-50/80 transition-colors">
+                      <td className="py-3 px-4 font-data font-semibold text-slate-900 whitespace-nowrap">
+                        {onOpenProjectWorkspace ? (
+                          <button
+                            type="button"
+                            onClick={() => onOpenProjectWorkspace(p.id)}
+                            className="text-teal-900 hover:underline font-bold whitespace-nowrap"
+                            dir="ltr"
+                          >
+                            {p.code}
+                          </button>
+                        ) : (
+                          <span className="whitespace-nowrap" dir="ltr">{p.code}</span>
+                        )}
+                      </td>
+                      <td className="py-3 px-4">
+                        <div className="font-medium text-slate-900">
+                          {language === 'ar' ? p.nameAr : p.nameFr}
+                        </div>
+                        <div className="mt-1 text-xs text-slate-600">
+                          <span className="font-data">{p.actualBuildingsCount}</span>{' '}
+                          {language === 'ar' ? 'عمارات مسجلة' : 'bâtiments enregistrés'} ·{' '}
+                          <span className="font-data">{p.actualUnitsCount}</span>{' '}
+                          {language === 'ar' ? 'وحدات عقارية مسجلة' : 'unités immobilières enregistrées'}
+                        </div>
+                        <div className="mt-0.5 text-[11px] text-slate-400">
+                          {language === 'ar' ? 'المخطط:' : 'Prévu :'}{' '}
+                          <span className="font-data">{p.plannedBlocksCount}</span>{' '}
+                          {language === 'ar' ? 'عمارات' : 'bâtiments'} ·{' '}
+                          <span className="font-data">{p.plannedUnitsCount}</span>{' '}
+                          {language === 'ar' ? 'وحدات' : 'unités'}
+                        </div>
+                      </td>
+                      <td className="py-3 px-4 text-xs text-slate-700">
+                        {p.wilayaCode} {p.wilayaName} — {p.municipality}
+                      </td>
+                      <td className="py-3 px-4 text-xs text-slate-700 whitespace-nowrap">{statusLabel(p.status)}</td>
+                      <td className="py-3 px-4 text-end font-data text-slate-900 whitespace-nowrap">
+                        {p.estimatedBudgetDzd === null ? '—' : formatDzd(p.estimatedBudgetDzd, language)}
+                      </td>
+                      <td className="py-3 px-4 text-end font-data text-slate-700 whitespace-nowrap">
+                        {p.members.length}
+                      </td>
+                      <td className="py-3 px-4 text-end">
+                        <div className="inline-flex flex-wrap items-center justify-end gap-2">
+                          {onOpenProjectWorkspace && (
+                            <button
+                              type="button"
+                              onClick={() => onOpenProjectWorkspace(p.id)}
+                              className="inline-flex items-center gap-1 rounded bg-teal-800 px-2.5 py-1 text-xs font-semibold text-white hover:bg-teal-900 whitespace-nowrap"
+                            >
+                              <span>{language === 'ar' ? 'فتح المساحة' : 'Ouvrir l’espace'}</span>
+                              <ArrowUpRight className="w-3.5 h-3.5" aria-hidden="true" />
+                            </button>
+                          )}
+                          {canManageProjectStructure(currentUser, p) && (
+                            <button
+                              type="button"
+                              onClick={() => setStructureProject(p)}
+                              className="inline-flex items-center gap-1.5 rounded border border-slate-200 px-2.5 py-1 text-xs font-medium text-slate-700 hover:bg-slate-100 whitespace-nowrap"
+                            >
+                              <Layers3 className="w-3.5 h-3.5" aria-hidden="true" />
+                              <span>{t.projects.structureButton}</span>
+                            </button>
+                          )}
+                          {canReadProjectCustomers(currentUser, p) && (
+                            <button
+                              type="button"
+                              onClick={() => setCustomersProject(p)}
+                              className="inline-flex items-center gap-1.5 rounded border border-slate-200 px-2.5 py-1 text-xs font-medium text-slate-700 hover:bg-slate-100 whitespace-nowrap"
+                            >
+                              <UsersRound className="w-3.5 h-3.5" aria-hidden="true" />
+                              <span>{language === 'ar' ? 'الزبائن والمهتمون' : 'Clients & prospects'}</span>
+                            </button>
+                          )}
+                          {canReadProjectSalesReservations(currentUser, p) && (
+                            <button
+                              type="button"
+                              onClick={() => setReservationsProject(p)}
+                              className="inline-flex items-center gap-1.5 rounded border border-slate-200 px-2.5 py-1 text-xs font-medium text-slate-700 hover:bg-slate-100 whitespace-nowrap"
+                            >
+                              <CalendarClock className="w-3.5 h-3.5" aria-hidden="true" />
+                              <span>{language === 'ar' ? 'الحجوزات' : 'Réservations'}</span>
+                            </button>
+                          )}
+                          {canReadProjectDocuments(currentUser, p) && (
+                            <button
+                              type="button"
+                              onClick={() => setDocumentsProject(p)}
+                              className="inline-flex items-center gap-1.5 rounded border border-slate-200 px-2.5 py-1 text-xs font-medium text-slate-700 hover:bg-slate-100 whitespace-nowrap"
+                            >
+                              <FileText className="w-3.5 h-3.5" aria-hidden="true" />
+                              <span>{language === 'ar' ? 'وثائق المشروع' : 'Documents'}</span>
+                            </button>
+                          )}
+                          {canManageProjects(currentUser, p) && (
+                            <button
+                              type="button"
+                              onClick={() => openEditProject(p)}
+                              className="inline-flex items-center gap-1.5 rounded border border-slate-200 px-2.5 py-1 text-xs font-medium text-slate-700 hover:bg-slate-100 whitespace-nowrap"
+                            >
+                              <Pencil className="w-3.5 h-3.5" aria-hidden="true" />
+                              <span>{t.projects.editButton}</span>
+                            </button>
+                          )}
+                          {canManageProjectAccess(currentUser, p) && (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setAccessProject(p);
+                              setModalError(null);
+                              if (users.length > 0 && !memberForm.userId) {
+                                setMemberForm((mf) => ({ ...mf, userId: users[0].id }));
+                              }
+                            }}
+                            className="inline-flex items-center gap-1.5 rounded border border-slate-200 px-2.5 py-1 text-xs font-medium text-slate-700 hover:bg-slate-100 whitespace-nowrap"
+                          >
+                            <KeyRound className="w-3.5 h-3.5" aria-hidden="true" />
+                            <span>{t.projects.manageAccess}</span>
+                          </button>
+                        )}
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </>
         )}
       </div>
 

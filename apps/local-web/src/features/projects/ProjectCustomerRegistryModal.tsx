@@ -19,7 +19,8 @@ interface ProjectCustomerRegistryModalProps {
   canManage: boolean;
   canReadPartyDirectory: boolean;
   canManagePartyIdentity: boolean;
-  onClose: () => void;
+  mode?: 'modal' | 'embedded';
+  onClose?: () => void;
 }
 
 interface CustomerFormState {
@@ -104,9 +105,11 @@ export function ProjectCustomerRegistryModal({
   canManage,
   canReadPartyDirectory,
   canManagePartyIdentity,
+  mode = 'modal',
   onClose,
 }: ProjectCustomerRegistryModalProps) {
   const isArabic = language === 'ar';
+  const [subView, setSubView] = useState<'registry' | 'pipelinePlanned'>('registry');
   const [customers, setCustomers] = useState<ProjectCustomerListItemDto[]>([]);
   const [documents, setDocuments] = useState<ProjectDocumentDto[]>([]);
   const [details, setDetails] = useState<ProjectCustomerDto | null>(null);
@@ -326,30 +329,49 @@ export function ProjectCustomerRegistryModal({
     ? 'اختر زبوناً من القائمة لعرض بيانات الاتصال وسجل المتابعة.'
     : 'Sélectionnez un client pour consulter ses coordonnées et son historique.';
 
-  return (
-    <div
-      className="fixed inset-0 z-[75] flex items-center justify-center bg-slate-950/50 p-3 sm:p-5"
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby="project-customers-title"
-      dir={isArabic ? 'rtl' : 'ltr'}
-    >
-      <div className="flex max-h-[94vh] w-full max-w-6xl flex-col overflow-hidden rounded-lg border border-slate-200 bg-white shadow-xl">
-        <header className="flex items-start justify-between gap-4 border-b border-slate-200 px-5 py-4">
-          <div className="min-w-0">
-            <div className="flex items-center gap-2 text-teal-800">
-              <UserRound className="h-5 w-5 shrink-0" aria-hidden="true" />
-              <h2 id="project-customers-title" className="text-base font-bold text-slate-900">{title}</h2>
+  const registryContent = (
+    <>
+      {mode === 'embedded' && (
+        <div className="flex flex-wrap gap-1.5 border-b border-slate-200 px-4 pt-3 bg-slate-50/70">
+          <button
+            type="button"
+            onClick={() => setSubView('registry')}
+            className={`px-3 py-2 text-xs font-semibold border-b-2 transition-colors ${
+              subView === 'registry'
+                ? 'border-teal-800 text-teal-900 bg-white rounded-t'
+                : 'border-transparent text-slate-600 hover:text-slate-900'
+            }`}
+          >
+            {isArabic ? 'سجل الزبائن والمهتمين' : 'Registre clients & prospects'}
+          </button>
+          <button
+            type="button"
+            onClick={() => setSubView('pipelinePlanned')}
+            className={`px-3 py-2 text-xs font-semibold border-b-2 transition-colors ${
+              subView === 'pipelinePlanned'
+                ? 'border-teal-800 text-teal-900 bg-white rounded-t'
+                : 'border-transparent text-slate-600 hover:text-slate-900'
+            }`}
+          >
+            {isArabic ? 'مسار الفرص التجارية (مخطط)' : 'Pipeline commercial (Planifié)'}
+          </button>
+        </div>
+      )}
+
+      {mode === 'embedded' && subView === 'pipelinePlanned' ? (
+        <div className="p-5 text-xs text-slate-600">
+          <div className="rounded-md border border-amber-200 bg-amber-50/70 p-4 text-amber-950 space-y-1.5">
+            <div className="font-bold">
+              {isArabic ? 'مسار الفرص التجارية (CRM Pipeline) — مخطط' : 'Pipeline commercial multi-étapes — Planifié'}
             </div>
-            <p className="mt-1 truncate text-xs text-slate-500">
-              <span className="font-data">{project.code}</span> · {isArabic ? project.nameAr : project.nameFr}
+            <p className="leading-relaxed">
+              {isArabic
+                ? 'سيتيح هذا المسار تتبع تحويل المهتمين المؤهلين نحو الحجوزات الداخلية ثم العقود القانونية، مع إحصائيات حقيقية من قاعدة البيانات بمجرد تفعيل مراحل البيع.'
+                : 'Ce pipeline assurera le suivi de conversion des prospects qualifiés vers les réservations internes puis les contrats légaux dès l’ouverture du socle commercial.'}
             </p>
           </div>
-          <button type="button" onClick={onClose} aria-label={isArabic ? 'إغلاق' : 'Fermer'} className="rounded p-1.5 text-slate-500 hover:bg-slate-100">
-            <X className="h-4 w-4" aria-hidden="true" />
-          </button>
-        </header>
-
+        </div>
+      ) : (
         <div className="flex-1 space-y-4 overflow-y-auto p-4 sm:p-5">
           {error && <div role="alert" className="rounded border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-800">{error}</div>}
 
@@ -674,6 +696,43 @@ export function ProjectCustomerRegistryModal({
             </section>
           </div>
         </div>
+      )}
+    </>
+  );
+
+  if (mode === 'embedded') {
+    return (
+      <div className="bg-white border border-slate-200 rounded-lg overflow-hidden" dir={isArabic ? 'rtl' : 'ltr'}>
+        {registryContent}
+      </div>
+    );
+  }
+
+  return (
+    <div
+      className="fixed inset-0 z-[75] flex items-center justify-center bg-slate-950/50 p-3 sm:p-5"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="project-customers-title"
+      dir={isArabic ? 'rtl' : 'ltr'}
+    >
+      <div className="flex max-h-[94vh] w-full max-w-6xl flex-col overflow-hidden rounded-lg border border-slate-200 bg-white shadow-xl">
+        <header className="flex items-start justify-between gap-4 border-b border-slate-200 px-5 py-4">
+          <div className="min-w-0">
+            <div className="flex items-center gap-2 text-teal-800">
+              <UserRound className="h-5 w-5 shrink-0" aria-hidden="true" />
+              <h2 id="project-customers-title" className="text-base font-bold text-slate-900">{title}</h2>
+            </div>
+            <p className="mt-1 truncate text-xs text-slate-500">
+              <span className="font-data">{project.code}</span> · {isArabic ? project.nameAr : project.nameFr}
+            </p>
+          </div>
+          <button type="button" onClick={onClose} aria-label={isArabic ? 'إغلاق' : 'Fermer'} className="rounded p-1.5 text-slate-500 hover:bg-slate-100">
+            <X className="h-4 w-4" aria-hidden="true" />
+          </button>
+        </header>
+
+        {registryContent}
       </div>
     </div>
   );

@@ -15,7 +15,9 @@ import { FormField, inputBaseClass } from '../../components/FormField';
 interface ProjectStructureModalProps {
   project: ProjectDto;
   language: AppLanguage;
-  onClose: () => void;
+  mode?: 'modal' | 'embedded';
+  onClose?: () => void;
+  onStructureChanged?: () => void;
 }
 
 const BUILDING_STATUSES = [
@@ -56,10 +58,13 @@ const NEXT_UNIT_STATUSES: Record<string, string[]> = {
 export function ProjectStructureModal({
   project,
   language,
+  mode = 'modal',
   onClose,
+  onStructureChanged,
 }: ProjectStructureModalProps) {
   const t = getTranslations(language);
   const labels = t.projects;
+  const [subView, setSubView] = useState<'registry' | 'unitFilePlanned'>('registry');
 
   const [structure, setStructure] = useState<ProjectStructureDto | null>(null);
   const [selectedBuildingId, setSelectedBuildingId] = useState<string | null>(null);
@@ -155,6 +160,7 @@ export function ProjectStructureModal({
           })
         : await apiClient.createProjectBuilding(project.id, buildingForm);
       setStructure(result);
+      onStructureChanged?.();
       if (!editingBuildingId) {
         const created = result.buildings.find(
           (building) => building.code === buildingForm.code.trim().toUpperCase()
@@ -200,6 +206,7 @@ export function ProjectStructureModal({
           )
         : await apiClient.createBuildingFloor(project.id, selectedBuilding.id, floorForm);
       setStructure(result);
+      onStructureChanged?.();
       if (!editingFloorId) {
         const updatedBuilding = result.buildings.find(
           (building) => building.id === selectedBuilding.id
@@ -277,6 +284,7 @@ export function ProjectStructureModal({
         }
       );
       setStructure(result);
+      onStructureChanged?.();
       setUnitForm({
         unitNumber: '',
         unitType: 'Apartment',
@@ -330,6 +338,7 @@ export function ProjectStructureModal({
         }
       );
       setStructure(result);
+      onStructureChanged?.();
       setEditingUnitId(null);
     } catch (err) {
       showMutationError(err, 'تعذر حفظ تعديلات الوحدة.', 'Impossible d’enregistrer les modifications de l’unité.');
@@ -357,6 +366,7 @@ export function ProjectStructureModal({
         }
       );
       setStructure(result);
+      onStructureChanged?.();
       setStatusSelections((current) => {
         const updated = { ...current };
         delete updated[unit.id];
@@ -384,48 +394,62 @@ export function ProjectStructureModal({
   const selectedFloorName = (floor: BuildingFloorDto) =>
     language === 'ar' ? floor.nameAr : floor.nameFr;
 
-  return (
-    <div
-      className="fixed inset-0 z-[60] bg-slate-950/60 flex items-center justify-center p-3 sm:p-5"
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby="project-structure-title"
-    >
-      <div className="bg-white w-full max-w-7xl max-h-[94vh] rounded-xl shadow-2xl flex flex-col overflow-hidden">
-        <div className="px-5 py-4 border-b border-slate-200 flex items-center justify-between gap-4">
-          <div className="min-w-0">
-            <h2 id="project-structure-title" className="font-bold text-slate-900">
-              {labels.structureTitle}
-            </h2>
-            <p className="text-xs text-slate-500 mt-1 truncate">
-              <span className="font-data">{project.code}</span> ·{' '}
-              {language === 'ar' ? project.nameAr : project.nameFr}
-            </p>
-          </div>
+  const structureBody = (
+    <>
+      {mode === 'embedded' && (
+        <div className="flex flex-wrap gap-1.5 border-b border-slate-200 px-4 pt-3 bg-slate-50/70">
           <button
             type="button"
-            onClick={onClose}
-            aria-label={language === 'ar' ? 'إغلاق' : 'Fermer'}
-            className="p-2 rounded-md text-slate-500 hover:bg-slate-100 shrink-0"
+            onClick={() => setSubView('registry')}
+            className={`px-3 py-2 text-xs font-semibold border-b-2 transition-colors ${
+              subView === 'registry'
+                ? 'border-teal-800 text-teal-900 bg-white rounded-t'
+                : 'border-transparent text-slate-600 hover:text-slate-900'
+            }`}
           >
-            <X className="w-5 h-5" aria-hidden="true" />
+            {language === 'ar' ? 'العمارات والطوابق والوحدات' : 'Bâtiments, étages & unités'}
+          </button>
+          <button
+            type="button"
+            onClick={() => setSubView('unitFilePlanned')}
+            className={`px-3 py-2 text-xs font-semibold border-b-2 transition-colors ${
+              subView === 'unitFilePlanned'
+                ? 'border-teal-800 text-teal-900 bg-white rounded-t'
+                : 'border-transparent text-slate-600 hover:text-slate-900'
+            }`}
+          >
+            {language === 'ar' ? 'الملف الموحد للوحدة (مخطط)' : 'Fiche lot unifiée (Planifié)'}
           </button>
         </div>
+      )}
 
-        {error && (
-          <div role="alert" className="mx-5 mt-4 rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-800">
-            {error}
-          </div>
-        )}
+      {error && (
+        <div role="alert" className="mx-5 mt-4 rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-800">
+          {error}
+        </div>
+      )}
 
-        {loading ? (
-          <div className="p-8 space-y-3">
-            <div className="h-10 rounded bg-slate-100 animate-pulse" />
-            <div className="h-10 rounded bg-slate-100 animate-pulse" />
-            <div className="h-10 rounded bg-slate-100 animate-pulse" />
+      {mode === 'embedded' && subView === 'unitFilePlanned' ? (
+        <div className="p-5 space-y-3 text-xs text-slate-600">
+          <div className="rounded-md border border-amber-200 bg-amber-50/70 p-4 text-amber-950 space-y-1.5">
+            <div className="font-bold">
+              {language === 'ar' ? 'الملف العقاري الموحد للوحدة — مخطط للمرحلة القادمة' : 'Fiche unifiée de l’unité immobilière — Planifié'}
+            </div>
+            <p className="leading-relaxed">
+              {language === 'ar'
+                ? 'سيجمع هذا العرض المركزي عند تفعيل العقود والتحصيل بين: السعر المرجعي الرسمي بالـ DZD، الحجز الداخلي المرتبط، العقد التوثيقي أو VSP، جدول الأقساط، وحالة التسليم مع الوثائق المرفقة.'
+                : 'À l’ouverture des modules Contrats et Finances, cette fiche regroupera le tarif de référence DZD, la réservation liée, le contrat VSP/acte final, l’échéancier et les documents du lot.'}
+            </p>
           </div>
-        ) : (
-          <div className="p-4 sm:p-5 grid grid-cols-1 lg:grid-cols-3 gap-4 overflow-y-auto">
+        </div>
+      ) : loading ? (
+        <div className="p-8 space-y-3">
+          <div className="h-10 rounded bg-slate-100 animate-pulse" />
+          <div className="h-10 rounded bg-slate-100 animate-pulse" />
+          <div className="h-10 rounded bg-slate-100 animate-pulse" />
+        </div>
+      ) : (
+        <div className="p-4 sm:p-5 grid grid-cols-1 lg:grid-cols-3 gap-4 overflow-y-auto">
             <section className="border border-slate-200 rounded-lg min-w-0">
               <div className="p-3 border-b border-slate-100 flex items-center justify-between gap-2">
                 <div className="flex items-center gap-2 font-semibold text-sm text-slate-800">
@@ -880,8 +904,48 @@ export function ProjectStructureModal({
                 </>
               )}
             </section>
+        </div>
+      )}
+    </>
+  );
+
+  if (mode === 'embedded') {
+    return (
+      <div className="bg-white border border-slate-200 rounded-lg overflow-hidden">
+        {structureBody}
+      </div>
+    );
+  }
+
+  return (
+    <div
+      className="fixed inset-0 z-[60] bg-slate-950/60 flex items-center justify-center p-3 sm:p-5"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="project-structure-title"
+    >
+      <div className="bg-white w-full max-w-7xl max-h-[94vh] rounded-xl shadow-2xl flex flex-col overflow-hidden">
+        <div className="px-5 py-4 border-b border-slate-200 flex items-center justify-between gap-4">
+          <div className="min-w-0">
+            <h2 id="project-structure-title" className="font-bold text-slate-900">
+              {labels.structureTitle}
+            </h2>
+            <p className="text-xs text-slate-500 mt-1 truncate">
+              <span className="font-data">{project.code}</span> ·{' '}
+              {language === 'ar' ? project.nameAr : project.nameFr}
+            </p>
           </div>
-        )}
+          <button
+            type="button"
+            onClick={onClose}
+            aria-label={language === 'ar' ? 'إغلاق' : 'Fermer'}
+            className="p-2 rounded-md text-slate-500 hover:bg-slate-100 shrink-0"
+          >
+            <X className="w-5 h-5" aria-hidden="true" />
+          </button>
+        </div>
+
+        {structureBody}
 
         <div className="px-5 py-3 border-t border-slate-200 flex justify-end">
           <button type="button" onClick={onClose} className="px-4 py-2 rounded-md border border-slate-200 text-sm text-slate-700 hover:bg-slate-50">

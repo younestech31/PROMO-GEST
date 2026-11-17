@@ -326,10 +326,19 @@ export const apiClient = {
       body: JSON.stringify({ newPassword }),
     }),
 
-  listProjects: () => requestJson<ProjectDto[]>('/api/projects', { method: 'GET' }),
+  listProjects: (params?: { q?: string; status?: string }) => {
+    const query = new URLSearchParams();
+    if (params?.q?.trim()) query.set('q', params.q.trim());
+    if (params?.status?.trim()) query.set('status', params.status.trim());
+    const qs = query.toString();
+    return requestJson<ProjectDto[]>(qs ? `/api/projects?${qs}` : '/api/projects', {
+      method: 'GET',
+      cache: 'no-store',
+    });
+  },
 
   getProject: (projectId: string) =>
-    requestJson<ProjectDto>(`/api/projects/${encodeURIComponent(projectId)}`, { method: 'GET' }),
+    requestJson<ProjectDto>(`/api/projects/${encodeURIComponent(projectId)}`, { method: 'GET', cache: 'no-store' }),
 
   createProject: (payload: CreateProjectRequest) =>
     requestJson<ProjectDto>('/api/projects', {

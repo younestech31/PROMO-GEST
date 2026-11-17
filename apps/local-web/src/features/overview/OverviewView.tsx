@@ -1,75 +1,104 @@
-import { ArrowLeft, ArrowRight, Database, FolderKanban, ShieldCheck, Users } from 'lucide-react';
-import type { AppLanguage, HealthStatusResponse, ProjectDto, SessionResponse } from '../../types/erp';
+import {
+  ArrowLeft,
+  ArrowRight,
+  BarChart3,
+  Building2,
+  FolderKanban,
+  MapPin,
+  Pin,
+  ShieldCheck,
+  Users,
+  Users2,
+} from 'lucide-react';
+import type { AppLanguage, ProjectDto, SessionResponse } from '../../types/erp';
 import { getTranslations } from '../../localization/translations';
 import { formatDzd, formatLocalDateTime } from '../../utils/algerianFormat';
-import { canManageUsers, canViewAuditLogs } from '../../utils/permissions';
-import type { ErpRoute } from '../../layouts/ErpShellLayout';
+import {
+  canManageUsers,
+  canReadPartyDirectory,
+  canViewAuditLogs,
+} from '../../utils/permissions';
+import {
+  filterAuthorizedPreferenceIds,
+  type AppRouteState,
+  type ProjectNavigationPreferences,
+} from '../../utils/navigation';
+import { ERP_MODULE_CATALOG } from '../../utils/moduleCatalog';
+import { ModuleStateTag, PageHeader } from '../../components/PageHeader';
+import { formatProjectStatus } from '../../components/ProjectIdentityStrip';
 
 interface OverviewViewProps {
   session: SessionResponse;
   language: AppLanguage;
-  health: HealthStatusResponse | null;
   projects: ProjectDto[];
-  onNavigate: (route: ErpRoute) => void;
+  preferences: ProjectNavigationPreferences;
+  onNavigate: (route: AppRouteState) => void;
+  onOpenSwitcher: () => void;
 }
 
 export function OverviewView({
   session,
   language,
-  health,
   projects,
+  preferences,
   onNavigate,
+  onOpenSwitcher,
 }: OverviewViewProps) {
+  const isArabic = language === 'ar';
   const t = getTranslations(language);
-  const DirectionArrow = language === 'ar' ? ArrowLeft : ArrowRight;
+  const DirectionArrow = isArabic ? ArrowLeft : ArrowRight;
 
-  const domainModules = [
-    {
-      ar: 'المشاريع العقارية والعمارات والطوابق',
-      fr: 'Projets immobiliers, blocs, étages et lots (appartements, commerces, parkings)',
-      statusAr: 'الركيزة الأولى مفعّلة (المشاريع والصلاحيات)',
-      statusFr: 'Socle Phase 1 actif (Projets & habilitations)',
-    },
-    {
-      ar: 'الزبائن، الحجوزات، وعقود البيع (DZD)',
-      fr: 'Clients, réservations, ventes et échéanciers en DZD',
-      statusAr: 'المرحلة الهندسية القادمة',
-      statusFr: 'Prochain jalon d\'ingénierie',
-    },
-    {
-      ar: 'متابعة الأشغال، التسليم، وخدمات ما بعد البيع',
-      fr: 'Avancement chantier, livraisons et suivi après-vente',
-      statusAr: 'مخطط في البنية المعيارية',
-      statusFr: 'Préparé dans l\'architecture modulaire',
-    },
-  ];
+  const pinnedProjects = filterAuthorizedPreferenceIds(preferences.pinnedProjectIds, projects);
+  const pinnedIds = new Set(pinnedProjects.map((p) => p.id));
+  const recentProjects = filterAuthorizedPreferenceIds(preferences.recentProjectIds, projects).filter(
+    (p) => !pinnedIds.has(p.id)
+  );
+  const continueProjects = [...pinnedProjects, ...recentProjects, ...projects.filter(
+    (p) => !pinnedIds.has(p.id) && !recentProjects.some((r) => r.id === p.id)
+  )].slice(0, 4);
+
+  const primaryProjectId = continueProjects[0]?.id ?? null;
 
   return (
     <div className="space-y-8">
-      <div>
-        <h1 className="text-2xl font-bold text-slate-900 tracking-tight">{t.overview.title}</h1>
-        <p className="text-sm text-slate-600 mt-1">{t.overview.subtitle}</p>
-      </div>
+      <PageHeader
+        title={t.overview.title}
+        subtitle={
+          isArabic
+            ? 'المركز اليومي للمؤسسة: المشاريع المصرح بها، دليل الأطراف، المرجع الإقليمي وخارطة وحدات PROMO GEST.'
+            : 'Espace quotidien de l’organisation : projets autorisés, répertoire des tiers, référentiel territorial et couverture modulaire A–L.'
+        }
+        language={language}
+      />
 
-      {/* Top 3 Operational & Health Foundation Cards — Real data only */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Organization Identity */}
+      {/* Top 2 Real Operational Cards (System Health moved cleanly to Technical Admin /admin/diagnostics) */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <section className="bg-white border border-slate-200 rounded-lg p-5">
-          <h2 className="text-xs font-semibold text-slate-500 mb-3">
-            {t.overview.orgIdentityHeading}
-          </h2>
+          <div className="flex items-center justify-between gap-2 mb-3">
+            <h2 className="text-xs font-semibold text-slate-500">
+              {t.overview.orgIdentityHeading}
+            </h2>
+            <button
+              type="button"
+              onClick={() => onNavigate({ kind: 'org', section: 'organizationProfile' })}
+              className="text-xs font-semibold text-teal-800 hover:underline"
+            >
+              {isArabic ? 'عرض الملف' : 'Voir le profil'}
+            </button>
+          </div>
           <p className="text-base font-bold text-slate-900">{session.organization.legalName}</p>
           <p className="text-xs text-slate-600 mt-1">
-            {session.organization.legalForm} · {session.organization.wilayaCode} {session.organization.wilayaName}
+            {session.organization.legalForm} · <span className="font-data">{session.organization.wilayaCode}</span>{' '}
+            {session.organization.wilayaName}
           </p>
           <dl className="mt-4 pt-4 border-t border-slate-100 space-y-2 text-xs">
             <div className="flex justify-between gap-2">
               <dt className="text-slate-500">NIF</dt>
-              <dd className="font-data text-slate-900">{session.organization.nif ?? '—'}</dd>
+              <dd className="font-data text-slate-900" dir="ltr">{session.organization.nif ?? '—'}</dd>
             </div>
             <div className="flex justify-between gap-2">
               <dt className="text-slate-500">RC</dt>
-              <dd className="font-data text-slate-900">
+              <dd className="font-data text-slate-900" dir="ltr">
                 {session.organization.tradeRegisterNumber ?? '—'}
               </dd>
             </div>
@@ -82,45 +111,14 @@ export function OverviewView({
           </dl>
         </section>
 
-        {/* System Health */}
-        <section className="bg-white border border-slate-200 rounded-lg p-5">
-          <h2 className="text-xs font-semibold text-slate-500 mb-3">
-            {t.overview.systemHealthHeading}
-          </h2>
-          <dl className="mt-4 pt-4 border-t border-slate-100 space-y-2 text-xs">
-            <div className="flex justify-between gap-2">
-              <dt className="text-slate-500 flex items-center gap-1.5">
-                <Database className="w-3.5 h-3.5" aria-hidden="true" />
-                <span>{t.overview.databaseEngine}</span>
-              </dt>
-              <dd className="font-data text-slate-900">
-                {health?.previewMode
-                  ? (language === 'ar' ? 'ذاكرة مؤقتة · بيانات تجريبية' : 'Mémoire temporaire · Démo')
-                  : `PostgreSQL 18${health?.databaseConnected ? ' · OK' : ''}`}
-              </dd>
-            </div>
-            <div className="flex justify-between gap-2">
-              <dt className="text-slate-500">{t.overview.apiRuntime}</dt>
-              <dd className="font-data text-slate-900">{health?.environmentMode ?? '—'}</dd>
-            </div>
-            <div className="flex justify-between gap-2">
-              <dt className="text-slate-500">{t.overview.initializationState}</dt>
-              <dd className="font-medium text-slate-900">
-                {health?.previewMode
-                  ? (language === 'ar' ? 'تهيئة تجريبية مؤقتة' : 'Initialisation démo temporaire')
-                  : health?.isInitialized ? t.overview.initializedYes : '—'}
-              </dd>
-            </div>
-          </dl>
-        </section>
-
-        {/* Current User Scope */}
         <section className="bg-white border border-slate-200 rounded-lg p-5">
           <h2 className="text-xs font-semibold text-slate-500 mb-3">
             {t.overview.foundationReadinessHeading}
           </h2>
-          <div className="text-2xl font-bold font-data text-slate-900">{projects.length}</div>
-          <p className="text-xs text-slate-600 mt-0.5">{t.overview.accessibleProjectsCount}</p>
+          <div className="flex items-baseline gap-3">
+            <span className="text-2xl font-bold font-data text-slate-900">{projects.length}</span>
+            <span className="text-xs text-slate-600">{t.overview.accessibleProjectsCount}</span>
+          </div>
 
           <dl className="mt-4 pt-4 border-t border-slate-100 space-y-2 text-xs">
             <div className="flex justify-between gap-2">
@@ -145,19 +143,132 @@ export function OverviewView({
         </section>
       </div>
 
-      {/* Quick Operational Actions */}
+      {/* Continue in Project — explicit selection, never auto-entered */}
+      <section className="bg-white border border-slate-200 rounded-lg p-6 space-y-4">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <h2 className="text-sm font-bold text-slate-900">
+              {isArabic ? 'المتابعة في مشروع عقاري' : 'Continuer dans un projet'}
+            </h2>
+            <p className="text-xs text-slate-500 mt-0.5">
+              {isArabic
+                ? 'اختر مشروعاً من قائمة صلاحياتك الفعلية أو استخدم مبدّل المشاريع الصريح.'
+                : 'Sélectionnez explicitement un projet autorisé ou ouvrez le sélecteur rapide.'}
+            </p>
+          </div>
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={onOpenSwitcher}
+              className="rounded border border-teal-700 bg-teal-800 px-3 py-1.5 text-xs font-semibold text-white hover:bg-teal-900"
+            >
+              {isArabic ? 'مبدّل المشروع (Ctrl+K)' : 'Sélecteur projet (Ctrl+K)'}
+            </button>
+            <button
+              type="button"
+              onClick={() => onNavigate({ kind: 'org', section: 'projects' })}
+              className="rounded border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-50"
+            >
+              {isArabic ? 'كل المشاريع' : 'Tous les projets'}
+            </button>
+          </div>
+        </div>
+
+        {continueProjects.length === 0 ? (
+          <div className="rounded border border-dashed border-slate-300 px-4 py-6 text-center text-xs text-slate-500">
+            {t.projects.emptyTitle} — {t.projects.emptyBody}
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            {continueProjects.map((project) => {
+              const isPinned = pinnedIds.has(project.id);
+              return (
+                <button
+                  key={project.id}
+                  type="button"
+                  onClick={() => onNavigate({ kind: 'project', projectId: project.id, section: 'overview' })}
+                  className="flex items-center justify-between gap-3 rounded-md border border-slate-200 px-4 py-3 text-start hover:border-teal-700 hover:bg-slate-50 transition-colors"
+                >
+                  <div className="min-w-0 space-y-1">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <span dir="ltr" className="font-data text-xs font-bold text-teal-900">
+                        {project.code}
+                      </span>
+                      <span className="text-sm font-semibold text-slate-900 truncate">
+                        {isArabic ? project.nameAr : project.nameFr}
+                      </span>
+                      {isPinned && <Pin className="h-3 w-3 text-teal-700 shrink-0" aria-hidden="true" />}
+                    </div>
+                    <div className="text-xs text-slate-500 truncate">
+                      <span className="font-data">{project.wilayaCode}</span> {project.wilayaName} ·{' '}
+                      {formatProjectStatus(project.status, language)} ·{' '}
+                      <span className="font-data">{project.actualUnitsCount}</span>{' '}
+                      {isArabic ? 'وحدات' : 'unités'}
+                    </div>
+                  </div>
+                  <DirectionArrow className="h-4 w-4 text-slate-400 shrink-0" aria-hidden="true" />
+                </button>
+              );
+            })}
+          </div>
+        )}
+      </section>
+
+      {/* Authorized Organization Actions */}
       <section className="bg-white border border-slate-200 rounded-lg p-6">
         <h2 className="text-sm font-bold text-slate-900 mb-4">{t.overview.quickActionsHeading}</h2>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
           <button
             type="button"
-            onClick={() => onNavigate('projects')}
+            onClick={() => onNavigate({ kind: 'org', section: 'projects' })}
             className="flex items-center justify-between gap-3 rounded-md border border-slate-200 px-4 py-3 text-start hover:border-teal-700 hover:bg-slate-50 transition-colors"
           >
             <div className="flex items-center gap-3 min-w-0">
               <FolderKanban className="w-4 h-4 text-teal-800 shrink-0" aria-hidden="true" />
+              <span className="text-sm font-medium text-slate-900 truncate">{t.overview.goToProjects}</span>
+            </div>
+            <DirectionArrow className="w-4 h-4 text-slate-400 shrink-0" aria-hidden="true" />
+          </button>
+
+          {canReadPartyDirectory(session.user) && (
+            <button
+              type="button"
+              onClick={() => onNavigate({ kind: 'org', section: 'parties' })}
+              className="flex items-center justify-between gap-3 rounded-md border border-slate-200 px-4 py-3 text-start hover:border-teal-700 hover:bg-slate-50 transition-colors"
+            >
+              <div className="flex items-center gap-3 min-w-0">
+                <Users2 className="w-4 h-4 text-teal-800 shrink-0" aria-hidden="true" />
+                <span className="text-sm font-medium text-slate-900 truncate">
+                  {isArabic ? 'دليل الأطراف المركزي' : 'Répertoire des tiers'}
+                </span>
+              </div>
+              <DirectionArrow className="w-4 h-4 text-slate-400 shrink-0" aria-hidden="true" />
+            </button>
+          )}
+
+          <button
+            type="button"
+            onClick={() => onNavigate({ kind: 'org', section: 'territorialReference' })}
+            className="flex items-center justify-between gap-3 rounded-md border border-slate-200 px-4 py-3 text-start hover:border-teal-700 hover:bg-slate-50 transition-colors"
+          >
+            <div className="flex items-center gap-3 min-w-0">
+              <MapPin className="w-4 h-4 text-teal-800 shrink-0" aria-hidden="true" />
               <span className="text-sm font-medium text-slate-900 truncate">
-                {t.overview.goToProjects}
+                {isArabic ? 'المرجع الإقليمي (69 ولاية)' : 'Référentiel 69 wilayas'}
+              </span>
+            </div>
+            <DirectionArrow className="w-4 h-4 text-slate-400 shrink-0" aria-hidden="true" />
+          </button>
+
+          <button
+            type="button"
+            onClick={() => onNavigate({ kind: 'org', section: 'reports' })}
+            className="flex items-center justify-between gap-3 rounded-md border border-slate-200 px-4 py-3 text-start hover:border-teal-700 hover:bg-slate-50 transition-colors"
+          >
+            <div className="flex items-center gap-3 min-w-0">
+              <BarChart3 className="w-4 h-4 text-teal-800 shrink-0" aria-hidden="true" />
+              <span className="text-sm font-medium text-slate-900 truncate">
+                {isArabic ? 'التقارير ولوحات الرقابة' : 'Reporting & Contrôle'}
               </span>
             </div>
             <DirectionArrow className="w-4 h-4 text-slate-400 shrink-0" aria-hidden="true" />
@@ -166,14 +277,12 @@ export function OverviewView({
           {canManageUsers(session.user) && (
             <button
               type="button"
-              onClick={() => onNavigate('users')}
+              onClick={() => onNavigate({ kind: 'admin', section: 'users' })}
               className="flex items-center justify-between gap-3 rounded-md border border-slate-200 px-4 py-3 text-start hover:border-teal-700 hover:bg-slate-50 transition-colors"
             >
               <div className="flex items-center gap-3 min-w-0">
                 <Users className="w-4 h-4 text-teal-800 shrink-0" aria-hidden="true" />
-                <span className="text-sm font-medium text-slate-900 truncate">
-                  {t.overview.goToUsers}
-                </span>
+                <span className="text-sm font-medium text-slate-900 truncate">{t.overview.goToUsers}</span>
               </div>
               <DirectionArrow className="w-4 h-4 text-slate-400 shrink-0" aria-hidden="true" />
             </button>
@@ -182,14 +291,12 @@ export function OverviewView({
           {canViewAuditLogs(session.user) && (
             <button
               type="button"
-              onClick={() => onNavigate('audit')}
+              onClick={() => onNavigate({ kind: 'admin', section: 'audit' })}
               className="flex items-center justify-between gap-3 rounded-md border border-slate-200 px-4 py-3 text-start hover:border-teal-700 hover:bg-slate-50 transition-colors"
             >
               <div className="flex items-center gap-3 min-w-0">
                 <ShieldCheck className="w-4 h-4 text-teal-800 shrink-0" aria-hidden="true" />
-                <span className="text-sm font-medium text-slate-900 truncate">
-                  {t.overview.goToAudit}
-                </span>
+                <span className="text-sm font-medium text-slate-900 truncate">{t.overview.goToAudit}</span>
               </div>
               <DirectionArrow className="w-4 h-4 text-slate-400 shrink-0" aria-hidden="true" />
             </button>
@@ -197,20 +304,55 @@ export function OverviewView({
         </div>
       </section>
 
-      {/* Algerian Real Estate ERP Structural Scope */}
-      <section className="bg-white border border-slate-200 rounded-lg p-6">
-        <h2 className="text-sm font-bold text-slate-900 mb-4">{t.overview.domainRoadmapHeading}</h2>
-        <div className="divide-y divide-slate-100">
-          {domainModules.map((mod, idx) => (
-            <div key={idx} className="py-3 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
-              <span className="text-sm font-medium text-slate-900">
-                {language === 'ar' ? mod.ar : mod.fr}
-              </span>
-              <span className="text-xs text-slate-500">
-                {language === 'ar' ? mod.statusAr : mod.statusFr}
-              </span>
-            </div>
-          ))}
+      {/* Complete A–L Module Coverage Directory */}
+      <section className="bg-white border border-slate-200 rounded-lg p-6 space-y-4">
+        <div className="flex items-center gap-2">
+          <Building2 className="h-4 w-4 text-teal-800" aria-hidden="true" />
+          <h2 className="text-sm font-bold text-slate-900">
+            {isArabic ? 'التغطية الشاملة لوحدات PROMO GEST (أ — ل)' : 'Couverture complète des modules PROMO GEST (A–L)'}
+          </h2>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+          {ERP_MODULE_CATALOG.map((mod) => {
+            const targetRoute: AppRouteState | null = mod.orgTargetRoute
+              ? mod.orgTargetRoute
+              : mod.projectSection && primaryProjectId
+                ? { kind: 'project', projectId: primaryProjectId, section: mod.projectSection }
+                : mod.projectSection
+                  ? { kind: 'org', section: 'projects' }
+                  : null;
+
+            return (
+              <div
+                key={mod.code}
+                className="flex flex-col justify-between gap-3 rounded-md border border-slate-200 p-4 hover:border-slate-300"
+              >
+                <div className="space-y-1.5">
+                  <div className="flex items-start justify-between gap-2">
+                    <h3 className="text-xs font-bold text-slate-900 leading-snug">{mod.title[language]}</h3>
+                    <ModuleStateTag state={mod.state} language={language} />
+                  </div>
+                  <p className="text-xs text-slate-600 leading-relaxed">{mod.summary[language]}</p>
+                </div>
+
+                <div className="flex items-center justify-between gap-2 pt-2 border-t border-slate-100">
+                  <span className="text-[11px] text-slate-500 font-data">
+                    {mod.subScreens.length} {isArabic ? 'شاشات' : 'écrans'}
+                  </span>
+                  {targetRoute && (
+                    <button
+                      type="button"
+                      onClick={() => onNavigate(targetRoute)}
+                      className="text-xs font-semibold text-teal-800 hover:underline"
+                    >
+                      {isArabic ? 'فتح الشاشة' : 'Ouvrir'}
+                    </button>
+                  )}
+                </div>
+              </div>
+            );
+          })}
         </div>
       </section>
     </div>

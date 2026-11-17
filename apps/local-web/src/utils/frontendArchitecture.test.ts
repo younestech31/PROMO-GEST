@@ -3,7 +3,6 @@ import fs from 'node:fs';
 import path from 'node:path';
 import test from 'node:test';
 import { fileURLToPath } from 'node:url';
-import * as ts from 'typescript';
 import { ApiError } from '../core/api/apiClient';
 import { ERP_MODULE_REGISTRY } from '../core/modules/registry';
 import { ERP_MODULE_CATALOG } from './moduleCatalog';
@@ -25,30 +24,24 @@ function walk(directory: string): string[] {
   });
 }
 
-function moduleSpecifiers(filePath: string, source: string): string[] {
-  const sourceFile = ts.createSourceFile(
-    filePath,
-    source,
-    ts.ScriptTarget.Latest,
-    true,
-    filePath.endsWith('.tsx') ? ts.ScriptKind.TSX : ts.ScriptKind.TS
-  );
+function moduleSpecifiers(source: string): string[] {
   const specifiers: string[] = [];
-  const visit = (node: ts.Node): void => {
-    if (ts.isImportDeclaration(node) || ts.isExportDeclaration(node)) {
-      const specifier = node.moduleSpecifier;
-      if (specifier && ts.isStringLiteral(specifier)) specifiers.push(specifier.text);
-    } else if (
-      ts.isCallExpression(node) &&
-      node.expression.kind === ts.SyntaxKind.ImportKeyword &&
-      node.arguments[0] &&
-      ts.isStringLiteral(node.arguments[0])
-    ) {
-      specifiers.push(node.arguments[0].text);
+  const declarations = source.matchAll(/^\\s*(?:import|export)\\b[\\s\\S]*?;/gm);
+
+  for (const declaration of declarations) {
+    const from = declaration[0].match(/\\bfrom\\s*['"]([^'"]+)['"]/);
+    if (from) {
+      specifiers.push(from[1]);
+      continue;
     }
-    ts.forEachChild(node, visit);
-  };
-  visit(sourceFile);
+    const sideEffect = declaration[0].match(/^\\s*import\\s*['"]([^'"]+)['"]/);
+    if (sideEffect) specifiers.push(sideEffect[1]);
+  }
+
+  for (const dynamicImport of source.matchAll(/\\bimport\\s*\\(\\s*['"]([^'"]+)['"]\\s*\\)/g)) {
+    specifiers.push(dynamicImport[1]);
+  }
+
   return specifiers;
 }
 
@@ -139,7 +132,7 @@ test('the modular frontend has one canonical registry and complete unique module
 
     const indexSource = fs.readFileSync(indexPath, 'utf8');
     assert.equal(indexSource.includes('@/features/'), false, module.code + ' still delegates ownership to legacy features/');
-    for (const specifier of moduleSpecifiers(indexPath, indexSource)) {
+    for (const specifier of moduleSpecifiers(indexSource)) {
       const target = resolveLocalImport(indexPath, specifier);
       if (!target) continue;
       const fromModuleRoot = path.relative(moduleRoot, target);
@@ -161,7 +154,7 @@ test('module boundaries use public index files only and the inter-module depende
     const source = fs.readFileSync(file, 'utf8');
     const owner = owningModule(file);
 
-    for (const specifier of moduleSpecifiers(file, source)) {
+    for (const specifier of moduleSpecifiers(source)) {
       const target = resolveLocalImport(file, specifier);
       if (!target) continue;
 
@@ -268,7 +261,7 @@ test('shared UI is the active import surface and root components contain no seco
     if (file.includes(path.sep + 'features' + path.sep) || file.includes(path.sep + 'layouts' + path.sep)) continue;
 
     const source = fs.readFileSync(file, 'utf8');
-    for (const specifier of moduleSpecifiers(file, source)) {
+    for (const specifier of moduleSpecifiers(source)) {
       if (specifier.startsWith('@/components/')) {
         activeRootImports.push(path.relative(srcRoot, file) + ' -> ' + specifier);
       }

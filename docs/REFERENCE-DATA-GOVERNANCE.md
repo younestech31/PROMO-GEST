@@ -228,3 +228,38 @@ A second deterministic comparison was run against the 108 commune names in the *
 This table records **unmatched source strings**, not 17 adjudicated errors. Some may be spelling/transliteration variants; others may be row-identity or parent-assignment problems. In particular, the Riadh2002 row `id=131` pairs `Metkaouak` with Arabic `عزيل عبد القادر`, while the JO58 text extraction names commune `Abdelkader Azil` with code `6003` and seat `Layadate`; the candidate file contains no exact Latin `Abdelkader Azil` row elsewhere. This must be checked against the Arabic JO58 image and historical source lineage before any canonical correction.
 
 The result raises islam-re and GeoAlgeria as useful **French-name/parent-group comparison inputs for the 108 new-Wilaya entries only**. It does not establish Arabic-name correctness, official four-digit codes, seats, legal effective dates, the other 1,433 commune rows, exhaustive historical amendments, or practitioner approval. The JO58 page screenshots remain unavailable (`Cache miss`), so all JO58 row comparisons are still text-extraction-only. No data was imported and P1-01 remains open.
+
+
+### 8.5 JO58 annex scope and Arabic legal-name cross-check — 17 November 2026
+
+A fresh read of the official JO58 French PDF text layer makes the annex scope more explicit. Article 1 states that the annex to the interministerial order of 22 June 1985 is modified and completed; it does not describe a complete replacement of that register. The annex declares three separate columns: `COMMUNES`, `NUMEROS DE CODE`, and `SIEGES`. These are respectively the commune label, four-digit register code, and administrative seat. The text parser's later-page table headings are inconsistent, so the first-page column labels govern interpretation of the continuation tables.
+
+In addition to the 11 new-Wilaya sections already audited in §8.4 (108 communes), the extracted annex contains table sections for nine existing Wilayas. Their own section headers state these commune counts:
+
+| Existing Wilaya | Code | Count stated in JO58 |
+|---|---:|---:|
+| Laghouat | 03 | 12 |
+| Batna | 05 | 53 |
+| Biskra | 07 | 22 |
+| Tébessa | 12 | 24 |
+| Tlemcen | 13 | 49 |
+| Djelfa | 17 | 18 |
+| Médéa | 26 | 43 |
+| M’Sila | 28 | 24 |
+| El Bayadh | 32 | 15 |
+| **Total of these nine section counts** | | **260** |
+
+The annex also contains explicit `sans changement` blocks, including references for Adrar and Chlef, Oum El Bouaghi, and Béjaïa. Therefore JO58's extractable tables cover both existing and newly created Wilaya groups, while unchanged groups refer back to the earlier register. The nine existing-Wilaya counts plus the 108 new-Wilaya counts are a useful scope inventory (368 declared commune entries across those 20 listed sections), **not** evidence that the nationwide 1,541-row legal crosswalk is complete or that all remaining source instruments have been reconciled. The full amendment lineage and dated parent/code history remain outstanding.
+
+#### Barika / Abdelkader Azil — Arabic and French legal corroboration
+
+The Arabic text of Law 26-06, JO No. 25, Article 52 bis 11 lists the eight communes of Barika and includes the exact Arabic name `عبد القادر عزيل`. In the French JO58 Barika table, the matching French commune label is `Abdelkader Azil`, register code `6003`, with the separate seat `Layadate`. These official texts corroborate the municipality name and distinguish its legal code from its seat.
+
+The Riadh2002 candidate row with `id=131` still cannot be accepted as a canonical match: it pairs Latin `Metkaouak` with Arabic `عزيل عبد القادر`. The Arabic string reverses the word order used in JO25, while the Latin string does not match the JO58 French commune label. This is a source-row discrepancy requiring historical/source identity adjudication; it is not enough evidence to silently rename, remap, or import that row.
+
+#### Evidence limits and import boundary
+
+- Official text-layer sources: [JO58 French PDF](https://www.joradp.dz/FTP/JO-FRANCAIS/2026/F2026058.pdf) and [Law 26-06, JO25 Arabic PDF](https://www.joradp.dz/FTP/jo-arabe/2026/A2026025.pdf).
+- JO58 text extraction now exposes the annex headings, Wilaya section headers, and table text. Screenshot requests for the relevant PDF pages still return `Cache miss`; no JO58 page has therefore been marked as visually inspected in this audit.
+- The current text-layer comparison does not replace examination of Arabic JO58 page images, the complete 1985/1986/1998/2021/2026 source lineage, all 1,541 rows, legal effective dates, duplicates/omissions, or qualified Algerian legal/practitioner adjudication.
+- No canonical commune dataset was adopted, no source row was rewritten, and no commune data/schema/migration/production/Cloud SQL record was changed. API remains `communesCount = 0` / `PendingOfficialVerification`; P1-01 stays In Progress / Pending and P1-02 stays Blocked.

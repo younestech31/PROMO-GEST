@@ -8,11 +8,11 @@ import type {
   UserDto,
 } from '@/types/erp';
 import { getTranslations, translateApiError } from '@/core/localization/translations';
-import { formatLocalDateTime } from '@/utils/algerianFormat';
-import { checkPasswordStrength, PASSWORD_MAX_LENGTH, validateCreateEmployee, type ValidationErrors } from '@/utils/validation';
+import { formatLocalDateTime } from '@/shared/utils/algerianFormat';
+import { checkPasswordStrength, PASSWORD_MAX_LENGTH, validateCreateEmployee, type ValidationErrors } from '@/shared/utils/validation';
 import { apiClient, ApiError } from '@/core/api/apiClient';
-import { FormField, inputBaseClass } from '@/components/FormField';
-import { ConfirmDialog } from '@/components/StateViews';
+import { FormField, inputBaseClass } from '@/shared/components/FormField';
+import { ConfirmDialog } from '@/shared/components/StateViews';
 
 interface UsersManagementViewProps {
   language: AppLanguage;

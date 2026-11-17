@@ -4,7 +4,7 @@ import type { AppLanguage, ProjectDto } from '@/types/erp';
 import { apiClient, ApiError } from '@/core/api/apiClient';
 import { translateApiError } from '@/core/localization/translations';
 import { filterAuthorizedPreferenceIds, type ProjectNavigationPreferences } from '@/shared/utils/navigationPreferences';
-import { formatProjectStatus } from '@/components/ProjectIdentityStrip';
+import { formatProjectStatus } from '@/shared/components/ProjectIdentityStrip';
 
 interface ProjectSwitcherModalProps {
   open: boolean;

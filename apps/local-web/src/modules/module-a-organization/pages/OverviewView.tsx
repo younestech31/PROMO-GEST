@@ -12,20 +12,17 @@ import {
 } from 'lucide-react';
 import type { AppLanguage, ProjectDto, SessionResponse } from '@/types/erp';
 import { getTranslations } from '@/core/localization/translations';
-import { formatDzd, formatLocalDateTime } from '@/utils/algerianFormat';
-import {
-  canManageUsers,
-  canReadPartyDirectory,
-  canViewAuditLogs,
-} from '@/core/permissions/permissionPolicy';
+import { formatDzd, formatLocalDateTime } from '@/shared/utils/algerianFormat';
+import { canReadPartyDirectory } from '@/modules/module-d-customers-parties';
+import { canManageUsers, canViewAuditLogs } from '@/modules/technical-admin';
 import {
   filterAuthorizedPreferenceIds,
   type ProjectNavigationPreferences,
 } from '@/shared/utils/navigationPreferences';
 import type { AppRouteState } from '@/core/modules/routeTypes';
 import { ERP_MODULE_REGISTRY as ERP_MODULE_CATALOG } from '@/core/modules/registry';
-import { ModuleStateTag, PageHeader } from '@/components/PageHeader';
-import { formatProjectStatus } from '@/components/ProjectIdentityStrip';
+import { ModuleStateTag, PageHeader } from '@/shared/components/PageHeader';
+import { formatProjectStatus } from '@/shared/components/ProjectIdentityStrip';
 
 interface OverviewViewProps {
   session: SessionResponse;

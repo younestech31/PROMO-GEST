@@ -29,29 +29,28 @@ import type { ProjectWorkspaceSection } from '@/core/modules/routeTypes';
 import { getModuleStateLabel } from '@/core/modules/moduleCodes';
 import { apiClient, ApiError } from '@/core/api/apiClient';
 import { getTranslations, translateApiError } from '@/core/localization/translations';
-import { formatDzd, formatLocalDateTime } from '@/utils/algerianFormat';
-import { useAdministrativeReference } from '@/modules/module-a-organization/hooks/useAdministrativeReference';
+import { formatDzd, formatLocalDateTime } from '@/shared/utils/algerianFormat';
+import { useAdministrativeReference } from '@/modules/module-a-organization';
+import { canManageProjectAccess, canManageProjects, canUpdateProjectFinancialBudget } from '../permissions';
 import {
-  canManageProjectAccess,
-  canManageProjects,
-  canManageUsers,
   canReadPartyDirectory,
   canManagePartyIdentity,
   canReadProjectCustomers,
   canManageProjectCustomers,
-  canReadProjectDocuments,
-  canUploadProjectDocuments,
+} from '@/modules/module-d-customers-parties';
+import { canReadProjectDocuments, canUploadProjectDocuments } from '@/modules/module-k-documents';
+import {
   canReadProjectSalesReservations,
   canManageProjectSalesReservations,
-  canUpdateProjectFinancialBudget,
-} from '@/core/permissions/permissionPolicy';
-import { validateCreateProject, type ValidationErrors } from '@/utils/validation';
+} from '@/modules/module-e-reservations';
+import { canManageUsers } from '@/modules/technical-admin';
+import { validateCreateProject, type ValidationErrors } from '@/shared/utils/validation';
 import { getModuleDefinition } from '@/core/modules/registry';
 import type { ModuleCode } from '@/core/modules/moduleCodes';
-import { PageHeader } from '@/components/PageHeader';
-import { EmptyState, ErrorBanner, LoadingSkeleton } from '@/components/StateViews';
-import { ProjectIdentityStrip, formatProjectStatus } from '@/components/ProjectIdentityStrip';
-import { FormField, inputBaseClass } from '@/components/FormField';
+import { PageHeader } from '@/shared/components/PageHeader';
+import { EmptyState, ErrorBanner, LoadingSkeleton } from '@/shared/components/StateViews';
+import { ProjectIdentityStrip, formatProjectStatus } from '@/shared/components/ProjectIdentityStrip';
+import { FormField, inputBaseClass } from '@/shared/components/FormField';
 import { ProjectStructureModal } from '@/modules/module-c-structure';
 import { ProjectCustomerRegistryModal } from '@/modules/module-d-customers-parties';
 import { ProjectSalesReservationsModal } from '@/modules/module-e-reservations';

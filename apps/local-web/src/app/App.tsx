@@ -35,7 +35,7 @@ import {
   SystemDiagnosticsView,
 } from '../modules/technical-admin';
 import { ReportsWorkspaceView } from '../modules/module-l-reporting';
-import { ConfirmDialog, ErrorBanner } from '../components/StateViews';
+import { ConfirmDialog, ErrorBanner } from '../shared/components/StateViews';
 
 type PendingNavigation =
   | { kind: 'route'; route: AppRouteState; fromHistory?: boolean }

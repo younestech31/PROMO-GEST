@@ -1,10 +1,10 @@
 import { BarChart3, ShieldAlert } from 'lucide-react';
 import type { AppLanguage, AuthenticatedUser, ProjectDto } from '@/types/erp';
-import { formatDzd } from '@/utils/algerianFormat';
-import { canViewAuditLogs } from '@/core/permissions/permissionPolicy';
-import { PageHeader } from '@/components/PageHeader';
-import { PlannedModuleWorkspace } from '@/components/StateViews';
-import { formatProjectStatus } from '@/components/ProjectIdentityStrip';
+import { formatDzd } from '@/shared/utils/algerianFormat';
+import { canViewAuditLogs } from '@/modules/technical-admin';
+import { PageHeader } from '@/shared/components/PageHeader';
+import { PlannedModuleWorkspace } from '@/shared/components/PlannedModuleWorkspace';
+import { formatProjectStatus } from '@/shared/components/ProjectIdentityStrip';
 
 interface ReportsWorkspaceViewProps {
   currentUser: AuthenticatedUser;

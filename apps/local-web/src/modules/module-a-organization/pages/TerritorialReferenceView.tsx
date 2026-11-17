@@ -1,10 +1,10 @@
 import { useMemo, useState } from 'react';
 import { AlertCircle, MapPin, Search } from 'lucide-react';
 import type { AppLanguage } from '@/types/erp';
-import { useAdministrativeReference } from '@/modules/module-a-organization/hooks/useAdministrativeReference';
-import { PageHeader } from '@/components/PageHeader';
-import { ErrorBanner, LoadingSkeleton } from '@/components/StateViews';
-import { inputBaseClass } from '@/components/FormField';
+import { useAdministrativeReference } from '../hooks/useAdministrativeReference';
+import { PageHeader } from '@/shared/components/PageHeader';
+import { ErrorBanner, LoadingSkeleton } from '@/shared/components/StateViews';
+import { inputBaseClass } from '@/shared/components/FormField';
 
 interface TerritorialReferenceViewProps {
   language: AppLanguage;

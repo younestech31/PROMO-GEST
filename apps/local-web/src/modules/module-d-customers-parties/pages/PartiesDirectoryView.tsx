@@ -3,10 +3,10 @@ import { Info, LoaderCircle, Pencil, Search, ShieldCheck, Users2, X } from 'luci
 import type { AppLanguage, AuthenticatedUser, PartyDirectoryItemDto } from '@/types/erp';
 import { apiClient, ApiError } from '@/core/api/apiClient';
 import { translateApiError } from '@/core/localization/translations';
-import { canManagePartyIdentity, canReadPartyDirectory } from '@/core/permissions/permissionPolicy';
-import { PageHeader } from '@/components/PageHeader';
-import { ConfirmDialog, EmptyState, ErrorBanner } from '@/components/StateViews';
-import { FormField, inputBaseClass } from '@/components/FormField';
+import { canManagePartyIdentity, canReadPartyDirectory } from '../permissions';
+import { PageHeader } from '@/shared/components/PageHeader';
+import { ConfirmDialog, EmptyState, ErrorBanner } from '@/shared/components/StateViews';
+import { FormField, inputBaseClass } from '@/shared/components/FormField';
 
 interface PartiesDirectoryViewProps {
   currentUser: AuthenticatedUser;

@@ -1,3 +1,3 @@
 export { authApi } from './api/authApi';
 export { PreviewAccessButton } from './components/PreviewAccessButton';
-export { LoginScreen } from '@/features/auth/LoginScreen';
+export { LoginScreen } from './pages/LoginScreen';

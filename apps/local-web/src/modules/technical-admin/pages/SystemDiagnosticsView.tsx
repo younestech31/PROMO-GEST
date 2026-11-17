@@ -1,7 +1,7 @@
 import { Database, Lock, Server } from 'lucide-react';
 import type { AppLanguage, HealthStatusResponse } from '@/types/erp';
-import { formatLocalDateTime } from '@/utils/algerianFormat';
-import { PageHeader } from '@/components/PageHeader';
+import { formatLocalDateTime } from '@/shared/utils/algerianFormat';
+import { PageHeader } from '@/shared/components/PageHeader';
 
 interface SystemDiagnosticsViewProps {
   language: AppLanguage;

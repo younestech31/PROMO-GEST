@@ -10,13 +10,29 @@ import type {
   UserDto,
 } from '@/types/erp';
 import { getTranslations, translateApiError } from '@/core/localization/translations';
-import { formatDzd } from '@/utils/algerianFormat';
-import { useAdministrativeReference } from '@/modules/module-a-organization/hooks/useAdministrativeReference';
-import { canCreateProject, canManageProjectAccess, canManageProjects, canManageProjectStructure, canManageUsers, canReadProjectDocuments, canUploadProjectDocuments, canReadProjectCustomers, canManageProjectCustomers, canReadProjectSalesReservations, canManageProjectSalesReservations, canUpdateProjectFinancialBudget } from '@/core/permissions/permissionPolicy';
-import { validateCreateProject, type ValidationErrors } from '@/utils/validation';
+import { formatDzd } from '@/shared/utils/algerianFormat';
+import { useAdministrativeReference } from '@/modules/module-a-organization';
+import {
+  canCreateProject,
+  canManageProjectAccess,
+  canManageProjects,
+  canUpdateProjectFinancialBudget,
+} from '../permissions';
+import { canManageProjectStructure } from '@/modules/module-c-structure';
+import {
+  canReadProjectCustomers,
+  canManageProjectCustomers,
+} from '@/modules/module-d-customers-parties';
+import {
+  canReadProjectSalesReservations,
+  canManageProjectSalesReservations,
+} from '@/modules/module-e-reservations';
+import { canReadProjectDocuments, canUploadProjectDocuments } from '@/modules/module-k-documents';
+import { canManageUsers } from '@/modules/technical-admin';
+import { validateCreateProject, type ValidationErrors } from '@/shared/utils/validation';
 import { apiClient, ApiError } from '@/core/api/apiClient';
-import { ConfirmDialog } from '@/components/StateViews';
-import { FormField, inputBaseClass } from '@/components/FormField';
+import { ConfirmDialog } from '@/shared/components/StateViews';
+import { FormField, inputBaseClass } from '@/shared/components/FormField';
 import { ProjectStructureModal } from '@/modules/module-c-structure';
 import { ProjectDocumentsModal } from '@/modules/module-k-documents';
 import { ProjectCustomerRegistryModal } from '@/modules/module-d-customers-parties';

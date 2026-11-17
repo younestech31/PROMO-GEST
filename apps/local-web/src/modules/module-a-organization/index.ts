@@ -1,4 +1,5 @@
 export { organizationApi } from './api/organizationApi';
+export { canManageOrganizationProfile } from './permissions';
 export { useAdministrativeReference } from './hooks/useAdministrativeReference';
 export { OverviewView } from './pages/OverviewView';
 export { OrganizationProfileView } from './pages/OrganizationProfileView';

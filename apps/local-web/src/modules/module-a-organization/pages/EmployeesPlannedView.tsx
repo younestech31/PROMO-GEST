@@ -1,7 +1,7 @@
 import type { AppLanguage, AuthenticatedUser } from '@/types/erp';
-import { canManageUsers } from '@/core/permissions/permissionPolicy';
-import { PageHeader } from '@/components/PageHeader';
-import { PlannedModuleWorkspace } from '@/components/StateViews';
+import { canManageUsers } from '@/modules/technical-admin';
+import { PageHeader } from '@/shared/components/PageHeader';
+import { PlannedModuleWorkspace } from '@/shared/components/PlannedModuleWorkspace';
 
 interface EmployeesPlannedViewProps {
   currentUser: AuthenticatedUser;

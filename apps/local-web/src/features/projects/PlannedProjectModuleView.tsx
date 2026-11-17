@@ -1,6 +1,10 @@
+/** @deprecated Planned workflow screens are now owned by their A–J module pages. */
 import type { AppLanguage, ProjectDto } from '../../types/erp';
-import { PlannedModuleWorkspace } from '../../components/StateViews';
-import type { ModuleCode } from '../../utils/moduleCatalog';
+import { ContractsModulePage } from '@/modules/module-f-contracts';
+import { FinanceModulePage } from '@/modules/module-g-finance';
+import { ConstructionModulePage } from '@/modules/module-h-construction';
+import { ProcurementModulePage } from '@/modules/module-i-procurement';
+import { AccountingModulePage } from '@/modules/module-j-accounting';
 
 export type PlannedProjectSection =
   | 'contracts'
@@ -9,41 +13,36 @@ export type PlannedProjectSection =
   | 'procurement'
   | 'accounting';
 
-const MODULE_CODES: Record<PlannedProjectSection, ModuleCode> = {
-  contracts: 'F',
-  finance: 'G',
-  construction: 'H',
-  procurement: 'I',
-  accounting: 'J',
-};
+interface PlannedProjectModuleViewProps {
+  section: PlannedProjectSection;
+  project: ProjectDto;
+  language: AppLanguage;
+  onGoToDocuments: () => void;
+}
 
+/** Compatibility dispatcher retained for legacy callers; active routing uses module-owned pages directly. */
 export function PlannedProjectModuleView({
   section,
   project,
   language,
   onGoToDocuments,
-}: {
-  section: PlannedProjectSection;
-  project: ProjectDto;
-  language: AppLanguage;
-  onGoToDocuments: () => void;
-}) {
-  const isArabic = language === 'ar';
-  const moduleCode = MODULE_CODES[section];
+}: PlannedProjectModuleViewProps) {
+  const common = { projectId: project.id, language };
 
-  return (
-    <PlannedModuleWorkspace
-      moduleCode={moduleCode}
-      language={language}
-      contextName={`${project.code} · ${isArabic ? project.nameAr : project.nameFr}`}
-      linkedActionLabel={
-        section === 'contracts' || section === 'construction'
-          ? (isArabic ? 'الانتقال إلى وثائق المشروع (K-Min)' : 'Ouvrir Documents du projet (K-Min)')
-          : undefined
-      }
-      onLinkedAction={
-        section === 'contracts' || section === 'construction' ? onGoToDocuments : undefined
-      }
-    />
-  );
+  switch (section) {
+    case 'contracts':
+      return <ContractsModulePage {...common} onGoToDocuments={onGoToDocuments} />;
+    case 'finance':
+      return <FinanceModulePage {...common} />;
+    case 'construction':
+      return <ConstructionModulePage {...common} />;
+    case 'procurement':
+      return <ProcurementModulePage {...common} />;
+    case 'accounting':
+      return <AccountingModulePage {...common} />;
+    default: {
+      const exhaustive: never = section;
+      return exhaustive;
+    }
+  }
 }

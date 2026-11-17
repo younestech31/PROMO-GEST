@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { RefreshCw } from 'lucide-react';
 import type { AppLanguage, AuditLogDto } from '@/types/erp';
 import { getTranslations, translateApiError } from '@/core/localization/translations';
-import { formatLocalDateTime } from '@/utils/algerianFormat';
+import { formatLocalDateTime } from '@/shared/utils/algerianFormat';
 import { apiClient, ApiError } from '@/core/api/apiClient';
 
 interface AuditLogViewProps {

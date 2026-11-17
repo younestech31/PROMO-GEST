@@ -7,8 +7,8 @@ import type {
 import { apiClient, ApiConnectionError, ApiError } from '@/core/api/apiClient';
 import { getTranslations, translateApiError } from '@/core/localization/translations';
 import { ALGERIAN_LEGAL_FORMS, formatAlgerianLegalForm, formatDzd } from '@/utils/algerianFormat';
-import { useAdministrativeReference } from '@/modules/module-a-organization/hooks/useAdministrativeReference';
-import { FormField, inputBaseClass } from '@/components/FormField';
+import { useAdministrativeReference } from '../hooks/useAdministrativeReference';
+import { FormField, inputBaseClass } from '@/shared/components/FormField';
 
 type OrganizationProfileDraft = Omit<UpdateOrganizationProfileRequest, 'expectedConcurrencyStamp'>;
 

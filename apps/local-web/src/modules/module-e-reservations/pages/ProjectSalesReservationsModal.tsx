@@ -9,7 +9,7 @@ import type {
 } from '@/types/erp';
 import { apiClient, ApiError } from '@/core/api/apiClient';
 import { translateApiError } from '@/core/localization/translations';
-import { ConfirmDialog } from '@/components/StateViews';
+import { ConfirmDialog } from '@/shared/components/StateViews';
 
 interface ProjectSalesReservationsModalProps {
   project: ProjectDto;

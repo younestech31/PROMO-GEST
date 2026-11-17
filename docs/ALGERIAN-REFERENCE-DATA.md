@@ -74,3 +74,8 @@ The JO58 annex has separate `COMMUNES`, `NUMEROS DE CODE`, and `SIEGES` columns.
 Do not substitute a public repository's row ID, `code_commune`, ONS/geographic identifier, OSM relation ID, or postal code for the official four-digit commune-register code. Postal identifiers may retain an older Wilaya prefix after a legal parent-Wilaya change. Keep the stable internal PROMO GEST UUID as the record identity, while each source-backed external code and its effective interval remain separate, versioned attributes.
 
 No candidate GitHub dataset is currently approved as the canonical 1,541-row register. See the source-by-source findings in [REFERENCE-DATA-GOVERNANCE.md](REFERENCE-DATA-GOVERNANCE.md), section 8.4. The commune catalogue remains unimported until the complete row-level crosswalk, source-page visual checks, effective dates, and qualified review are accepted.
+
+
+## P1-01 legal review artifacts
+
+The current source-chain findings, Chabet El Ameur discrepancy, JO58 scope correction, visual-review protocol and practitioner decision fields are collected in [P1-01 discrepancy and legal sign-off pack](reference-data/P1-01-DISCREPANCIES-FOR-SIGNOFF.md). An [illustrative legal provenance CSV template](reference-data/P1-01-LEGAL-PROVENANCE-TEMPLATE.csv) preserves sample source assertions only; it is not the canonical 1,541-row dataset and does not authorize import. The 69-Wilaya reference remains implemented; commune records remain unimported pending P1-01 closure.

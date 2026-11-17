@@ -195,3 +195,36 @@ This is a **count and parent-group check only**. It does not prove row-level ide
 - Preserve commune name and administrative seat in separate fields. Record source spelling as observed before proposing a canonical bilingual label.
 - The new-Wilaya group-count match does not replace the outstanding full 1,541-row crosswalk, exhaustive amendment inventory, source-page visual inspection, effective-date analysis, and qualified Algerian legal/practitioner review.
 - No candidate repository has been adopted as the canonical source, and no commune row has been imported. API status remains `PendingOfficialVerification` with `communesCount = 0`. P1-01 remains `In Progress / Pending`; P1-02 remains `Blocked`.
+
+
+#### Row-name cross-check against the JO58 text layer — 17 November 2026
+
+A second deterministic comparison was run against the 108 commune names in the **left/commune column** of the JO58 text extraction for Wilayas 59–69. Comparison normalization removed diacritics, case differences, punctuation and spacing; it did not translate names or treat the right-hand seat column as a commune name.
+
+- The pinned islam-re bilingual JSON `ascii` name set matched all 108 extracted JO58 commune names after that normalization; its group counts also matched each Wilaya.
+- The pinned GeoAlgeria `name_fr` set matched all 108 extracted JO58 commune names after the same normalization; its group counts also matched each Wilaya.
+- Riadh2002 had the correct group count in each new Wilaya, but **17 commune-name strings did not match** the JO58 left-column name set after that normalization:
+
+| Wilaya | JO58 extracted commune name | Riadh2002 name |
+|---:|---|---|
+| 59 | El Beïdha | Beidha |
+| 60 | Abdelkader Azil | Metkaouak |
+| 60 | M’Doukal | M'doukel |
+| 61 | Djemourah | Djemorah |
+| 62 | El Ogla El Melha | El Ogla |
+| 64 | Zmalet El Emir Abdelkader | Zmalet El Emir Aek |
+| 64 | Serguine | Serghine |
+| 65 | Aïn Ouessara | Ain Oussera |
+| 65 | Bouira Lahdab | Bouira Lahdeb |
+| 66 | Faïdh El Botma | Feidh El Botma |
+| 67 | Oum El Djallil | Oum El Djalil |
+| 67 | M’Fatha | Meftaha |
+| 68 | Mouhamed Boudiaf | Oued Chair |
+| 68 | Menaâ | Ouled Atia |
+| 68 | Aïn El Meleh | Ain El Melh |
+| 68 | Oultem | Oultene |
+| 69 | El Meharra | El Mehara |
+
+This table records **unmatched source strings**, not 17 adjudicated errors. Some may be spelling/transliteration variants; others may be row-identity or parent-assignment problems. In particular, the Riadh2002 row `id=131` pairs `Metkaouak` with Arabic `عزيل عبد القادر`, while the JO58 text extraction names commune `Abdelkader Azil` with code `6003` and seat `Layadate`; the candidate file contains no exact Latin `Abdelkader Azil` row elsewhere. This must be checked against the Arabic JO58 image and historical source lineage before any canonical correction.
+
+The result raises islam-re and GeoAlgeria as useful **French-name/parent-group comparison inputs for the 108 new-Wilaya entries only**. It does not establish Arabic-name correctness, official four-digit codes, seats, legal effective dates, the other 1,433 commune rows, exhaustive historical amendments, or practitioner approval. The JO58 page screenshots remain unavailable (`Cache miss`), so all JO58 row comparisons are still text-extraction-only. No data was imported and P1-01 remains open.

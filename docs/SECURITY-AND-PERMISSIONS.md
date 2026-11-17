@@ -100,10 +100,12 @@ For all non-`SYSTEM_ADMIN` users, holding an organization role permission is **n
 
 | Project Operation | Required Global Permission | Required `ProjectMember` Condition (non-Admin) |
 |---|---|---|
-| Read Project Summary | *(Enforced by member filter/lookup)* | Any `ProjectMember` row |
+| Read Project Summary (non-financial fields) | *(Enforced by member filter/lookup)* | Any `ProjectMember` row; `EstimatedBudgetDzd` is separately gated by `CanViewFinancials` below |
+| Read Estimated Project Budget | Existing project-read scope | Explicit `ProjectMember` row with `CanViewFinancials == true`; no implicit `SYSTEM_ADMIN` or `ProjectManager` bypass |
+| Update Estimated Project Budget | `projects.manage` | Both `RoleInProject == ProjectManager` and `CanViewFinancials == true` on the actor's explicit membership |
 | Read Project Structure | `projects.read` | Any `ProjectMember` row |
-| Create Project | `projects.create` | Auto-creates creator as `ProjectManager` member (all capabilities `true`) |
-| Update Project Details | `projects.manage` | `RoleInProject == ProjectManager` |
+| Create Project | `projects.create` | Non-admin creator is explicitly assigned as `ProjectManager` with existing creation-time capabilities; `SYSTEM_ADMIN` creates with zero budget until a financial member is explicitly assigned |
+| Update Project Details (non-financial master data) | `projects.manage` | `RoleInProject == ProjectManager`; send `EstimatedBudgetDzd: null` to preserve the restricted value when lacking `CanViewFinancials` |
 | Manage Project Team | `projects.access.manage` | `RoleInProject == ProjectManager` *(blocks removing last PM)* |
 | Manage Buildings / Floors / Units | `projects.structure.manage` | `CanManageConstruction == true \|\| RoleInProject == ProjectManager` |
 | Read Project Documents | `files.read` *(plus `customers.read` for customer identity documents)* | Any `ProjectMember` row + category capability check (`Financial` -> `CanViewFinancials`, `Commercial` -> `CanManageSales`, `Engineering`/`Plans` -> `CanManageConstruction \|\| CanManageDocuments`, `Legal`/`LandAndTitle` -> `CanManageDocuments`; `ProjectManager` bypasses category cap except customer identity PII isolation) |
@@ -117,10 +119,11 @@ For all non-`SYSTEM_ADMIN` users, holding an organization role permission is **n
 
 ## 5. Segregation of Duties (SoD) & PII Isolation Boundaries
 
-1. **System Administrator vs Business Operations:** `SYSTEM_ADMIN` manages technical setup, employees/roles, audit logs, and emergency access—never intended as a financial approver or commercial buyer manager; projects created by `SYSTEM_ADMIN` deliberately have no default business `ProjectManager` until explicitly assigned (`ADR-0006`).
+1. **System Administrator vs Business Operations:** `SYSTEM_ADMIN` manages technical setup, employees/roles, audit logs, and emergency access—never an implicit financial approver. It has no automatic access to `EstimatedBudgetDzd`; a `ProjectMember` row with `CanViewFinancials == true` is required even for `SYSTEM_ADMIN` (`ADR-0011`). Projects created by `SYSTEM_ADMIN` deliberately have no default business `ProjectManager` until explicitly assigned (`ADR-0006`).
 2. **Party Search vs Project Confidential Data (`ADR-0009`):** `parties.directory.read` permits searching organization-wide canonical `Party` identities (`Id`, `Kind`, `DisplayName`, `ConcurrencyStamp`) when adding customers, **without** granting access to project-specific phones, emails, addresses, notes/interactions, identity documents, or reservations in projects where the user is not a member.
 3. **Identity Document & Category Isolation:** Even within a project, viewing or downloading a file linked as `ProjectCustomer.IdentityDocumentStoredFileId` requires `customers.read` (in addition to `files.read`), preventing non-commercial/non-legal members (e.g., site engineers) from accessing buyer KYC identity files via `/api/projects/{id}/documents`; sales users without `files.read` can still update non-document contact fields without unlinking the file. Category scoping further isolates `Financial`, `Commercial`, `Engineering`/`Plans`, and `Legal`/`LandAndTitle` documents by `ProjectMember` capabilities.
 4. **Audit Accountability & Verified Party Directory Denials:**
    - User, project, structure, document, customer, reservation, and Party directory authorization denials are written as `ACCESS_DENIED` security audit events before the operation is rejected.
+   - Returning a non-null project estimated budget on list/detail reads writes `PROJECT_FINANCIALS_VIEWED`; denied budget updates write `ACCESS_DENIED`. Successful project create/update events remain `PROJECT_CREATED` / `PROJECT_UPDATED`.
    - **Resolved — PR #36:** `PartyDirectoryService.EnsurePermissionAsync` writes the denial audit through `IAuditWriter` before throwing `ForbiddenDomainException`. `UpdateIdentityAsync` captures `previousKind` before mutating the canonical Party. `ApplicationSecurityAndFoundationTests` covers `PartyDirectory_DeniedPermissionsAreSecurityAuditedBeforeRejecting` and `PartyDirectory_UpdateIdentityAudit_UsesOriginalKindBeforeMutation`; the project-customer denial path is also covered. This is not a remaining Phase 0 defect.
 5. **Planned Future Role & Permission Scope (`PLANNED`):** Finance treasury approval (`FINANCE_OFFICER`), Chantier situation verification (`SITE_ENGINEER`), notarial contract verification (`LEGAL_OFFICER`), and SCF journal posting/period close will introduce dedicated permissions enforced strictly with SoD before Phases 2–4.

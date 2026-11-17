@@ -53,6 +53,29 @@ export interface PreviewUserContext {
   permissions: readonly string[];
 }
 
+/** Project financial visibility is granted only by an explicit member capability, never by SYSTEM_ADMIN alone. */
+export function canUserViewProjectFinancials(
+  user: Pick<PreviewUserContext, 'id'>,
+  project: ProjectDto
+): boolean {
+  return project.members.some((member) =>
+    member.userId === user.id && member.canViewFinancials
+  );
+}
+
+/** Return a response-safe project copy; never mutate the source project while redacting its financial field. */
+export function withProjectFinancialVisibility(
+  project: ProjectDto,
+  user: Pick<PreviewUserContext, 'id'>
+): ProjectDto {
+  return {
+    ...project,
+    estimatedBudgetDzd: canUserViewProjectFinancials(user, project)
+      ? project.estimatedBudgetDzd
+      : null,
+  };
+}
+
 export function canUserAccessProjectStructure(
   user: PreviewUserContext,
   project: ProjectDto,
@@ -142,8 +165,11 @@ export function updateProjectInStore(
     throw new DevPreviewStoreError(400, 'PROJECT_STATUS_INVALID', 'A valid project status is required.');
   }
 
-  const estimatedBudgetDzd = Number(request.estimatedBudgetDzd ?? 0);
-  if (!Number.isFinite(estimatedBudgetDzd) || estimatedBudgetDzd < 0 || estimatedBudgetDzd > 9_999_999_999_999_999.99) {
+  const estimatedBudgetDzd = request.estimatedBudgetDzd === null || request.estimatedBudgetDzd === undefined
+    ? project.estimatedBudgetDzd
+    : Number(request.estimatedBudgetDzd);
+  if (estimatedBudgetDzd !== null &&
+      (!Number.isFinite(estimatedBudgetDzd) || estimatedBudgetDzd < 0 || estimatedBudgetDzd > 9_999_999_999_999_999.99)) {
     throw new DevPreviewStoreError(400, 'PROJECT_BUDGET_INVALID', 'Estimated budget must fit the supported non-negative DZD range.');
   }
 

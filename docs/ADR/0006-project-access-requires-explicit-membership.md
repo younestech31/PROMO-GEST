@@ -31,7 +31,7 @@ For ordinary project members:
 - Document upload requires membership, the document capability, and the file permissions.
 - Team assignment/removal requires membership as Project Manager plus the team-management permission.
 
-The System Administrator remains a separate technical role and may bypass membership for support/recovery. This does not make the System Administrator a business approver or accountant.
+The System Administrator remains a separate technical role and may bypass membership for ordinary support/recovery project reads and management. This does not make the System Administrator a business approver or accountant, and it does not bypass the project financial capability: EstimatedBudgetDzd remains restricted to explicit ProjectMember.CanViewFinancials membership under ADR-0011.
 
 ## Lifecycle rules
 

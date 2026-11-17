@@ -690,14 +690,21 @@ public sealed class PostgresEndToEndTests : IClassFixture<PostgreSql18Integratio
             Assert.Equal(HttpStatusCode.Created, empResp.StatusCode);
             var createdEmployee = await empResp.Content.ReadFromJsonAsync<UserDto>();
 
+            var deniedBudgetCreate = await adminClient.PostAsJsonAsync("/api/projects", new CreateProjectRequest(
+                "PRJ-16-DENIED-BUDGET", "مشروع ممنوع", "Projet sans autorisation financière", "16", "Alger", "Dely Ibrahim",
+                null, null, null, null, "Planning", 1m, 1, 1));
+            Assert.Equal(HttpStatusCode.Forbidden, deniedBudgetCreate.StatusCode);
+            Assert.Contains("PROJECT_FINANCIAL_ACCESS_DENIED", await deniedBudgetCreate.Content.ReadAsStringAsync(), StringComparison.Ordinal);
+
             var projectResp = await adminClient.PostAsJsonAsync("/api/projects", new CreateProjectRequest(
                 "PRJ-16-009", "إقامة الأطلس", "Résidence Atlas", "16", "Alger", "Dely Ibrahim",
-                null, null, null, null, "Commercialization", 450_000_000m, 4, 64));
+                null, null, null, null, "Commercialization", 0m, 4, 64));
             Assert.Equal(HttpStatusCode.Created, projectResp.StatusCode);
             var createdProject = await projectResp.Content.ReadFromJsonAsync<ProjectDto>();
             Assert.NotNull(createdProject);
+            Assert.Null(createdProject!.EstimatedBudgetDzd);
 
-            // Project master-data updates are permitted to the system administrator and preserve the immutable project code.
+            // SYSTEM_ADMIN manages non-financial project master data; the budget stays restricted.
             var projectUpdate = new UpdateProjectRequest(
                 "إقامة الأطلس المحدثة",
                 "Résidence Atlas Mise à Jour",
@@ -709,7 +716,7 @@ public sealed class PostgresEndToEndTests : IClassFixture<PostgreSql18Integratio
                 "PC-ORAN-2026-010",
                 new DateOnly(2026, 11, 13),
                 "UnderConstruction",
-                470_000_000m,
+                null,
                 4,
                 64,
                 createdProject!.ConcurrencyStamp);
@@ -721,6 +728,7 @@ public sealed class PostgresEndToEndTests : IClassFixture<PostgreSql18Integratio
             Assert.Equal(projectUpdate.NameAr, updatedProject.NameAr);
             Assert.Equal(projectUpdate.WilayaCode, updatedProject.WilayaCode);
             Assert.Equal(projectUpdate.Status, updatedProject.Status);
+            Assert.Null(updatedProject.EstimatedBudgetDzd);
             Assert.NotEqual(createdProject.ConcurrencyStamp, updatedProject.ConcurrencyStamp);
 
             // A second editor submitting the original version must receive a conflict and must not overwrite the first save.
@@ -769,7 +777,7 @@ public sealed class PostgresEndToEndTests : IClassFixture<PostgreSql18Integratio
                 var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
                 var persistedProject = await db.Projects.SingleAsync(project => project.Id == createdProject.Id);
                 Assert.Equal(projectUpdate.NameFr, persistedProject.NameFr);
-                Assert.Equal(projectUpdate.EstimatedBudgetDzd, persistedProject.EstimatedBudgetDzd);
+                Assert.Equal(0m, persistedProject.EstimatedBudgetDzd);
                 Assert.Contains(await db.AuditLogs.ToListAsync(), entry =>
                     entry.EventType == "PROJECT_UPDATED" &&
                     entry.TargetEntityId == createdProject.Id.ToString());
@@ -1118,7 +1126,7 @@ public sealed class PostgresEndToEndTests : IClassFixture<PostgreSql18Integratio
                     null,
                     null,
                     "Planning",
-                    100_000_000m,
+                    0m,
                     2,
                     20));
             Assert.Equal(HttpStatusCode.Created, otherProjectResponse.StatusCode);
@@ -1652,21 +1660,123 @@ public sealed class PostgresEndToEndTests : IClassFixture<PostgreSql18Integratio
             // An explicit team assignment grants project scope; the same global role alone did not.
             var directorProjectAssignment = await adminClient.PutAsJsonAsync(
                 $"/api/projects/{createdProject.Id}/members",
-                new AssignProjectMemberRequest(directorCreatedUserId, "ProjectManager", true, true, true, true));
+                new AssignProjectMemberRequest(directorCreatedUserId, "ProjectManager", false, true, true, true));
             Assert.Equal(HttpStatusCode.OK, directorProjectAssignment.StatusCode);
             var projectAfterManagerAssignment = await directorProjectAssignment.Content.ReadFromJsonAsync<ProjectDto>();
             Assert.NotNull(projectAfterManagerAssignment);
+            Assert.Null(projectAfterManagerAssignment!.EstimatedBudgetDzd);
+
+            var directorReadWithoutFinancials = await directorClient.GetFromJsonAsync<ProjectDto>(
+                $"/api/projects/{createdProject.Id}");
+            Assert.NotNull(directorReadWithoutFinancials);
+            Assert.Null(directorReadWithoutFinancials!.EstimatedBudgetDzd);
+
+            var directorFinancialTampering = await directorClient.PutAsJsonAsync(
+                $"/api/projects/{createdProject.Id}",
+                directorUpdate with
+                {
+                    EstimatedBudgetDzd = 50_000_000m,
+                    ExpectedConcurrencyStamp = directorReadWithoutFinancials.ConcurrencyStamp
+                });
+            Assert.Equal(HttpStatusCode.Forbidden, directorFinancialTampering.StatusCode);
+            Assert.Contains("PROJECT_FINANCIAL_ACCESS_DENIED", await directorFinancialTampering.Content.ReadAsStringAsync(), StringComparison.Ordinal);
 
             var directorAssignedUpdate = await directorClient.PutAsJsonAsync(
                 $"/api/projects/{createdProject.Id}",
                 directorUpdate with
                 {
-                    ExpectedConcurrencyStamp = projectAfterManagerAssignment!.ConcurrencyStamp
+                    EstimatedBudgetDzd = null,
+                    ExpectedConcurrencyStamp = projectAfterManagerAssignment.ConcurrencyStamp
                 });
             Assert.Equal(HttpStatusCode.OK, directorAssignedUpdate.StatusCode);
             var directorUpdatedProject = await directorAssignedUpdate.Content.ReadFromJsonAsync<ProjectDto>();
             Assert.NotNull(directorUpdatedProject);
             Assert.Equal(directorUpdate.NameAr, directorUpdatedProject!.NameAr);
+            Assert.Null(directorUpdatedProject.EstimatedBudgetDzd);
+
+            var grantFinancials = await adminClient.PutAsJsonAsync(
+                $"/api/projects/{createdProject.Id}/members",
+                new AssignProjectMemberRequest(directorCreatedUserId, "ProjectManager", true, true, true, true));
+            Assert.Equal(HttpStatusCode.OK, grantFinancials.StatusCode);
+            var adminAssignmentResponse = await grantFinancials.Content.ReadFromJsonAsync<ProjectDto>();
+            Assert.NotNull(adminAssignmentResponse);
+            Assert.Null(adminAssignmentResponse!.EstimatedBudgetDzd);
+
+            var directorBudgetRead = await directorClient.GetFromJsonAsync<ProjectDto>(
+                $"/api/projects/{createdProject.Id}");
+            Assert.NotNull(directorBudgetRead);
+            Assert.Equal(0m, directorBudgetRead!.EstimatedBudgetDzd);
+
+            var authorizedBudgetUpdate = await directorClient.PutAsJsonAsync(
+                $"/api/projects/{createdProject.Id}",
+                directorUpdate with
+                {
+                    EstimatedBudgetDzd = 470_000_000m,
+                    ExpectedConcurrencyStamp = directorBudgetRead.ConcurrencyStamp
+                });
+            Assert.Equal(HttpStatusCode.OK, authorizedBudgetUpdate.StatusCode);
+            var authorizedBudgetResult = await authorizedBudgetUpdate.Content.ReadFromJsonAsync<ProjectDto>();
+            Assert.NotNull(authorizedBudgetResult);
+            Assert.Equal(470_000_000m, authorizedBudgetResult!.EstimatedBudgetDzd);
+
+            var administratorBudgetRead = await adminClient.GetFromJsonAsync<ProjectDto>(
+                $"/api/projects/{createdProject.Id}");
+            Assert.NotNull(administratorBudgetRead);
+            Assert.Null(administratorBudgetRead!.EstimatedBudgetDzd);
+
+            Guid systemAdminUserId;
+            using (var adminScope = factory.Services.CreateScope())
+            {
+                var db = adminScope.ServiceProvider.GetRequiredService<AppDbContext>();
+                systemAdminUserId = await db.Users
+                    .Where(user => user.IsSystemAdministrator)
+                    .Select(user => user.Id)
+                    .SingleAsync();
+            }
+
+            var explicitlyGrantAdminFinancialScope = await adminClient.PutAsJsonAsync(
+                $"/api/projects/{createdProject.Id}/members",
+                new AssignProjectMemberRequest(systemAdminUserId, "FinanceController", true, false, false, false));
+            Assert.Equal(HttpStatusCode.OK, explicitlyGrantAdminFinancialScope.StatusCode);
+            var adminAfterExplicitMembership = await adminClient.GetFromJsonAsync<ProjectDto>(
+                $"/api/projects/{createdProject.Id}");
+            Assert.NotNull(adminAfterExplicitMembership);
+            Assert.Equal(470_000_000m, adminAfterExplicitMembership!.EstimatedBudgetDzd);
+
+            var adminFinanceControllerWrite = await adminClient.PutAsJsonAsync(
+                $"/api/projects/{createdProject.Id}",
+                projectUpdate with
+                {
+                    EstimatedBudgetDzd = 490_000_000m,
+                    ExpectedConcurrencyStamp = adminAfterExplicitMembership.ConcurrencyStamp
+                });
+            Assert.Equal(HttpStatusCode.Forbidden, adminFinanceControllerWrite.StatusCode);
+            Assert.Contains("PROJECT_FINANCIAL_ACCESS_DENIED", await adminFinanceControllerWrite.Content.ReadAsStringAsync(), StringComparison.Ordinal);
+
+            var promoteAdminProjectMembership = await adminClient.PutAsJsonAsync(
+                $"/api/projects/{createdProject.Id}/members",
+                new AssignProjectMemberRequest(systemAdminUserId, "ProjectManager", true, true, true, true));
+            Assert.Equal(HttpStatusCode.OK, promoteAdminProjectMembership.StatusCode);
+            var adminProjectManagerBudgetRead = await adminClient.GetFromJsonAsync<ProjectDto>(
+                $"/api/projects/{createdProject.Id}");
+            Assert.NotNull(adminProjectManagerBudgetRead);
+            Assert.Equal(470_000_000m, adminProjectManagerBudgetRead!.EstimatedBudgetDzd);
+            var adminProjectManagerBudgetUpdate = await adminClient.PutAsJsonAsync(
+                $"/api/projects/{createdProject.Id}",
+                projectUpdate with
+                {
+                    EstimatedBudgetDzd = 490_000_000m,
+                    ExpectedConcurrencyStamp = adminProjectManagerBudgetRead.ConcurrencyStamp
+                });
+            Assert.Equal(HttpStatusCode.OK, adminProjectManagerBudgetUpdate.StatusCode);
+            var adminProjectManagerBudgetUpdated = await adminProjectManagerBudgetUpdate.Content.ReadFromJsonAsync<ProjectDto>();
+            Assert.NotNull(adminProjectManagerBudgetUpdated);
+            Assert.Equal(490_000_000m, adminProjectManagerBudgetUpdated!.EstimatedBudgetDzd);
+
+            var restoreAdminToFinancialReader = await adminClient.PutAsJsonAsync(
+                $"/api/projects/{createdProject.Id}/members",
+                new AssignProjectMemberRequest(systemAdminUserId, "FinanceController", true, false, false, false));
+            Assert.Equal(HttpStatusCode.OK, restoreAdminToFinancialReader.StatusCode);
 
             var directorBuildingResponse = await directorClient.PostAsJsonAsync(
                 $"{structureUrl}/buildings",
@@ -1778,6 +1888,11 @@ public sealed class PostgresEndToEndTests : IClassFixture<PostgreSql18Integratio
                 $"Project member assignment failed with {(int)assignResp.StatusCode} {assignResp.StatusCode}: {assignBody}" +
                 $"{Environment.NewLine}Captured ASP.NET Core server logs:{Environment.NewLine}{string.Join(Environment.NewLine, _serverLogs.Snapshot())}");
 
+            var salesMemberWithoutFinancials = await employeeClient.GetFromJsonAsync<ProjectDto>(
+                $"/api/projects/{createdProject.Id}");
+            Assert.NotNull(salesMemberWithoutFinancials);
+            Assert.Null(salesMemberWithoutFinancials!.EstimatedBudgetDzd);
+
             // Sales project membership plus customers.manage permits access to customer records.
             var memberCustomerList = await employeeClient.GetAsync(
                 $"/api/projects/{createdProject.Id}/customers");
@@ -1831,6 +1946,19 @@ public sealed class PostgresEndToEndTests : IClassFixture<PostgreSql18Integratio
                 new AssignProjectMemberRequest(createdEmployee.Id, "CommercialAgent", true, false, false, false));
             Assert.Equal(HttpStatusCode.OK, updateMembershipResp.StatusCode);
 
+            var salesMemberWithFinancials = await employeeClient.GetFromJsonAsync<ProjectDto>(
+                $"/api/projects/{createdProject.Id}");
+            Assert.NotNull(salesMemberWithFinancials);
+            Assert.Equal(490_000_000m, salesMemberWithFinancials!.EstimatedBudgetDzd);
+            var salesMemberBudgetWrite = await employeeClient.PutAsJsonAsync(
+                $"/api/projects/{createdProject.Id}",
+                projectUpdate with
+                {
+                    EstimatedBudgetDzd = 480_000_000m,
+                    ExpectedConcurrencyStamp = salesMemberWithFinancials.ConcurrencyStamp
+                });
+            Assert.Equal(HttpStatusCode.Forbidden, salesMemberBudgetWrite.StatusCode);
+
             using (var scope = factory.Services.CreateScope())
             {
                 var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
@@ -1842,6 +1970,14 @@ public sealed class PostgresEndToEndTests : IClassFixture<PostgreSql18Integratio
                 Assert.False(updatedMembership.CanManageDocuments);
                 Assert.Equal(1, await db.ProjectMembers.CountAsync(
                     member => member.ProjectId == createdProject.Id && member.UserId == createdEmployee.Id));
+                Assert.Contains(await db.AuditLogs.ToListAsync(), entry =>
+                    entry.EventType == "PROJECT_FINANCIALS_VIEWED" &&
+                    entry.ActorUserId == directorCreatedUserId &&
+                    entry.TargetEntityId == createdProject.Id.ToString());
+                Assert.Contains(await db.AuditLogs.ToListAsync(), entry =>
+                    entry.EventType == "ACCESS_DENIED" &&
+                    entry.ActorUserId == directorCreatedUserId &&
+                    entry.TargetEntityId == createdProject.Id.ToString());
             }
 
             // Removing the per-project sales-management flag preserves read access but blocks customer mutations.
@@ -2323,7 +2459,7 @@ public sealed class PostgresEndToEndTests : IClassFixture<PostgreSql18Integratio
 
         var projectResp = await adminClient.PostAsJsonAsync("/api/projects", new CreateProjectRequest(
             "PRJ-PII-01", "مشروع الخصوصية", "Projet Confidentialité", "16", "Alger", "Hydra",
-            null, null, null, null, "Planning", 100_000_000m, 1, 10));
+            null, null, null, null, "Planning", 0m, 1, 10));
         Assert.Equal(HttpStatusCode.Created, projectResp.StatusCode);
         var project = await projectResp.Content.ReadFromJsonAsync<ProjectDto>();
 
@@ -2442,7 +2578,7 @@ public sealed class PostgresEndToEndTests : IClassFixture<PostgreSql18Integratio
             "/api/projects",
             new CreateProjectRequest(
                 "PRJ-DUP-01", "مشروع منع التكرار", "Projet Anti-doublon", "16", "Alger", "Hydra",
-                null, null, null, null, "Planning", 100_000_000m, 1, 10));
+                null, null, null, null, "Planning", 0m, 1, 10));
         Assert.Equal(HttpStatusCode.Created, projectResponse.StatusCode);
         var project = await projectResponse.Content.ReadFromJsonAsync<ProjectDto>();
         Assert.NotNull(project);
@@ -2603,7 +2739,7 @@ public sealed class PostgresEndToEndTests : IClassFixture<PostgreSql18Integratio
             "/api/projects",
             new CreateProjectRequest(
                 "PRJ-MIGRATION-GUARD", "مشروع اختبار الترحيل", "Projet Test Migration", "16", "Alger", "Hydra",
-                null, null, null, null, "Planning", 100_000_000m, 1, 10));
+                null, null, null, null, "Planning", 0m, 1, 10));
         Assert.Equal(HttpStatusCode.Created, projectResponse.StatusCode);
         var project = await projectResponse.Content.ReadFromJsonAsync<ProjectDto>();
         Assert.NotNull(project);

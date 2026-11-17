@@ -430,7 +430,7 @@ public sealed class ApplicationSecurityAndFoundationTests
                 null,
                 null,
                 "Commercialization",
-                150_000_000m,
+                0m,
                 2,
                 32),
             metadata);
@@ -763,7 +763,7 @@ public sealed class ApplicationSecurityAndFoundationTests
 
         var project = await projectSvc.CreateProjectAsync(
             init.SystemAdminUserId,
-            new CreateProjectRequest("PRJ-16-01", "إقامة الياسمين", "Résidence Yasmine", "16", "Alger", "Cheraga", null, null, null, null, "Commercialization", 150_000_000m, 2, 32),
+            new CreateProjectRequest("PRJ-16-01", "إقامة الياسمين", "Résidence Yasmine", "16", "Alger", "Cheraga", null, null, null, null, "Commercialization", 0m, 2, 32),
             meta);
 
         // Employee without assignment gets empty list and 403 Forbidden on direct ID access
@@ -820,7 +820,7 @@ public sealed class ApplicationSecurityAndFoundationTests
                 null,
                 null,
                 "Planning",
-                300_000_000m,
+                0m,
                 2,
                 40),
             metadata);
@@ -1125,10 +1125,11 @@ public sealed class ApplicationSecurityAndFoundationTests
                 null,
                 null,
                 "Planning",
-                150_000_000m,
+                0m,
                 2,
                 32),
             metadata);
+        Assert.Null(created.EstimatedBudgetDzd);
 
         clock.UtcNow = clock.UtcNow.AddMinutes(5);
         var updateRequest = new UpdateProjectRequest(
@@ -1142,7 +1143,7 @@ public sealed class ApplicationSecurityAndFoundationTests
             "PC-ORAN-2026-010",
             new DateOnly(2026, 11, 13),
             "UnderConstruction",
-            175_000_000m,
+            null,
             3,
             36,
             created.ConcurrencyStamp);
@@ -1159,7 +1160,7 @@ public sealed class ApplicationSecurityAndFoundationTests
         Assert.Equal(updateRequest.WilayaCode, updated.WilayaCode);
         Assert.Equal(updateRequest.Municipality, updated.Municipality);
         Assert.Equal(updateRequest.Status, updated.Status);
-        Assert.Equal(updateRequest.EstimatedBudgetDzd, updated.EstimatedBudgetDzd);
+        Assert.Null(updated.EstimatedBudgetDzd);
         Assert.Equal(created.CreatedAtUtc, updated.CreatedAtUtc);
         Assert.True(updated.CreatedAtUtc < clock.UtcNow);
         Assert.Contains(store.AuditLogs, entry =>
@@ -1177,6 +1178,7 @@ public sealed class ApplicationSecurityAndFoundationTests
         var stillCurrent = await projectSvc.GetProjectByIdAsync(init.SystemAdminUserId, created.Id, metadata);
         Assert.Equal(updated.NameAr, stillCurrent.NameAr);
         Assert.Equal(updated.ConcurrencyStamp, stillCurrent.ConcurrencyStamp);
+        Assert.Null(stillCurrent.EstimatedBudgetDzd);
 
         var denied = await Assert.ThrowsAsync<ForbiddenDomainException>(() =>
             projectSvc.UpdateProjectAsync(employee.Id, created.Id, updateRequest, metadata));
@@ -1186,14 +1188,243 @@ public sealed class ApplicationSecurityAndFoundationTests
             entry.ActorUserId == employee.Id &&
             entry.TargetEntityId == created.Id.ToString());
 
-        var invalidBudget = updateRequest with { EstimatedBudgetDzd = -1m, ExpectedConcurrencyStamp = updated.ConcurrencyStamp };
-        await Assert.ThrowsAsync<DomainException>(() =>
+        var invalidBudget = updateRequest with
+        {
+            EstimatedBudgetDzd = -1m,
+            ExpectedConcurrencyStamp = updated.ConcurrencyStamp
+        };
+        var financialDenied = await Assert.ThrowsAsync<ForbiddenDomainException>(() =>
             projectSvc.UpdateProjectAsync(init.SystemAdminUserId, created.Id, invalidBudget, metadata));
+        Assert.Equal("PROJECT_FINANCIAL_ACCESS_DENIED", financialDenied.Code);
 
-        var invalidStatus = updateRequest with { Status = "999", ExpectedConcurrencyStamp = updated.ConcurrencyStamp };
+        var invalidStatus = updateRequest with
+        {
+            Status = "999",
+            ExpectedConcurrencyStamp = updated.ConcurrencyStamp
+        };
         var statusError = await Assert.ThrowsAsync<DomainException>(() =>
             projectSvc.UpdateProjectAsync(init.SystemAdminUserId, created.Id, invalidStatus, metadata));
         Assert.Equal("PROJECT_STATUS_INVALID", statusError.Code);
+    }
+
+    [Fact]
+    public async Task ProjectBudget_RequiresExplicitFinancialCapability_ForReadAndWrite()
+    {
+        var store = new InMemoryStore();
+        var clock = new FakeClock();
+        var hasher = new Pbkdf2PasswordHasher();
+        var setup = new SetupService(store, hasher, store, clock);
+        var userSvc = new UserManagementService(store, store, hasher, store, clock);
+        var projectSvc = new ProjectService(store, store, store, clock);
+        var metadata = new RequestMetadata("127.0.0.1", "xUnit");
+
+        var init = await setup.InitializeAsync(ValidInitRequest(), metadata);
+
+        // The lightweight test store seeds only the baseline roles. Add the production Project Director
+        // role and projects.manage permission locally for this test; do not change production seed data.
+        var projectDirectorRole = Role.Create(
+            Guid.NewGuid(),
+            Role.ProjectDirectorCode,
+            "مدير المشاريع",
+            "Directeur de Projets",
+            "إدارة المشاريع",
+            "Gestion des projets",
+            false,
+            clock.UtcNow);
+        var projectsManagePermission = Permission.Create(
+            Guid.NewGuid(),
+            "projects.manage",
+            "Projects",
+            "إدارة بيانات المشروع",
+            "Gérer les données du projet",
+            clock.UtcNow);
+        var systemAdminRole = store.Roles.Single(role => role.Code == Role.SystemAdminCode);
+        store.Roles.Add(projectDirectorRole);
+        store.Permissions.Add(projectsManagePermission);
+        store.RolePermissions.Add(RolePermission.Create(projectDirectorRole.Id, projectsManagePermission.Id));
+        store.RolePermissions.Add(RolePermission.Create(systemAdminRole.Id, projectsManagePermission.Id));
+
+        var financialManager = await userSvc.CreateEmployeeAsync(
+            init.SystemAdminUserId,
+            new CreateEmployeeRequest("finance.pm", "Financial PM", "finance.pm@elbahdja.dz", null, "StrongPass123", "fr", new[] { Role.ProjectDirectorCode }),
+            metadata);
+        var restrictedManager = await userSvc.CreateEmployeeAsync(
+            init.SystemAdminUserId,
+            new CreateEmployeeRequest("restricted.pm", "Restricted PM", "restricted.pm@elbahdja.dz", null, "StrongPass123", "fr", new[] { Role.ProjectDirectorCode }),
+            metadata);
+        var financialReader = await userSvc.CreateEmployeeAsync(
+            init.SystemAdminUserId,
+            new CreateEmployeeRequest("finance.reader", "Financial Reader", "finance.reader@elbahdja.dz", null, "StrongPass123", "fr", new[] { Role.ProjectDirectorCode }),
+            metadata);
+        var nonMember = await userSvc.CreateEmployeeAsync(
+            init.SystemAdminUserId,
+            new CreateEmployeeRequest("no.project", "No Project", "no.project@elbahdja.dz", null, "StrongPass123", "fr", new[] { Role.ProjectDirectorCode }),
+            metadata);
+
+        var project = await projectSvc.CreateProjectAsync(
+            init.SystemAdminUserId,
+            new CreateProjectRequest("PRJ-FIN-SCOPE", "مشروع مالي", "Projet financier", "16", "Alger", "Hydra", null, null, null, null, "Planning", 0m, 1, 12),
+            metadata);
+        Assert.Null(project.EstimatedBudgetDzd);
+
+        var unauthorizedCreate = await Assert.ThrowsAsync<ForbiddenDomainException>(() =>
+            projectSvc.CreateProjectAsync(
+                init.SystemAdminUserId,
+                new CreateProjectRequest("PRJ-FIN-DENIED", "مشروع", "Projet", "16", "Alger", "Hydra", null, null, null, null, "Planning", 1m, 1, 1),
+                metadata));
+        Assert.Equal("PROJECT_FINANCIAL_ACCESS_DENIED", unauthorizedCreate.Code);
+
+        await projectSvc.AssignMemberAsync(
+            init.SystemAdminUserId,
+            project.Id,
+            new AssignProjectMemberRequest(financialManager.Id, nameof(ProjectRole.ProjectManager), true, true, true, true),
+            metadata);
+        await projectSvc.AssignMemberAsync(
+            init.SystemAdminUserId,
+            project.Id,
+            new AssignProjectMemberRequest(restrictedManager.Id, nameof(ProjectRole.ProjectManager), false, true, true, true),
+            metadata);
+        await projectSvc.AssignMemberAsync(
+            init.SystemAdminUserId,
+            project.Id,
+            new AssignProjectMemberRequest(financialReader.Id, nameof(ProjectRole.FinanceController), true, false, false, false),
+            metadata);
+
+        var adminRead = await projectSvc.GetProjectByIdAsync(init.SystemAdminUserId, project.Id, metadata);
+        Assert.Null(adminRead.EstimatedBudgetDzd);
+
+        var financialManagerRead = await projectSvc.GetProjectByIdAsync(financialManager.Id, project.Id, metadata);
+        Assert.Equal(0m, financialManagerRead.EstimatedBudgetDzd);
+        var restrictedManagerRead = await projectSvc.GetProjectByIdAsync(restrictedManager.Id, project.Id, metadata);
+        Assert.Null(restrictedManagerRead.EstimatedBudgetDzd);
+        var financialReaderRead = await projectSvc.GetProjectByIdAsync(financialReader.Id, project.Id, metadata);
+        Assert.Equal(0m, financialReaderRead.EstimatedBudgetDzd);
+
+        var financialList = Assert.Single(await projectSvc.ListAccessibleProjectsAsync(financialManager.Id, metadata));
+        Assert.Equal(0m, financialList.EstimatedBudgetDzd);
+        var restrictedList = Assert.Single(await projectSvc.ListAccessibleProjectsAsync(restrictedManager.Id, metadata));
+        Assert.Null(restrictedList.EstimatedBudgetDzd);
+        Assert.Empty(await projectSvc.ListAccessibleProjectsAsync(nonMember.Id, metadata));
+
+        var generalUpdate = new UpdateProjectRequest(
+            "مشروع محدث",
+            "Projet mis à jour",
+            "16",
+            "Alger",
+            "Hydra",
+            null,
+            null,
+            null,
+            null,
+            "Planning",
+            null,
+            1,
+            12,
+            restrictedManagerRead.ConcurrencyStamp);
+        var generalUpdated = await projectSvc.UpdateProjectAsync(
+            restrictedManager.Id,
+            project.Id,
+            generalUpdate,
+            metadata);
+        Assert.Equal("مشروع محدث", generalUpdated.NameAr);
+        Assert.Null(generalUpdated.EstimatedBudgetDzd);
+
+        var budgetTampering = generalUpdate with
+        {
+            EstimatedBudgetDzd = 90_000_000m,
+            ExpectedConcurrencyStamp = generalUpdated.ConcurrencyStamp
+        };
+        var deniedBudgetUpdate = await Assert.ThrowsAsync<ForbiddenDomainException>(() =>
+            projectSvc.UpdateProjectAsync(restrictedManager.Id, project.Id, budgetTampering, metadata));
+        Assert.Equal("PROJECT_FINANCIAL_ACCESS_DENIED", deniedBudgetUpdate.Code);
+
+        var stillRestricted = await projectSvc.GetProjectByIdAsync(restrictedManager.Id, project.Id, metadata);
+        Assert.Null(stillRestricted.EstimatedBudgetDzd);
+        var unchangedForFinance = await projectSvc.GetProjectByIdAsync(financialManager.Id, project.Id, metadata);
+        Assert.Equal(0m, unchangedForFinance.EstimatedBudgetDzd);
+
+        var financialUpdate = generalUpdate with
+        {
+            EstimatedBudgetDzd = 125_000_000m,
+            ExpectedConcurrencyStamp = unchangedForFinance.ConcurrencyStamp
+        };
+        var financialUpdated = await projectSvc.UpdateProjectAsync(
+            financialManager.Id,
+            project.Id,
+            financialUpdate,
+            metadata);
+        Assert.Equal(125_000_000m, financialUpdated.EstimatedBudgetDzd);
+
+        var financeReaderAfterUpdate = await projectSvc.GetProjectByIdAsync(financialReader.Id, project.Id, metadata);
+        Assert.Equal(125_000_000m, financeReaderAfterUpdate.EstimatedBudgetDzd);
+        var adminAfterUpdate = await projectSvc.GetProjectByIdAsync(init.SystemAdminUserId, project.Id, metadata);
+        Assert.Null(adminAfterUpdate.EstimatedBudgetDzd);
+
+        await projectSvc.AssignMemberAsync(
+            init.SystemAdminUserId,
+            project.Id,
+            new AssignProjectMemberRequest(init.SystemAdminUserId, nameof(ProjectRole.FinanceController), true, false, false, false),
+            metadata);
+        var explicitlyAuthorizedAdminRead = await projectSvc.GetProjectByIdAsync(init.SystemAdminUserId, project.Id, metadata);
+        Assert.Equal(125_000_000m, explicitlyAuthorizedAdminRead.EstimatedBudgetDzd);
+
+        var adminFinanceControllerWrite = await Assert.ThrowsAsync<ForbiddenDomainException>(() =>
+            projectSvc.UpdateProjectAsync(
+                init.SystemAdminUserId,
+                project.Id,
+                financialUpdate with { EstimatedBudgetDzd = 140_000_000m, ExpectedConcurrencyStamp = explicitlyAuthorizedAdminRead.ConcurrencyStamp },
+                metadata));
+        Assert.Equal("PROJECT_FINANCIAL_ACCESS_DENIED", adminFinanceControllerWrite.Code);
+
+        var financeReaderManagerWrite = await Assert.ThrowsAsync<ForbiddenDomainException>(() =>
+            projectSvc.UpdateProjectAsync(
+                financialReader.Id,
+                project.Id,
+                financialUpdate with { EstimatedBudgetDzd = 145_000_000m, ExpectedConcurrencyStamp = financeReaderAfterUpdate.ConcurrencyStamp },
+                metadata));
+        Assert.Equal("FORBIDDEN_PROJECT_UPDATE", financeReaderManagerWrite.Code);
+
+        await projectSvc.AssignMemberAsync(
+            init.SystemAdminUserId,
+            project.Id,
+            new AssignProjectMemberRequest(init.SystemAdminUserId, nameof(ProjectRole.ProjectManager), true, true, true, true),
+            metadata);
+        var adminProjectManagerRead = await projectSvc.GetProjectByIdAsync(init.SystemAdminUserId, project.Id, metadata);
+        var adminManagerBudgetUpdate = await projectSvc.UpdateProjectAsync(
+            init.SystemAdminUserId,
+            project.Id,
+            financialUpdate with { EstimatedBudgetDzd = 175_000_000m, ExpectedConcurrencyStamp = adminProjectManagerRead.ConcurrencyStamp },
+            metadata);
+        Assert.Equal(175_000_000m, adminManagerBudgetUpdate.EstimatedBudgetDzd);
+
+        var restrictedAfterUpdate = await projectSvc.GetProjectByIdAsync(restrictedManager.Id, project.Id, metadata);
+        Assert.Null(restrictedAfterUpdate.EstimatedBudgetDzd);
+
+        var financeReaderWrite = await Assert.ThrowsAsync<ForbiddenDomainException>(() =>
+            projectSvc.UpdateProjectAsync(
+                financialReader.Id,
+                project.Id,
+                financialUpdate with { EstimatedBudgetDzd = 150_000_000m, ExpectedConcurrencyStamp = financeReaderAfterUpdate.ConcurrencyStamp },
+                metadata));
+        Assert.Equal("FORBIDDEN_PROJECT_UPDATE", financeReaderWrite.Code);
+
+        Assert.Contains(store.AuditLogs, entry =>
+            entry.EventType == "PROJECT_FINANCIALS_VIEWED" &&
+            entry.ActorUserId == financialManager.Id &&
+            entry.TargetEntityId == project.Id.ToString());
+        Assert.Contains(store.AuditLogs, entry =>
+            entry.EventType == "ACCESS_DENIED" &&
+            entry.ActorUserId == restrictedManager.Id &&
+            entry.TargetEntityId == project.Id.ToString());
+        Assert.Contains(store.AuditLogs, entry =>
+            entry.EventType == "ACCESS_DENIED" &&
+            entry.ActorUserId == init.SystemAdminUserId);
+        await Assert.ThrowsAsync<ForbiddenDomainException>(() =>
+            projectSvc.GetProjectByIdAsync(nonMember.Id, project.Id, metadata));
+        Assert.Contains(store.AuditLogs, entry =>
+            entry.EventType == "ACCESS_DENIED" &&
+            entry.ActorUserId == nonMember.Id &&
+            entry.TargetEntityId == project.Id.ToString());
     }
 
     [Fact]
@@ -1346,7 +1577,7 @@ public sealed class ApplicationSecurityAndFoundationTests
                 null,
                 null,
                 "UnderConstruction",
-                850_000_000m,
+                0m,
                 3,
                 72),
             meta);
@@ -1539,7 +1770,7 @@ public sealed class ApplicationSecurityAndFoundationTests
         var init = await setup.InitializeAsync(ValidInitRequest(), meta);
         var project = await projectSvc.CreateProjectAsync(
             init.SystemAdminUserId,
-            new CreateProjectRequest("PRJ-STRUCT-PERM", "مشروع", "Projet", "16", "Alger", "Hydra", null, null, null, null, "Planning", 100_000_000m, 1, 10),
+            new CreateProjectRequest("PRJ-STRUCT-PERM", "مشروع", "Projet", "16", "Alger", "Hydra", null, null, null, null, "Planning", 0m, 1, 10),
             meta);
 
         // CommercialManager does NOT have projects.structure.manage
@@ -1587,7 +1818,7 @@ public sealed class ApplicationSecurityAndFoundationTests
             var init = await setup.InitializeAsync(ValidInitRequest(), meta);
             var project = await projectSvc.CreateProjectAsync(
                 init.SystemAdminUserId,
-                new CreateProjectRequest("PRJ-DOC-SCOPE", "مشروع الوثائق", "Projet Docs", "16", "Alger", "Hydra", null, null, null, null, "Planning", 100_000_000m, 1, 10),
+                new CreateProjectRequest("PRJ-DOC-SCOPE", "مشروع الوثائق", "Projet Docs", "16", "Alger", "Hydra", null, null, null, null, "Planning", 0m, 1, 10),
                 meta);
 
             var financeUser = await userSvc.CreateEmployeeAsync(
@@ -1734,20 +1965,20 @@ public sealed class ApplicationSecurityAndFoundationTests
 
         var alpha = await projectSvc.CreateProjectAsync(
             init.SystemAdminUserId,
-            new CreateProjectRequest("PRJ-69-ALPHA", "إقامة الشهباء", "Résidence Aflou", "59", "Aflou", "Aflou", null, null, null, null, "Commercialization", 200_000_000m, 2, 24),
+            new CreateProjectRequest("PRJ-69-ALPHA", "إقامة الشهباء", "Résidence Aflou", "59", "Aflou", "Aflou", null, null, null, null, "Commercialization", 0m, 2, 24),
             meta);
         Assert.Equal("أفلو / Aflou", alpha.WilayaName);
 
         var beta = await projectSvc.CreateProjectAsync(
             init.SystemAdminUserId,
-            new CreateProjectRequest("PRJ-16-BETA", "إقامة البهجة", "Résidence Hydra", "16", "Alger", "Hydra", null, null, null, null, "Planning", 100_000_000m, 1, 12),
+            new CreateProjectRequest("PRJ-16-BETA", "إقامة البهجة", "Résidence Hydra", "16", "Alger", "Hydra", null, null, null, null, "Planning", 0m, 1, 12),
             meta);
         await projectSvc.AssignMemberAsync(init.SystemAdminUserId, alpha.Id, new AssignProjectMemberRequest(assignedUser.Id, nameof(ProjectRole.CommercialAgent), false, true, false, false), meta);
 
         var mismatchProject = await Assert.ThrowsAsync<DomainException>(() =>
             projectSvc.CreateProjectAsync(
                 init.SystemAdminUserId,
-                new CreateProjectRequest("PRJ-16-BAD", "مشروع", "Projet", "16", "Oran", "Hydra", null, null, null, null, "Planning", 10_000_000m, 1, 1),
+                new CreateProjectRequest("PRJ-16-BAD", "مشروع", "Projet", "16", "Oran", "Hydra", null, null, null, null, "Planning", 0m, 1, 1),
                 meta));
         Assert.Equal("PROJECT_WILAYA_NAME_MISMATCH", mismatchProject.Code);
 

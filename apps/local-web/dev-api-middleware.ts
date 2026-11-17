@@ -31,6 +31,7 @@ import { getDevPreviewCookieAttributes } from './src/utils/devPreviewCookies';
 import { DEV_PREVIEW_ADMINISTRATIVE_REFERENCE } from './src/utils/administrativeReferencePreview';
 import {
   canUserAccessProjectStructure,
+  canUserViewProjectFinancials,
   changeUnitStatusInStore,
   computeProjectStructureCounts,
   createBuildingInStore,
@@ -44,6 +45,7 @@ import {
   updateProjectInStore,
   updateUnitInStore,
   withComputedStructureCounts,
+  withProjectFinancialVisibility,
 } from './src/utils/devPreviewProjectStore';
 
 interface StoredUserRecord extends UserDto {
@@ -281,6 +283,24 @@ export function createPromoGestDevApiPlugin(): Plugin {
       }
     }
     return [...set].sort();
+  }
+
+  function toProjectResponse(project: ProjectDto, actor: StoredUserRecord): ProjectDto {
+    if (canUserViewProjectFinancials(actor, project)) {
+      addAudit(
+        'PROJECT_FINANCIALS_VIEWED',
+        'Info',
+        `Viewed estimated budget for project '${project.code}'.`,
+        actor,
+        'Project',
+        project.id
+      );
+    }
+
+    return withProjectFinancialVisibility(
+      withComputedStructureCounts(project, projectStructures),
+      actor
+    );
   }
 
   function toPublicUser(u: StoredUserRecord): UserDto {
@@ -937,7 +957,7 @@ export function createPromoGestDevApiPlugin(): Plugin {
           return sendJson(
             res,
             200,
-            visible.map((project) => withComputedStructureCounts(project, projectStructures))
+            visible.map((project) => toProjectResponse(project, currentUser))
           );
         }
 
@@ -947,6 +967,19 @@ export function createPromoGestDevApiPlugin(): Plugin {
             return sendJson(res, 403, { code: 'FORBIDDEN_PROJECT_CREATE', message: 'Forbidden.' });
           }
           const body = await readJsonBody<any>(req);
+          if (currentUser.isSystemAdministrator && Number(body.estimatedBudgetDzd ?? 0) !== 0) {
+            addAudit(
+              'ACCESS_DENIED',
+              'Security',
+              `Unauthorized financial budget supplied during project creation by '${currentUser.username}'.`,
+              currentUser,
+              'Project'
+            );
+            return sendJson(res, 403, {
+              code: 'PROJECT_FINANCIAL_ACCESS_DENIED',
+              message: 'An explicit project financial capability is required to set an estimated budget.',
+            });
+          }
           const code = (body.code || '').trim().toUpperCase();
           if (projects.some((p) => p.code === code)) {
             return sendJson(res, 409, { code: 'PROJECT_CODE_EXISTS', message: 'Project code already exists.' });
@@ -986,7 +1019,7 @@ export function createPromoGestDevApiPlugin(): Plugin {
           };
           projects.unshift(created);
           addAudit('PROJECT_CREATED', 'Info', `Created project '${created.code}' (${created.nameFr}).`, currentUser, 'Project', created.id);
-          return sendJson(res, 201, withComputedStructureCounts(created, projectStructures));
+          return sendJson(res, 201, toProjectResponse(created, currentUser));
         }
 
         const projectDetailMatch = pathname.match(/^\/api\/projects\/([^/]+)$/);
@@ -998,7 +1031,7 @@ export function createPromoGestDevApiPlugin(): Plugin {
             return sendJson(res, 403, { code: 'PROJECT_ACCESS_DENIED', message: 'Project access denied.' });
           }
           if (!project) return sendJson(res, 404, { code: 'PROJECT_NOT_FOUND', message: 'Project not found.' });
-          return sendJson(res, 200, withComputedStructureCounts(project, projectStructures));
+          return sendJson(res, 200, toProjectResponse(project, currentUser));
         }
 
         if (method === 'PUT' && projectDetailMatch) {
@@ -1028,6 +1061,26 @@ export function createPromoGestDevApiPlugin(): Plugin {
           }
           try {
             const body = await readJsonBody<UpdateProjectRequest>(req);
+            const canUpdateFinancialBudget =
+              getPermissions(currentUser).includes('projects.manage') &&
+              membership?.roleInProject === 'ProjectManager' &&
+              membership?.canViewFinancials === true;
+            if (body.estimatedBudgetDzd !== null &&
+                body.estimatedBudgetDzd !== undefined &&
+                !canUpdateFinancialBudget) {
+              addAudit(
+                'ACCESS_DENIED',
+                'Security',
+                `Unauthorized estimated-budget update attempt by '${currentUser.username}' on project '${project.code}'.`,
+                currentUser,
+                'Project',
+                project.id
+              );
+              return sendJson(res, 403, {
+                code: 'PROJECT_FINANCIAL_ACCESS_DENIED',
+                message: 'Updating the estimated budget requires projects.manage, ProjectManager membership, and CanViewFinancials.',
+              });
+            }
             const updated = updateProjectInStore(project, body);
             addAudit(
               'PROJECT_UPDATED',
@@ -1037,7 +1090,7 @@ export function createPromoGestDevApiPlugin(): Plugin {
               'Project',
               updated.id
             );
-            return sendJson(res, 200, withComputedStructureCounts(updated, projectStructures));
+            return sendJson(res, 200, toProjectResponse(updated, currentUser));
           } catch (err) {
             if (err instanceof DevPreviewStoreError) {
               return sendJson(res, err.status, { code: err.code, message: err.message });
@@ -1377,7 +1430,7 @@ export function createPromoGestDevApiPlugin(): Plugin {
             project.concurrencyStamp = crypto.randomUUID();
           }
           addAudit('PROJECT_MEMBER_ASSIGNED', 'Security', `Assigned '${target.username}' to '${project.code}' (${body.roleInProject}).`, currentUser, 'Project', project.id);
-          return sendJson(res, 200, withComputedStructureCounts(project, projectStructures));
+          return sendJson(res, 200, toProjectResponse(project, currentUser));
         }
 
         const removeMemberMatch = pathname.match(/^\/api\/projects\/([^/]+)\/members\/([^/]+)$/);
@@ -1402,7 +1455,7 @@ export function createPromoGestDevApiPlugin(): Plugin {
           project.members = project.members.filter((m) => m.userId !== targetUserId);
           project.concurrencyStamp = crypto.randomUUID();
           addAudit('PROJECT_MEMBER_REVOKED', 'Security', `Revoked access on '${project.code}' for user '${targetUserId}'.`, currentUser, 'Project', project.id);
-          return sendJson(res, 200, withComputedStructureCounts(project, projectStructures));
+          return sendJson(res, 200, toProjectResponse(project, currentUser));
         }
 
         // Audit

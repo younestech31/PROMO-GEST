@@ -192,7 +192,7 @@ export interface ProjectDto {
   buildingPermitNumber: string | null;
   buildingPermitDate: string | null;
   status: string;
-  estimatedBudgetDzd: number;
+  estimatedBudgetDzd: number | null;
   plannedBlocksCount: number;
   plannedUnitsCount: number;
   actualBuildingsCount: number;
@@ -356,7 +356,8 @@ export interface CreateProjectRequest {
   plannedUnitsCount: number;
 }
 
-export type UpdateProjectRequest = Omit<CreateProjectRequest, 'code'> & {
+export type UpdateProjectRequest = Omit<CreateProjectRequest, 'code' | 'estimatedBudgetDzd'> & {
+  estimatedBudgetDzd: number | null;
   expectedConcurrencyStamp: string;
 };
 

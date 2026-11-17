@@ -55,11 +55,16 @@ public sealed class ProjectService
             ? await _projectRepository.ListAllWithMembersAsync(normalizedQuery, parsedStatus, ct)
             : await _projectRepository.ListForUserWithMembersAsync(actorUserId, normalizedQuery, parsedStatus, ct);
 
+        await RecordFinancialViewsAsync(actor, projects, metadata, ct);
+
         var structureCounts = await _projectRepository.GetStructureCountsByProjectIdsAsync(
             projects.Select(project => project.Id).ToArray(), ct);
 
         return projects
-            .Select(project => MapProject(project, structureCounts.GetValueOrDefault(project.Id)))
+            .Select(project => MapProject(
+                project,
+                structureCounts.GetValueOrDefault(project.Id),
+                HasFinancialPermission(project, actorUserId)))
             .ToList();
     }
 
@@ -95,7 +100,8 @@ public sealed class ProjectService
             throw new NotFoundDomainException("PROJECT_NOT_FOUND", "Project not found.");
         }
 
-        return await MapProjectAsync(project, ct);
+        await RecordFinancialViewsAsync(actor, new[] { project }, metadata, ct);
+        return await MapProjectAsync(project, actorUserId, ct);
     }
 
     public async Task<ProjectDto> CreateProjectAsync(
@@ -116,6 +122,19 @@ public sealed class ProjectService
                 metadata,
                 ct);
             throw new ForbiddenDomainException("FORBIDDEN_PROJECT_CREATE", "You do not have permission to create real estate projects.");
+        }
+
+        if (actor.IsSystemAdministrator && request.EstimatedBudgetDzd != 0m)
+        {
+            await RecordAccessDeniedAsync(
+                actor,
+                null,
+                $"Unauthorized financial budget supplied during project creation by '{actor.Username}'.",
+                metadata,
+                ct);
+            throw new ForbiddenDomainException(
+                "PROJECT_FINANCIAL_ACCESS_DENIED",
+                "An explicit project financial capability is required to set an estimated budget.");
         }
 
         var normalizedCode = (request.Code ?? string.Empty).Trim().ToUpperInvariant();
@@ -188,7 +207,7 @@ public sealed class ProjectService
         await _projectRepository.SaveChangesAsync(ct);
 
         var reloaded = await _projectRepository.GetByIdWithMembersAsync(project.Id, ct) ?? project;
-        return await MapProjectAsync(reloaded, ct);
+        return await MapProjectAsync(reloaded, actorUserId, ct);
     }
 
     public async Task<ProjectDto> UpdateProjectAsync(
@@ -200,12 +219,12 @@ public sealed class ProjectService
     {
         var actor = await RequireActiveActorAsync(actorUserId, "UpdateProject", metadata, ct);
 
-        // Check the membership relation before loading the project itself. A non-member
-        // receives the same 403 for unknown and known project identifiers.
+        // Resolve explicit membership for every actor. SYSTEM_ADMIN may manage general
+        // project master data, but does not bypass the separate financial capability.
+        var membership = await _projectRepository.GetMemberAsync(projectId, actorUserId, ct);
+        var permissions = await _userRepository.GetEffectivePermissionsAsync(actorUserId, ct);
         if (!actor.IsSystemAdministrator)
         {
-            var permissions = await _userRepository.GetEffectivePermissionsAsync(actorUserId, ct);
-            var membership = await _projectRepository.GetMemberAsync(projectId, actorUserId, ct);
             var canManageProject = permissions.Contains("projects.manage", StringComparer.OrdinalIgnoreCase) &&
                 membership?.RoleInProject == ProjectRole.ProjectManager;
 
@@ -225,6 +244,24 @@ public sealed class ProjectService
 
         var project = await _projectRepository.GetByIdWithMembersAsync(projectId, ct)
             ?? throw new NotFoundDomainException("PROJECT_NOT_FOUND", "Project not found.");
+
+        var canUpdateFinancialBudget =
+            permissions.Contains("projects.manage", StringComparer.OrdinalIgnoreCase) &&
+            membership?.RoleInProject == ProjectRole.ProjectManager &&
+            membership?.CanViewFinancials == true;
+
+        if (request.EstimatedBudgetDzd.HasValue && !canUpdateFinancialBudget)
+        {
+            await RecordAccessDeniedAsync(
+                actor,
+                projectId,
+                $"Unauthorized estimated-budget update attempt by '{actor.Username}' on project ID '{projectId}'.",
+                metadata,
+                ct);
+            throw new ForbiddenDomainException(
+                "PROJECT_FINANCIAL_ACCESS_DENIED",
+                "Updating the estimated budget requires projects.manage, ProjectManager membership, and CanViewFinancials.");
+        }
 
         if (request.ExpectedConcurrencyStamp == Guid.Empty ||
             request.ExpectedConcurrencyStamp != project.ConcurrencyStamp)
@@ -258,7 +295,7 @@ public sealed class ProjectService
             request.BuildingPermitNumber,
             request.BuildingPermitDate,
             parsedStatus,
-            request.EstimatedBudgetDzd,
+            request.EstimatedBudgetDzd ?? project.EstimatedBudgetDzd,
             request.PlannedBlocksCount,
             request.PlannedUnitsCount,
             nowUtc);
@@ -280,7 +317,7 @@ public sealed class ProjectService
         await _projectRepository.SaveChangesAsync(ct);
 
         var reloaded = await _projectRepository.GetByIdWithMembersAsync(project.Id, ct) ?? project;
-        return await MapProjectAsync(reloaded, ct);
+        return await MapProjectAsync(reloaded, actorUserId, ct);
     }
 
     public async Task<ProjectDto> AssignMemberAsync(
@@ -350,7 +387,7 @@ public sealed class ProjectService
         await _projectRepository.SaveChangesAsync(ct);
 
         var reloaded = await _projectRepository.GetByIdWithMembersAsync(project.Id, ct) ?? project;
-        return await MapProjectAsync(reloaded, ct);
+        return await MapProjectAsync(reloaded, actor.Id, ct);
     }
 
     public async Task<ProjectDto> RemoveMemberAsync(
@@ -396,7 +433,7 @@ public sealed class ProjectService
         await _projectRepository.SaveChangesAsync(ct);
 
         var reloaded = await _projectRepository.GetByIdWithMembersAsync(project.Id, ct) ?? project;
-        return await MapProjectAsync(reloaded, ct);
+        return await MapProjectAsync(reloaded, actor.Id, ct);
     }
 
     private async Task<User> RequireActiveActorAsync(
@@ -474,14 +511,59 @@ public sealed class ProjectService
         await _projectRepository.SaveChangesAsync(ct);
     }
 
-    private async Task<ProjectDto> MapProjectAsync(Project project, CancellationToken ct)
+    private static bool HasFinancialPermission(Project project, Guid actorUserId)
+        => project.Members.Any(member =>
+            member.UserId == actorUserId && member.CanViewFinancials);
+
+    private async Task RecordFinancialViewsAsync(
+        User actor,
+        IEnumerable<Project> projects,
+        RequestMetadata metadata,
+        CancellationToken ct)
+    {
+        var visibleFinancialProjects = projects
+            .Where(project => HasFinancialPermission(project, actor.Id))
+            .ToArray();
+
+        foreach (var project in visibleFinancialProjects)
+        {
+            await _auditWriter.WriteAsync(
+                AuditLog.Record(
+                    _clock.UtcNow,
+                    actor.Id,
+                    actor.Username,
+                    "PROJECT_FINANCIALS_VIEWED",
+                    AuditSeverity.Info,
+                    "Project",
+                    project.Id.ToString(),
+                    $"Viewed estimated budget for project '{project.Code}'.",
+                    null,
+                    metadata.IpAddress,
+                    metadata.UserAgent),
+                ct);
+        }
+
+        if (visibleFinancialProjects.Length > 0)
+            await _projectRepository.SaveChangesAsync(ct);
+    }
+
+    private async Task<ProjectDto> MapProjectAsync(
+        Project project,
+        Guid actorUserId,
+        CancellationToken ct)
     {
         var structureCounts = await _projectRepository.GetStructureCountsByProjectIdsAsync(
             new[] { project.Id }, ct);
-        return MapProject(project, structureCounts.GetValueOrDefault(project.Id));
+        return MapProject(
+            project,
+            structureCounts.GetValueOrDefault(project.Id),
+            HasFinancialPermission(project, actorUserId));
     }
 
-    private static ProjectDto MapProject(Project project, ProjectStructureCounts structureCounts)
+    private static ProjectDto MapProject(
+        Project project,
+        ProjectStructureCounts structureCounts,
+        bool canViewFinancials)
         => new(
             project.Id,
             project.Code,
@@ -495,7 +577,7 @@ public sealed class ProjectService
             project.BuildingPermitNumber,
             project.BuildingPermitDate,
             project.Status.ToString(),
-            project.EstimatedBudgetDzd,
+            canViewFinancials ? project.EstimatedBudgetDzd : null,
             project.PlannedBlocksCount,
             project.PlannedUnitsCount,
             structureCounts.BuildingsCount,

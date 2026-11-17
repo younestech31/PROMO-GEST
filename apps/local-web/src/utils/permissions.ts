@@ -18,6 +18,24 @@ export function canManageUsers(user: AuthenticatedUser | null): boolean {
   return hasPermission(user, 'users.manage');
 }
 
+/** Budget visibility is an explicit per-project financial capability; SYSTEM_ADMIN does not bypass it. */
+export function canViewProjectFinancials(user: AuthenticatedUser | null, project: ProjectDto): boolean {
+  if (!user || !user.isActive) return false;
+  return project.members.some((member) =>
+    member.userId === user.id && member.canViewFinancials
+  );
+}
+
+/** Budget editing requires both financial visibility and explicit Project Manager scope. */
+export function canUpdateProjectFinancialBudget(user: AuthenticatedUser | null, project: ProjectDto): boolean {
+  if (!user || !user.isActive || !hasPermission(user, 'projects.manage')) return false;
+  return project.members.some((member) =>
+    member.userId === user.id &&
+    member.roleInProject === 'ProjectManager' &&
+    member.canViewFinancials
+  );
+}
+
 export function canCreateProject(user: AuthenticatedUser | null): boolean {
   return hasPermission(user, 'projects.create');
 }

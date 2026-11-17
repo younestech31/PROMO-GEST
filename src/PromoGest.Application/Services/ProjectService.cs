@@ -248,7 +248,7 @@ public sealed class ProjectService
         var canUpdateFinancialBudget =
             permissions.Contains("projects.manage", StringComparer.OrdinalIgnoreCase) &&
             membership?.RoleInProject == ProjectRole.ProjectManager &&
-            membership.CanViewFinancials;
+            membership?.CanViewFinancials == true;
 
         if (request.EstimatedBudgetDzd.HasValue && !canUpdateFinancialBudget)
         {

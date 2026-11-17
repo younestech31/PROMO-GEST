@@ -1,11 +1,11 @@
 # PROMO GEST — Master Engineering Blueprint
 
 **Document Role:** Single authoritative index & master entry point for the PROMO GEST local-first real estate developer ERP (*promoteur immobilier* — Algeria).  
-**Last ASP.NET Core API/Application Runtime Source:** `61bcf8b0a0b2e3967fa5b7add904afd9bc1b0da3` (PR #80 merge; D-014 project estimated-budget financial capability). PR #80 added no EF migration; **EF/schema source remains** `53c50fbc0db801b9298ec731cfc44f2d4d58ff7f` (PR #59).  
+**Last ASP.NET Core API/Application Runtime Source:** `b41d34aae03e1549ca1963a23d92643ff91bf393` (PR #87 merge; P1-07 financial-document read authorization and list-denial audit). PR #87 added no EF migration; **EF/schema source remains** `53c50fbc0db801b9298ec731cfc44f2d4d58ff7f` (PR #59).
 **Latest Frontend Architecture Source:** `bf8a47c1cd334ec94807c727c79d10f40f20be7f` (PR #82 merge; PR #81 canonical frontend platform and PR #82 active module-boundary import analysis).  
-**Latest Test-Source Commit:** `c453201625e3e44278dbaa0be1b77c538a8cadda` (PR #82 head; import parsing/public-index/acyclic dependency regression tests); PR CI #734 passed all three jobs.  
-**Main Commit Inspected:** `bf8a47c1cd334ec94807c727c79d10f40f20be7f` (PR #82 merge).  
-**Latest main CI:** Run #735 / [44096116974](https://github.com/younestech31/PROMO-GEST/actions/runs/44096116974) passed all three jobs on this exact main SHA; frontend TypeScript/tests/Vite and ASP.NET Core static-host builds, .NET 10 + PostgreSQL 18 (Domain 34/34, Application 21/21, Integration 32/32), full restore drill, Linux and Windows publish and PowerShell checks passed. The CI log includes a non-failing Vite warning that one generated JS chunk exceeds 500 kB; treat code-splitting as a separate performance task, not a release failure. Manual RTL/LTR browser acceptance remains outstanding.
+**Latest Test-Source Commit:** PR #87 final head `8dc81b0bc74629d125c01f2549caec1370bd2ec1` (financial-document read authorization and list-denial audit tests); PR CI #766 passed all three jobs.
+**Most recent code-bearing Main commit inspected:** `b41d34aae03e1549ca1963a23d92643ff91bf393` (PR #87; PRs #91–#94 after it were documentation-only).
+**Latest main CI:** Run #795 / [44168633237](https://github.com/younestech31/PROMO-GEST/actions/runs/44168633237) passed all three jobs on post-PR-94 main SHA `0413556195d0e0fc85265d1a9081c1640e5da8a9`; frontend 79/79 tests, .NET 10/PostgreSQL 18 Domain 34/34, Application 21/21, Integration 32/32, full restore drill, Windows x64 publish and PowerShell validation. The Vite chunk-size warning was observed in earlier CI #735, not reported as a failure; manual RTL/LTR browser acceptance remains outstanding.
 **Governing Charter:** Local-first, on-premises per organization, PostgreSQL 18 single source of truth, single System Administrator (`SYSTEM_ADMIN`), HTTP-only `SameSite=Strict` cookie sessions (`promogest_session`) + CSRF, local filesystem storage with SHA-256 verification, Arabic RTL primary / French LTR secondary, Algerian DZD & legal context.
 
 ---

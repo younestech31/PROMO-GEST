@@ -1099,6 +1099,13 @@ public sealed class PostgresEndToEndTests : IClassFixture<PostgreSql18Integratio
             }
 
             // A permitted filename extension must not allow another payload to masquerade as a PDF.
+            int storedProjectDocumentCountBeforeInvalidSignature;
+            using (var countBeforeScope = factory.Services.CreateScope())
+            {
+                var db = countBeforeScope.ServiceProvider.GetRequiredService<AppDbContext>();
+                storedProjectDocumentCountBeforeInvalidSignature = await db.StoredFiles.CountAsync(file =>
+                    file.ProjectId == createdProject.Id && file.Scope == StoredFileScope.Project);
+            }
             using (var invalidSignatureUpload = new MultipartFormDataContent())
             {
                 invalidSignatureUpload.Add(new ByteArrayContent(new byte[] { 0x4D, 0x5A, 0x90, 0x00 }), "file", "forged-permit.pdf");
@@ -1111,7 +1118,7 @@ public sealed class PostgresEndToEndTests : IClassFixture<PostgreSql18Integratio
                 Assert.Equal("FILE_SIGNATURE_INVALID", invalidSignatureError!.Code);
                 using var countScope = factory.Services.CreateScope();
                 var db = countScope.ServiceProvider.GetRequiredService<AppDbContext>();
-                Assert.Equal(1, await db.StoredFiles.CountAsync(file =>
+                Assert.Equal(storedProjectDocumentCountBeforeInvalidSignature, await db.StoredFiles.CountAsync(file =>
                     file.ProjectId == createdProject.Id && file.Scope == StoredFileScope.Project));
             }
 

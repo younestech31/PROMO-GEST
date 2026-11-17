@@ -2427,15 +2427,17 @@ public sealed class PostgresEndToEndTests : IClassFixture<PostgreSql18Integratio
         }
 
         // Test-only grant: production role seeding remains unchanged; the API resolves org.manage dynamically.
-        using (var permissionScope = factory.Services.CreateScope())
+        var permissionDbOptions = new DbContextOptionsBuilder<AppDbContext>()
+            .UseNpgsql(_fixture.GetMigrationConnectionString(connStr))
+            .Options;
+        await using (var permissionDb = new AppDbContext(permissionDbOptions))
         {
-            var db = permissionScope.ServiceProvider.GetRequiredService<AppDbContext>();
-            var commercialRole = await db.Roles.SingleAsync(role => role.Code == Role.CommercialManagerCode);
-            var orgManagePermission = await db.Permissions.SingleAsync(permission => permission.Code == "org.manage");
-            Assert.False(await db.RolePermissions.AnyAsync(link =>
+            var commercialRole = await permissionDb.Roles.SingleAsync(role => role.Code == Role.CommercialManagerCode);
+            var orgManagePermission = await permissionDb.Permissions.SingleAsync(permission => permission.Code == "org.manage");
+            Assert.False(await permissionDb.RolePermissions.AnyAsync(link =>
                 link.RoleId == commercialRole.Id && link.PermissionId == orgManagePermission.Id));
-            db.RolePermissions.Add(RolePermission.Create(commercialRole.Id, orgManagePermission.Id));
-            await db.SaveChangesAsync();
+            permissionDb.RolePermissions.Add(RolePermission.Create(commercialRole.Id, orgManagePermission.Id));
+            await permissionDb.SaveChangesAsync();
         }
 
         var editorSession = await employeeClient.GetFromJsonAsync<SessionResponse>("/api/auth/me");

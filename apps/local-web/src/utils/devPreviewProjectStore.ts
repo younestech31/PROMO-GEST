@@ -168,7 +168,8 @@ export function updateProjectInStore(
   const estimatedBudgetDzd = request.estimatedBudgetDzd === null || request.estimatedBudgetDzd === undefined
     ? project.estimatedBudgetDzd
     : Number(request.estimatedBudgetDzd);
-  if (!Number.isFinite(estimatedBudgetDzd) || estimatedBudgetDzd < 0 || estimatedBudgetDzd > 9_999_999_999_999_999.99) {
+  if (estimatedBudgetDzd !== null &&
+      (!Number.isFinite(estimatedBudgetDzd) || estimatedBudgetDzd < 0 || estimatedBudgetDzd > 9_999_999_999_999_999.99)) {
     throw new DevPreviewStoreError(400, 'PROJECT_BUDGET_INVALID', 'Estimated budget must fit the supported non-negative DZD range.');
   }
 

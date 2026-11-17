@@ -70,7 +70,10 @@ function resolveLocalImport(fromFile: string, specifier: string): string | null 
     path.join(basePath, 'index.ts'),
     path.join(basePath, 'index.tsx'),
   ];
-  return candidates.find((candidate) => fs.existsSync(candidate)) ?? null;
+  return candidates.find((candidate) => {
+    if (!fs.existsSync(candidate)) return false;
+    return fs.statSync(candidate).isFile();
+  }) ?? null;
 }
 
 function owningModule(filePath: string): string | null {
@@ -259,10 +262,9 @@ test('shared UI is the active import surface and root components contain no seco
   const activeRootImports: string[] = [];
 
   for (const file of files) {
-    if (
-      file.includes(path.sep + 'components' + path.sep) &&
-      !file.includes(path.sep + 'shared' + path.sep + 'components' + path.sep)
-    ) continue;
+    const rootComponents = path.join(srcRoot, 'components') + path.sep;
+    const sharedComponents = path.join(srcRoot, 'shared', 'components') + path.sep;
+    if (file.startsWith(rootComponents) || file.startsWith(sharedComponents)) continue;
     if (file.includes(path.sep + 'features' + path.sep) || file.includes(path.sep + 'layouts' + path.sep)) continue;
 
     const source = fs.readFileSync(file, 'utf8');

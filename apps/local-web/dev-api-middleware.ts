@@ -1061,9 +1061,13 @@ export function createPromoGestDevApiPlugin(): Plugin {
           }
           try {
             const body = await readJsonBody<UpdateProjectRequest>(req);
+            const canUpdateFinancialBudget =
+              currentUser.permissions.includes('projects.manage') &&
+              membership?.roleInProject === 'ProjectManager' &&
+              membership?.canViewFinancials === true;
             if (body.estimatedBudgetDzd !== null &&
                 body.estimatedBudgetDzd !== undefined &&
-                membership?.canViewFinancials !== true) {
+                !canUpdateFinancialBudget) {
               addAudit(
                 'ACCESS_DENIED',
                 'Security',
@@ -1074,7 +1078,7 @@ export function createPromoGestDevApiPlugin(): Plugin {
               );
               return sendJson(res, 403, {
                 code: 'PROJECT_FINANCIAL_ACCESS_DENIED',
-                message: 'CanViewFinancials is required to view or update the project estimated budget.',
+                message: 'Updating the estimated budget requires projects.manage, ProjectManager membership, and CanViewFinancials.',
               });
             }
             const updated = updateProjectInStore(project, body);

@@ -26,6 +26,16 @@ export function canViewProjectFinancials(user: AuthenticatedUser | null, project
   );
 }
 
+/** Budget editing requires both financial visibility and explicit Project Manager scope. */
+export function canUpdateProjectFinancialBudget(user: AuthenticatedUser | null, project: ProjectDto): boolean {
+  if (!user || !user.isActive || !hasPermission(user, 'projects.manage')) return false;
+  return project.members.some((member) =>
+    member.userId === user.id &&
+    member.roleInProject === 'ProjectManager' &&
+    member.canViewFinancials
+  );
+}
+
 export function canCreateProject(user: AuthenticatedUser | null): boolean {
   return hasPermission(user, 'projects.create');
 }

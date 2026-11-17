@@ -1351,6 +1351,14 @@ public sealed class ApplicationSecurityAndFoundationTests
                 metadata));
         Assert.Equal("PROJECT_FINANCIAL_ACCESS_DENIED", adminFinanceControllerWrite.Code);
 
+        var financeReaderManagerWrite = await Assert.ThrowsAsync<ForbiddenDomainException>(() =>
+            projectSvc.UpdateProjectAsync(
+                financialReader.Id,
+                project.Id,
+                financialUpdate with { EstimatedBudgetDzd = 145_000_000m, ExpectedConcurrencyStamp = financeReaderAfterUpdate.ConcurrencyStamp },
+                metadata));
+        Assert.Equal("FORBIDDEN_PROJECT_UPDATE", financeReaderManagerWrite.Code);
+
         await projectSvc.AssignMemberAsync(
             init.SystemAdminUserId,
             project.Id,

@@ -1,6 +1,6 @@
 # Algerian administrative reference data
 
-**Current legal baseline checked:** 16 November 2026  
+**Current legal baseline checked:** 17 November 2026  
 **Purpose:** authoritative reference for Wilaya codes in organization and project records  
 **Status:** 69 bilingual Wilaya records are server-owned and exposed by `GET /api/reference/administrative-units`; setup, organization-profile and project selectors consume that endpoint (PR #59). The 1,541-commune catalogue remains unimported and requires separate source reconciliation.
 
@@ -75,6 +75,14 @@ Do not substitute a public repository's row ID, `code_commune`, ONS/geographic i
 
 No candidate GitHub dataset is currently approved as the canonical 1,541-row register. See the source-by-source findings in [REFERENCE-DATA-GOVERNANCE.md](REFERENCE-DATA-GOVERNANCE.md), section 8.4. The commune catalogue remains unimported until the complete row-level crosswalk, source-page visual checks, effective dates, and qualified review are accepted.
 
+
+
+### Latest P1-01 evidence slices — 17 November 2026
+
+- [PR #99](https://github.com/younestech31/PROMO-GEST/pull/99) adds a six-assertion territorial change ledger for locality/mechta transfers and a commune rename. These assertions do not establish four-digit register-code changes.
+- [PR #100](https://github.com/younestech31/PROMO-GEST/pull/100) records the Decree 85-20 four-digit code rule and adds an eight-row code-lineage comparison for Chabet El Ameur, Chihani and Raml Souk. ONS W./C. columns are kept separate from derived candidates; its cover/introduction date conflict and JO44/JO23 visual-review gaps remain open.
+- Both PRs are documentation-only and merged; PR CI #804/#806 and post-merge main CI #805/#807 passed all three required jobs. Current main CI: [#807](https://github.com/younestech31/PROMO-GEST/actions/runs/44191879285), main SHA `29771173c2be3f803535461066625cc97e1dd61a`. They do not approve a canonical code or complete the 1,541-row crosswalk.
+- The current server-owned reference remains 69 Wilayas / legal baseline 1,541 communes / 0 commune rows loaded / `PendingOfficialVerification`. P1-01 remains In Progress / Pending and P1-02 remains Blocked.
 
 ## P1-01 legal review artifacts
 

@@ -1,15 +1,16 @@
 import type { AppLanguage } from "@/types/erp";
 import { PageHeader } from "@/shared/components/PageHeader";
 import { PlannedModuleShell } from "@/shared/components/PlannedModuleShell";
-import { CONTRACTS_SUB_WORKFLOWS } from '../api/contractsApi';
+import { CONTRACTS_SUB_WORKFLOWS } from '../presentation/workflows';
 import { getModuleDefinition } from "@/core/modules/registry";
 
 interface ContractsModulePageProps {
   projectId: string;
   language: AppLanguage;
+  onGoToDocuments: () => void;
 }
 
-export function ContractsModulePage({ projectId, language }: ContractsModulePageProps) {
+export function ContractsModulePage({ projectId, language, onGoToDocuments }: ContractsModulePageProps) {
   const isArabic = language === 'ar';
   const def = getModuleDefinition('F');
 
@@ -35,15 +36,15 @@ export function ContractsModulePage({ projectId, language }: ContractsModulePage
         subWorkflows={CONTRACTS_SUB_WORKFLOWS}
         invariants={[
           {
-            ar: 'لا يُعتد بأي عقد بيع على التصاميم (VSP) دون تقديم شهادة الضمان FGCMPI وتوثيق العقود رسمياً.',
-            fr: 'Aucun contrat VSP n’est valide sans attestation FGCMPI et authentification notariale.',
+            ar: 'المحتوى القانوني والتوثيقي هنا هيكل واجهة أولي فقط، ويظل بانتظار مراجعة واعتماد مختص قانوني وموثق جزائري قبل تحويله إلى قواعد تشغيلية.',
+            fr: 'Le contenu juridique et notarial est une structure d’interface provisoire, en attente de validation par un juriste et un notaire algériens avant toute règle opérationnelle.',
           },
         ]}
         plannedEndpoints={[...def.plannedEndpoints]}
         crossLinks={[
           {
-            label: { ar: 'فتح الوثائق (K-Min)', fr: 'Ouvrir Documents (K-Min)' },
-            onClick: () => {},
+            label: { ar: 'فتح وثائق المشروع (K-Min)', fr: 'Ouvrir les documents du projet (K-Min)' },
+            onClick: onGoToDocuments,
           },
         ]}
       />

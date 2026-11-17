@@ -6,19 +6,13 @@ import type {
   RoleDto,
   UpdateEmployeeRequest,
   UserDto,
-} from "@/types/erp";
-import { getTranslations, translateApiError } from "@/core/localization/translations";
-import { formatLocalDateTime } from "@/shared/utils/algerianFormat";
-import {
-  checkPasswordStrength,
-  PASSWORD_MAX_LENGTH,
-  validateCreateEmployee,
-  type ValidationErrors,
-} from "@/shared/utils/validation";
-import { ApiError } from "@/core/api/apiClient";
-import { FormField, inputBaseClass } from "@/shared/components/FormField";
-import { ConfirmDialog } from "@/shared/components/StateViews";
-import { adminApi } from '../api/adminApi';
+} from '@/types/erp';
+import { getTranslations, translateApiError } from '@/core/localization/translations';
+import { formatLocalDateTime } from '@/utils/algerianFormat';
+import { checkPasswordStrength, PASSWORD_MAX_LENGTH, validateCreateEmployee, type ValidationErrors } from '@/utils/validation';
+import { apiClient, ApiError } from '@/core/api/apiClient';
+import { FormField, inputBaseClass } from '@/components/FormField';
+import { ConfirmDialog } from '@/components/StateViews';
 
 interface UsersManagementViewProps {
   language: AppLanguage;
@@ -128,8 +122,8 @@ export function UsersManagementView({ language, onDirtyChange }: UsersManagement
     setError(null);
     try {
       const [usersData, rolesData] = await Promise.all([
-        adminApi.listUsers(),
-        adminApi.listRoles(),
+        apiClient.listUsers(),
+        apiClient.listRoles(),
       ]);
       setUsers(usersData);
       setRoles(rolesData);
@@ -163,7 +157,7 @@ export function UsersManagementView({ language, onDirtyChange }: UsersManagement
 
     setSubmitting(true);
     try {
-      const created = await adminApi.createEmployee(createForm);
+      const created = await apiClient.createEmployee(createForm);
       setUsers((prev) => [...prev, created]);
       setCreateOpen(false);
       setCreateForm({
@@ -211,7 +205,7 @@ export function UsersManagementView({ language, onDirtyChange }: UsersManagement
 
     setSubmitting(true);
     try {
-      const updated = await adminApi.updateEmployee(editingUser.id, editForm);
+      const updated = await apiClient.updateEmployee(editingUser.id, editForm);
       setUsers((prev) => prev.map((u) => (u.id === updated.id ? updated : u)));
       setEditingUser(null);
     } catch (err) {
@@ -228,7 +222,7 @@ export function UsersManagementView({ language, onDirtyChange }: UsersManagement
   const handleToggleStatus = async (user: UserDto) => {
     setError(null);
     try {
-      const updated = await adminApi.setUserStatus(user.id, !user.isActive);
+      const updated = await apiClient.setUserStatus(user.id, !user.isActive);
       setUsers((prev) => prev.map((u) => (u.id === updated.id ? updated : u)));
     } catch (err) {
       if (err instanceof ApiError) {
@@ -258,7 +252,7 @@ export function UsersManagementView({ language, onDirtyChange }: UsersManagement
 
     setSubmitting(true);
     try {
-      await adminApi.resetUserPassword(resetUser.id, newPassword);
+      await apiClient.resetUserPassword(resetUser.id, newPassword);
       setResetUser(null);
       setNewPassword('');
     } catch (err) {

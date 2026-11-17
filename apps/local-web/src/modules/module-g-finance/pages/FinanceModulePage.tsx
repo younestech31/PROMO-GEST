@@ -1,7 +1,7 @@
 import type { AppLanguage } from "@/types/erp";
 import { PageHeader } from "@/shared/components/PageHeader";
 import { PlannedModuleShell } from "@/shared/components/PlannedModuleShell";
-import { FINANCE_SUB_WORKFLOWS } from '../api/financeApi';
+import { FINANCE_SUB_WORKFLOWS } from '../presentation/workflows';
 import { getModuleDefinition } from "@/core/modules/registry";
 
 interface FinanceModulePageProps {

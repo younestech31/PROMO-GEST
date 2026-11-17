@@ -978,6 +978,56 @@ test('Dev API middleware restricts project budget reads and writes to explicit C
     const adminAfterExplicitFinancialMembership = await adminClient.request('/api/projects/' + project.id);
     assert.equal(adminAfterExplicitFinancialMembership.json.estimatedBudgetDzd, 125000000);
 
+    const adminFinanceControllerWrite = await adminClient.request('/api/projects/' + project.id, {
+      method: 'PUT',
+      body: JSON.stringify({
+        nameAr: 'تعديل مسؤول مالي غير مدير',
+        nameFr: 'Modification sans rôle de chef de projet',
+        wilayaCode: '31',
+        wilayaName: 'وهران / Oran',
+        municipality: 'Bir El Djir',
+        status: 'Planning',
+        estimatedBudgetDzd: 140000000,
+        plannedBlocksCount: 2,
+        plannedUnitsCount: 24,
+        expectedConcurrencyStamp: adminAfterExplicitFinancialMembership.json.concurrencyStamp,
+      }),
+    });
+    assert.equal(adminFinanceControllerWrite.status, 403);
+    assert.equal(adminFinanceControllerWrite.json.code, 'PROJECT_FINANCIAL_ACCESS_DENIED');
+
+    const promoteAdminToProjectManager = await adminClient.request('/api/projects/' + project.id + '/members', {
+      method: 'PUT',
+      body: JSON.stringify({
+        userId: previewSession.json.user.id,
+        roleInProject: 'ProjectManager',
+        canViewFinancials: true,
+        canManageSales: true,
+        canManageConstruction: true,
+        canManageDocuments: true,
+      }),
+    });
+    assert.equal(promoteAdminToProjectManager.status, 200);
+    const adminProjectManagerRead = await adminClient.request('/api/projects/' + project.id);
+    assert.equal(adminProjectManagerRead.json.estimatedBudgetDzd, 125000000);
+    const adminProjectManagerWrite = await adminClient.request('/api/projects/' + project.id, {
+      method: 'PUT',
+      body: JSON.stringify({
+        nameAr: 'تعديل مالي لمسؤول مكلف بالمشروع',
+        nameFr: 'Modification financière par un chef de projet',
+        wilayaCode: '31',
+        wilayaName: 'وهران / Oran',
+        municipality: 'Bir El Djir',
+        status: 'Planning',
+        estimatedBudgetDzd: 175000000,
+        plannedBlocksCount: 2,
+        plannedUnitsCount: 24,
+        expectedConcurrencyStamp: adminProjectManagerRead.json.concurrencyStamp,
+      }),
+    });
+    assert.equal(adminProjectManagerWrite.status, 200);
+    assert.equal(adminProjectManagerWrite.json.estimatedBudgetDzd, 175000000);
+
     const restrictedDetail = await restrictedManagerClient.request('/api/projects/' + project.id);
     assert.equal(restrictedDetail.status, 200);
     assert.equal(restrictedDetail.json.estimatedBudgetDzd, null);
@@ -1068,7 +1118,7 @@ test('Dev API middleware restricts project budget reads and writes to explicit C
     const restrictedReadAfter = await restrictedManagerClient.request('/api/projects/' + project.id);
     assert.equal(restrictedReadAfter.json.estimatedBudgetDzd, null);
     const adminReadAfter = await adminClient.request('/api/projects/' + project.id);
-    assert.equal(adminReadAfter.json.estimatedBudgetDzd, 150000000);
+    assert.equal(adminReadAfter.json.estimatedBudgetDzd, 175000000);
 
     const auditResponse = await adminClient.request('/api/audit?limit=250');
     assert.equal(auditResponse.status, 200);

@@ -1219,6 +1219,29 @@ public sealed class ApplicationSecurityAndFoundationTests
         var metadata = new RequestMetadata("127.0.0.1", "xUnit");
 
         var init = await setup.InitializeAsync(ValidInitRequest(), metadata);
+
+        // The lightweight test store seeds only the baseline roles. Add the production Project Director
+        // role and projects.manage permission locally for this test; do not change production seed data.
+        var projectDirectorRole = Role.Create(
+            Guid.NewGuid(),
+            Role.ProjectDirectorCode,
+            "مدير المشاريع",
+            "Directeur de Projets",
+            "إدارة المشاريع",
+            "Gestion des projets",
+            false,
+            clock.UtcNow);
+        var projectsManagePermission = Permission.Create(
+            Guid.NewGuid(),
+            "projects.manage",
+            "Projects",
+            "إدارة بيانات المشروع",
+            "Gérer les données du projet",
+            clock.UtcNow);
+        store.Roles.Add(projectDirectorRole);
+        store.Permissions.Add(projectsManagePermission);
+        store.RolePermissions.Add(RolePermission.Create(projectDirectorRole.Id, projectsManagePermission.Id));
+
         var financialManager = await userSvc.CreateEmployeeAsync(
             init.SystemAdminUserId,
             new CreateEmployeeRequest("finance.pm", "Financial PM", "finance.pm@elbahdja.dz", null, "StrongPass123", "fr", new[] { Role.ProjectDirectorCode }),

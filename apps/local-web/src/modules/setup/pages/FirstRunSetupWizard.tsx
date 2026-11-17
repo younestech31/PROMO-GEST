@@ -13,7 +13,7 @@ import { PreviewAccessButton } from '@/modules/auth';
 interface FirstRunSetupWizardProps {
   language: AppLanguage;
   onLanguageChange: (lang: AppLanguage) => void;
-  onInitialized: () => void | Promise<void>;
+  onInitialized: (defaultLanguage: AppLanguage, organizationLegalName: string) => void | Promise<void>;
   requiresBootstrapToken?: boolean;
   isPreviewMode: boolean;
   onPreviewLogin: () => Promise<void>;
@@ -101,7 +101,10 @@ export function FirstRunSetupWizard({
       const currentSetup = await apiClient.getSetupStatus();
       if (currentSetup.isInitialized) {
         setErrors({});
-        await onInitialized();
+        await onInitialized(
+          currentSetup.defaultLanguage ?? form.defaultLanguage,
+          currentSetup.organizationLegalName ?? form.legalName
+        );
         return;
       }
 
@@ -114,7 +117,7 @@ export function FirstRunSetupWizard({
         return;
       }
 
-      await apiClient.initializeInstallation(
+      const initialized = await apiClient.initializeInstallation(
         {
           ...form,
           wilayaName: selectedWilaya.canonicalDisplayName,
@@ -122,12 +125,23 @@ export function FirstRunSetupWizard({
         },
         bootstrapToken
       );
-      await onInitialized();
+      await onInitialized(form.defaultLanguage, initialized.organizationLegalName);
     } catch (err) {
       // A concurrent first-run request may have initialized the installation
       // after the status check. Treat the API conflict as completed setup.
       if (err instanceof ApiError && err.code === 'SETUP_ALREADY_INITIALIZED') {
-        await onInitialized();
+        // Another browser may have completed the same first-run transaction.
+        // Refresh only the public setup status; no authenticated session is created here.
+        let completedLanguage = form.defaultLanguage;
+        let completedOrganizationName = form.legalName;
+        try {
+          const completedSetup = await apiClient.getSetupStatus();
+          completedLanguage = completedSetup.defaultLanguage ?? completedLanguage;
+          completedOrganizationName = completedSetup.organizationLegalName ?? completedOrganizationName;
+        } catch {
+          // The conflict itself proves setup completed; keep the submitted language/name as fallback.
+        }
+        await onInitialized(completedLanguage, completedOrganizationName);
       } else if (err instanceof ApiConnectionError) {
         setSubmitError(t.operationTemporarilyUnavailable);
       } else if (err instanceof ApiError) {

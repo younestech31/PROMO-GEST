@@ -232,9 +232,9 @@ The result raises islam-re and GeoAlgeria as useful **French-name/parent-group c
 
 ### 8.5 JO58 annex scope and Arabic legal-name cross-check — 17 November 2026
 
-A fresh read of the official JO58 French PDF text layer makes the annex scope more explicit. Article 1 states that the annex to the interministerial order of 22 June 1985 is modified and completed; it does not describe a complete replacement of that register. The annex declares three separate columns: `COMMUNES`, `NUMEROS DE CODE`, and `SIEGES`. These are respectively the commune label, four-digit register code, and administrative seat. The text parser's later-page table headings are inconsistent, so the first-page column labels govern interpretation of the continuation tables.
+A fresh read of the official JO58 French PDF text layer confirms that Article 1 modifies and completes the annex to the interministerial order of 22 June 1985; it does not republish the entire national register. The annex headings are `COMMUNES`, `NUMEROS DE CODE`, and `SIEGES`: commune name, four-digit register code, and administrative seat are separate fields. The JORADP text representation exposes the headings and tabular rows, but its text extraction must not be treated as a substitute for visual page verification.
 
-In addition to the 11 new-Wilaya sections already audited in §8.4 (108 communes), the extracted annex contains table sections for nine existing Wilayas. Their own section headers state these commune counts:
+In addition to the 11 new-Wilaya sections (108 communes), the French JO58 text layer exposes ten affected existing-Wilaya sections. The section headers state these counts:
 
 | Existing Wilaya | Code | Count stated in JO58 |
 |---|---:|---:|
@@ -243,23 +243,104 @@ In addition to the 11 new-Wilaya sections already audited in §8.4 (108 communes
 | Biskra | 07 | 22 |
 | Tébessa | 12 | 24 |
 | Tlemcen | 13 | 49 |
+| Tiaret | 14 | 36 |
 | Djelfa | 17 | 18 |
 | Médéa | 26 | 43 |
 | M’Sila | 28 | 24 |
 | El Bayadh | 32 | 15 |
-| **Total of these nine section counts** | | **260** |
+| **Total of ten affected existing-Wilaya sections** | | **296** |
 
-The annex also contains explicit `sans changement` blocks, including references for Adrar and Chlef, Oum El Bouaghi, and Béjaïa. Therefore JO58's extractable tables cover both existing and newly created Wilaya groups, while unchanged groups refer back to the earlier register. The nine existing-Wilaya counts plus the 108 new-Wilaya counts are a useful scope inventory (368 declared commune entries across those 20 listed sections), **not** evidence that the nationwide 1,541-row legal crosswalk is complete or that all remaining source instruments have been reconciled. The full amendment lineage and dated parent/code history remain outstanding.
+The 11 new-Wilaya sections total 108; therefore the JO58 annex contains **404 declared commune entries across its 21 printed Wilaya sections** (296 + 108). The remaining 48 Wilayas are represented by explicit `sans changement` references in the annex. This is a scope inventory, not a completed national crosswalk: it does not prove the 1,541 commune rows, all bilingual labels, all historical code/parent intervals, or every prior amendment. Earlier audit wording that counted nine existing-Wilaya sections / 260 rows omitted Tiaret (Wilaya 14, 36 communes) and is superseded by this corrected count.
 
-#### Barika / Abdelkader Azil — Arabic and French legal corroboration
+The affected existing-Wilaya count vector is 03=12, 05=53, 07=22, 12=24, 13=49, 14=36, 17=18, 26=43, 28=24, 32=15. The new-Wilaya counts (59–69) remain 12, 8, 5, 4, 4, 6, 10, 8, 21, 23, 7 respectively.
 
-The Arabic text of Law 26-06, JO No. 25, Article 52 bis 11 lists the eight communes of Barika and includes the exact Arabic name `عبد القادر عزيل`. In the French JO58 Barika table, the matching French commune label is `Abdelkader Azil`, register code `6003`, with the separate seat `Layadate`. These official texts corroborate the municipality name and distinguish its legal code from its seat.
+#### Barika / Abdelkader Azil — Arabic and French legal-name cross-check
 
-The Riadh2002 candidate row with `id=131` still cannot be accepted as a canonical match: it pairs Latin `Metkaouak` with Arabic `عزيل عبد القادر`. The Arabic string reverses the word order used in JO25, while the Latin string does not match the JO58 French commune label. This is a source-row discrepancy requiring historical/source identity adjudication; it is not enough evidence to silently rename, remap, or import that row.
+The Arabic text of Law 26-06, JO No. 25, Article 52 bis 11 includes the Barika commune name `عبد القادر عزيل`. The French JO58 text-layer row lists commune `Abdelkader Azil`, register code `6003`, and separate seat `Layadate`. This supports the Arabic/French lexical pairing at text-layer level; the Arabic JO58 annex page itself still requires visual verification.
+
+The Riadh2002 candidate row with `id=131` remains unsuitable as a canonical match: it pairs Latin `Metkaouak` with Arabic `عزيل عبد القادر`, while the JO25 Arabic string is `عبد القادر عزيل` and the JO58 French row is `Abdelkader Azil`. The difference in word order/Latin label is a source-row identity discrepancy, not authority to silently rename, remap, or import the row.
+
+#### Separate commune names, codes and seats
+
+The French JO58 text layer shows examples in which the seat is not the commune label:
+
+| Wilaya | Commune | Register code | Seat |
+|---|---|---:|---|
+| Aflou (59) | Oued M’Zi | 5911 | Madna El Grada |
+| Barika (60) | Abdelkader Azil | 6003 | Layadate |
+| Barika (60) | Djezzar | 6006 | Merabtine |
+| Tébessa (12) | Gourrigueur | 1216 | Satha |
+| Médéa (26) | Djouab | 2637 | Nacerddine |
+| El Bayadh (32) | Arbaouat | 3209 | Arba Fougani |
+
+These are French text-layer observations and still require the row/page visual check before ingestion. The parser must retain source column identity; it must never treat a seat as an alternative commune name.
 
 #### Evidence limits and import boundary
 
-- Official text-layer sources: [JO58 French PDF](https://www.joradp.dz/FTP/JO-FRANCAIS/2026/F2026058.pdf) and [Law 26-06, JO25 Arabic PDF](https://www.joradp.dz/FTP/jo-arabe/2026/A2026025.pdf).
-- JO58 text extraction now exposes the annex headings, Wilaya section headers, and table text. Screenshot requests for the relevant PDF pages still return `Cache miss`; no JO58 page has therefore been marked as visually inspected in this audit.
-- The current text-layer comparison does not replace examination of Arabic JO58 page images, the complete 1985/1986/1998/2021/2026 source lineage, all 1,541 rows, legal effective dates, duplicates/omissions, or qualified Algerian legal/practitioner adjudication.
+- Official text-layer sources: [JO58 French PDF](https://www.joradp.dz/FTP/JO-FRANCAIS/2026/F2026058.pdf), [JO58 Arabic PDF](https://www.joradp.dz/FTP/jo-arabe/2026/A2026058.pdf), and [Law 26-06, JO25 Arabic PDF](https://www.joradp.dz/FTP/jo-arabe/2026/A2026025.pdf).
+- The supplied audit reports that a local `pdftotext` extraction can reverse the apparent column order on printed page 22 between the Barika and Bir El Ater sections. That exact local extraction has not yet been independently reproduced in this repository audit. The JORADP text-layer rendering reviewed here associates `El Ogla El Melha / 6203 / Ain Zeguig` in that order. Until visual confirmation is complete, no fixed positional regex or parser assumption is approved.
+- Arabic JO58 pages 21–25 require image-based review because the supplied audit reports malformed Arabic text-layer glyph mapping and line segmentation. No Arabic JO58 row is marked visually verified by this audit.
+- Screenshot requests for relevant JORADP PDFs have returned `Cache miss`; PDF bytes have not been obtained in the working runtime, so source-artifact SHA-256 values have **not** been generated. Do not invent or publish checksums until the exact original PDF bytes are downloaded and hashed.
+- Required visual review: printed JO58 pages 9–25 in both French and Arabic, including the commune/code/seat rows and the 2026 Arabic spellings; plus the Boumerdès section on printed page 11 of JO23/1998 in both French and Arabic. Record PDF URL, edition/language, printed page, row, reviewer, and evidence artifact.
 - No canonical commune dataset was adopted, no source row was rewritten, and no commune data/schema/migration/production/Cloud SQL record was changed. API remains `communesCount = 0` / `PendingOfficialVerification`; P1-01 stays In Progress / Pending and P1-02 stays Blocked.
+
+
+### 8.6 Legal register lineage and Chabet El Ameur discrepancy — 17 November 2026
+
+This section records the source hierarchy and the presently corroborated Chabet El Ameur evidence. It is a technical source audit and proposed sign-off position, **not a legal opinion or qualified practitioner approval**.
+
+#### Register lineage relevant to the 1,541-row crosswalk
+
+The legal sources answer different questions and must not be conflated:
+
+| Instrument / publication | Scope established in this audit | Provenance use and limitation |
+|---|---|---|
+| Decree No. 85-20 of 2 February 1985, JO No. 06, 3 February 1985 | Establishes the `Répertoire des collectivités territoriales` and the code structure/update rules. | Governs territorial-register code semantics; it is not itself the consolidated 2026 row list. |
+| Interministerial order of 22 June 1985, JO No. 44, 23 October 1985, pp. 1052–1073 | Initial register annex with Wilaya/commune labels, codes and seats. | Historical base edition; later amendments must be applied as dated deltas. |
+| Interministerial order of 8 February 1986, JO No. 11, 12 March 1986, p. 280 | A specific amendment to the 1985 register. The extracted annex contains four commune/code/seat updates: Aïn Sandel (2407), Bir Ben Laabed (2656), Haraza (3434), and Béni Guécha (3919). | Confirm the complete row transcription and all effects against both official editions before finalizing the national crosswalk; this is not a full replacement register. |
+| Interministerial order of 21 March 1998, JO No. 23, 19 April 1998, pp. 9–11 | Updates the Grand-Alger Governorate and the Wilayas of Blida, Boumerdès and Tipaza. The Boumerdès page 11 table declares 32 communes. | A geographically bounded register delta; the French page 11 prints Chabet El Ameur with code `3614`. |
+| Interministerial order of 12 September 2021, JO No. 79, 17 October 2021 | Modifies and completes the 1985 register, including the 49–58 Wilaya changes and affected parent-Wilaya entries. | Amendment/delta, not proof that the unchanged sections were reprinted or that it is the only pre-2026 amendment. |
+| Law No. 26-06, JO No. 25, 5 April 2026 | Updates territorial organization and establishes the 69-Wilaya / 1,541-commune national baseline and legal parent composition. | Legal parentage and total baseline; not, by itself, a complete code-and-seat register. |
+| Presidential Decree No. 26-206, JO No. 40, 3 June 2026 | Names and seats Wilayas 59–69. | Wilaya-level names/seats; not the complete commune-code list. |
+| Executive Decree No. 26-208, JO No. 40, 3 June 2026 | Governs the asset/liability transition between parent/new Wilayas. | Do not infer that every operational office, registry or service has transferred solely from these financial/property deadlines. |
+| Interministerial order of 5 May 2026, JO No. 58, 12 August 2026 | Modifies and completes the 1985 register annex; prints 404 entries across 10 affected existing Wilayas and 11 new Wilayas, with explicit unchanged references for 48 others. | Latest identified register delta; not a standalone 1,541-row republication. |
+
+A search of the inspected JORADP material has not identified a 1996 amendment to Decree 85-20, the 22 June 1985 register order, or Decree 84-365. This is a bounded search result, not proof that no 1996 sectoral or territorial text exists anywhere. The official JO No. 49 dated 21 August 1996 does contain a school-establishment directory (including the page 15 annex under Executive Decree 96-273) that lists Chabet El Ameur as Boumerdès code `3514`; this is a non-register cross-check, **not** an amendment of the territorial register. Do not conflate that 1996 cross-check with the 8 February 1986 register amendment.
+
+#### Chabet El Ameur — source-by-source transcription
+
+| Source | Printed statement | Evidence meaning |
+|---|---|---|
+| 1985 register, JO No. 44, printed p. 1069, French | `Chabet El Ameur — 3514` | Direct entry in the initial territorial-register annex. |
+| 1996 school-establishment directory, JO No. 49, printed p. 15, French | `Boumerdès (35) — Chabet El Ameur — 3514` | Independent official cross-check in a school directory; not a territorial-register amendment. |
+| 1998 register amendment, JO No. 23, printed p. 11, French | `Chabet El Ameur — 3614` | Direct conflicting transcription in the later register amendment. |
+| 1985 register, JO No. 44, El Tarf table, French text layer | Extracted as `Chihani — 3624`; the same extraction also returns `Raml Souk — 3624` | Internally anomalous text-layer result. The row must be checked against the page image; it cannot settle whether Chihani is 3614, 3624, or a column/text-layer artifact. |
+
+The 1985 text-layer extraction prints Boumerdès codes `3513 Tidjelabine`, `3514 Chabet El Ameur`, and `3515 Thenia` consecutively. In the El Tarf table the same extraction returns `Chihani 3624` and `Raml Souk 3624`, an internally anomalous duplicate. Because the printed page has not been visually inspected, this extraction cannot establish whether `3614` belongs to Chihani, is a typesetting issue, or is a column/text-layer artifact. The earlier categorical statement that `3614` either does or does not collide with Chihani is withdrawn; this relationship remains pending visual verification.
+
+**Proposed sign-off position, not an adopted legal correction:** `3514` is the stronger candidate for the Chabet El Ameur code because it appears in the original 1985 territorial register and the official 1996 school directory; `3614` appears in the later French 1998 register table and must remain preserved as the verbatim source assertion. The 1998 transcription may be a printing/transcription error, but that characterization and the canonical code must not be adopted until a qualified Algerian practitioner reviews the Arabic and French 1998 editions, the full relevant legal chain, and signs the discrepancy record. The local/administrative sequential list reportedly showing `3513` is not accepted as the register code; it conflicts with the primary 1985 table where `3513` belongs to Tidjelabine.
+
+#### Label variants and seat semantics requiring adjudication
+
+Keep source strings as separate assertions; do not overwrite them during normalization:
+
+| Subject | Source variant A | Source variant B | Current treatment |
+|---|---|---|---|
+| Wilaya 68 name | JO58 French: `Bou Saada` | Decree 26-206: `Bou Saâda` | Preserve each source spelling; legal display/canonical transliteration awaits practitioner/source-policy decision. |
+| Wilaya 62 commune | JO58 French: `El Ogla El Melha` | Law 26-06: `Ogla Melha` | Record the distinct legal wording as a variant pair; verify identity and Arabic label before canonicalization. |
+| Barika commune | JO25 Arabic: `عبد القادر عزيل` | JO58 French: `Abdelkader Azil` | Strong text-level correspondence; JO58 Arabic image verification still pending. |
+
+The seat must remain a different attribute from the commune name. The examples in §8.5 demonstrate that the commune name, four-digit code and seat are distinct source columns. Do not map a seat into an alias field simply because the seat differs from the commune name.
+
+#### P1-01 evidence gate and explicit remaining work
+
+P1-01 remains **In Progress / Verification Pending**. P1-02 remains **Blocked**. Before source approval and implementation may proceed, the review pack must contain:
+
+1. Full amendment-inventory reconciliation from the initial 1985 register through all verified updates, including any intervening instruments referenced by the 2021 order's “modified and completed” wording.
+2. A row-level concordance for all 1,541 communes under 69 Wilayas, with legal code, Arabic/French labels, parent, seat where established, effective interval, verbatim source transcription, instrument, JO issue/date, printed page, language, and extraction method.
+3. Visual inspection records for JO58 printed pp. 9–25 in both language editions and JO23/1998 Boumerdès printed p. 11 in both language editions; record any parser disagreement and the final manually transcribed table cell.
+4. Immutable copies of the exact JORADP PDF bytes and SHA-256 checksums. No checksum is recorded in this audit because those original binary artifacts were not available in the working runtime.
+5. Deterministic duplicate, omission, parent, code-version and effective-date checks across the complete 1,541-row set; do not use group-count matching or a GitHub candidate dataset as legal proof.
+6. A qualified Algerian legal/practitioner review which explicitly decides the Chabet El Ameur code, the 1996/1986 lineage question, the Arabic/French pairs, seat distinctions, and any remaining source contradictions.
+
+A reviewer-ready template and illustrative source assertions are provided in `docs/reference-data/P1-01-DISCREPANCIES-FOR-SIGNOFF.md` and `docs/reference-data/P1-01-LEGAL-PROVENANCE-TEMPLATE.csv`. The CSV is **illustrative only**, not the 1,541-row canonical dataset. No commune rows are imported or authorized for import by this documentation update.

@@ -6,6 +6,8 @@ import { fileURLToPath } from 'node:url';
 import { ApiError } from '../core/api/apiClient';
 import { ERP_MODULE_REGISTRY } from '../core/modules/registry';
 import { ERP_MODULE_CATALOG } from './moduleCatalog';
+import { canManageOrganizationProfile } from '../core/permissions/permissionPolicy';
+import type { AuthenticatedUser } from '../types/erp';
 import { reportingApi } from '../modules/module-l-reporting';
 import { contractsApi } from '../modules/module-f-contracts';
 import { financeApi } from '../modules/module-g-finance';
@@ -304,6 +306,54 @@ test('planned F-J workflow metadata is not stored in API modules', () => {
       assert.equal(/_SUB_WORKFLOWS/.test(source), false, moduleDir + '/api/' + file + ' contains presentation metadata');
     }
   }
+});
+
+test('organization profile edit visibility uses the canonical org.manage permission', () => {
+  const createUser = (
+    permissions: string[],
+    isSystemAdministrator = false
+  ): AuthenticatedUser => ({
+    id: 'organization-editor',
+    username: 'organization.editor',
+    fullName: 'Organization Editor',
+    email: 'organization.editor@example.test',
+    phone: null,
+    isSystemAdministrator,
+    isActive: true,
+    preferredLanguage: 'ar',
+    roles: ['COMMERCIAL_MANAGER'],
+    permissions,
+    lastLoginAtUtc: null,
+  });
+
+  assert.equal(canManageOrganizationProfile(createUser(['org.read', 'org.manage'])), true);
+  assert.equal(canManageOrganizationProfile(createUser(['org.read'])), false);
+  assert.equal(canManageOrganizationProfile(createUser(['organization.manage'])), false);
+  assert.equal(canManageOrganizationProfile(createUser([], true)), true);
+
+  const appSource = fs.readFileSync(path.join(srcRoot, 'app', 'App.tsx'), 'utf8');
+  const permissionSource = fs.readFileSync(
+    path.join(srcRoot, 'core', 'permissions', 'permissionPolicy.ts'),
+    'utf8'
+  );
+  const previewSource = fs.readFileSync(path.resolve(srcRoot, '..', 'dev-api-middleware.ts'), 'utf8');
+  const moduleA = ERP_MODULE_REGISTRY.find((module) => module.code === 'A');
+
+  assert.match(appSource, /canManage=\{canManageOrganizationProfile\(session\.user\)\}/);
+  assert.doesNotMatch(appSource, /organization\.manage/);
+  assert.match(permissionSource, /hasPermission\(user,\s*'org\.manage'\)/);
+  assert.doesNotMatch(permissionSource, /organization\.manage/);
+  assert.deepEqual(moduleA?.requiredPermissions, ['org.read', 'org.manage', 'users.manage']);
+
+  const rolePermsBlock = previewSource.match(
+    /const ROLE_PERMS: Record<string, string\[]> = \{([\s\S]*?)\n\};/
+  )?.[1];
+  assert.ok(rolePermsBlock, 'Vite preview role permission catalogue is missing');
+  const systemAdminPermissions = rolePermsBlock.match(/SYSTEM_ADMIN:\s*\[([\s\S]*?)\],/)?.[1];
+  assert.ok(systemAdminPermissions?.includes("'org.manage'"), 'preview SYSTEM_ADMIN must retain org.manage');
+  const nonAdminRolePermissions = rolePermsBlock.replace(/SYSTEM_ADMIN:\s*\[[\s\S]*?\],/, '');
+  assert.doesNotMatch(nonAdminRolePermissions, /['"]org\.manage['"]/);
+  assert.doesNotMatch(rolePermsBlock, /organization\.manage|organization\.read/);
 });
 
 test('planned endpoints reject explicitly instead of reporting fake successful data', () => {

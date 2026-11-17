@@ -1,11 +1,11 @@
 # PROMO GEST — Master Engineering Blueprint
 
 **Document Role:** Single authoritative index & master entry point for the PROMO GEST local-first real estate developer ERP (*promoteur immobilier* — Algeria).  
-**Last ASP.NET Core Runtime / Schema Source Commit:** `53c50fbc0db801b9298ec731cfc44f2d4d58ff7f` (PR #59 merge; server-owned 69-Wilaya reference integrated into setup, organization and project forms).  
-**Latest Frontend Architecture Merge:** `eff036401809bdee4c4ef9a2b9467ac863ae7f95` (PR #81; canonical frontend platform, module-owned screens and architecture boundaries).  
-**Latest Test-Source Commit:** `6e37abf8eb170f2c4dfc136dc481bdf7a11f22d2` (PR #67 head; xUnit analyzer-warning correction in the logout integration test; CI #595 passed all three jobs). PR #63 remains the source of the expanded first-run and logout/session-revocation regression tests.  
-**Main Commit Inspected:** `eff036401809bdee4c4ef9a2b9467ac863ae7f95` (PR #81 merge). Backend runtime/schema source remains `53c50fbc0db801b9298ec731cfc44f2d4d58ff7f`; latest frontend architecture source is PR #81.  
-**Latest main CI:** Run #730 / [44091044674](https://github.com/younestech31/PROMO-GEST/actions/runs/44091044674) passed all three jobs on merge SHA `eff036401809bdee4c4ef9a2b9467ac863ae7f95`; frontend strict TypeScript and **68/68** tests, SPA/static-host builds, .NET 10/PostgreSQL 18, restore, Linux/Windows and PowerShell checks passed. Historical PR #79 Run #628 remains a documentation-only PR-head record. Backend runtime/schema source remains `53c50fbc0db801b9298ec731cfc44f2d4d58ff7f`.
+**Last ASP.NET Core API/Application Runtime Source:** `61bcf8b0a0b2e3967fa5b7add904afd9bc1b0da3` (PR #80 merge; D-014 project estimated-budget financial capability). PR #80 added no EF migration; **EF/schema source remains** `53c50fbc0db801b9298ec731cfc44f2d4d58ff7f` (PR #59).  
+**Latest Frontend Architecture Source:** `bf8a47c1cd334ec94807c727c79d10f40f20be7f` (PR #82 merge; PR #81 canonical frontend platform and PR #82 active module-boundary import analysis).  
+**Latest Test-Source Commit:** `c453201625e3e44278dbaa0be1b77c538a8cadda` (PR #82 head; import parsing/public-index/acyclic dependency regression tests); PR CI #734 passed all three jobs.  
+**Main Commit Inspected:** `bf8a47c1cd334ec94807c727c79d10f40f20be7f` (PR #82 merge).  
+**Latest main CI:** Run #735 / [44096116974](https://github.com/younestech31/PROMO-GEST/actions/runs/44096116974) passed all three jobs on this exact main SHA; frontend TypeScript/tests/Vite and ASP.NET Core static-host builds, .NET 10 + PostgreSQL 18 (Domain 34/34, Application 21/21, Integration 32/32), full restore drill, Linux and Windows publish and PowerShell checks passed. The CI log includes a non-failing Vite warning that one generated JS chunk exceeds 500 kB; treat code-splitting as a separate performance task, not a release failure. Manual RTL/LTR browser acceptance remains outstanding.
 **Governing Charter:** Local-first, on-premises per organization, PostgreSQL 18 single source of truth, single System Administrator (`SYSTEM_ADMIN`), HTTP-only `SameSite=Strict` cookie sessions (`promogest_session`) + CSRF, local filesystem storage with SHA-256 verification, Arabic RTL primary / French LTR secondary, Algerian DZD & legal context.
 
 ---

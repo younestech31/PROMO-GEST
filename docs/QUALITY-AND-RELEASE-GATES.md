@@ -21,7 +21,15 @@
 
 ---
 
-## 2. Current Gate Status Against Baseline (main source `53c50fbc0db801b9298ec731cfc44f2d4d58ff7f`; main CI #581)
+## 2. Current Gate Status Against the Audited Main Baseline
+
+**Current main:** `bf8a47c1cd334ec94807c727c79d10f40f20be7f` (PR #82). **Latest full CI:** [Run #735](https://github.com/younestech31/PROMO-GEST/actions/runs/44096116974), all three jobs passed. Frontend strict TypeScript, unit tests, Vite build and ASP.NET Core static-host build passed; .NET 10/PostgreSQL 18 Domain **34/34**, Application **21/21**, Integration **32/32**, full restore drill passed; Windows x64 publish, machine-scoped Data Protection recovery and PowerShell validation passed. Run #735 is automated CI evidence, not a manual browser or production-installation acceptance.
+
+**Runtime/schema distinction:** PR #80 / D-014 changed ASP.NET Core application/API behavior and merged at `61bcf8b0a0b2e3967fa5b7add904afd9bc1b0da3`; it introduced no EF migration. The current EF/schema source remains PR #59 / `53c50fbc0db801b9298ec731cfc44f2d4d58ff7f`. PR #80 CI #707 and post-merge main CI #708 passed. PR #81 navigation and PR #82 module-boundary checks are also merged and their CI is green.
+
+**Outstanding manual and practitioner gates:** Arabic RTL / French LTR desktop/mobile workflows, budget value redaction/editor visibility, dirty-form Back/Forward/reload/tab-close and project switch/revocation remain unverified in a real browser. P0-A01 and P0-A04 remain `NOT_RUN` for manual first-run/second-initialization and logout/session-revocation. The full official 1,541-commune bilingual crosswalk and qualified review remain pending; Phase 1 stays `IN_PROGRESS` and Phase 2 remains blocked by dependencies.
+
+Historical runs below are retained as evidence for the earlier source baselines; they do not supersede Run #735 for the current main snapshot.
 
 ### Main CI #573 — 16 November 2026
 - **Frontend/static hosting:** passed; strict TypeScript/lint, **39/39** frontend tests, SPA and ASP.NET Core static-host builds, and preview-leak checks.

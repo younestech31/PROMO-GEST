@@ -12,7 +12,7 @@ import type {
 import { getTranslations, translateApiError } from '../../localization/translations';
 import { formatDzd } from '../../utils/algerianFormat';
 import { useAdministrativeReference } from '../../hooks/useAdministrativeReference';
-import { canCreateProject, canManageProjectAccess, canManageProjects, canManageProjectStructure, canManageUsers, canReadProjectDocuments, canUploadProjectDocuments, canReadProjectCustomers, canManageProjectCustomers, canReadProjectSalesReservations, canManageProjectSalesReservations, canViewProjectFinancials, canUpdateProjectFinancialBudget } from '../../utils/permissions';
+import { canCreateProject, canManageProjectAccess, canManageProjects, canManageProjectStructure, canManageUsers, canReadProjectDocuments, canUploadProjectDocuments, canReadProjectCustomers, canManageProjectCustomers, canReadProjectSalesReservations, canManageProjectSalesReservations, canUpdateProjectFinancialBudget } from '../../utils/permissions';
 import { validateCreateProject, type ValidationErrors } from '../../utils/validation';
 import { apiClient, ApiError } from '../../services/apiClient';
 import { FormField, inputBaseClass } from '../../components/FormField';

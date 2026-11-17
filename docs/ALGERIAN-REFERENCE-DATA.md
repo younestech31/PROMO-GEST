@@ -63,3 +63,14 @@ Any later changes to Wilaya or commune names/codes require:
 3. A version/effective-date note.
 4. Domain, API, frontend, preview and integration regression tests.
 5. A decision on how existing installations receive the reference-data update without silently changing saved business records.
+
+
+## 6. Commune register source and code semantics
+
+Law 26-06 (JO No. 25, 5 April 2026) establishes the national total of 69 Wilayas and 1,541 communes. Decree 26-206 (JO No. 40, 3 June 2026) identifies the new Wilaya names and seats. For the amended commune register, use the interministerial order dated 5 May 2026 and published in **JO No. 58 on 12 August 2026**: [official French edition](https://www.joradp.dz/FTP/JO-FRANCAIS/2026/F2026058.pdf) · [official Arabic edition](https://www.joradp.dz/FTP/jo-arabe/2026/A2026058.pdf).
+
+The JO58 annex has separate `COMMUNES`, `NUMEROS DE CODE`, and `SIEGES` columns. The four-digit register code and administrative seat are not interchangeable. For example, the extracted text lists `Abdelkader Azil` as commune code `6003` with seat `Layadate`, and `Oued M’Zi` as code `5911` with seat `Madna El Grada`. The relevant JO58 annex screenshots returned `Cache miss`; these examples remain text-extraction observations pending visual page verification and qualified review.
+
+Do not substitute a public repository's row ID, `code_commune`, ONS/geographic identifier, OSM relation ID, or postal code for the official four-digit commune-register code. Postal identifiers may retain an older Wilaya prefix after a legal parent-Wilaya change. Keep the stable internal PROMO GEST UUID as the record identity, while each source-backed external code and its effective interval remain separate, versioned attributes.
+
+No candidate GitHub dataset is currently approved as the canonical 1,541-row register. See the source-by-source findings in [REFERENCE-DATA-GOVERNANCE.md](REFERENCE-DATA-GOVERNANCE.md), section 8.4. The commune catalogue remains unimported until the complete row-level crosswalk, source-page visual checks, effective dates, and qualified review are accepted.

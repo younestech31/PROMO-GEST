@@ -551,6 +551,7 @@ test('dev preview enforces customer/reservation scopes, dual concurrency, and ca
     assert.equal(structAfter.data.buildings[0].floors[0].units[0].status, 'AvailableForSale');
   });
 });
+
 test('dev preview exposes canonical organization permissions without broadening non-admin grants', async () => {
   await withPreviewServer(async (baseUrl) => {
     const { adminClient, commercial } = await setupWithActors(baseUrl);

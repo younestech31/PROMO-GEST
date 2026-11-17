@@ -25,7 +25,7 @@ public sealed record ProjectDto(
     string? BuildingPermitNumber,
     DateOnly? BuildingPermitDate,
     string Status,
-    decimal EstimatedBudgetDzd,
+    decimal? EstimatedBudgetDzd,
     int PlannedBlocksCount,
     int PlannedUnitsCount,
     int ActualBuildingsCount,

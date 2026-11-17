@@ -6,8 +6,8 @@ const readSource = (path: string) =>
   readFileSync(new URL(path, import.meta.url), 'utf8');
 
 const app = readSource('../app/App.tsx');
-const login = readSource('../features/auth/LoginScreen.tsx');
-const setup = readSource('../features/setup/FirstRunSetupWizard.tsx');
+const login = readSource('../modules/auth/pages/LoginScreen.tsx');
+const setup = readSource('../modules/setup/pages/FirstRunSetupWizard.tsx');
 const layout = readSource('../app/ErpShellLayout.tsx');
 const overview = readSource('../modules/module-a-organization/pages/OverviewView.tsx');
 const translations = readSource('../core/localization/translations.ts');

@@ -162,3 +162,13 @@ Added [W02 Chlef (35)](P1-01-JO44-1985-W02-CHLEF-TEXT-EXTRACT-35.csv), [W04 Oum 
 These rows are not image-verified, not Arabic-paired, not joined to candidate identities and not adjudicated for current validity, effective dates, parent history or later register amendments. `Labi od Medjadja` (W02 code 0228) is preserved verbatim from the text layer and remains a source-string anomaly, not a canonical label.
 
 Together with W31 Oran (26) and W06 Bejaia (52), the bounded JO44 extracts total 187/975 planned rows; 788 remain, subject to full national row-count reconciliation. P1-01 remains In Progress / Pending; P1-02 remains Blocked; no commune data is imported.
+
+## 13. JO44/1985 — three further original-register sections (106 rows)
+
+Added [W03 Laghouat (24)](P1-01-JO44-1985-W03-LAGHOUAT-TEXT-EXTRACT-24.csv), [W05 Batna (61)](P1-01-JO44-1985-W05-BATNA-TEXT-EXTRACT-61.csv), and [W08 Bechar (21)](P1-01-JO44-1985-W08-BECHAR-TEXT-EXTRACT-21.csv), extracted from the official French JO44/1985 searchable text layer on printed pp.1053–1054, pp.1054–1055 and p.1056, respectively. The official table declares 24, 61 and 21 entries; codes span 0301–0324, 0501–0561 and 0801–0821.
+
+Each 24-column CSV retains commune name, register code and administrative seat separately, with row-level source page and evidence status. Apparent Batna text-layer strings `Legride t` (0518) and `Boulh...iat` / `Boulh...at` (0560) are preserved verbatim for visual/Arabic verification.
+
+These rows are not visually page-verified, not Arabic-row-paired, not joined to candidate identities, and not adjudicated for current validity, effective dates, parent lineage or later amendment effects. They remain historical source assertions only.
+
+Together with W31 Oran (26), W06 Bejaia (52), W02 Chlef (35), W04 Oum El Bouaghi (29) and W10 Bouira (45), bounded JO44 extracts now total 293/975 planned rows; 682 remain subject to full national reconciliation. P1-01 stays In Progress / Pending; P1-02 stays Blocked; no commune records are imported.

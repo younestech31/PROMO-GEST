@@ -112,3 +112,10 @@ This supplement is documentation-only. It does not constitute the full amendment
 - This is extraction progress only. No new section in these five tranches has received page-image verification or Arabic row pairing in the extraction passes. Source PDF hash is reused from the existing repository inventory, not recalculated in this work.
 - Preserve text anomalies literally pending official visual/bilingual inspection: W06 `Tirmzrit` and seat `T rouna`; W02 `Labi od Medjadja`. No spelling correction, candidate match, current code, parent assignment or valid-time inference is made.
 - The full intervening register amendments, territorial-composition instruments, source-lineage/effective dates and qualified Algerian practitioner adjudication remain open. All 1,541 candidate workpaper rows remain unapproved; no commune data is imported.
+
+## 5C. JO44/1985 original-register extraction progress — 18 November 2026
+
+- Three further bounded French searchable-text source extracts are documented: W03 Laghouat 24 rows, W05 Batna 61 and W08 Bechar 21. Added to the five earlier sections, the repository/active tranche records **293/975** planned JO44 rows transcribed; **682 remain**, subject to final national completeness reconciliation.
+- Text anomalies preserved without correction include W03? none singled out; W05 seat `Legride t` (0518) and `Boulh...iat` / `Boulh...at` (0560); earlier W06 `Tirmzrit` and seat `T rouna`; W02 `Labi od Medjadja`.
+- The three new sections are French text-layer extraction only; their relevant printed-page image requests returned `Cache miss`, and no Arabic row pairing is claimed. The PDF hash is reused from the source inventory rather than independently recalculated.
+- No candidate identity/current-validity join, code correction, parent assignment, amendment closure or practitioner sign-off is implied. All 1,541 candidates remain unapproved; no commune import.

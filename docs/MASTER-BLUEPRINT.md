@@ -4,8 +4,8 @@
 **Last ASP.NET Core API/Application Runtime Source:** `b41d34aae03e1549ca1963a23d92643ff91bf393` (PR #87 merge; P1-07 financial-document read authorization and list-denial audit). PR #87 added no EF migration; **EF/schema source remains** `53c50fbc0db801b9298ec731cfc44f2d4d58ff7f` (PR #59).
 **Latest Frontend Architecture Source:** `bf8a47c1cd334ec94807c727c79d10f40f20be7f` (PR #82 merge; PR #81 canonical frontend platform and PR #82 active module-boundary import analysis).  
 **Latest Test-Source Commit:** PR #87 final head `8dc81b0bc74629d125c01f2549caec1370bd2ec1` (financial-document read authorization and list-denial audit tests); PR CI #766 passed all three jobs.
-**Most recent code-bearing Main commit inspected:** `b41d34aae03e1549ca1963a23d92643ff91bf393` (PR #87; PRs #91–#103 after it were documentation-only).
-**Latest main CI:** Run #814 / [44259516745](https://github.com/younestech31/PROMO-GEST/actions/runs/44259516745) passed all three required jobs on audited main SHA `1c068dcaa1dc23c3ec3804abf903a10a8540dc76`. Detailed test totals remain in Run #795 (frontend 79/79; Domain 34/34; Application 21/21; PostgreSQL 18 Integration 32/32 and restore drill); PRs #96–#103 are documentation-only and did not change application code/schema. Manual RTL/LTR browser acceptance remains outstanding.
+**Most recent code-bearing Main commit inspected:** `b41d34aae03e1549ca1963a23d92643ff91bf393` (PR #87; PRs #91–#107 after it were documentation/reference-data-only).
+**Latest main CI:** [Run #822](https://github.com/younestech31/PROMO-GEST/actions/runs/44289721946) passed all three required jobs on current main SHA `8b40120aaf2f649bb123cd654f88f62250ce02d9`. PR #107 head CI #821 also passed 3/3. Detailed code-test totals remain in code-bearing Run #795; PRs #105–#107 are documentation/reference-data-only and do not change application code or EF schema. Manual RTL/LTR browser acceptance remains outstanding.
 **Governing Charter:** Local-first, on-premises per organization, PostgreSQL 18 single source of truth, single System Administrator (`SYSTEM_ADMIN`), HTTP-only `SameSite=Strict` cookie sessions (`promogest_session`) + CSRF, local filesystem storage with SHA-256 verification, Arabic RTL primary / French LTR secondary, Algerian DZD & legal context.
 
 ---
@@ -120,6 +120,11 @@ PROMO GEST refuses scope creep driven by generic SaaS ERP conventions. All devel
 | **Decisions Awaiting Product Owner / Practitioner Approval** | (1) Exact commercial release cut-off (Foundation+CRM+Holds vs full VSP Contracts+Collections); (2) Business role assignment for `parties.identity.manage`; (3) Law 11-04 / Decree 13-431 VSP & FGCMPI legal sign-off; (4) Finance Law 2025/2026 VAT & SCF posting rules CPA sign-off; (5) Verified official 1,541-commune dataset (`ADR-0010`). | Documented in [DECISION-LOG.md](DECISION-LOG.md) Section 3. |
 
 
-### P1-01 source-audit evidence refresh — 17 November 2026
+### P1-01 source-audit evidence refresh — 17 November 2026 (superseded by 18 November checkpoint below)
 
 PR #99 merged at `ec038a1137335c36c523469bce4e4884d45ab215`; PR #100 merged at `29771173c2be3f803535461066625cc97e1dd61a`; PR #102 merged at `7a22d15a37b56cc71002a945552743e02db4d9be`; PR #103 merged at `1c068dcaa1dc23c3ec3804abf903a10a8540dc76`. Their PR and post-merge CI runs passed. PR #101/#102 are documentation-only baseline syncs; PR #103 adds ONS 2008 evidence. The six-row territorial assertion ledger and eleven-row code-lineage cross-checks improve provenance and preserve conflicts, but do not constitute a canonical 1,541-commune dataset or professional legal sign-off. Current audited main CI #814 passed 3/3 required jobs on `1c068dcaa1dc23c3ec3804abf903a10a8540dc76`. P1-01 remains In Progress / Pending; P1-02 remains Blocked.
+
+
+### P1-01 source-audit refresh — 18 November 2026
+
+PR #105 merged the 1,541-row working crosswalk; PR #106 merged the 404-row JO58/2026 French text-layer delta and five-name exception file; PR #107 merged JO11/1986 and JO79/2021 historical register evidence at main SHA `8b40120aaf2f649bb123cd654f88f62250ce02d9`. PR #107 CI #821 and post-merge main CI #822 passed all three required jobs. The 59 JO79 new-Wilaya rows on French printed pages 17–19 are now visually checked, including correction of W55/W56 rows to printed page 19; the 103 JO79 existing-Wilaya rows on pages 13–16 remain text-layer only. Arabic row pairing, PDF SHA-256, the remaining 975 rows, all historic exception decisions, and qualified Algerian practitioner approval remain outstanding. P1-01 remains In Progress / Pending; P1-02 remains Blocked. The 69-Wilaya application slice remains implemented; the commune catalogue remains unimported (`communesCount = 0`).

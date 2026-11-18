@@ -184,6 +184,17 @@ ________________________________________________________________
 
 **Decision date:** ___________________  **Signature / stamp:** ___________________
 
+## 8A. Owner-directed proposed decisions — 18 November 2026
+
+The project owner has stated in the project conversation that they are the qualified reviewer and will personally sign/approve the work. The following decision memorandum has been prepared for their signature: [P1-01 owner decision memorandum](P1-01-OWNER-DECISION-MEMORANDUM-2026-11-18.md).
+
+- Chabet El Ameur: proposed canonical code 3514; retain French JO23/1998 printed 3614 as a translated-edition source discrepancy.
+- Chihani / شهاني: proposed canonical code 3614 and Arabic label شهاني; retain French JO44/1985 printed 3624 as a translated-edition source discrepancy, and شحاني as a source-backed ONS spelling variant/alias.
+- Ville d'Alger 1600: retain as a separate historical special/aggregate assertion; do not count or import it as a commune.
+- Effective dates: distinguish legal publication, legal parentage, progressive transfer of administrative powers, FY2026 budget execution, assets/financial close, fee collection and litigation jurisdiction. Do not apply 2027-01-01 as a universal operational date.
+
+**Formal signature status:** owner instruction received in chat; reviewer name, professional qualification/capacity, signature and stamp are not yet recorded in a signed artifact. Do not mark practitioner approval complete until the owner completes the signature fields in the memorandum or this section.
+
 ## 9. PROMO GEST implementation boundary
 
 This pack does not authorize commune import or code changes. Keep the existing 69-Wilaya catalogue only; maintain `communesCount = 0` and `PendingOfficialVerification`. P1-01 remains In Progress / Pending. P1-02 remains Blocked until the complete concordance and qualified sign-off are accepted. No schema, migration, application code, production data, or Google AI Studio Cloud SQL data is changed by this pack.

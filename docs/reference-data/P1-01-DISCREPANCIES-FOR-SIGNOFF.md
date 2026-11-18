@@ -172,3 +172,21 @@ ________________________________________________________________
 ## 9. PROMO GEST implementation boundary
 
 This pack does not authorize commune import or code changes. Keep the existing 69-Wilaya catalogue only; maintain `communesCount = 0` and `PendingOfficialVerification`. P1-01 remains In Progress / Pending. P1-02 remains Blocked until the complete concordance and qualified sign-off are accepted. No schema, migration, application code, production data, or Google AI Studio Cloud SQL data is changed by this pack.
+
+
+## 10. JO79/2021 and JO58/2026 — dated parent/code transitions
+
+The 2021 JO79 register and 2026 JO58 register preserve four exact normalized French-name parent/code changes:
+
+| Commune | JO79/2021 source | JO58/2026 source |
+|---|---|---|
+| Branis | W07 / 0703 | W61 / 6103 |
+| El Kantara | W07 / 0717 | W61 / 6101 |
+| Aïn Zaâtout | W07 / 0718 | W61 / 6102 |
+| El Outaya | W07 / 0719 | W61 / 6104 |
+
+JO79 also prints Djemorah / 0720; JO58 prints Djemourah / 6105. This is a possible same-commune transition but remains unlinked pending Arabic and original page review. Preserve all old and new assertions as dated records; do not overwrite a commune's current parent/code.
+
+A separate blocking parent discrepancy remains for Tabelbala: JO79/2021 places it in W52 with code 5206, while the pinned candidate list places the label under W08. No automatic re-parenting is authorized.
+
+The JO79/2021 existing-Wilaya extract covers 103 source rows: 81 exact name-and-parent candidate links, four exact French-name parent-difference links, and 18 unresolved source-label rows. It is text-layer evidence only; pages 13–16 and Arabic row pairings still require review.

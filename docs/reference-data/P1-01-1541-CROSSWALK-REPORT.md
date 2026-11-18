@@ -124,3 +124,10 @@ The 404-row count comprises 296 entries across the ten existing-Wilaya sections 
 - Law transcription markdown blob SHA: `73d32b1c211ea06211cdf8d69f14630811f62d0e`
 - JO58 extracted record count: 404 (108 new-Wilaya + 296 existing-Wilaya)
 - Main workpaper SHA / PR: to be recorded after commit and CI.
+
+
+## 5C. JO79/2021 — 103 historical rows in eight existing Wilayas
+
+The separate 103-row JO79/2021 extract covers W01, W07, W08, W11, W30, W33, W39 and W47. It yields 81 exact normalized name-and-parent matches, four exact French-name matches to current candidate rows under a different parent, and 18 unresolved label/identity rows. Four exact parent/code changes are Branis 0703→6103, El Kantara 0717→6101, Aïn Zaâtout 0718→6102, and El Outaya 0719→6104. Djemorah 0720 vs Djemourah 6105 remains unlinked. The source tables are text-layer only for printed pages 13–16; no visual verification is claimed.
+
+See [the 103-row historical extract](P1-01-JO79-2021-EXISTING-WILAYAS-103-REGISTER-EXTRACT.csv), [the exceptions list](P1-01-JO79-2021-EXISTING-WILAYAS-EXCEPTIONS.csv), and [the Biskra-to-W61 transition controls](P1-01-JO79-TO-JO58-2026-BISKRA-PARENT-TRANSFER-CONTROLS.csv).

@@ -20,7 +20,7 @@ These corrections do not change the technical or legal status: all 1,541 workpap
 
 ### 2.1 Existing extracts
 
-The repository now contains 21 bounded JO44/1985 French searchable-text extracts (status refreshed 19 November 2026):
+The repository now contains 30 bounded JO44/1985 French searchable-text extracts (status refreshed 19 November 2026):
 
 | Wilaya code | Section | Extracted rows |
 |---:|---|---:|
@@ -43,11 +43,21 @@ The repository now contains 21 bounded JO44/1985 French searchable-text extracts
 | 16 | Alger (numbered commune rows only; 1600 special row separate) | 33 |
 | 17 | Djelfa | 36 |
 | 18 | Jijel | 28 |
+| 20 | Saida | 16 |
+| 23 | Annaba | 12 |
+| 25 | Constantine | 12 |
+| 31 | Oran | 26 |
+| 32 | El Bayadh | 22 |
+| 33 | Illizi | 6 |
 | 35 | Boumerdes | 38 |
 | 36 | El Tarf | 24 |
-| **Total** | **21 of the 48 original Wilaya sections** | **742** |
+| 37 | Tindouf (French heading text-layer literal `TINDOUE`) | 2 |
+| 38 | Tissemsilt | 22 |
+| 45 | Naama | 12 |
+| 47 | Ghardaia | 13 |
+| **Total** | **30 of the 48 original Wilaya sections** | **859** |
 
-The Adrar tranche contains 28 unique assertion IDs and 28 unique four-digit codes in sequence 0101–0128. The Biskra tranche contains 33 unique assertion IDs and 33 unique four-digit codes in sequence 0701–0733. The Biskra source heading declares 33 communes; this is distinct from the 27 Biskra rows republished/changed in JO79/2021. All 742 numbered rows remain historical source assertions, not verified current commune identities. The JO44 extracts are French searchable-text transcriptions only except for the heading and first three W35 rows on printed p.1068, whose official page image was reviewed. They are not fully Arabic-paired, not candidate-joined as a complete historical crosswalk, and not practitioner-approved. The current 48-Wilaya control table contains 48 section rows; all 48 official declared counts have now been transcribed and sum to 1,541. This is an aggregate count control, not proof of all current identities or legal parent/effective-date relationships.
+The Adrar tranche contains 28 unique assertion IDs and 28 unique four-digit codes in sequence 0101–0128. The Biskra tranche contains 33 unique assertion IDs and 33 unique four-digit codes in sequence 0701–0733. The Biskra source heading declares 33 communes; this is distinct from the 27 Biskra rows republished/changed in JO79/2021. All 859 numbered rows remain historical source assertions, not verified current commune identities. The JO44 extracts are French searchable-text transcriptions only except for the heading and first three W35 rows on printed p.1068, whose official page image was reviewed. They are not fully Arabic-paired, not candidate-joined as a complete historical crosswalk, and not practitioner-approved. The current 48-Wilaya control table contains 48 section rows; all 48 official declared counts have now been transcribed and sum to 1,541. This is an aggregate count control, not proof of all current identities or legal parent/effective-date relationships.
 
 ### 2.1A Official heading-count tranche — 18 November 2026
 
@@ -191,4 +201,8 @@ A separate source assertion `Ville d'Alger | 1600` is retained in the same CSV a
 This priority slice adds historical lineage evidence only. It does not update the 1,541-row candidate dispositions, does not mark any row APPROVED, and does not authorize database import or P1-02.
 ### 2.1C Djelfa and Jijel extraction — 19 November 2026
 
-The W17 Djelfa and W18 Jijel text-layer extracts add 64 source assertions: 36 rows with contiguous codes 1701–1736 and 28 rows with contiguous codes 1801–1828. Both extracts preserve administrative seats independently from commune names. The printed page ranges are pp.1060–1061 and pp.1061–1062 respectively. The PDF screenshot service returned cache misses for these pages, so their page-image visual review was not re-run; the rows remain searchable-text-only. Arabic pairings, legal amendment chain, candidate joins, current effective dates and qualified practitioner approval remain open. This advances the aggregate extraction control to 21/48 sections and 742 rows, leaving 27 JO44 section tables.
+The W17 Djelfa and W18 Jijel text-layer extracts add 64 source assertions: 36 rows with contiguous codes 1701–1736 and 28 rows with contiguous codes 1801–1828. Both extracts preserve administrative seats independently from commune names. The printed page ranges are pp.1060–1061 and pp.1061–1062 respectively. The PDF screenshot service returned cache misses for these pages, so their page-image visual review was not re-run; the rows remain searchable-text-only. Arabic pairings, legal amendment chain, candidate joins, current effective dates and qualified practitioner approval remain open. This advances the aggregate extraction control to 30/48 sections and 859 rows, leaving 18 JO44 section tables.
+
+### 2.1D Nine further JO44 section extracts — 19 November 2026
+
+The French searchable-text extracts add 117 assertions across W20 Saida (16), W23 Annaba (12), W25 Constantine (12), W32 El Bayadh (22), W33 Illizi (6), W37 Tindouf (2), W38 Tissemsilt (22), W45 Naama (12) and W47 Ghardaia (13). Deterministic structural checks confirm each declared row count, unique row IDs, unique numeric code and contiguous ascending code sequence. The W37 heading text layer says `TINDOUE`; the row-level extract retains that as `wilaya_name_fr_verbatim`, while the control keeps the section label Tindouf. No canonical heading correction is asserted. The printed-page references are recorded per row; the official JORADP PDF screenshot endpoint returned cache misses, so page-image visual verification is not claimed. All nine tables remain French-only and are not matched row-by-row to the Arabic edition or candidate dataset. Subsequent amendment reconciliation, current parent/effective-date lineage and qualified practitioner review remain pending. The combined source extraction denominator is now 30/48 and 859 rows, with 18 section tables still outstanding.

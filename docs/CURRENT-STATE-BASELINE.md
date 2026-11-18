@@ -8,7 +8,6 @@
 **Latest main commit inspected:** `cd57a5912ccb3631a6e9581d48d1aab2600180d2`; this is the current frontend/runtime and P1-01 evidence checkpoint. The API/Application runtime source remains PR #87 and the EF/schema source remains PR #59.  
 **Manual acceptance boundary:** Arabic RTL / French LTR browser acceptance, desktop/mobile navigation, dirty-form Back/Forward/reload/tab-close, project switching/revocation, and budget-redaction UI still require independent browser evidence. P0-A01 and P0-A04 remain `NOT_RUN` for manual first-run and logout/session-revocation acceptance.  
 **Governance finding:** the repository currently reports `main` as unprotected and no active rulesets; no branch-policy change was made in this audit. Future code and docs changes must use focused branches and PRs.
-**Governing Rule:**
 **Governing Rule:** A feature is `IMPLEMENTED_AND_VERIFIED` only when its code and applicable automated verification pass in the audited repository baseline. A green pipeline does not certify untested browser UX, preview parity, production installation, or legal/accounting correctness.
 
 ---

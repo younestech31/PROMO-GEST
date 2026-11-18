@@ -76,7 +76,7 @@ The Product Owner established Notion as the operational reference for roadmap se
 PRs #99, #100 and #103 are merged documentation-only evidence slices; the six-row territorial ledger and eleven-row code-lineage evidence table are linked from the source governance docs. Current audited main CI #814 passed all three required jobs. The source ledger and code-lineage cross-checks are linked from [REFERENCE-DATA-GOVERNANCE.md](REFERENCE-DATA-GOVERNANCE.md). The 69-Wilaya subset remains implemented, while the 1,541-commune hierarchy remains unimported. Keep P1-01 In Progress / Pending and P1-02 Blocked until the complete row-level legal concordance, original-source verification, effective-date reconciliation and qualified review are accepted. No application/schema or production-data change is implied.
 
 
-## 7. Current source-audit checkpoint — P1-01 (18 November 2026)
+## 7. Historical source-audit checkpoint — P1-01 (18 November 2026; superseded by §8 / CI #825)
 
 - Current main: `8b40120aaf2f649bb123cd654f88f62250ce02d9` (PR #107 merge). Post-merge main CI [#822](https://github.com/younestech31/PROMO-GEST/actions/runs/44289721946) passed all three required jobs on this exact SHA; PR #107 CI #821 passed all three jobs on exact PR head.
 - PRs #105–#107 add the 1,541-row candidate crosswalk, 404-row JO58/2026 French text-layer delta, JO11/1986 four-row register change, JO79/2021 historical extracts and exception/transition controls. They are documentation-only; the code-bearing API/schema baseline remains PR #87 / PR #59.

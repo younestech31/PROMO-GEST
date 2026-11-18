@@ -75,6 +75,12 @@ Every contributor or engineering session **must** complete these 5 preparation s
    - Never add stub endpoints returning fake success, empty files, or unverified `mock` data inside `src/` or `apps/local-web/`.
    - Never embed API keys, static credentials, or default passwords in code or templates.
 
+6. **Vite Development Preview Isolation (P1-14):**
+   - The normal development path uses the real ASP.NET Core API: `npm run dev` starts `scripts/dev-with-local-api.sh`, which requires a ready `ASPNETCORE_URL` or configured Cloud SQL development target before starting Vite. For the dedicated Google AI Studio Cloud SQL development runner use `npm run dev:cloudsql`; it applies migrations with the separate migration identity, starts the API with the restricted runtime identity, waits for `/health/ready`, and then starts the UI. Use fictional test data only; Cloud SQL is development/test only, never production business storage.
+   - The disposable in-memory demo is a separate mode. Enable it only with `PROMOGEST_VITE_ONLY=1`; do not configure `ASPNETCORE_URL` or any of `SQL_HOST`, `SQL_DB_NAME`, `SQL_USER`, `SQL_PASSWORD`, `SQL_ADMIN_USER`, or `SQL_ADMIN_PASSWORD`. Both Vite configuration entry points enforce this boundary. The demo is in-memory, non-persistent, and is not evidence of API, PostgreSQL 18, permissions, migrations, restore, or production behavior.
+   - Vite binds to `127.0.0.1` by default. A temporary external preview requires `PROMOGEST_VITE_ALLOW_EXTERNAL=1`, a comma-separated exact hostname/IP list in `PROMOGEST_VITE_ALLOWED_HOSTS`, and comma-separated exact HTTP(S) origins in `PROMOGEST_VITE_ALLOWED_ORIGINS` (no wildcards, URL paths, query strings, or credentials). Add only the exact preview host/origin supplied by the platform; never use wildcard allowlists.
+   - Host/origin allowlists and CORS are not authentication. Any external listener also requires restrictive Google AI Studio/platform network ingress. Never expose Vite or its in-memory demo directly to a public or production network. Do not treat an external preview link as proof of a protected API session.
+
 ---
 
 ## 3. After Completing Development (Before Opening / Merging PR)

@@ -25,9 +25,6 @@ The repository currently contains 13 bounded JO44/1985 French searchable-text ex
 | Wilaya code | Section | Extracted rows |
 |---:|---|---:|
 | 01 | Adrar | 28 |
-| Wilaya code | Section | Extracted rows |
-|---:|---|---:|
-| 01 | Adrar | 28 |
 | 02 | Chlef | 35 |
 | 03 | Laghouat | 24 |
 | 04 | Oum El Bouaghi | 29 |
@@ -42,7 +39,7 @@ The repository currently contains 13 bounded JO44/1985 French searchable-text ex
 | 31 | Oran | 26 |
 | **Total** | **13 of the 48 original Wilaya sections** | **421** |
 
-The Adrar tranche contains 28 unique assertion IDs and 28 unique four-digit codes in sequence 0101–0128. The Biskra tranche contains 33 unique assertion IDs and 33 unique four-digit codes in sequence 0701–0733. The Biskra source heading declares 33 communes; this is distinct from the 27-row changed-Wilaya table in JO79/2021. All 421 rows remain historical source assertions, not verified current commune identities: the JO44 extracts are French searchable-text transcriptions only, not fully Arabic-paired, not candidate-joined as a complete historical crosswalk, and not practitioner-approved. The current 48-Wilaya control table contains 48 section rows; 23 official declared counts have been entered and 25 remain to be transcribed.
+The Adrar tranche contains 28 unique assertion IDs and 28 unique four-digit codes in sequence 0101–0128. The Biskra tranche contains 33 unique assertion IDs and 33 unique four-digit codes in sequence 0701–0733. The Biskra source heading declares 33 communes; this is distinct from the 27 Biskra rows republished/changed in JO79/2021. All 421 rows remain historical source assertions, not verified current commune identities: the JO44 extracts are French searchable-text transcriptions only, not fully Arabic-paired, not candidate-joined as a complete historical crosswalk, and not practitioner-approved. The current 48-Wilaya control table contains 48 section rows; 24 official declared counts have been entered, summing to 702, and 24 remain to be transcribed. The partial sum is not the national total.
 
 ### 2.2 Retire 360/975 as the extraction progress ratio
 
@@ -53,9 +50,8 @@ Accordingly:
 - Keep the earlier `975` bucket in the historical notes as the former residual work-planning bucket.
 - Do **not** report `360/975` or `615 remaining` as national JO44 source coverage.
 - The new work-planning control is to enumerate and reconcile all 48 Wilaya sections in JO44/1985.
-- The provisional arithmetic is 48 original Wilaya sections minus 11 extracted sections = 37 section tables still to process. If, and only if, the sum of the 48 official `NOMBRE DE COMMUNES` headings is confirmed to be 1,541 after excluding the non-counting `1600 — Ville d'Alger` row, then 1,541 − 360 = **1,181 expected rows** across the 37 remaining sections.
-
-The 1,181 figure is a planning estimate until the declared commune counts are transcribed and summed from all 48 official headings and checked against actual row counts. It is not yet a verified denominator or an approved row count. Build a 48-row control table with: Wilaya code, printed Wilaya heading, declared commune count, actual extracted rows, excluded special rows, FR/AR page coverage, source checksum, and reconciliation result.
+- The current extract coverage is 13 of 48 sections, leaving 35 original Wilaya tables to extract and reconcile. Do not infer a national remaining-row count from the 1,541 current-law total or the former 975 residual bucket. The full 1985 declared-count sum must first be established directly from all 48 official headings, and then compared against the 48 row extracts while excluding the historical `1600 — Ville d'Alger` special line.
+- The 48-row control table records each Wilaya code, printed heading, official declared commune count, actual extracted rows, excluded special rows, printed page range, source checksum and separate FR/AR/visual/current-validity review statuses. As of this update, 24 declared counts have been transcribed (partial sum 702); the remaining 24 must still be captured and independently reconciled.
 
 ## 3. Legal treatment proposed for the bilingual code discrepancies
 

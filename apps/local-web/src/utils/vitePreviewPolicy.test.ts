@@ -36,6 +36,15 @@ test('Vite-only simulation requires an explicit opt-in and excludes an API targe
     }),
     /cannot be combined/
   );
+  assert.throws(
+    () => resolveVitePreviewPolicy({
+      command: 'serve',
+      viteOnlyPreview: true,
+      cloudSqlConfigured: true,
+      allowExternalPreview: false,
+    }),
+    /cannot be combined with Cloud SQL settings/
+  );
   assert.deepEqual(
     resolveVitePreviewPolicy({
       command: 'serve',

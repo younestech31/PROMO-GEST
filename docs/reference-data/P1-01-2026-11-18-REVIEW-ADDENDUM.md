@@ -20,10 +20,11 @@ These corrections do not change the technical or legal status: all 1,541 workpap
 
 ### 2.1 Existing extracts
 
-The repository currently contains 11 bounded JO44/1985 French searchable-text extracts:
+The repository currently contains 12 bounded JO44/1985 French searchable-text extracts:
 
 | Wilaya code | Section | Extracted rows |
 |---:|---|---:|
+| 01 | Adrar | 28 |
 | 02 | Chlef | 35 |
 | 03 | Laghouat | 24 |
 | 04 | Oum El Bouaghi | 29 |
@@ -35,9 +36,9 @@ The repository currently contains 11 bounded JO44/1985 French searchable-text ex
 | 11 | Tamanghasset | 10 |
 | 12 | Tebessa | 28 |
 | 31 | Oran | 26 |
-| **Total** | **11 of the 48 original Wilaya sections** | **360** |
+| **Total** | **12 of the 48 original Wilaya sections** | **388** |
 
-Each row remains a historical source assertion, not a verified current commune identity: the extracts are not page-image verified in this tranche, not fully Arabic-paired, not joined to candidate identities, and not practitioner-approved.
+The Adrar tranche contains 28 unique assertion IDs and 28 unique four-digit codes in sequence 0101–0128. All 388 rows remain historical source assertions, not verified current commune identities: the JO44 extracts are French searchable-text transcriptions only, not fully Arabic-paired, not candidate-joined as a complete historical crosswalk, and not practitioner-approved. The current 48-Wilaya control table contains 48 section rows; 23 official declared counts have been entered and 25 remain to be transcribed.
 
 ### 2.2 Retire 360/975 as the extraction progress ratio
 

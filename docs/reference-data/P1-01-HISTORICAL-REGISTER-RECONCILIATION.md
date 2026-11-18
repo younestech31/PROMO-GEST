@@ -118,3 +118,14 @@ Three additional bounded extracts have been added: [W02 Chlef, 35 rows](P1-01-JO
 - Evidence level is **official French searchable text layer only**. Page-image screenshot requests for printed pp. 1053, 1054 and 1057 returned `Cache miss`; no visual review is claimed. Arabic edition row pairing was not completed in this tranche. The existing PDF SHA-256 is copied from the repository source inventory, not recalculated.
 - No candidate identity join, current-validity/effective-date decision, parent-lineage conclusion, amendment closure or practitioner sign-off is made. These are historical source assertions only.
 - With W31 Oran (26), W06 Bejaia (52), W02 Chlef (35), W04 Oum El Bouaghi (29), and W10 Bouira (45), the repository now has **187/975** planned JO44 baseline rows in bounded CSV extracts; **788 remain**, subject to final national row-count reconciliation.
+
+## 5H. JO44/1985 — W03 Laghouat, W05 Batna and W08 Bechar (106-row French text tranche)
+
+Three additional bounded extracts have been added: [W03 Laghouat, 24 rows](P1-01-JO44-1985-W03-LAGHOUAT-TEXT-EXTRACT-24.csv), [W05 Batna, 61 rows](P1-01-JO44-1985-W05-BATNA-TEXT-EXTRACT-61.csv), and [W08 Bechar, 21 rows](P1-01-JO44-1985-W08-BECHAR-TEXT-EXTRACT-21.csv).
+
+- The official French JO44/1985 searchable text layer declares W03 = 24 communes (printed pp. 1053–1054), W05 = 61 (pp. 1054–1055), and W08 = 21 (p. 1056). Codes are 0301–0324, 0501–0561 and 0801–0821, respectively.
+- All three CSVs use the same 24-column structure. The commune label, four-digit register code and administrative seat remain separate verbatim source assertions, and page references are recorded per row.
+- W05 preserves apparent text-layer defects: seat `Legride t` (0518) and commune/seat strings `Boulh...iat` / `Boulh...at` (0560). These are not corrected or normalized.
+- Evidence level is **official French searchable text layer only**. Page-image retrieval attempts for the relevant printed pages returned `Cache miss`; no visual verification is claimed. Arabic edition row pairing was not performed in this tranche. The source PDF SHA-256 is reused from the repository source inventory, not recomputed.
+- No candidate identity joins, current-validity/effective-date adjudication, parent-lineage conclusions, amendment closure or qualified practitioner decisions are made.
+- With these three sections added to the previously merged W31 Oran, W06 Bejaia, W02 Chlef, W04 Oum El Bouaghi and W10 Bouira extracts, bounded JO44 text extraction now totals **293/975** planned rows; **682 remain**, subject to final national row-count reconciliation.

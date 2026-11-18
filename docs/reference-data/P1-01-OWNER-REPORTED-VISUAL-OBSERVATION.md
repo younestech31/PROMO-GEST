@@ -25,13 +25,15 @@ The existing source assertions remain unchanged:
 
 | Source | Current recorded assertion |
 |---|---|
-| JO44/1985 French, printed p. 1069, Boumerdès | Chabet El Ameur — `3514` |
+| JO44/1985 French (`F1985044.PDF`, printed p. 1069, Boumerdès) | Chabet El Ameur — `3514` (PNG visually verified) |
+| JO44/1985 Arabic (`A1985044.PDF`, printed p. 1634, Boumerdès) | شعبة العامر — `3514` (PNG visually verified) |
 | JO49/1996 French, printed p. 15, school directory (not a register amendment) | Chabet El Ameur — `3514` |
-| JO23/1998 French, printed p. 11, register amendment | Chabet El Ameur — `3614` |
-| JO44/1985 French, El Tarf text layer | Chihani — `3624` (duplicate with Raml Souk in the extraction) |
-| JO44/1985 French, El Tarf image | Product Owner reports Chihani — `3614`; image/crop not supplied to this audit |
+| JO23/1998 Arabic (`A1998023.PDF`, printed p. 13, register amendment) | شعبة العامر — `3514` (PNG visually verified) |
+| JO23/1998 French (`F1998023.PDF`, printed p. 11, register amendment) | Chabet El Ameur — `3614` (PNG visually verified) |
+| JO44/1985 French (`F1985044.PDF`, printed p. 1069, El Tarf) | Chihani — `3624` literally printed on French page (duplicates `Raml Souk — 3624`) |
+| JO44/1985 Arabic (`A1985044.PDF`, printed p. 1635, El Tarf) | شهاني — `3614` literally printed on Arabic page (corroborates Product Owner reading; `رمل السوق` — `3624`) |
 
-**No canonical code is approved by this note.** `3514` remains the stronger candidate based on the initial register and official school-directory cross-check, but the later 1998 register amendment is a direct conflicting assertion. The legal effect and whether it is a printing/transcription error require the complete page-image evidence and qualified practitioner decision.
+**No canonical code is approved by this note.** `3514` is supported by JO44/1985 (FR & AR), JO49/1996, and JO23/1998 Arabic (`A1998023.PDF` p. 13), while `JO23/1998` French p. 11 prints `3614` and `JO44/1985` French p. 1069 prints `Chihani — 3624`. Qualified practitioner decision remains required.
 
 ## Import boundary
 

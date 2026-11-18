@@ -70,13 +70,25 @@ The 2 June 1984 seat-setting order in JO41/1984 is identified. The existence and
 
 JO79/2021 prints 103 register rows for eight older Wilaya sections: W01 (16), W07 (27), W08 (11), W11 (5), W30 (8), W33 (4), W39 (22), and W47 (10). The 27 Biskra rows are historical; JO58/2026 later re-composes W07 and creates W61. Four exact French-name pairs move from W07 to W61 with new codes: Branis 0703→6103, El Kantara 0717→6101, Aïn Zaâtout 0718→6102, El Outaya 0719→6104. Djemorah 0720→Djemourah 6105 remains unlinked pending bilingual review. The other 76 rows belong to seven older W sections not modified in JO58/2026 and remain part of current source coverage. See the JO79 existing-Wilaya 103-row extract and transfer-control CSVs.
 
-## 5. Visual and bilingual verification still required
+## 5. PDF SHA-256 record, completed visual checks, and remaining verification
 
-- Retrieve and preserve the exact original Arabic and French PDF bytes for each relied-upon instrument; compute SHA-256 on those downloaded bytes.
-- For the 1992/1993/2006/2021 instruments, inspect the Arabic text against the French rows and capture the page, article and exact locality spelling.
-- For JO44/1985, inspect the original table image around the Boumerdès and El Tarf rows, including the owner-reported Chihani 3614 observation; keep it in a separate evidence class until the original image/crop is attached and independently verified.
-- For JO23/1998, inspect both language editions of the Boumerdès table on printed p. 11, especially Chabet El Ameur 3614.
-- For JO58/2026, visually inspect printed pp. 9–25 in both languages, preserving column/cell coordinates because the text extraction may reorder commune, code and seat values.
+Downloaded official PDFs and verified SHA-256 checksums for instruments referenced in this inventory:
+- `F1984041.pdf` (`7094710ebdce9cd336c9898e5a35888cb7656831c474373959df5a5e3dbe92e3`) | `A1984041.pdf` (`28ed5d373a2b8f943d10063924b5b91f045e9b66539dad6ad2c964c85ec554ec`)
+- `F1985006.PDF` (`402c46c62af42a222f997506cc32452dde08611baacf9a9437de7be037d60659`) | `A1985006.PDF` (`afadc45a4acb13b0816bfcafdf713f71038c6b6f2f1d07a93fe0454c6b798bcc`)
+- `F1985044.PDF` (`bc9f42cbf3d7bb1fc576383ea8d7194d6ae7a06945003b5ede31581e9a8daf2`) | `A1985044.PDF` (`a90f0306f236fea45956377b8eb5944c07f7e3b995db971edaf35fd6bff4bc59`)
+- `F1986011.PDF` (`49cfdbd7aafca943f3c39e33882a24e791ed7531ff251f5b627d9947d111904b`) | `A1986011.PDF` (`3d26169e0094ecb115d034fbfc1ab4507910efb8916822b41247a2ca494d3072`)
+- `F1992082.PDF` (`f6cbbf779516a525030dde63c1f43470ed9ba6a81818dea4ca4f56301d35d4c3`)
+- `F1993003.pdf` (`3d2f5aebd8b59b35aa349d6803f092978bf3de661900f1c3f2569d7a28d278d3`)
+- `F1996049.PDF` (`45b015a90675863380fc36b864f1a25092c542d0029d4dfe724aaaceedecb7aa`) | `A1996049.PDF` (`66e780a9725d9e1da4a31bfe7bb69e4c5074096c29a27ad23faa863d61f99220`)
+- `F1998023.PDF` (`e618f876aca7d27e7b60e0efe650343942c2b80e9c51e6425d4e223513ef5c8c`) | `A1998023.PDF` (`50fb657098ac30e1ddc939483140b94fbb3a96413629898d871452d26d230362`)
+- `F2006049.pdf` (`30457eca5fdcb79937df35c2479373abf247f12bbaf8add685c0e7b0018b1320`)
+- `F2021026.pdf` (`ef9be0a38a84996d9415c783b1cc568ec7be130d4fd87d06b3ae144a01bc7e9a`) | `A2021026.pdf` (`50f8d7e861004e5f3f72eda872ffab0d38ff40244227907e0e891cb0fbac19d2`)
+- `F2021079.pdf` (`7ca010b9856fea63d4bd8c90cadaa088bbe0e9194d1e0f8edb64e507c57a984e`) | `A2021079.pdf` (`288ea0da7013d8c18530a5b03c22a91cb25f40d9fe7ea7c356ecc0fc2b4433da`)
+- `F2026058.pdf` (`6a1e59f7c0e8396115657c6376dabeb3fa07543ac8a7036ee3003af6a415aad6`) | `A2026058.pdf` (`b1f68aa2794b751b8234a8ff5f9c2dfc1479b996dced2620e9b6f254cf6a889c`)
+
+Completed vs remaining visual/bilingual work:
+- **Completed:** PNG page-image verification in both French and Arabic for JO58/2026 (pp. 9–25, all 404 rows), JO79/2021 (pp. 13–19 FR & 15–22 AR, all 162 rows), JO11/1986 (pp. 280–281 FR & 401–402 AR), JO23/1998 (Boumerdès FR p. 11 vs AR p. 13), and disputed sections of JO44/1985 (FR pp. 1065–1070 & AR pp. 1631–1635, resolving Chabet El Ameur `3514` and Chihani FR `3624` vs AR `3614`).
+- **Remaining:** Retrieve Arabic PDFs and inspect Arabic locality spellings/page images for the `1992/1993/2006` territorial-composition decrees; verify full Arabic/French annex parity for Decree 21-128 (`JO26/2021`) and the 1984 seat order (`JO41/1984`); and extract/reconcile the remaining 975 unmodified-Wilaya rows across the full 1985 annex.
 
 ## 6. Current delivery and import boundary
 

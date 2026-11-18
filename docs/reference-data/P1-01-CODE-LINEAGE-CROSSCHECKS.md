@@ -37,29 +37,29 @@ The ONS 2008 table is an earlier official bilingual cross-check. Its source PDF 
 
 Its introduction says the document applies Decree 21-128 and the interministerial order dated 12 September 2021 which modifies/completes the 22 June 1985 register order. However, the document cover labels the edition **JUIN 2021**. June precedes 12 September. This internal date inconsistency is a material provenance exception: the copy may have been updated/reissued without changing its cover date, but that explanation has not been established. Do not use this file's cover date as proof of the post-September state until the publisher's release/version metadata is clarified.
 
-The ONS PDFs' page screenshots returned cache-miss during this audit. The exact source bytes were not downloaded into the working runtime; no SHA-256 is available. All six ONS rows are therefore text-layer cross-checks, not visually verified page transcriptions.
+The exact ONS source PDF bytes were downloaded and hashed (`ons_code_geo_2008.pdf`, SHA-256 `5b7768f8df92cc2c16da04e8223c137bc22ad70d842fb3f1ac13ae4a7b629720`; `ons_code_geo_2021.pdf`, SHA-256 `9d3a1d9f483e1a1a82924fc4e813c1a9703a720f059671d31efb7b6fd5f37fe4`). However, Ghostscript page rendering hit `Error: can't process embedded font stream` on their content streams (rendering only page footers). All six ONS rows are therefore SHA-hashed text-layer cross-checks, not visually image-verified page scans.
 
 ## 3. Chabet El Ameur
 
 | Source | Statement | Assessment |
 |---|---|---|
-| JO44/1985 initial register, p. 1069 | Chabet El Ameur — 3514 | Direct initial-register assertion; text-layer only in this audit |
+| JO44/1985 initial register, p. 1069 (FR) / p. 1634 (AR) | FR `Chabet El Ameur — 3514`; AR `شعبة العامر — 3514` | Direct initial-register assertion; visually verified on both FR & AR PNG scans |
 | JO49/1996 official school directory, p. 15 | Boumerdès (35), Chabet El Ameur — 3514 | Official independent cross-check, but not a register amendment |
-| JO23/1998 register amendment, p. 11 | Chabet El Ameur — 3614 | Direct conflicting register assertion; text-layer only |
+| JO23/1998 register amendment, p. 13 (AR) vs p. 11 (FR) | AR `شعبة العامر — 3514`; FR `Chabet El Ameur — 3614` | Intra-issue bilingual discrepancy visually verified in both FR & AR PNG scans |
 | ONS Code Géographique National 2008, p. 50 | BOUMERDES W.=35, CHAABET EL AMEUR C.=14 | Derived 3514; independent official cross-check after the 1998 order, not a register amendment |
 | ONS Code Géographique National 2021, p. 49 | BOUMERDES W.=35, CHAABET EL AMEUR C.=14 | Derived 3514; qualified by the cover/introduction date conflict |
 
-A further structural anomaly is now explicit: the 1998 row appears under Boumerdès (Wilaya 35) but prints `3614`, whose first two digits denote Wilaya 36 under Article 3 of Decree 85-20. This does not authorize automatic correction; the Arabic and French page images and legal lineage still require review.
+Direct bilingual PNG review of JO23/1998 establishes that the **Arabic edition (`A1998023.PDF`, printed p. 13) literally prints `شعبة العامر | 3514 | شعبة العامر`** under Wilaya 35 Boumerdès, whereas the **French edition (`F1998023.PDF`, printed p. 11) literally prints `3614`** between `3513` (`Tidjelabine`) and `3515` (`Thénia`). Preserve both verbatim assertions until a qualified practitioner adjudicates the bilingual conflict.
 
-**Proposed position only:** 3514 is the stronger candidate because it appears in the initial register, the official 1996 directory and the ONS table's W=35/C=14 fields. Preserve the 1998 French assertion 3614 verbatim. Neither value is adopted as canonical pending primary-image inspection and qualified review.
+**Proposed position only:** 3514 is the stronger candidate because it matches the initial 1985 French/Arabic register, the 1996 directory, the 1998 Arabic edition, and ONS 2008/2021 W=35/C=14. Neither value is adopted as canonical pending signed practitioner decision.
 
-## 4. Chihani / Raml Souk and the 1985 extraction anomaly
+## 4. Chihani / Raml Souk and the 1985 bilingual page-image finding
 
-The JO44/1985 French text layer assigns 3624 to both Chihani and Raml Souk in the El Tarf table. The official ONS 2008 and 2021 geographic-code tables instead present Chihani as W=36/C=14 (derived 3614) and Raml Souk as W=36/C=24 (derived 3624). The 2008 edition is an independent cross-check predating the 2021 edition/date anomaly and is consistent with the owner's separately reported visual reading of Chihani as 3614. These later ONS tables suggest that the JO44 text-layer duplicate may be a table-layout or extraction artifact, but they do not prove what the 1985 printed image shows.
+Direct PNG inspection of the official JO44/1985 scans clarifies both editions:
+- **French (`F1985044.PDF`, printed p. 1069, PDF p. 25):** literally prints **`Chihani | 3624 | Chihani`** between `Dréan (3613)` and `Chebaïta Mokhtar (3615)`, duplicating `Raml Souk | 3624 | Raml Souk` at the bottom of the column. Thus `3624` is printed in the French edition itself, not merely an extraction bug.
+- **Arabic (`A1985044.PDF`, printed p. 1635, PDF p. 35):** literally prints **`شهاني | 3614 | شهاني`** between `الذرعان (3613)` and `شبايطة مختار (3615)`, and `رمل السوق | 3624 | رمل السوق`. This matches the owner's separately reported visual reading (`3614`) and the ONS 2008 (`شهاني`, W=36/C=14) and ONS 2021 (`شحاني`, W=36/C=14) tables.
 
-That is not proof of what the JO44 printed image shows. The owner-reported reading remains a separately attributed observation; no independent visual inspection of the JORADP page image was possible. The ONS 2008/2021 page images are also not visually reviewed. Keep the raw source observations separate until the original page cells are inspected.
-
-The 1998 Chabet value 3614 also equals the ONS-derived Chihani code. If both assertions were applied literally to the same code scheme at the same time, they would collide; this is another reason to retain the full code/parent lineage and not normalize values by appearance.
+Preserve both the French (`3624`) and Arabic (`3614`) 1985 assertions verbatim; do not normalize `شهاني` vs `شحاني` without practitioner review.
 
 ## 5. Files and review protocol
 
@@ -67,12 +67,12 @@ The 1998 Chabet value 3614 also equals the ONS-derived Chihani code. If both ass
 - [Legal discrepancy sign-off pack](P1-01-DISCREPANCIES-FOR-SIGNOFF.md)
 - [Territorial amendment inventory](P1-01-TERRITORIAL-AMENDMENT-INVENTORY.md)
 
-Required before acceptance:
-1. Inspect JO44/1985 French and Arabic printed page 1069, specifically the Chabet El Ameur, Chihani and Raml Souk cells.
-2. Inspect JO23/1998 French and Arabic printed page 11.
-3. Inspect ONS 2008 printed pages 50–51 and ONS 2021 printed pages 49–50; resolve the ONS 2021 JUIN 2021 / 12 September 2021 edition metadata.
-4. Preserve the exact original PDFs and calculate SHA-256 from those bytes.
-5. Obtain a signed, reasoned decision from a qualified Algerian legal/practitioner reviewer on Chabet's code and the Chihani/Raml source conflict.
+Verification status and remaining actions before acceptance:
+1. JO44/1985 French (p. 1069) and Arabic (pp. 1634–1635) page images — **visually PNG-verified** (Chabet El Ameur `3514` FR/AR; Chihani `3624` FR vs `3614` AR; Raml Souk `3624` FR/AR).
+2. JO23/1998 French (p. 11) and Arabic (p. 13) page images — **visually PNG-verified** (Chabet El Ameur `3614` FR vs `3514` AR).
+3. Inspect ONS 2008 printed pages 50–51 and ONS 2021 printed pages 49–50 in a PDF viewer that renders their embedded font streams, and resolve the ONS 2021 `JUIN 2021` / `12 September 2021` edition metadata.
+4. Preserve the exact original PDFs and verified SHA-256 hashes (computed and recorded in `P1-01-DISCREPANCIES-FOR-SIGNOFF.md` and `P1-01-CODE-LINEAGE-CROSSCHECKS.csv`).
+5. Obtain a signed, reasoned decision from a qualified Algerian legal/practitioner reviewer on Chabet El Ameur's code and the Chihani/Raml Souk source conflict.
 
 ## 6. Implementation boundary
 

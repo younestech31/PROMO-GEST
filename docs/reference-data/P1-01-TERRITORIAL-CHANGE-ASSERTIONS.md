@@ -20,7 +20,7 @@ The broader inventory of the 2 June 1984 chief-lieu seat order and Decree 21-128
 - Source language in this ledger is French only. Arabic source labels are deliberately blank; they must be transcribed from the corresponding Arabic primary edition, not translated or inferred.
 - The French printed page 4 of JO 03/1993 was visually inspected during this audit for Decrees 93-11 and 93-12. This records a page-image reading by the audit process, not independent review by a legal practitioner.
 - Decree 92-412 and Decree 06-256 are text-layer reviewed only in this pass. No visual verification is claimed for their printed pages.
-- No PDF page crop or original PDF binary was preserved in the working runtime; therefore `source_pdf_sha256` is intentionally blank. Obtain the exact original JORADP bytes and compute SHA-256 before the source archive is treated as immutable evidence.
+- Official French PDF binaries were retrieved and hashed: `F1992082.PDF` (SHA-256 `f6cbbf779516a525030dde63c1f43470ed9ba6a81818dea4ca4f56301d35d4c3`), `F1993003.pdf` (SHA-256 `3d2f5aebd8b59b35aa349d6803f092978bf3de661900f1c3f2569d7a28d278d3`), and `F2006049.pdf` (SHA-256 `30457eca5fdcb79937df35c2479373abf247f12bbaf8add685c0e7b0018b1320`); these exact hashes are recorded in `P1-01-TERRITORIAL-CHANGE-ASSERTIONS.csv`. Arabic-edition PDFs and visual checks for 1992/2006 remain pending.
 - The `printed_page` field is the page number printed in the Journal officiel, not the PDF page index. `pdf_page_index_zero_based` is populated only where that index was actually identified in this review.
 
 ## Data rules
@@ -42,7 +42,7 @@ The broader inventory of the 2 June 1984 chief-lieu seat order and Decree 21-128
 | `code_assertion_status` | Records that the four-digit code is not stated by this instrument. A separate register-chain reconciliation is mandatory. |
 | `effective_date_status` | All rows are `not_adjudicated`; the valid-time interval remains blank pending full instrument/legal review. |
 | `practitioner_review_status` | All rows are `pending`; no professional acceptance is claimed. |
-| `source_pdf_sha256` | Blank until calculated from the exact original PDF bytes. |
+| `source_pdf_sha256` | Verified SHA-256 calculated from the exact downloaded official French PDF bytes (`F1992082.PDF`, `F1993003.pdf`, `F2006049.pdf`). |
 
 ## Non-negotiable reconciliation rules
 

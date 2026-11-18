@@ -1,7 +1,7 @@
 # P1-01 — Historical register reconciliation supplement (JO79 existing Wilayas)
 
 **Prepared:** 18 November 2026  
-**State:** FRENCH TEXT-LAYER RECONCILIATION — NOT LEGALLY APPROVED
+**State:** FR & AR VISUAL PNG VERIFIED (ALL 103 ROWS) — NOT LEGALLY APPROVED
 
 ## 1. Scope
 
@@ -21,7 +21,7 @@ This supplement expands the JO79/2021 source chain for the eight existing-Wilaya
 | 47 Ghardaïa | 10 | 16 |
 | **Total** | **103** | |
 
-All 103 rows were transcribed from the official French JORADP PDF text layer, keeping commune name, code and seat as separate fields. Page-image attempts for printed pages 13–16 returned Cache miss; none of these rows is labelled visually verified. The Arabic edition was unavailable in this pass. Exact original PDF bytes were not obtained, so all JO79 PDF SHA-256 fields remain blank.
+All 103 rows were extracted from the official French (`F2021079.pdf`, SHA-256 `7ca010b9856fea63d4bd8c90cadaa088bbe0e9194d1e0f8edb64e507c57a984e`) and Arabic (`A2021079.pdf`, SHA-256 `288ea0da7013d8c18530a5b03c22a91cb25f40d9fe7ea7c356ecc0fc2b4433da`) JORADP editions, keeping commune name, code and seat as separate fields. Rendered PNG page images for **French printed pp. 13–16** and **Arabic printed pp. 15–18** have now been visually inspected across all 103 rows. Visual inspection does not substitute for qualified Algerian practitioner sign-off.
 
 ## 3. Deterministic candidate reconciliation
 
@@ -40,7 +40,7 @@ The four exact W07-to-W61 source pairs are:
 | Aïn Zaâtout | W07 / 0718 | W61 / 6102 |
 | El Outaya | W07 / 0719 | W61 / 6104 |
 
-The fifth Biskra row, Djemorah / 0720, is not exactly matched to JO58's Djemourah / 6105. Do not merge it or create an alias until the Arabic row and original page cell are reviewed.
+The fifth Biskra row, `Djemorah / 0720` (JO79 French p. 14) vs `Djemourah / 6105` (JO58 French p. 22), is now visually verified in both Arabic editions as sharing the exact same Arabic spelling **`جمورة`** (JO79 Arabic p. 16 `جمورة | 0720 | جمورة` vs JO58 Arabic p. 22 `جمورة | 6105 | جمورة`), isolating the difference to a one-letter French vowel shift (`o` → `ou`). Keep the French pair formally unlinked until practitioner sign-off approves the dated transition/alias.
 
 ## 4. Source-coverage arithmetic for the 1,137 rows outside JO58/2026
 
@@ -59,12 +59,12 @@ Total: 59 + 76 + 27 + 975 = 1,137. These are source-coverage buckets, not a fina
 - Djemorah/Djemourah remains a source-label/identity issue.
 - Beni Guecha / Ben Guecha / Béni Guécha appears in JO79/2021, the candidate list and JO11/1986 respectively with code 3919. Preserve all verbatim source labels; no alias has been approved.
 
-## 6. Required remaining evidence
+## 6. Verification completed and required remaining evidence
 
-1. Arabic JO79 and JO58 page-level row pairing, exact page/cell capture, and original PDF SHA-256.
-2. Visual review of JO79 pages 13–16 and JO44/1985, JO11/1986, JO23/1998 pages that contain the unresolved rows.
-3. Reconcile the 975 remaining rows against JO44/1985 plus every applicable subsequent register amendment.
-4. Complete temporal parent/code lineage, duplicate/omission checks and valid-time adjudication.
-5. Qualified Algerian legal/territorial-administration practitioner review.
+1. *(Completed — 18 November 2026)* Exact PDF SHA-256 checksums computed for both French (`F2021079.pdf`) and Arabic (`A2021079.pdf`) JO79/2021 editions and JO58/2026 (`F2026058.pdf`, `A2026058.pdf`); all 103 existing-Wilaya rows visually PNG-inspected across JO79 French pp. 13–16 and Arabic pp. 15–18.
+2. *(Completed for disputed sections)* JO44/1985 (Boumerdès/El Tarf/M'Sila/El Oued FR pp. 1065–1070 & AR pp. 1631–1635), JO11/1986 (pp. 280–281 FR & 401–402 AR), and JO23/1998 (Boumerdès FR p. 11 & AR p. 13) PNG-inspected.
+3. Reconcile the 975 remaining rows across 30 unmodified Wilayas against the full JO44/1985 register and every applicable subsequent register amendment.
+4. Complete temporal parent/code lineage, duplicate/omission checks and valid-time adjudication across all 1,541 units.
+5. Qualified Algerian legal/territorial-administration practitioner review and dated sign-off.
 
 P1-01 remains In Progress / Pending, P1-02 remains Blocked, and no commune data is imported.

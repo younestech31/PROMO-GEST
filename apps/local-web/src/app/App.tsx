@@ -20,6 +20,7 @@ import {
   saveProjectNavigationPreferences,
 } from '../shared/utils/navigationPreferences';
 import { useUnsavedGuard } from '../shared/hooks/useUnsavedGuard';
+import { getDocumentPresentation, isVitePreviewRuntime } from '../shared/utils/appRuntime';
 import { ErpShellLayout } from './ErpShellLayout';
 import { LoginScreen, authApi } from '../modules/auth';
 import { FirstRunSetupWizard, setupApi } from '../modules/setup';
@@ -59,6 +60,7 @@ interface AppContentRouterProps {
   onProjectVerified: (project: ProjectDto) => void;
   onProjectVerificationFailed: (projectId: string) => void;
   onDirtyChange: (dirty: boolean) => void;
+  onOrganizationUpdated: (organization: SessionResponse['organization']) => void;
   saveActionRef: MutableRefObject<(() => Promise<boolean>) | null>;
   discardActionRef: MutableRefObject<(() => void) | null>;
 }
@@ -74,6 +76,7 @@ export function AppContentRouter({
   onProjectVerified,
   onProjectVerificationFailed,
   onDirtyChange,
+  onOrganizationUpdated,
   saveActionRef,
   discardActionRef,
 }: AppContentRouterProps) {
@@ -123,9 +126,7 @@ export function AppContentRouter({
           organization={session.organization}
           language={language}
           canManage={canManageOrganizationProfile(session.user)}
-          onUpdated={(updated) => {
-            session.organization = updated;
-          }}
+          onUpdated={onOrganizationUpdated}
           onDirtyChange={onDirtyChange}
           saveActionRef={saveActionRef}
         />
@@ -530,6 +531,15 @@ export function App() {
   }, []);
 
   const language = session?.user.preferredLanguage ?? unauthenticatedLanguage;
+  const isPreviewMode = isVitePreviewRuntime(health);
+
+  useEffect(() => {
+    if (typeof document === 'undefined') return;
+    const presentation = getDocumentPresentation(language);
+    document.documentElement.lang = presentation.lang;
+    document.documentElement.dir = presentation.dir;
+    document.title = presentation.title;
+  }, [language]);
 
   const handleLanguageChange = (nextLanguage: AppLanguage) => {
     if (!session) {
@@ -543,6 +553,13 @@ export function App() {
   };
 
   const handlePreviewLogin = async () => {
+    if (!isPreviewMode) {
+      throw new Error(
+        language === 'ar'
+          ? 'المعاينة التجريبية متاحة فقط في وضع Vite المنفصل.'
+          : 'La démonstration en mémoire est uniquement disponible en mode aperçu Vite.'
+      );
+    }
     const demoSession = await authApi.openPreviewSession();
     setSession({
       ...demoSession,
@@ -579,7 +596,7 @@ export function App() {
         language={language}
         onLanguageChange={handleLanguageChange}
         requiresBootstrapToken={setupState?.requiresBootstrapToken}
-        isPreviewMode={true}
+        isPreviewMode={isPreviewMode}
         onPreviewLogin={handlePreviewLogin}
         onInitialized={handleInitialized}
       />
@@ -593,7 +610,7 @@ export function App() {
         onLanguageChange={handleLanguageChange}
         organizationName={setupState.organizationLegalName ?? null}
         setupCompleted={setupCompletedNotice}
-        isPreviewMode={true}
+        isPreviewMode={isPreviewMode}
         onPreviewLogin={handlePreviewLogin}
         onLoggedIn={(newSession) => {
           setSession({
@@ -644,6 +661,9 @@ export function App() {
         onProjectVerified={handleProjectVerified}
         onProjectVerificationFailed={handleProjectVerificationFailed}
         onDirtyChange={handleDirtyChange}
+        onOrganizationUpdated={(organization) =>
+          setSession((current) => (current ? { ...current, organization } : current))
+        }
         saveActionRef={saveActionRef}
         discardActionRef={discardActionRef}
       />

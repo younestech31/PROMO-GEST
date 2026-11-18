@@ -3,11 +3,13 @@
 All 12 functional ERP domains required by PROMO GEST, mapped strictly using the 6-state taxonomy against actual inspected code, controllers, EF configurations, and tests.
 
 **Last ASP.NET Core API/Application Runtime Source:** `b41d34aae03e1549ca1963a23d92643ff91bf393` (PR #87). **EF/schema source remains:** `53c50fbc0db801b9298ec731cfc44f2d4d58ff7f` (PR #59; no migration in PR #87).  
-**Current frontend/main baseline:** `cd57a5912ccb3631a6e9581d48d1aab2600180d2`; latest project navigation is PR #90, and the 18 November frontend runtime/language/session-state changes are present on main.  
-**Latest main CI:** [#825](https://github.com/younestech31/PROMO-GEST/actions/runs/44310687822) passed all three jobs on exact SHA `cd57a5912ccb3631a6e9581d48d1aab2600180d2`: Frontend 82/82, Domain 34/34, Application 21/21, PostgreSQL 18 Integration 32/32, static hosting, restore and Windows publish/PowerShell. Manual browser acceptance remains pending.
+**Current frontend/main baseline:** `d859046734fcd0c661a9aada4b7203acc5937c07`; latest code-bearing frontend/runtime source remains PR #112 `293476cbdbf3c4c3fbcae87d7c9b682a493ca436`, while PR #118 is documentation-only.  
+**Latest main CI:** [#899](https://github.com/younestech31/PROMO-GEST/actions/runs/44365099814) passed all three required jobs on exact current main SHA `d859046734fcd0c661a9aada4b7203acc5937c07`. Detailed code-bearing test totals last reported in main CI #873 are Frontend 88/88, Domain 34/34, Application 21/21 and PostgreSQL 18 Integration 32/32. Manual browser acceptance remains pending.
 **Live Preview / Manual Acceptance Evidence:** On 15 November 2026, the Product Owner confirmed the real Google AI Studio development server/API and PostgreSQL development connection operate, and owner-attested successful Arabic RTL / French LTR desktop/mobile workflows for projects, structure, customer interactions, internal holds, documents/SHA-256, authorization, audit, concurrency, safe errors, and persistence. Detailed group mapping is in `PHASE-0-MANUAL-ACCEPTANCE.md`; Phase 0 was administratively closed by owner decision D-010, with P0-A01 and P0-A04 still `NOT_RUN` as accepted residual exceptions.
 
 ---
+
+**Administrative reference delivery:** the bilingual 69-Wilaya catalogue is implemented; the 1,541-commune catalogue is not imported. P1-01 remains `In Progress / Pending` (13/48 JO44 sections extracted as French text, 421 rows; 24/48 declared counts transcribed, partial total 702; JO23/1998 142 source commune rows plus separate 1600 special row). P1-02 remains blocked. See `docs/reference-data/P1-01-1541-CROSSWALK-REPORT.md`.  
 
 ## 1. Overview Matrix
 

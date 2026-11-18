@@ -154,3 +154,11 @@ The new [W06 Bejaia 52-row extract](P1-01-JO44-1985-W06-BEJAIA-TEXT-EXTRACT-52.c
 The extract preserves source strings `Tirmzrit` (0607) and seat `T rouna` (0650) pending image/bilingual verification. The relevant page-image requests returned `Cache miss`; Arabic pairing is not established. The existing PDF checksum is referenced from the repository inventory rather than recomputed. No candidate join, current code/effective date, parent lineage, later-amendment conclusion or legal approval is asserted.
 
 With the W31 Oran extract, 78/975 planned JO44 rows are now transcribed; 897 remain, subject to full national row-count reconciliation. P1-01 remains In Progress / Pending, P1-02 remains Blocked, and no commune rows are imported.
+
+## 12. JO44/1985 — three additional original-register sections (109 rows)
+
+Added [W02 Chlef (35)](P1-01-JO44-1985-W02-CHLEF-TEXT-EXTRACT-35.csv), [W04 Oum El Bouaghi (29)](P1-01-JO44-1985-W04-OUM-EL-BOUAGHI-TEXT-EXTRACT-29.csv), and [W10 Bouira (45)](P1-01-JO44-1985-W10-BOUIRA-TEXT-EXTRACT-45.csv), extracted from the official French searchable text layer on printed pp. 1053, 1054 and 1057 respectively. The source declares 35, 29 and 45 entries; codes span 0201–0235, 0401–0429 and 1001–1045. Each CSV retains separate source commune, register code and seat fields with provenance/evidence status.
+
+These rows are not image-verified, not Arabic-paired, not joined to candidate identities and not adjudicated for current validity, effective dates, parent history or later register amendments. `Labi od Medjadja` (W02 code 0228) is preserved verbatim from the text layer and remains a source-string anomaly, not a canonical label.
+
+Together with W31 Oran (26) and W06 Bejaia (52), the bounded JO44 extracts total 187/975 planned rows; 788 remain, subject to full national row-count reconciliation. P1-01 remains In Progress / Pending; P1-02 remains Blocked; no commune data is imported.

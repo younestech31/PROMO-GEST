@@ -107,3 +107,14 @@ A second bounded tranche of the original 1985 register has been transcribed into
 - Together with the prior W31 Oran tranche, 78 of the 975 planned JO44 rows are transcribed in bounded source files; 897 remain, subject to the final national row-count audit.
 
 Source: [official JO44/1985 French PDF](https://www.joradp.dz/FTP/jo-francais/1985/F1985044.PDF). Existing source-inventory SHA-256: `bc9f42cbf3d7bb1fc576383ea8d7194d6ae7a06945003b5ede31581e9a8daf2`. P1-01 remains In Progress / Pending; P1-02 remains Blocked. No commune data is imported.
+
+## 5G. JO44/1985 — W02 Chlef, W04 Oum El Bouaghi and W10 Bouira (109-row French text tranche)
+
+Three additional bounded extracts have been added: [W02 Chlef, 35 rows](P1-01-JO44-1985-W02-CHLEF-TEXT-EXTRACT-35.csv), [W04 Oum El Bouaghi, 29 rows](P1-01-JO44-1985-W04-OUM-EL-BOUAGHI-TEXT-EXTRACT-29.csv), and [W10 Bouira, 45 rows](P1-01-JO44-1985-W10-BOUIRA-TEXT-EXTRACT-45.csv).
+
+- The official French JO44/1985 searchable text layer declares W02 = 35 communes on printed p. 1053, W04 = 29 on printed p. 1054, and W10 = 45 on printed p. 1057. Extracted codes are respectively 0201–0235, 0401–0429, and 1001–1045.
+- Each CSV retains 24 source/provenance fields. The rows keep the commune name, four-digit code and administrative seat in distinct verbatim columns. Seat differences are not normalized into commune names.
+- W02 row 0228 preserves `Labi od Medjadja` exactly as returned by the text layer. Do not merge, respell or normalize it without visual and Arabic source evidence.
+- Evidence level is **official French searchable text layer only**. Page-image screenshot requests for printed pp. 1053, 1054 and 1057 returned `Cache miss`; no visual review is claimed. Arabic edition row pairing was not completed in this tranche. The existing PDF SHA-256 is copied from the repository source inventory, not recalculated.
+- No candidate identity join, current-validity/effective-date decision, parent-lineage conclusion, amendment closure or practitioner sign-off is made. These are historical source assertions only.
+- With W31 Oran (26), W06 Bejaia (52), W02 Chlef (35), W04 Oum El Bouaghi (29), and W10 Bouira (45), the repository now has **187/975** planned JO44 baseline rows in bounded CSV extracts; **788 remain**, subject to final national row-count reconciliation.

@@ -51,7 +51,7 @@ test('Vite-only mode requires explicit opt-in and rejects real API or Cloud SQL 
 
   for (const config of [rootVite, appVite]) {
     assert.match(config, /viteOnlyPreview: value\('PROMOGEST_VITE_ONLY'\) === '1'/);
-    assert.match(config, /apiTarget: value\('ASPNETCORE_URL'\)/);
+    assert.match(config, /apiUrl: value\('ASPNETCORE_URL'\)/);
     assert.match(config, /if \(policy\.previewEnabled\)/);
     assert.match(config, /createPromoGestDevApiPlugin\(\{ previewEnabled: true \}\)/);
   }

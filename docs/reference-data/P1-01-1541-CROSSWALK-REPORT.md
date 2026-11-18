@@ -139,3 +139,11 @@ The separate [59-row JO79 new-Wilaya extract](P1-01-JO79-2021-WILAYAS-49-58-59-R
 All 59 rows are now visually verified in both French (`F2021079.pdf`, SHA-256 `7ca010b9856fea63d4bd8c90cadaa088bbe0e9194d1e0f8edb64e507c57a984e`, printed pp. 17–19, PDF indices 16–18) and Arabic (`A2021079.pdf`, SHA-256 `288ea0da7013d8c18530a5b03c22a91cb25f40d9fe7ea7c356ecc0fc2b4433da`, printed pp. 19–22).
 
 The Tabelbala row remains a material candidate-parent conflict: both JO79 French (p. 18) and Arabic (p. 20, `تبلبلة | 5206 | تبلبلة`) place Tabelbala in W52 with code `5206`, while the candidate row `W08-R012` is under W08. Bilingual visual verification confirms what the official pages print; qualified practitioner sign-off remains required before closing P1-01 or authorizing any import.
+
+## 10. JO44/1985 — first bounded inherited-register tranche
+
+The new [W31 Oran 26-row JO44/1985 source extract](P1-01-JO44-1985-W31-ORAN-TEXT-EXTRACT-26.csv) captures the French text-layer table on printed p. 1068. The source declares 26 entries; deterministic read-back confirms 26 rows, 26 unique four-digit codes, and a 31 prefix on each. Commune labels, four-digit code strings, and administrative seats remain separate fields.
+
+This is a raw historical-source tranche, not a join to the 1,541-row candidate workpaper and not a current/effective legal concordance. The source page was not visually verified in this pass (Cache miss), the Arabic row pairing is pending, and the existing repository PDF checksum was referenced rather than recalculated. The 975-row JO44 planning tranche is therefore only partially advanced: 26 rows transcribed, 949 still outstanding, plus later-amendment, temporal, parent-lineage and practitioner review.
+
+No commune records were imported; P1-01 remains In Progress / Pending and P1-02 remains Blocked.

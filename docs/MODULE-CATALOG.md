@@ -9,7 +9,7 @@ All 12 functional ERP domains required by PROMO GEST, mapped strictly using the 
 
 ---
 
-**Administrative reference delivery:** the bilingual 69-Wilaya catalogue is implemented; the 1,541-commune catalogue is not imported. P1-01 remains `In Progress / Pending` (13/48 JO44 sections extracted as French text, 421 rows; 24/48 declared counts transcribed, partial total 702; JO23/1998 142 source commune rows plus separate 1600 special row). P1-02 remains blocked. See `docs/reference-data/P1-01-1541-CROSSWALK-REPORT.md`.  
+**Administrative reference delivery:** the bilingual 69-Wilaya catalogue is implemented; the 1,541-commune catalogue is not imported. P1-01 remains `In Progress / Pending` (13/48 JO44 sections extracted as French text, 421 rows; 36/48 declared counts transcribed, partial total 1,144; JO23/1998 142 source commune rows plus separate 1600 special row). P1-02 remains blocked. See `docs/reference-data/P1-01-1541-CROSSWALK-REPORT.md`.  
 
 ## 1. Overview Matrix
 

@@ -88,7 +88,14 @@ Downloaded official PDFs and verified SHA-256 checksums for instruments referenc
 
 Completed vs remaining visual/bilingual work:
 - **Completed:** PNG page-image verification in both French and Arabic for JO58/2026 (pp. 9–25, all 404 rows), JO79/2021 (pp. 13–19 FR & 15–22 AR, all 162 rows), JO11/1986 (pp. 280–281 FR & 401–402 AR), JO23/1998 (Boumerdès FR p. 11 vs AR p. 13), and disputed sections of JO44/1985 (FR pp. 1065–1070 & AR pp. 1631–1635, resolving Chabet El Ameur `3514` and Chihani FR `3624` vs AR `3614`).
-- **Remaining:** Retrieve Arabic PDFs and inspect Arabic locality spellings/page images for the `1992/1993/2006` territorial-composition decrees; verify full Arabic/French annex parity for Decree 21-128 (`JO26/2021`) and the 1984 seat order (`JO41/1984`); and extract/reconcile the remaining 975 unmodified-Wilaya rows across the full 1985 annex.
+- **Remaining:** Retrieve Arabic PDFs and inspect Arabic locality spellings/page images for the `1992/1993/2006` territorial-composition decrees; verify full Arabic/French annex parity for Decree 21-128 (`JO26/2021`) and the 1984 seat order (`JO41/1984`); extract and reconcile the remaining 897 of the 975 planned original-register rows (78 are now transcribed in W31 Oran and W06 Bejaia text-layer source files), subject to final national row-count reconciliation.
+
+## 5A. JO44/1985 original-table extraction progress — 18 November 2026
+
+- The repository now contains 26 French searchable-text rows for W31 Oran (printed p. 1068; PR #113 merged) and 52 for W06 Bejaia (printed pp. 1055–1056; PR #114 in review). Commune name, register code and administrative seat are stored as separate verbatim fields.
+- Combined bounded progress: 78/975 planning rows transcribed; 897 remain, subject to final national row-count reconciliation. These extracts are historical source assertions only, not a current legal register.
+- Neither W31 nor W06 table rows are page-image verified or Arabic-row-paired in these extraction passes. Source-image rendering returned `Cache miss`; the PDF checksum is re-used from the existing source inventory, not recalculated.
+- Candidate matching, code/parent/effective-date lineage, full intervening amendments and qualified practitioner adjudication remain open. W06 text-layer anomalies `Tirmzrit` and seat `T rouna` are preserved verbatim pending verification.
 
 ## 6. Current delivery and import boundary
 

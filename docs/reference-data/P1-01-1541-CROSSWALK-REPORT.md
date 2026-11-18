@@ -147,3 +147,10 @@ The new [W31 Oran 26-row JO44/1985 source extract](P1-01-JO44-1985-W31-ORAN-TEXT
 This is a raw historical-source tranche, not a join to the 1,541-row candidate workpaper and not a current/effective legal concordance. The source page was not visually verified in this pass (Cache miss), the Arabic row pairing is pending, and the existing repository PDF checksum was referenced rather than recalculated. The 975-row JO44 planning tranche is therefore only partially advanced: 26 rows transcribed, 949 still outstanding, plus later-amendment, temporal, parent-lineage and practitioner review.
 
 No commune records were imported; P1-01 remains In Progress / Pending and P1-02 remains Blocked.
+## 11. JO44/1985 — W06 Bejaia 52-row source tranche
+
+The new [W06 Bejaia 52-row extract](P1-01-JO44-1985-W06-BEJAIA-TEXT-EXTRACT-52.csv) transcribes the original-register table from the official French JO44/1985 searchable text layer: 49 rows on printed p. 1055 and 3 continuation rows on p. 1056. All 52 four-digit codes are unique and carry prefix `06`; commune, code and administrative seat are kept as independent columns.
+
+The extract preserves source strings `Tirmzrit` (0607) and seat `T rouna` (0650) pending image/bilingual verification. The relevant page-image requests returned `Cache miss`; Arabic pairing is not established. The existing PDF checksum is referenced from the repository inventory rather than recomputed. No candidate join, current code/effective date, parent lineage, later-amendment conclusion or legal approval is asserted.
+
+With the W31 Oran extract, 78/975 planned JO44 rows are now transcribed; 897 remain, subject to full national row-count reconciliation. P1-01 remains In Progress / Pending, P1-02 remains Blocked, and no commune rows are imported.

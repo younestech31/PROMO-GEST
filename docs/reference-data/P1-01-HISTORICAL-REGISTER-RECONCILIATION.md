@@ -94,3 +94,16 @@ A first bounded tranche of the remaining 1985 baseline work has been transcribed
 - This accounts for 26 rows of the 975-row JO44 planning tranche; 949 remain to be transcribed/reconciled, subject to the final national row-count audit.
 
 Source: [official JO44/1985 French PDF](https://www.joradp.dz/FTP/jo-francais/1985/F1985044.PDF); existing source-inventory SHA-256: bc9f42cbf3d7bb1fc576383ea8d7194d6ae7a06945003b5ede31581e9a8daf2. P1-01 remains In Progress / Pending; P1-02 remains Blocked. No commune data is imported.
+## 5F. JO44/1985 — W06 Bejaia (52-row French text-layer tranche)
+
+A second bounded tranche of the original 1985 register has been transcribed into [the 52-row W06 Bejaia source extract](P1-01-JO44-1985-W06-BEJAIA-TEXT-EXTRACT-52.csv).
+
+- The official French JO44/1985 annex identifies Wilaya code 06, heading `WILAYA DE BEJAIA`, and declares 52 communes. The table spans printed p. 1055 (codes 0601–0649, 49 rows) and p. 1056 (codes 0650–0652, 3 rows).
+- The 24-column extract retains all 52 rows from the searchable text layer, including the exact source labels and separate seat column. Deterministic checks confirm 52 data rows, 52 unique four-digit codes and the `06` prefix for every code.
+- Do not treat the seat as a commune label. Examples include Chelata / 0605 / Felden, Tifra / 0614 / Hammam Sillal, Ifelain Ilmathen / 0618 / Boubzi, and Sidi Ayad / 0621 / Hammam Sidi Ayad.
+- Two text-layer spellings require source-image attention: `Tirmzrit` (0607) and the seat `T rouna` (0650). They are preserved verbatim; no correction or Arabic inference is made.
+- Evidence level is **official French searchable text layer only**. PDF screenshots for printed pp. 1055–1056 returned `Cache miss`, and the Arabic edition was inaccessible in this pass. No bilingual visual verification is claimed. The PDF SHA-256 is reused from the repository's existing source inventory and was not recomputed here.
+- No candidate-row join, effective-date decision, parent lineage adjudication, later-amendment conclusion or practitioner sign-off is made. This is a historical assertion, not an approved current commune record.
+- Together with the prior W31 Oran tranche, 78 of the 975 planned JO44 rows are transcribed in bounded source files; 897 remain, subject to the final national row-count audit.
+
+Source: [official JO44/1985 French PDF](https://www.joradp.dz/FTP/jo-francais/1985/F1985044.PDF). Existing source-inventory SHA-256: `bc9f42cbf3d7bb1fc576383ea8d7194d6ae7a06945003b5ede31581e9a8daf2`. P1-01 remains In Progress / Pending; P1-02 remains Blocked. No commune data is imported.

@@ -5,7 +5,6 @@
 **Current frontend/main source:** `cd57a5912ccb3631a6e9581d48d1aab2600180d2` (18 November 2026; runtime-derived preview detection, document language/direction/title synchronization and immutable organization-session updates). GitHub reports no associated PR for this commit; see the governance note in `CURRENT-STATE-BASELINE.md`.  
 **Latest main verification:** [CI #825](https://github.com/younestech31/PROMO-GEST/actions/runs/44310687822) passed all three jobs on exact SHA `cd57a5912ccb3631a6e9581d48d1aab2600180d2`: Frontend 82/82, Domain 34/34, Application 21/21, PostgreSQL 18 Integration 32/32, static hosting, restore, and Windows publish/PowerShell.  
 **Manual acceptance boundary:** Arabic RTL / French LTR desktop/mobile, route/dirty-form/switcher/revocation journeys remain pending; P1-01 legal/practitioner sign-off remains open and P1-14 preview isolation is incomplete.
-**Governing Charter:**
 **Governing Charter:** Local-first, on-premises per organization, PostgreSQL 18 single source of truth, single System Administrator (`SYSTEM_ADMIN`), HTTP-only `SameSite=Strict` cookie sessions (`promogest_session`) + CSRF, local filesystem storage with SHA-256 verification, Arabic RTL primary / French LTR secondary, Algerian DZD & legal context.
 
 ---
@@ -77,7 +76,7 @@ Every claim across this blueprint uses **strictly one** of the six evidence-back
 3. **Counterparties (Party), CRM & Holds:** Organization-wide `parties` identity (`id`, `party_kind`, `display_name`), project-scoped `project_customers` & `customer_interactions`, and internal lot/unit holds (`project_sales_reservations`), cleanly separated from future Statutory Reservation Contracts, VSP / *Acte Notarié* sales contracts, regulated payment milestones, and DZD collections.
 4. **Execution, Accounting & Statutory Compliance:** Works/construction tracking (lots, contractor situations, FGCMPI/legal compliance), suppliers/inventory, **Algerian SCF (Système Comptable Financier)** journal generation, VAT/IBS/TAP/IRG tax tracking (Finance Laws 2025/2026 gated on qualified accountant review), and local reporting.
 
-### High-Level Program Status Snapshot (Main Merge Baseline: `29771173c2be3f803535461066625cc97e1dd61a`; latest main CI #807)
+### High-Level Program Status Snapshot (Current Main: `cd57a5912ccb3631a6e9581d48d1aab2600180d2`; main CI #825)
 
 | Layer / Domain | Current State | Verification Evidence |
 |---|---|---|

@@ -81,3 +81,16 @@ These buckets sum to 1,137 (59 + 76 + 27 + 975). This is a source-coverage plan,
 - P1-02 remains **Blocked**.
 - No commune records are imported; no database schema, production data or Google AI Studio Cloud SQL data is changed.
 - Bilingual visual PNG review and exact PDF SHA-256 verification are now complete for: JO58/2026 (pp. 9–25 FR & AR, 404 rows), JO79/2021 (pp. 13–19 FR & 15–22 AR, 162 rows), JO11/1986 (pp. 280–281 FR & 401–402 AR, 4 rows), JO23/1998 (Boumerdès table FR p. 11 & AR p. 13), and key disputed sections of JO44/1985 (FR pp. 1065–1070 & AR pp. 1631–1635). Full row-by-row transcription and reconciliation of the remaining 975 rows across the 30 unmodified Wilayas against JO44/1985 remains open.
+
+## 5E. JO44/1985 — W31 Oran (26-row French text-layer tranche)
+
+A first bounded tranche of the remaining 1985 baseline work has been transcribed into [the 26-row W31 Oran source extract](P1-01-JO44-1985-W31-ORAN-TEXT-EXTRACT-26.csv).
+
+- The official French JO44/1985 PDF identifies the order of 22 June 1985, Wilaya 31 (Oran), and a declared total of 26 communes. Its printed table is on p. 1068 and exposes the three separate columns: commune, register code and administrative seat.
+- The extract preserves all 26 source rows from the French searchable text layer: codes 3101–3126. Programmatic read-back verified 26 data rows, 26 unique four-digit codes, and the 31 Wilaya prefix on every code.
+- The fields are intentionally independent. In particular, the source gives Ben Fréha / 3120 / Hassiane El Toual and Aïn Biya / 3126 / Charla Zeghloul; the seat is not interchangeable with the commune name.
+- Evidence level is **official French PDF text-layer extraction only**. The page-image renderer returned Cache miss; this tranche is not marked visually verified. The Arabic JO44 counterpart was not available for row pairing in this pass. The SHA-256 below is the checksum already recorded in the repository's source inventory; it was not recomputed in this extraction session.
+- No fuzzy or candidate-row join was applied. Arabic labels, current effective dates, parent lineage, subsequent amendments and qualified practitioner review remain pending. This is a historical source assertion, not an approved current commune record.
+- This accounts for 26 rows of the 975-row JO44 planning tranche; 949 remain to be transcribed/reconciled, subject to the final national row-count audit.
+
+Source: [official JO44/1985 French PDF](https://www.joradp.dz/FTP/jo-francais/1985/F1985044.PDF); existing source-inventory SHA-256: bc9f42cbf3d7bb1fc576383ea8d7194d6ae7a06945003b5ede31581e9a8daf2. P1-01 remains In Progress / Pending; P1-02 remains Blocked. No commune data is imported.

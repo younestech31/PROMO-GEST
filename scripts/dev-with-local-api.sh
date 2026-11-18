@@ -73,8 +73,11 @@ for variable in SQL_HOST SQL_DB_NAME SQL_USER SQL_PASSWORD SQL_ADMIN_USER SQL_AD
 done
 
 if [[ "${PROMOGEST_VITE_ONLY:-$CONFIGURED_VITE_ONLY}" == "1" ]]; then
-  # Explicit frontend-only mode. Vite config also honors this flag and will
-  # use the in-memory development simulator rather than proxying a dead API.
+  # Explicit frontend-only mode is mutually exclusive with all real API/SQL targets.
+  if [[ -n "$CONFIGURED_API_URL" || "$SQL_ENV_PRESENT" == true ]]; then
+    echo "ERROR: PROMOGEST_VITE_ONLY=1 cannot be combined with ASPNETCORE_URL or Cloud SQL settings. Remove the demo flag to use the real API." >&2
+    exit 1
+  fi
   export PROMOGEST_VITE_ONLY=1
   echo "Starting explicit Vite-only demo mode; no ASP.NET Core API or persistent database is used."
 elif [[ -n "$CONFIGURED_API_URL" || "$SQL_ENV_PRESENT" == true ]]; then
@@ -183,10 +186,8 @@ elif [[ -n "$CONFIGURED_API_URL" || "$SQL_ENV_PRESENT" == true ]]; then
   export PROMOGEST_VITE_ONLY=0
   echo "API readiness verified. Starting React UI with /api and /health proxy to $API_URL."
 else
-  # No API target and no database integration were requested: choose the
-  # simulator deliberately instead of inheriting an unrelated loopback URL.
-  export PROMOGEST_VITE_ONLY=1
-  echo "No API target or Cloud SQL integration configured; starting explicit Vite-only demo mode."
+  echo "ERROR: No API target or Cloud SQL integration is configured. Set ASPNETCORE_URL for the real local API, or explicitly set PROMOGEST_VITE_ONLY=1 for the disposable in-memory demo." >&2
+  exit 1
 fi
 
 if [[ ! -x "$ROOT_DIR/node_modules/.bin/vite" ]]; then
@@ -194,7 +195,7 @@ if [[ ! -x "$ROOT_DIR/node_modules/.bin/vite" ]]; then
   exit 1
 fi
 
-"$ROOT_DIR/node_modules/.bin/vite" --port=3000 --host=0.0.0.0 "$@" &
+"$ROOT_DIR/node_modules/.bin/vite" --port=3000 "$@" &
 VITE_PID=$!
 
 # If this launcher owns the API process and it exits unexpectedly, stop the

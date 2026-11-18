@@ -138,3 +138,32 @@ Law No. 26-06 and Executive Decree No. 26-208 do not establish one universal dat
 - Executive Decree No. 26-208, JO No. 40/2026, Articles 2–13: [French translation edition](https://www.joradp.dz/FTP/jo-francais/2026/F2026040.pdf).
 
 **Final status:** this addendum improves the evidence plan and records proposed reviewer questions. It does not approve a code, certify the full register, import reference data, change application code/schema, or unblock P1-02.
+
+
+## 8. JO23/1998 — priority update to Algiers, Blida, Boumerdès and Tipaza
+
+The official French text layer for the interministerial order of 21 March 1998 (JO No. 23, published 19 April 1998) explicitly updates the territorial register for the Grand-Alger Governorate and Wilayas 09 Blida, 35 Boumerdès and 42 Tipaza. It does not include Wilaya 36 El Tarf; the Chihani issue is a separate JO44/1985/ONS source conflict.
+
+The new [142-row JO23/1998 extract](P1-01-JO23-1998-ALGIERS-BLIDA-BOUMERDES-TIPAZA-REGISTER-EXTRACT.csv) preserves the three columns (commune, register code and seat) separately and records:
+
+| Scope | Declared communes | Extracted commune rows | Printed page |
+|---|---:|---:|---:|
+| Blida (09) | 25 | 25 | 9 |
+| Grand-Alger (16) | 57 | 57 | 10 |
+| Boumerdès (35) | 32 | 32 | 11 |
+| Tipaza (42) | 28 | 28 | 11 |
+| **Total commune rows** | **142** | **142** | — |
+
+A separate source assertion `Ville d'Alger | 1600` is retained in the same CSV as `HISTORICAL_SPECIAL_OR_AGGREGATE_NOT_COMMUNE`, with `counted_in_commune_total=false`. The 57 numbered Algiers communes are codes 1601–1657; the special line 1600 is not a 58th commune. The 2000-01 termination and exact valid-to treatment still require full instrument review.
+
+### JO23/1998 deterministic read-back
+
+- 143 data rows total: 142 commune assertions plus one historical special row.
+- 143 unique assertion IDs.
+- 142 commune records; 142 distinct `(Wilaya, four-digit code)` pairs.
+- Extracted row count equals declared count for each section: 09=25, 16=57, 35=32, 42=28.
+- Chabet El Ameur is preserved verbatim as French JO23/1998 `3614` under Wilaya 35, between `3513` and `3515`; do not overwrite this source assertion with the proposed canonical value.
+- The French source text is searchable and machine-extracted. Screenshot attempts for source pages 9–11 returned UnexpectedStatusCode / Cache miss; therefore no fresh page-image visual verification is claimed in this tranche. Arabic-original row pairing for the complete annex is still pending; the previously documented Arabic JO23 Chabet El Ameur observation remains separate.
+- All rows remain historical source assertions, not current canonical data; candidate identity mapping, cross-source chronology, effective intervals and owner sign-off remain pending.
+
+This priority slice adds historical lineage evidence only. It does not update the 1,541-row candidate dispositions, does not mark any row APPROVED, and does not authorize database import or P1-02.

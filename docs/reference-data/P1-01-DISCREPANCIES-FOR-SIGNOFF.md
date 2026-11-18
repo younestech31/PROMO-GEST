@@ -53,6 +53,21 @@ The ONS *Code Géographique National* text layer lists:
 
 The W./C. composition follows Article 3 of Decree 85-20. This later official table supports 3514 for Chabet and the owner's reported 3614 reading for Chihani, and distinguishes Raml Souk as 3624. It remains a cross-check, not a register amendment. Its cover is dated June 2021 while its introduction cites the 12 September 2021 register order; resolve this publication/version-date conflict. The ONS page images and exact PDF hash remain outstanding. Full evidence and row-by-row treatment are in `P1-01-CODE-LINEAGE-CROSSCHECKS.md` and `.csv`.
 
+
+### Additional ONS historical cross-check — Code Géographique National 2008
+
+The official ONS Code Géographique National accompanying the 5th General Population and Housing Census (2008) provides an independent bilingual W./C. table:
+
+| Commune | Arabic printed label | W. | C. | Four-digit candidate from Article 3 | Printed page |
+|---|---|---:|---:|---:|---:|
+| CHAABET EL AMEUR | شعبة العامر | 35 | 14 | 3514 | 50 |
+| CHIHANI | شهاني | 36 | 14 | 3614 | 51 |
+| RAML SOUK | رمل سوق | 36 | 24 | 3624 | 51 |
+
+This is official ONS geographic-reference evidence, not an amendment to the territorial register. It independently corroborates the 1985/1996/1998 conflict for Chabet, and supports keeping Chihani at 3614 and Raml Souk at 3624 rather than assigning the same extracted 3624 to both JO44 rows. ONS 2008 prints the Arabic CHIHANI label as شهاني, while the ONS 2021 text layer reads شحاني; these are source variants and are not normalized here.
+
+The ONS 2008 PDF text layer was reviewed, but its page screenshots returned Cache miss; exact PDF bytes and SHA-256 were not available. Printed pages 50–51 remain text-layer evidence, not visually verified page images. This source strengthens the cross-check but does not settle the legal effect of the direct JO23/1998 register assertion 3614 for Chabet El Ameur. Qualified practitioner adjudication remains required.
+
 ## 4. JO58 — table scope and parsing risk
 
 The French JO58 text layer exposes these affected existing-Wilaya sections:

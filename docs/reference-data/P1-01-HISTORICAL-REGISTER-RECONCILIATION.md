@@ -48,7 +48,7 @@ The official JO79 annex declares the following ten Wilayas and 59 commune rows:
 | 58 | El Meniaâ | 3 | 3 | 2 |
 | **Total** | 10 new Wilayas | **59** | **58** | **42** |
 
-The new-Wilaya extract keeps commune name, four-digit register code and administrative seat in separate columns. The source text layer contains 59 rows; 42 join by exact normalized French label to a same-Wilaya candidate row. Seventeen source rows remain unlinked due to label variation or a missing same-Wilaya candidate row. The 2021 rows for Wilayas 49–51 are on printed page 17, which was visually captured and checked for the separate name/code/seat columns; rows for 52–58 are text-layer-only with page-image review pending. Arabic row pairing and exact PDF SHA-256 remain pending for all rows.
+The new-Wilaya extract keeps commune name, four-digit register code and administrative seat in separate columns. The source text layer contains 59 rows; 42 join by exact normalized French label to a same-Wilaya candidate row. Seventeen source rows remain unlinked due to label variation or a missing same-Wilaya candidate row. The 59 JO79/2021 new-Wilaya rows are spread over printed pages 17–19: Wilayas 49–51 on p.17, 52–54 on p.18, and 55–58 on p.19. All 59 rows were visually checked against the official French PDF page images, with commune, register-code and seat columns read separately. The row-level extract now records PDF page indices 16–18 and corrects the printed-page attribution for Wilayas 55 and 56 from 18 to 19. This is French-edition visual verification only; Arabic row pairing and exact PDF SHA-256 remain pending.
 
 ### 3.1 Confirmed parent-Wilaya candidate discrepancy: Tabelbala
 
@@ -80,4 +80,4 @@ These buckets sum to 1,137 (59 + 76 + 27 + 975). This is a source-coverage plan,
 - P1-01 remains **In Progress / Pending** until all 1,541 source rows, exact source binaries/checksums, bilingual pairings, effective-dated relationships, open discrepancy adjudication and qualified Algerian practitioner approval are complete.
 - P1-02 remains **Blocked**.
 - No commune records are imported; no database schema, production data or Google AI Studio Cloud SQL data is changed.
-- Page-image review for JO44/1985 and JO11/1986 is pending; JO79 printed page 17 has been screenshot-checked; pages 18–19 and Arabic editions remain pending.
+- Page-image review for JO44/1985 and JO11/1986 remains pending. JO79/2021 French printed pages 17–19 are now visually checked for all 59 new-Wilaya rows; the 103-row existing-Wilaya extract on printed pages 13–16 remains text-layer-only. Arabic row pairing for both JO79 extracts remains pending.

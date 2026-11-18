@@ -20,7 +20,7 @@ import {
   saveProjectNavigationPreferences,
 } from '../shared/utils/navigationPreferences';
 import { useUnsavedGuard } from '../shared/hooks/useUnsavedGuard';
-import { getDocumentPresentation, isVitePreviewRuntime } from '../shared/utils/appRuntime';
+import { getDocumentPresentation, isViteDevelopmentBuild, isVitePreviewRuntime } from '../shared/utils/appRuntime';
 import { ErpShellLayout } from './ErpShellLayout';
 import { LoginScreen, authApi } from '../modules/auth';
 import { FirstRunSetupWizard, setupApi } from '../modules/setup';
@@ -531,7 +531,7 @@ export function App() {
   }, []);
 
   const language = session?.user.preferredLanguage ?? unauthenticatedLanguage;
-  const isPreviewMode = isVitePreviewRuntime(health);
+  const isPreviewMode = isViteDevelopmentBuild && isVitePreviewRuntime(health);
 
   useEffect(() => {
     if (typeof document === 'undefined') return;
@@ -553,7 +553,7 @@ export function App() {
   };
 
   const handlePreviewLogin = async () => {
-    if (!isPreviewMode) {
+    if (!isViteDevelopmentBuild || !isPreviewMode) {
       throw new Error(
         language === 'ar'
           ? 'المعاينة التجريبية متاحة فقط في وضع Vite المنفصل.'

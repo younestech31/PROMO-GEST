@@ -64,7 +64,11 @@ Do not silently replace a project note that says “1996” with “1986”. Ask
 
 ## 4. Unresolved historical pointer: 13 May 1985 seat amendment
 
-The 2 June 1984 seat-setting order in JO41/1984 has been identified. A claimed amendment dated 13 May 1985 has not yet been tied to an exact JORADP issue, page and instrument title in this pass. Until the precise primary publication is identified, retain this as an unverified source pointer and do not use it to overwrite the 1984 or 1985 seat assertions.
+The 2 June 1984 seat-setting order in JO41/1984 is identified. The existence and subject of an order dated 13 May 1985 modifying its commune chief-lieu-seat annex are expressly cited in the 'Vu' clauses of the 8 February 1986 register amendment (JO11/1986, printed p. 280). Its standalone JORADP issue/page and full annex remain unlocated; treat this as an established source pointer with incomplete publication/evidence metadata. Do not infer its full effects from the 1986 recital alone.
+
+## 4C. JO79/2021 — eight re-published existing-Wilaya tables
+
+JO79/2021 prints 103 register rows for eight older Wilaya sections: W01 (16), W07 (27), W08 (11), W11 (5), W30 (8), W33 (4), W39 (22), and W47 (10). The 27 Biskra rows are historical; JO58/2026 later re-composes W07 and creates W61. Four exact French-name pairs move from W07 to W61 with new codes: Branis 0703→6103, El Kantara 0717→6101, Aïn Zaâtout 0718→6102, El Outaya 0719→6104. Djemorah 0720→Djemourah 6105 remains unlinked pending bilingual review. The other 76 rows belong to seven older W sections not modified in JO58/2026 and remain part of current source coverage. See the JO79 existing-Wilaya 103-row extract and transfer-control CSVs.
 
 ## 5. Visual and bilingual verification still required
 

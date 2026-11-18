@@ -42,14 +42,18 @@ test('an API child-process exit also stops the Vite proxy process', () => {
   assert.match(launcher, /kill "\$VITE_PID"/);
 });
 
-test('Vite-only mode explicitly bypasses any inherited ASPNETCORE_URL proxy target', () => {
+test('Vite-only mode requires explicit opt-in and rejects real API or Cloud SQL targets', () => {
   assert.match(launcher, /PROMOGEST_VITE_ONLY/);
-  assert.match(launcher, /export PROMOGEST_VITE_ONLY=0/);
+  assert.match(launcher, /cannot be combined with ASPNETCORE_URL or Cloud SQL settings/);
+  assert.match(launcher, /explicitly set PROMOGEST_VITE_ONLY=1/);
+  assert.match(launcher, /No API target or Cloud SQL integration is configured/);
+  assert.doesNotMatch(launcher, /--host=0\.0\.0\.0/);
+
   for (const config of [rootVite, appVite]) {
-    assert.match(config, /viteOnlyPreview/);
-    assert.match(config, /process\.env\.PROMOGEST_VITE_ONLY \?\? env\.PROMOGEST_VITE_ONLY/);
-    assert.match(config, /viteOnlyPreview \? undefined/);
-    assert.match(config, /createPromoGestDevApiPlugin/);
+    assert.match(config, /viteOnlyPreview: value\('PROMOGEST_VITE_ONLY'\) === '1'/);
+    assert.match(config, /apiUrl: value\('ASPNETCORE_URL'\)/);
+    assert.match(config, /if \(policy\.previewEnabled\)/);
+    assert.match(config, /createPromoGestDevApiPlugin\(\{ previewEnabled: true \}\)/);
   }
 });
 

@@ -36,8 +36,13 @@ jobs:
             echo "Missing frontend JavaScript/CSS assets" >&2
             exit 1
           fi
-          if grep -R -n -E 'dev-api-middleware|createPromoGestDevApiPlugin|ViteDevContractPreview' apps/local-web/dist; then
-            echo "Development preview code leaked into production frontend." >&2
+          preview_leak_pattern='dev-api-middleware|createPromoGestDevApiPlugin|ViteDevContractPreview|demo[.]admin|/api/auth/preview-session|X-PROMOGEST-PREVIEW-TOKEN|previewSessionToken|PreviewAccessButton|Authorization.{0,32}Bearer|Bearer.{0,40}preview|The preview host or reverse proxy'
+          if grep -R -n -E "$preview_leak_pattern" apps/local-web/dist; then
+            echo "Development preview endpoint, identity, token, or UI leaked into the production frontend." >&2
+            exit 1
+          fi
+          if grep -R -n -E 'preview-session|X-PROMOGEST-PREVIEW-TOKEN|demo\\.admin' src/PromoGest.Api src/PromoGest.Application src/PromoGest.Infrastructure src/PromoGest.Contracts --include='*.cs'; then
+            echo "Vite-only preview route or identity leaked into an ASP.NET Core production source project." >&2
             exit 1
           fi
       - name: Build frontend into ASP.NET Core wwwroot
@@ -51,8 +56,8 @@ jobs:
             echo "Missing wwwroot JavaScript/CSS assets" >&2
             exit 1
           fi
-          if grep -R -n -E 'dev-api-middleware|createPromoGestDevApiPlugin|ViteDevContractPreview' src/PromoGest.Api/wwwroot; then
-            echo "Development preview code leaked into ASP.NET Core wwwroot." >&2
+          if grep -R -n -E 'dev-api-middleware|createPromoGestDevApiPlugin|ViteDevContractPreview|demo\\.admin|/api/auth/preview-session|X-PROMOGEST-PREVIEW-TOKEN|previewSessionToken|PreviewAccessButton|The preview host or reverse proxy' src/PromoGest.Api/wwwroot; then
+            echo "Development preview endpoint, identity, token, or UI leaked into ASP.NET Core wwwroot." >&2
             exit 1
           fi
       - name: Upload verified production SPA assets

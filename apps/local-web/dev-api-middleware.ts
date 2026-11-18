@@ -2738,7 +2738,10 @@ export function createPromoGestDevMiddleware(): (
   };
 }
 
-export function createPromoGestDevApiPlugin(): Plugin {
+export function createPromoGestDevApiPlugin(options: { previewEnabled: boolean }): Plugin {
+  if (options.previewEnabled !== true) {
+    throw new Error('The development API middleware requires explicit PROMOGEST_VITE_ONLY=1 mode.');
+  }
   const middleware = createPromoGestDevMiddleware();
   return {
     name: 'promogest-dev-api-contract',

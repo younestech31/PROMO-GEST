@@ -179,7 +179,7 @@ export function FirstRunSetupWizard({
             <p className="text-xs font-semibold text-teal-800 mb-1">{t.setup.eyebrow}</p>
             <h1 className="text-2xl font-bold text-slate-900 tracking-tight">{t.setup.title}</h1>
             <p className="text-sm text-slate-600 mt-1.5 max-w-3xl">{t.setup.subtitle}</p>
-            {isPreviewMode && (
+            {import.meta.env.DEV && isPreviewMode && (
               <div className="mt-4 max-w-md">
                 <PreviewAccessButton language={language} onOpen={onPreviewLogin} />
               </div>

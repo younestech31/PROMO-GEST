@@ -53,7 +53,7 @@ function buildSampleProject(overrides?: Partial<ProjectDto>): ProjectDto {
 }
 
 function createMiddlewareServer(): Promise<{ server: http.Server; baseUrl: string }> {
-  const plugin = createPromoGestDevApiPlugin();
+  const plugin = createPromoGestDevApiPlugin({ previewEnabled: true });
   const handlers: MiddlewareHandler[] = [];
   const fakeViteServer = {
     middlewares: {

@@ -1,3 +1,5 @@
+export const isViteDevelopmentBuild = import.meta.env?.DEV === true;
+
 import type { AppLanguage, HealthStatusResponse } from '../../types/erp';
 
 export interface DocumentPresentation {

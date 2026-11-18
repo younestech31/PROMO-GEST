@@ -20,7 +20,7 @@ These corrections do not change the technical or legal status: all 1,541 workpap
 
 ### 2.1 Existing extracts
 
-The repository now contains 19 bounded JO44/1985 French searchable-text extracts (status refreshed 19 November 2026):
+The repository now contains 21 bounded JO44/1985 French searchable-text extracts (status refreshed 19 November 2026):
 
 | Wilaya code | Section | Extracted rows |
 |---:|---|---:|
@@ -41,11 +41,13 @@ The repository now contains 19 bounded JO44/1985 French searchable-text extracts
 | 14 | Tiaret | 42 |
 | 15 | Tizi Ouzou | 67 |
 | 16 | Alger (numbered commune rows only; 1600 special row separate) | 33 |
+| 17 | Djelfa | 36 |
+| 18 | Jijel | 28 |
 | 35 | Boumerdes | 38 |
 | 36 | El Tarf | 24 |
-| **Total** | **19 of the 48 original Wilaya sections** | **678** |
+| **Total** | **21 of the 48 original Wilaya sections** | **742** |
 
-The Adrar tranche contains 28 unique assertion IDs and 28 unique four-digit codes in sequence 0101–0128. The Biskra tranche contains 33 unique assertion IDs and 33 unique four-digit codes in sequence 0701–0733. The Biskra source heading declares 33 communes; this is distinct from the 27 Biskra rows republished/changed in JO79/2021. All 678 numbered rows remain historical source assertions, not verified current commune identities. The JO44 extracts are French searchable-text transcriptions only except for the heading and first three W35 rows on printed p.1068, whose official page image was reviewed. They are not fully Arabic-paired, not candidate-joined as a complete historical crosswalk, and not practitioner-approved. The current 48-Wilaya control table contains 48 section rows; 38 official declared counts have been entered, summing to a partial 1,224, and 10 remain to be transcribed. This is not the national total.
+The Adrar tranche contains 28 unique assertion IDs and 28 unique four-digit codes in sequence 0101–0128. The Biskra tranche contains 33 unique assertion IDs and 33 unique four-digit codes in sequence 0701–0733. The Biskra source heading declares 33 communes; this is distinct from the 27 Biskra rows republished/changed in JO79/2021. All 742 numbered rows remain historical source assertions, not verified current commune identities. The JO44 extracts are French searchable-text transcriptions only except for the heading and first three W35 rows on printed p.1068, whose official page image was reviewed. They are not fully Arabic-paired, not candidate-joined as a complete historical crosswalk, and not practitioner-approved. The current 48-Wilaya control table contains 48 section rows; all 48 official declared counts have now been transcribed and sum to 1,541. This is an aggregate count control, not proof of all current identities or legal parent/effective-date relationships.
 
 ### 2.1A Official heading-count tranche — 18 November 2026
 
@@ -187,3 +189,6 @@ A separate source assertion `Ville d'Alger | 1600` is retained in the same CSV a
 - All rows remain historical source assertions, not current canonical data; candidate identity mapping, cross-source chronology, effective intervals and owner sign-off remain pending.
 
 This priority slice adds historical lineage evidence only. It does not update the 1,541-row candidate dispositions, does not mark any row APPROVED, and does not authorize database import or P1-02.
+### 2.1C Djelfa and Jijel extraction — 19 November 2026
+
+The W17 Djelfa and W18 Jijel text-layer extracts add 64 source assertions: 36 rows with contiguous codes 1701–1736 and 28 rows with contiguous codes 1801–1828. Both extracts preserve administrative seats independently from commune names. The printed page ranges are pp.1060–1061 and pp.1061–1062 respectively. The PDF screenshot service returned cache misses for these pages, so their page-image visual review was not re-run; the rows remain searchable-text-only. Arabic pairings, legal amendment chain, candidate joins, current effective dates and qualified practitioner approval remain open. This advances the aggregate extraction control to 21/48 sections and 742 rows, leaving 27 JO44 section tables.

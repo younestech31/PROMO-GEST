@@ -14,6 +14,9 @@
 - [P1-01-JO58-EXISTING-WILAYAS-296-REGISTER-EXTRACT.csv](P1-01-JO58-EXISTING-WILAYAS-296-REGISTER-EXTRACT.csv) — 296 JO58 French text-layer rows for ten existing Wilayas.
 - [P1-01-JO58-REGISTER-EXTRACT-404.csv](P1-01-JO58-REGISTER-EXTRACT-404.csv) — consolidated 404-row JO58 extract with separate commune-name, register-code and seat fields, candidate-row mapping status and provenance.
 - [P1-01-JO58-NAME-RECONCILIATION-EXCEPTIONS.csv](P1-01-JO58-NAME-RECONCILIATION-EXCEPTIONS.csv) — the five source-label variants kept unresolved and unlinked.
+- [P1-01-JO79-2021-EXISTING-WILAYAS-103-REGISTER-EXTRACT.csv](P1-01-JO79-2021-EXISTING-WILAYAS-103-REGISTER-EXTRACT.csv) — 103 source rows in eight existing Wilayas; the repository marks both FR and AR page-image review as completed.
+- [P1-01-JO79-ARABIC-EXCEPTION-RECONCILIATION.csv](P1-01-JO79-ARABIC-EXCEPTION-RECONCILIATION.csv) — 39 old/new-Wilaya JO79 exceptions with Arabic register labels, candidate Arabic labels and row-level match assessment; formal mapping status remains pending.
+- [P1-01-OWNER-DECISION-MEMORANDUM-2026-11-18.md](P1-01-OWNER-DECISION-MEMORANDUM-2026-11-18.md) — proposed owner decisions and temporal rules, with signature fields intentionally blank.
 - [this report](P1-01-1541-CROSSWALK-REPORT.md) — reproducible method, deterministic checks, blockers and import boundary.
 
 ## 2. Primary legal sources and source roles

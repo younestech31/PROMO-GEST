@@ -36,7 +36,7 @@ jobs:
             echo "Missing frontend JavaScript/CSS assets" >&2
             exit 1
           fi
-          preview_leak_pattern='dev-api-middleware|createPromoGestDevApiPlugin|ViteDevContractPreview|demo\\.admin|/api/auth/preview-session|X-PROMOGEST-PREVIEW-TOKEN|previewSessionToken|PreviewAccessButton|The preview host or reverse proxy'
+          preview_leak_pattern='dev-api-middleware|createPromoGestDevApiPlugin|ViteDevContractPreview|demo[.]admin|/api/auth/preview-session|X-PROMOGEST-PREVIEW-TOKEN|previewSessionToken|PreviewAccessButton|Authorization.{0,32}Bearer|Bearer.{0,40}preview|The preview host or reverse proxy'
           if grep -R -n -E "$preview_leak_pattern" apps/local-web/dist; then
             echo "Development preview endpoint, identity, token, or UI leaked into the production frontend." >&2
             exit 1

@@ -119,3 +119,9 @@ This supplement is documentation-only. It does not constitute the full amendment
 - Text anomalies preserved without correction include W03? none singled out; W05 seat `Legride t` (0518) and `Boulh...iat` / `Boulh...at` (0560); earlier W06 `Tirmzrit` and seat `T rouna`; W02 `Labi od Medjadja`.
 - The three new sections are French text-layer extraction only; their relevant printed-page image requests returned `Cache miss`, and no Arabic row pairing is claimed. The PDF hash is reused from the source inventory rather than independently recalculated.
 - No candidate identity/current-validity join, code correction, parent assignment, amendment closure or practitioner sign-off is implied. All 1,541 candidates remain unapproved; no commune import.
+
+## 5D. JO44/1985 original-register extraction progress — 18 November 2026
+
+- Three further sections are prepared in a review branch: W09 Blida 29, W11 Tamanghasset 10 and W12 Tebessa 28. Added to the eight merged sections (293 rows), proposed coverage is **360/975** planned JO44 rows; **615 remain**, subject to national row-count reconciliation.
+- W09 printed-page split is 13 rows on p.1057 and 16 on p.1058; W11 and W12 tables are on p.1058. Every row has a separate source commune label, code and administrative seat.
+- These 67 rows remain French searchable-text assertions only: page-image verification and Arabic pairing are not done; no candidate identity, current code, effective date, parent history or legal approval is inferred. Source-file SHA uses the prior inventory value, not a fresh byte-level recomputation.

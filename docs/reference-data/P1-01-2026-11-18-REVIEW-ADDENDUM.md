@@ -39,7 +39,11 @@ The repository currently contains 13 bounded JO44/1985 French searchable-text ex
 | 31 | Oran | 26 |
 | **Total** | **13 of the 48 original Wilaya sections** | **421** |
 
-The Adrar tranche contains 28 unique assertion IDs and 28 unique four-digit codes in sequence 0101–0128. The Biskra tranche contains 33 unique assertion IDs and 33 unique four-digit codes in sequence 0701–0733. The Biskra source heading declares 33 communes; this is distinct from the 27 Biskra rows republished/changed in JO79/2021. All 421 rows remain historical source assertions, not verified current commune identities: the JO44 extracts are French searchable-text transcriptions only, not fully Arabic-paired, not candidate-joined as a complete historical crosswalk, and not practitioner-approved. The current 48-Wilaya control table contains 48 section rows; 24 official declared counts have been entered, summing to 702, and 24 remain to be transcribed. The partial sum is not the national total.
+The Adrar tranche contains 28 unique assertion IDs and 28 unique four-digit codes in sequence 0101–0128. The Biskra tranche contains 33 unique assertion IDs and 33 unique four-digit codes in sequence 0701–0733. The Biskra source heading declares 33 communes; this is distinct from the 27 Biskra rows republished/changed in JO79/2021. All 421 rows remain historical source assertions, not verified current commune identities: the JO44 extracts are French searchable-text transcriptions only, not fully Arabic-paired, not candidate-joined as a complete historical crosswalk, and not practitioner-approved. The current 48-Wilaya control table contains 48 section rows; 36 official declared counts have been entered, summing to 1,144, and 12 remain to be transcribed. The partial sum is not the national total.
+
+### 2.1A Official heading-count tranche — 18 November 2026
+
+The 48-Wilaya control now has 36/48 declared commune counts entered, summing to 1,144. Twelve official headings remain without count transcription. The count subtotal is not the national total. The source-table extraction count is independently 13/48 sections and 421 rows; 35 source tables remain. The new heading-count-only entries are Tlemcen 53, Tizi Ouzou 67, Sétif 60, Saïda 16, Sidi Bel Abbès 52, Annaba 12, Guelma 34, Constantine 12, Médéa 64 (previously transcribed, retained), Mostaganem 32, El Oued 30, Tipaza 42 and Mila 32. They are French searchable-text heading reads only; not page-image reviewed or Arabic-cross-checked in this tranche. The official source is [JO44/1985](https://www.joradp.dz/FTP/jo-francais/1985/F1985044.PDF).
 
 ### 2.2 Retire 360/975 as the extraction progress ratio
 
@@ -51,7 +55,7 @@ Accordingly:
 - Do **not** report `360/975` or `615 remaining` as national JO44 source coverage.
 - The new work-planning control is to enumerate and reconcile all 48 Wilaya sections in JO44/1985.
 - The current extract coverage is 13 of 48 sections, leaving 35 original Wilaya tables to extract and reconcile. Do not infer a national remaining-row count from the 1,541 current-law total or the former 975 residual bucket. The full 1985 declared-count sum must first be established directly from all 48 official headings, and then compared against the 48 row extracts while excluding the historical `1600 — Ville d'Alger` special line.
-- The 48-row control table records each Wilaya code, printed heading, official declared commune count, actual extracted rows, excluded special rows, printed page range, source checksum and separate FR/AR/visual/current-validity review statuses. As of this update, 24 declared counts have been transcribed (partial sum 702); the remaining 24 must still be captured and independently reconciled.
+- The 48-row control table records each Wilaya code, printed heading, official declared commune count, actual extracted rows, excluded special rows, printed page range, source checksum and separate FR/AR/visual/current-validity review statuses. As of this update, 36 declared counts have been transcribed (partial sum 1,144); the remaining 12 must still be captured and independently reconciled.
 
 ## 3. Legal treatment proposed for the bilingual code discrepancies
 

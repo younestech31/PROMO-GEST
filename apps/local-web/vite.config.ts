@@ -2,7 +2,7 @@ import tailwindcss from '@tailwindcss/vite';
 import react from '@vitejs/plugin-react';
 import path from 'node:path';
 import { defineConfig, loadEnv } from 'vite';
-import { readRequestedViteHost, resolveVitePreviewPolicy } from './vitePreviewPolicy';
+import { CLOUD_SQL_ENVIRONMENT_VARIABLES, readRequestedViteHost, resolveVitePreviewPolicy } from './vitePreviewPolicy';
 
 export default defineConfig(async ({ command, mode }) => {
   const repositoryRoot = path.resolve(__dirname, '../..');
@@ -11,6 +11,7 @@ export default defineConfig(async ({ command, mode }) => {
   const policy = resolveVitePreviewPolicy({
     command,
     apiUrl: value('ASPNETCORE_URL'),
+    cloudSqlConfigured: CLOUD_SQL_ENVIRONMENT_VARIABLES.some((name) => Boolean(value(name).trim())),
     viteOnlyPreview: value('PROMOGEST_VITE_ONLY') === '1',
     allowExternalPreview: value('PROMOGEST_VITE_ALLOW_EXTERNAL') === '1',
     allowedHosts: value('PROMOGEST_VITE_ALLOWED_HOSTS'),

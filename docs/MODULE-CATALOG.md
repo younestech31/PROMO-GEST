@@ -3,13 +3,13 @@
 All 12 functional ERP domains required by PROMO GEST, mapped strictly using the 6-state taxonomy against actual inspected code, controllers, EF configurations, and tests.
 
 **Last ASP.NET Core API/Application Runtime Source:** `b41d34aae03e1549ca1963a23d92643ff91bf393` (PR #87). **EF/schema source remains:** `53c50fbc0db801b9298ec731cfc44f2d4d58ff7f` (PR #59; no migration in PR #87).  
-**Current frontend/main baseline:** `ca904011ac63e113da64ea478f269607b5842787`; latest code-bearing frontend/runtime source remains PR #112 `293476cbdbf3c4c3fbcae87d7c9b682a493ca436`, PRs #118 and #119 are documentation-only merges.  
-**Latest main CI:** [#899](https://github.com/younestech31/PROMO-GEST/actions/runs/44365099814) passed 3/3 on prior main SHA `d859046`. Current main CI #902 is running on `ca904011ac63e113da64ea478f269607b5842787`. Detailed code-bearing test totals last reported in main CI #873 are Frontend 88/88, Domain 34/34, Application 21/21 and PostgreSQL 18 Integration 32/32. Manual browser acceptance remains pending.
+**Current main base:** `9b54ca8e98ea9f48bb3fa890431438e242649b6e`; PRs #118–#120 are documentation-only merges, and latest code-bearing frontend/runtime source remains PR #112 `293476cbdbf3c4c3fbcae87d7c9b682a493ca436`. Proposed PR #121 adds W13/W14 JO44 extracts and the updated count control on a review branch; it does not approve or import commune rows.  
+**Latest main CI:** [#909](https://github.com/younestech31/PROMO-GEST/actions/runs/44369988889) passed all 3 jobs on exact main base SHA `9b54ca8e98ea9f48bb3fa890431438e242649b6e`. Detailed code-bearing test totals last reported in main CI #873 are Frontend 88/88, Domain 34/34, Application 21/21 and PostgreSQL 18 Integration 32/32. Manual browser acceptance remains pending.
 **Live Preview / Manual Acceptance Evidence:** On 15 November 2026, the Product Owner confirmed the real Google AI Studio development server/API and PostgreSQL development connection operate, and owner-attested successful Arabic RTL / French LTR desktop/mobile workflows for projects, structure, customer interactions, internal holds, documents/SHA-256, authorization, audit, concurrency, safe errors, and persistence. Detailed group mapping is in `PHASE-0-MANUAL-ACCEPTANCE.md`; Phase 0 was administratively closed by owner decision D-010, with P0-A01 and P0-A04 still `NOT_RUN` as accepted residual exceptions.
 
 ---
 
-**Administrative reference delivery:** the bilingual 69-Wilaya catalogue is implemented; the 1,541-commune catalogue is not imported. P1-01 remains `In Progress / Pending` (13/48 JO44 sections extracted as French text, 421 rows; 24/48 declared counts transcribed, partial total 702; JO23/1998 142 source commune rows plus separate 1600 special row). P1-02 remains blocked. See `docs/reference-data/P1-01-1541-CROSSWALK-REPORT.md`.  
+**Administrative reference delivery:** the bilingual 69-Wilaya catalogue is implemented; the 1,541-commune catalogue is not imported. P1-01 remains `In Progress / Pending` (16/48 JO44 sections extracted as French text in proposed PR #121, 583 rows; 37/48 declared counts transcribed, partial total 1,186; JO23/1998 142 source commune rows plus separate 1600 special row). P1-02 remains blocked. See `docs/reference-data/P1-01-1541-CROSSWALK-REPORT.md`.  
 
 ## 1. Overview Matrix
 

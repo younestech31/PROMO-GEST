@@ -23,13 +23,13 @@
 
 ## 2. Current Gate Status Against the Audited Main Baseline
 
-**Most recent code-bearing main commit:** `b41d34aae03e1549ca1963a23d92643ff91bf393` (PR #87; subsequent PRs #91–#100 were documentation-only). **Latest full CI:** [Run #807](https://github.com/younestech31/PROMO-GEST/actions/runs/44191879285) passed all three jobs on current main SHA `29771173c2be3f803535461066625cc97e1dd61a`. Frontend strict TypeScript and 79/79 unit tests, Vite/ASP.NET Core static-host build, .NET 10/PostgreSQL 18 Domain **34/34**, Application **21/21**, Integration **32/32**, full restore drill, Windows x64 publish and PowerShell validation passed. This is automated CI evidence, not manual browser or production-installation acceptance.
+**Most recent code-bearing main commit:** `b41d34aae03e1549ca1963a23d92643ff91bf393` (PR #87; subsequent PRs #91–#101 were documentation-only). **Latest full CI:** [Run #809](https://github.com/younestech31/PROMO-GEST/actions/runs/44195620196) passed all three jobs on current main SHA `0135712ab766f1e19283f3f2fee36fb61edfa85c`. Frontend strict TypeScript and 79/79 unit tests, Vite/ASP.NET Core static-host build, .NET 10/PostgreSQL 18 Domain **34/34**, Application **21/21**, Integration **32/32**, full restore drill, Windows x64 publish and PowerShell validation passed. This is automated CI evidence, not manual browser or production-installation acceptance.
 
 **Runtime/schema distinction:** PR #80 / D-014 changed ASP.NET Core application/API behavior and merged at `61bcf8b0a0b2e3967fa5b7add904afd9bc1b0da3`; it introduced no EF migration. The current EF/schema source remains PR #59 / `53c50fbc0db801b9298ec731cfc44f2d4d58ff7f`. PR #80 CI #707 and post-merge main CI #708 passed. PR #81 navigation and PR #82 module-boundary checks are also merged and their CI is green.
 
 **Outstanding manual and practitioner gates:** Arabic RTL / French LTR desktop/mobile workflows, budget value redaction/editor visibility, dirty-form Back/Forward/reload/tab-close and project switch/revocation remain unverified in a real browser. P0-A01 and P0-A04 remain `NOT_RUN` for manual first-run/second-initialization and logout/session-revocation. The full official 1,541-commune bilingual crosswalk and qualified review remain pending; Phase 1 stays `IN_PROGRESS` and Phase 2 remains blocked by dependencies.
 
-Run #795 detailed frontend/.NET/PostgreSQL test totals remain the last recorded individual test counts; Run #807 is the latest full CI evidence for the current main snapshot. PRs #99/#100 are documentation-only and do not certify legal data, page-image review or practitioner acceptance.
+Run #795 detailed frontend/.NET/PostgreSQL test totals remain the last recorded individual test counts; Run #809 is the latest full CI evidence for the current main snapshot. PRs #99–#101 are documentation-only and do not certify legal data, page-image review or practitioner acceptance.
 
 Historical runs below are retained as evidence for earlier source baselines;
 

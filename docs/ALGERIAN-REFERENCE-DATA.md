@@ -81,7 +81,7 @@ No candidate GitHub dataset is currently approved as the canonical 1,541-row reg
 
 - [PR #99](https://github.com/younestech31/PROMO-GEST/pull/99) adds a six-assertion territorial change ledger for locality/mechta transfers and a commune rename. These assertions do not establish four-digit register-code changes.
 - [PR #100](https://github.com/younestech31/PROMO-GEST/pull/100) records the Decree 85-20 four-digit code rule and adds an eight-row code-lineage comparison for Chabet El Ameur, Chihani and Raml Souk. ONS W./C. columns are kept separate from derived candidates; its cover/introduction date conflict and JO44/JO23 visual-review gaps remain open.
-- Both PRs are documentation-only and merged; PR CI #804/#806 and post-merge main CI #805/#807 passed all three required jobs. Current main CI: [#807](https://github.com/younestech31/PROMO-GEST/actions/runs/44191879285), main SHA `29771173c2be3f803535461066625cc97e1dd61a`. They do not approve a canonical code or complete the 1,541-row crosswalk.
+- PRs #99/#100 are documentation-only and merged; PR CI #804/#806 and post-merge main CI #805/#807 passed all three required jobs. PR #101 synchronized baseline docs without application or data changes. Current main CI: [#809](https://github.com/younestech31/PROMO-GEST/actions/runs/44195620196), main SHA `0135712ab766f1e19283f3f2fee36fb61edfa85c`. They do not approve a canonical code or complete the 1,541-row crosswalk.
 - The current server-owned reference remains 69 Wilayas / legal baseline 1,541 communes / 0 commune rows loaded / `PendingOfficialVerification`. P1-01 remains In Progress / Pending and P1-02 remains Blocked.
 
 ## P1-01 legal review artifacts

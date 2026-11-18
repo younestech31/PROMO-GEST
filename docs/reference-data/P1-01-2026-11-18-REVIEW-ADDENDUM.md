@@ -20,8 +20,11 @@ These corrections do not change the technical or legal status: all 1,541 workpap
 
 ### 2.1 Existing extracts
 
-The repository currently contains 12 bounded JO44/1985 French searchable-text extracts:
+The repository currently contains 13 bounded JO44/1985 French searchable-text extracts:
 
+| Wilaya code | Section | Extracted rows |
+|---:|---|---:|
+| 01 | Adrar | 28 |
 | Wilaya code | Section | Extracted rows |
 |---:|---|---:|
 | 01 | Adrar | 28 |
@@ -30,15 +33,16 @@ The repository currently contains 12 bounded JO44/1985 French searchable-text ex
 | 04 | Oum El Bouaghi | 29 |
 | 05 | Batna | 61 |
 | 06 | Bejaia | 52 |
+| 07 | Biskra | 33 |
 | 08 | Bechar | 21 |
 | 09 | Blida | 29 |
 | 10 | Bouira | 45 |
 | 11 | Tamanghasset | 10 |
 | 12 | Tebessa | 28 |
 | 31 | Oran | 26 |
-| **Total** | **12 of the 48 original Wilaya sections** | **388** |
+| **Total** | **13 of the 48 original Wilaya sections** | **421** |
 
-The Adrar tranche contains 28 unique assertion IDs and 28 unique four-digit codes in sequence 0101–0128. All 388 rows remain historical source assertions, not verified current commune identities: the JO44 extracts are French searchable-text transcriptions only, not fully Arabic-paired, not candidate-joined as a complete historical crosswalk, and not practitioner-approved. The current 48-Wilaya control table contains 48 section rows; 23 official declared counts have been entered and 25 remain to be transcribed.
+The Adrar tranche contains 28 unique assertion IDs and 28 unique four-digit codes in sequence 0101–0128. The Biskra tranche contains 33 unique assertion IDs and 33 unique four-digit codes in sequence 0701–0733. The Biskra source heading declares 33 communes; this is distinct from the 27-row changed-Wilaya table in JO79/2021. All 421 rows remain historical source assertions, not verified current commune identities: the JO44 extracts are French searchable-text transcriptions only, not fully Arabic-paired, not candidate-joined as a complete historical crosswalk, and not practitioner-approved. The current 48-Wilaya control table contains 48 section rows; 23 official declared counts have been entered and 25 remain to be transcribed.
 
 ### 2.2 Retire 360/975 as the extraction progress ratio
 

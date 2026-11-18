@@ -1,11 +1,11 @@
 # PROMO GEST — Master Engineering Blueprint
 
 **Document Role:** Single authoritative index & master entry point for the PROMO GEST local-first real estate developer ERP (*promoteur immobilier* — Algeria).  
-**Last ASP.NET Core API/Application Runtime Source:** `b41d34aae03e1549ca1963a23d92643ff91bf393` (PR #87 merge; P1-07 financial-document read authorization and list-denial audit). PR #87 added no EF migration; **EF/schema source remains** `53c50fbc0db801b9298ec731cfc44f2d4d58ff7f` (PR #59).
-**Latest Frontend Architecture Source:** `bf8a47c1cd334ec94807c727c79d10f40f20be7f` (PR #82 merge; PR #81 canonical frontend platform and PR #82 active module-boundary import analysis).  
-**Latest Test-Source Commit:** PR #87 final head `8dc81b0bc74629d125c01f2549caec1370bd2ec1` (financial-document read authorization and list-denial audit tests); PR CI #766 passed all three jobs.
-**Most recent code-bearing Main commit inspected:** `b41d34aae03e1549ca1963a23d92643ff91bf393` (PR #87; PRs #91–#107 after it were documentation/reference-data-only).
-**Latest main CI:** [Run #822](https://github.com/younestech31/PROMO-GEST/actions/runs/44289721946) passed all three required jobs on current main SHA `8b40120aaf2f649bb123cd654f88f62250ce02d9`. PR #107 head CI #821 also passed 3/3. Detailed code-test totals remain in code-bearing Run #795; PRs #105–#107 are documentation/reference-data-only and do not change application code or EF schema. Manual RTL/LTR browser acceptance remains outstanding.
+**Last ASP.NET Core API/Application Runtime Source:** `b41d34aae03e1549ca1963a23d92643ff91bf393` (PR #87 merge; P1-07 financial-document read authorization and list-denial audit). PR #87 added no EF migration; **EF/schema source remains** `53c50fbc0db801b9298ec731cfc44f2d4d58ff7f` (PR #59).  
+**Current frontend/main source:** `cd57a5912ccb3631a6e9581d48d1aab2600180d2` (18 November 2026; runtime-derived preview detection, document language/direction/title synchronization and immutable organization-session updates). GitHub reports no associated PR for this commit; see the governance note in `CURRENT-STATE-BASELINE.md`.  
+**Latest main verification:** [CI #825](https://github.com/younestech31/PROMO-GEST/actions/runs/44310687822) passed all three jobs on exact SHA `cd57a5912ccb3631a6e9581d48d1aab2600180d2`: Frontend 82/82, Domain 34/34, Application 21/21, PostgreSQL 18 Integration 32/32, static hosting, restore, and Windows publish/PowerShell.  
+**Manual acceptance boundary:** Arabic RTL / French LTR desktop/mobile, route/dirty-form/switcher/revocation journeys remain pending; P1-01 legal/practitioner sign-off remains open and P1-14 preview isolation is incomplete.
+**Governing Charter:**
 **Governing Charter:** Local-first, on-premises per organization, PostgreSQL 18 single source of truth, single System Administrator (`SYSTEM_ADMIN`), HTTP-only `SameSite=Strict` cookie sessions (`promogest_session`) + CSRF, local filesystem storage with SHA-256 verification, Arabic RTL primary / French LTR secondary, Algerian DZD & legal context.
 
 ---

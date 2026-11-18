@@ -1,6 +1,6 @@
 # PROMO GEST — Project Navigation & Active Context UX
 
-**Status:** Design approved (D-013). Navigation foundation and architecture stabilization are merged in PR #81 (`eff036401809bdee4c4ef9a2b9467ac863ae7f95`); post-merge main CI #730 passed. The UX remains `IMPLEMENTED_NOT_VERIFIED` pending manual browser acceptance.  
+**Status:** Design approved (D-013); single-switcher / sidebar-only refinement D-015 is implemented in PR #90 (merge SHA `16ed3fdd93a4a2685d37433b0eed5cdf256f953d`). Current main `cd57a5912ccb3631a6e9581d48d1aab2600180d2` passed all three jobs in [CI #825](https://github.com/younestech31/PROMO-GEST/actions/runs/44310687822). The UX remains `IMPLEMENTED_NOT_VERIFIED` pending manual browser acceptance.  
 **Scope:** Project selection, switching, multi-project work, and project-specific navigation  
 **Applies to:** The local-first organization-wide ERP shell and project workspace
 
@@ -16,9 +16,9 @@ The approved D-013 model is refined to remove competing controls:
 
 The code change is tracked by Notion P1-20. Automated CI is evidence for compilation and regression tests; Arabic RTL / French LTR, desktop/mobile, keyboard/focus and dirty-switch journeys require separate browser acceptance.
 
-## Current repository implementation check — 16–17 November 2026
+## Current repository implementation check — 18 November 2026
 
-Source inspected at main merge SHA `eff036401809bdee4c4ef9a2b9467ac863ae7f95`: ASP.NET Core 10 runtime/schema source remains unchanged; frontend architecture and navigation safeguards are under `apps/local-web/`. Post-merge main CI Run #730 passed all three jobs, but no browser walkthrough for this merge was executed.
+Source inspected at main SHA `cd57a5912ccb3631a6e9581d48d1aab2600180d2`. The latest API/Application runtime source remains PR #87 (`b41d34aae03e1549ca1963a23d92643ff91bf393`); EF/schema remains PR #59 (`53c50fbc0db801b9298ec731cfc44f2d4d58ff7f`). PR #90 supplies the single-switcher/sidebar-navigation refinement. Main CI [#825](https://github.com/younestech31/PROMO-GEST/actions/runs/44310687822) passed all three jobs, including 82/82 frontend tests. No independent browser walkthrough for Arabic RTL / French LTR, desktop/mobile or keyboard/focus has been executed for this current source baseline.
 
 The React application now has the foundational three-context, URL-routed shell (`app/App.tsx`, `app/routeRegistry.ts`, `app/ErpShellLayout.tsx`, `modules/module-b-projects/components/ProjectSwitcherModal.tsx`, and module-owned workspace pages) plus a canonical shared platform and navigation safeguards:
 - Direct URL access to `/admin/users`, `/admin/audit`, `/admin/diagnostics`, and `/organization/parties` checks `canAccessRoute` prior to mounting any restricted view and redirects unauthorized actors to `/projects` with a bilingual notice.
@@ -273,3 +273,11 @@ These references informed the interaction decisions; they are design evidence, n
 - Oracle Primavera Cloud, **Add a Project to a Portfolio** — uses saved filter criteria to define portfolio membership rather than requiring every portfolio view to display every project: https://docs.oracle.com/cd/E80480_01/English/user_guides/portfolio_management_user_guide/81707.htm
 - Nielsen Norman Group, Megan Chan, **Designing for Serial Task Switching** (May 23, 2025) — recommends orientation cues such as breadcrumbs and section headers, and error-prevention/recovery support for task switching: https://www.nngroup.com/articles/serial-task-switching/
 - Nielsen Norman Group, Kate Kaplan, **8 Design Guidelines for Complex Applications** (November 8, 2020) — covers reducing clutter without reducing capability and making important information salient: https://www.nngroup.com/articles/complex-application-design/
+
+
+## 18 November 2026 — source-audited navigation facts
+
+- `ErpShellLayout` exposes one project-switch action in the global header in both organization and project contexts. `ProjectIdentityStrip` retains identity, pin/unpin and Project Directory actions but does not expose a second switch action.
+- `ProjectWorkspaceView` renders the active section PageHeader and breadcrumb; project sections are selected from the active-project sidebar. No second horizontal project tab bar is intended.
+- `ProjectSwitcherModal` performs authorized server-backed search through the project list endpoint; saved recent/pinned IDs are filtered against currently authorized results. The project directory separately sends server-backed `q` and `status` filters. Server-side directory pagination/sort remains a gap.
+- The current UI implementation and PR #90 are technically merged, but P1-20 remains In Review / Pending until real browser evidence covers desktop/mobile RTL/LTR, keyboard/focus, unsaved-form switching and membership revocation.

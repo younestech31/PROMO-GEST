@@ -1,6 +1,6 @@
 # PROMO GEST — Algerian Administrative Reference-Data Governance
 
-**Legal baseline checked:** 17 November 2026.  
+**Legal baseline checked:** 18 November 2026.  
 **Status:** The server-owned, bilingual, versioned 69-Wilaya catalogue and its UI integration are implemented and verified (PR #59). The canonical commune catalogue remains pending official extraction/reconciliation: the API reports `PendingOfficialVerification` and `communesCount = 0`; the 1,541 figure is the statutory baseline, not a loaded record count.
 
 ## 1. Authoritative territorial baseline
@@ -117,6 +117,7 @@ This is a source audit, not an imported dataset or a legal opinion. It records w
 | [Executive Decree 26-208, JO No. 40, 3 June 2026 — same issue](https://www.joradp.dz/FTP/jo-francais/2026/F2026040.pdf) | Establishes the asset/liability sharing rules between parent and new Wilayas. Article 2 sets separate completion deadlines: before 31 December 2026 for patrimonial operations and at the end of FY2026 for financial operations. | It is a transition/asset-liability instrument, not evidence that every local office or operational registry transferred, and not the source of legal commune parentage. |
 | [Interministerial order of 5 May 2026, JO No. 58, 12 August 2026 — French](https://www.joradp.dz/FTP/JO-FRANCAIS/2026/F2026058.pdf) / [Arabic](https://www.joradp.dz/FTP/jo-arabe/2026/A2026058.pdf) | Amends/completes the 1985 territorial-register annex. The annex has three distinct headings: `COMMUNES`, `NUMEROS DE CODE`, and `SIEGES`; it names/code-numbers communes and separately records seats. It also explicitly marks unchanged Wilaya groups. | This is an amendment/delta with `sans changement` references, not a standalone republication of all 1,541 rows. The seat column is not an Arabic or French commune-name column. |
 | [ONS National Geographic Code, June 2021](https://www.ons.dz/IMG/pdf/code_geo_2021.pdf) | Official bilingual historical baseline with Arabic/French commune labels and W./C. codes; it describes 58 Wilayas and 1,541 communes under the 2021 territorial arrangement. | It predates Law 26-06 and cannot be imported unchanged as the current 69-Wilaya parent hierarchy. Use it as a historical baseline/crosswalk input only, after reconciliation with the 2026 legal changes. |
+| [ONS Code Géographique National, 5th General Population and Housing Census (2008)](https://www.ons.dz/IMG/pdf/code_geo.pdf) | Official bilingual geographic-reference tables with separate W./C. columns. The table lists CHAABET EL AMEUR 35/14 (printed p. 50), CHIHANI 36/14 and RAML SOUK 36/24 (printed p. 51). | This is an official ONS cross-check, not an amendment to the Decree 85-20 register or a current 2026 parent hierarchy. Four-digit candidates are derived from W./C. under Article 3; page-image review and SHA-256 are outstanding. |
 
 ### 8.2 Directly observed reconciliation facts
 
@@ -135,6 +136,15 @@ This is a source audit, not an imported dataset or a legal opinion. It records w
 - **Earlier source PDFs:** the screenshot service also returned cache misses for the relevant 1985/1996/1998 pages. Those row-level comparisons remain text-extraction evidence. Visual verification of these archival page images, the JO58 annex pages, and qualified practitioner adjudication remain outstanding.
 - Official French editions use variant spellings for some names. One visible example is the new Wilaya 65: the current in-code reference spells `Aïn Oussera`, while the JO40 decree and JO58 territorial register spell `Aïn Ouessara`. The JO58 register also writes `Bou Saada` where the current code and JO40 decree use `Bou Saâda`. Treat these as source variants requiring recorded provenance and a reviewed canonical-label decision, not automatic transliteration or silent rename.
 - Record the instrument's signed date, publication date and legally confirmed `valid_from` separately. Do not assume that a signature date, the first PDF date, or a Wilaya-seat decree publication automatically supplies every commune relationship's effective-from date. The applicable commencement and any transitional parent interval require legal review.
+
+
+#### ONS historical code cross-check — 2008 edition (18 November 2026)
+
+The official ONS Code Géographique National published with the 5th General Population and Housing Census identifies:
+- Boumerdès: CHAABET EL AMEUR, W.=35/C.=14 (derived 3514), Arabic شعبة العامر, printed p. 50.
+- El Tarf: CHIHANI, W.=36/C.=14 (derived 3614), Arabic شهاني, and RAML SOUK, W.=36/C.=24 (derived 3624), Arabic رمل سوق, printed p. 51.
+
+This 2008 edition is independent corroborating reference material, not a territorial-register amendment. It provides an earlier official cross-check after the 1998 order and supports the Article 3 W./C. composition for these rows. Its extracted Arabic CHIHANI spelling (شهاني) differs from the 2021 ONS text layer (شحاني); preserve both source forms until reviewed. Web page screenshots for the ONS 2008 PDF returned Cache miss; no original PDF bytes or SHA-256 were obtained. Do not claim visual verification, and do not treat this source as a legal adjudication of the JO23/1998 Chabet El Ameur 3614 assertion.
 
 ### 8.3 Required crosswalk before import
 

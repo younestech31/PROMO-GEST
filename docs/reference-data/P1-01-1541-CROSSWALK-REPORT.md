@@ -172,3 +172,13 @@ Each 24-column CSV retains commune name, register code and administrative seat s
 These rows are not visually page-verified, not Arabic-row-paired, not joined to candidate identities, and not adjudicated for current validity, effective dates, parent lineage or later amendment effects. They remain historical source assertions only.
 
 Together with W31 Oran (26), W06 Bejaia (52), W02 Chlef (35), W04 Oum El Bouaghi (29) and W10 Bouira (45), bounded JO44 extracts now total 293/975 planned rows; 682 remain subject to full national reconciliation. P1-01 stays In Progress / Pending; P1-02 stays Blocked; no commune records are imported.
+
+## 14. JO44/1985 — three additional original-register sections (67 rows)
+
+Added [W09 Blida (29)](P1-01-JO44-1985-W09-BLIDA-TEXT-EXTRACT-29.csv), [W11 Tamanghasset (10)](P1-01-JO44-1985-W11-TAMANGHASSET-TEXT-EXTRACT-10.csv), and [W12 Tebessa (28)](P1-01-JO44-1985-W12-TEBESSA-TEXT-EXTRACT-28.csv), extracted from the official French JO44/1985 searchable text layer on printed pp.1057–1058, p.1058 and p.1058, respectively. Codes span 0901–0929, 1101–1110 and 1201–1228.
+
+Each 24-column CSV stores commune, code and seat separately and includes the printed page per row. W09 has 13 rows on p.1057 and 16 on p.1058; the other two sections are on p.1058. Distinct seat strings such as `Ben Chabane` (for Ben Khellil) and `Larbaa` (for Larbaâ) are retained literally.
+
+These sections are not visually page-verified or Arabic-row-paired. They are not candidate-joined or adjudicated for current-validity/effective dates, parent lineage or later amendment effects. The PDF SHA is reused from the repository inventory, not recomputed.
+
+Together with the eight earlier sections, bounded JO44 text extraction would total 360/975 planned rows; 615 remain subject to national row-count reconciliation. This branch remains a source-evidence proposal until PR CI and merge.

@@ -1,6 +1,7 @@
 export interface VitePreviewPolicyInput {
   command: 'serve' | 'build';
   apiUrl?: string;
+  cloudSqlConfigured?: boolean;
   viteOnlyPreview: boolean;
   allowExternalPreview: boolean;
   allowedHosts?: string;
@@ -16,6 +17,15 @@ export interface VitePreviewPolicy {
   allowedHosts?: string[];
   allowedOrigins?: string[];
 }
+
+export const CLOUD_SQL_ENVIRONMENT_VARIABLES = [
+  'SQL_HOST',
+  'SQL_DB_NAME',
+  'SQL_USER',
+  'SQL_PASSWORD',
+  'SQL_ADMIN_USER',
+  'SQL_ADMIN_PASSWORD',
+] as const;
 
 const LOOPBACK_HOSTS = new Set(['localhost', '127.0.0.1', '::1', '[::1]']);
 
@@ -92,6 +102,10 @@ export function resolveVitePreviewPolicy(input: VitePreviewPolicyInput): VitePre
 
   if (input.command === 'serve' && !staticPreview && input.viteOnlyPreview && apiTarget) {
     throw new Error('PROMOGEST_VITE_ONLY=1 cannot be combined with ASPNETCORE_URL. Choose either the explicit in-memory Vite demo or the real ASP.NET Core API.');
+  }
+
+  if (input.command === 'serve' && !staticPreview && input.viteOnlyPreview && input.cloudSqlConfigured) {
+    throw new Error('PROMOGEST_VITE_ONLY=1 cannot be combined with Cloud SQL settings. Use the real ASP.NET Core API path for a Cloud SQL development database.');
   }
 
   if (input.command === 'serve' && !staticPreview && !apiTarget && !input.viteOnlyPreview) {

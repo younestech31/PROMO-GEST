@@ -20,7 +20,7 @@ These corrections do not change the technical or legal status: all 1,541 workpap
 
 ### 2.1 Existing extracts
 
-The repository currently contains 18 bounded JO44/1985 French searchable-text extracts:
+The repository now contains 19 bounded JO44/1985 French searchable-text extracts (status refreshed 19 November 2026):
 
 | Wilaya code | Section | Extracted rows |
 |---:|---|---:|
@@ -42,13 +42,20 @@ The repository currently contains 18 bounded JO44/1985 French searchable-text ex
 | 15 | Tizi Ouzou | 67 |
 | 16 | Alger (numbered commune rows only; 1600 special row separate) | 33 |
 | 35 | Boumerdes | 38 |
-| **Total** | **18 of the 48 original Wilaya sections** | **654** |
+| 36 | El Tarf | 24 |
+| **Total** | **19 of the 48 original Wilaya sections** | **678** |
 
-The Adrar tranche contains 28 unique assertion IDs and 28 unique four-digit codes in sequence 0101–0128. The Biskra tranche contains 33 unique assertion IDs and 33 unique four-digit codes in sequence 0701–0733. The Biskra source heading declares 33 communes; this is distinct from the 27 Biskra rows republished/changed in JO79/2021. All 654 numbered rows remain historical source assertions, not verified current commune identities. The JO44 extracts are French searchable-text transcriptions only except for the heading and first three W35 rows on printed p.1068, whose official page image was reviewed. They are not fully Arabic-paired, not candidate-joined as a complete historical crosswalk, and not practitioner-approved. The current 48-Wilaya control table contains 48 section rows; 38 official declared counts have been entered, summing to a partial 1,224, and 10 remain to be transcribed. This is not the national total.
+The Adrar tranche contains 28 unique assertion IDs and 28 unique four-digit codes in sequence 0101–0128. The Biskra tranche contains 33 unique assertion IDs and 33 unique four-digit codes in sequence 0701–0733. The Biskra source heading declares 33 communes; this is distinct from the 27 Biskra rows republished/changed in JO79/2021. All 678 numbered rows remain historical source assertions, not verified current commune identities. The JO44 extracts are French searchable-text transcriptions only except for the heading and first three W35 rows on printed p.1068, whose official page image was reviewed. They are not fully Arabic-paired, not candidate-joined as a complete historical crosswalk, and not practitioner-approved. The current 48-Wilaya control table contains 48 section rows; 38 official declared counts have been entered, summing to a partial 1,224, and 10 remain to be transcribed. This is not the national total.
 
 ### 2.1A Official heading-count tranche — 18 November 2026
 
 The 48-Wilaya control now has 38/48 declared commune counts entered, summing to a partial 1,224. Ten official headings remain without count transcription. The count subtotal is not the national total. The source-table extraction count is independently 18/48 sections and 654 numbered rows; 30 source tables remain. For W16 Alger, the 33 numbered commune rows are 1601–1633; 1600 is a separate historical special assertion. The heading-count-only entries in this register include Sétif 60, Saïda 16, Sidi Bel Abbès 52, Annaba 12, Guelma 34, Constantine 12, Médéa 64 (previously transcribed, retained), Mostaganem 32, El Oued 30, Tipaza 42 and Mila 32. Tlemcen 53, Tiaret 42, Tizi Ouzou 67 and Alger 33 numbered commune rows now also have source row extracts, still French text-layer only. The separate `1600 — Ville d'Alger` historical special assertion is preserved in its own file and excluded from the commune count. All these values remain unverified visually and not Arabic-cross-checked in this tranche. The official source is [JO44/1985](https://www.joradp.dz/FTP/jo-francais/1985/F1985044.PDF).
+
+### 2.1B Updated controls — 19 November 2026
+
+The ten previously blank JO44 heading counts have now been transcribed from the official French searchable-text headings: Djelfa 36; Jijel 28; Skikda 38; M'Sila 47; Mascara 47; Ouargla 21; El Bayadh 22; Illizi 6; Bordj Bou Arreridj 34; Relizane 38. Their sum is 317; together with the prior subtotal 1,224, all 48 declared headings sum to 1,541. This is an aggregate count-control result, not row-level approval or proof that every historical identity is still current.
+
+The W36 El Tarf extract adds 24 French searchable-text assertions. It has 24 unique assertion IDs and 23 distinct code strings because the French page prints `Chihani | 3624` and `Raml Souk | 3624`, leaving `3614` absent from that table. The sign-off pack records prior Arabic page review as `شهاني | 3614` and `رمل السوق | 3624`. Preserve both editions verbatim; do not silently repair `3624` or declare `3614` canonical. The extract records the prior bilingual page-review evidence but does not claim a new screenshot review or complete row-by-row Arabic transcription in this tranche. It remains `HISTORICAL_SOURCE_ASSERTION_ONLY_NOT_APPROVED`; candidate joins, later register amendments, effective dates and practitioner adjudication are pending.
 
 The Boumerdes (W35) extraction contains 38 source rows, with 38 unique assertion IDs and 38 unique four-digit codes in sequential order 3501–3538. The official heading and first three rows (3501–3503) were visually checked against the official page PDF for printed p.1068. The remaining 35 rows (3504–3538) were transcribed from the official French searchable-text table under printed p.1069; their page image was not available for visual confirmation in this pass. Source assertions include Chabet El Ameur / 3514, consistent with the 1985 register entry. This confirms only the 1985 French source assertion; Arabic pairing, JO23/1998 comparison, post-1985 parent/code transfers, candidate matching, current effective dates and owner approval remain open. Official page source: [JORADP page 1068](https://www.joradp.dz/JO8499/1985/044/FP1068.pdf); whole issue: [F1985044.PDF](https://www.joradp.dz/FTP/jo-francais/1985/F1985044.PDF).
 

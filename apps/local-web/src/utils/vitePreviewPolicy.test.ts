@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { readRequestedViteHost, resolveVitePreviewPolicy } from '../vitePreviewPolicy';
+import { readRequestedViteHost, resolveVitePreviewPolicy } from '../../vitePreviewPolicy';
 
 test('real ASP.NET Core API mode uses loopback and never registers the preview simulator', () => {
   assert.deepEqual(

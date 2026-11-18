@@ -47,6 +47,11 @@ This is an evidence pack for review, not legal advice and not a substitute for t
 
 Local or operational lists that sequentially renumber Boumerdès communes and show Chabet El Ameur as `3513` are not accepted as the territorial-register code. Both the 1985 and 1998 French/Arabic page images assign `3513` to Tidjelabine (`تيجلبين`).
 
+
+### El Tarf 24-row extraction — source discrepancy remains open
+
+The 19 November 2026 workpaper [P1-01-JO44-1985-W36-EL-TARF-TEXT-EXTRACT-24.csv](P1-01-JO44-1985-W36-EL-TARF-TEXT-EXTRACT-24.csv) records all 24 French JO44/1985 name/code/seat assertions as printed. Its French code column has 23 distinct values: `3624` is printed for both Chihani and Raml Souk, and `3614` is not present in the French section. The earlier bilingual page-review evidence described above records the Arabic edition at printed p.1635 as `شهاني | 3614` and `رمل السوق | 3624`. The source variants are preserved verbatim; no correction, canonical identity, effective date or practitioner decision is inferred. The new CSV's Arabic status is not a full row-by-row Arabic transcription or legal sign-off.
+
 ### Additional official code cross-check — ONS table (qualified)
 
 The ONS *Code Géographique National* text layer lists:

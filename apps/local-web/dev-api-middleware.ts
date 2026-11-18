@@ -2,10 +2,11 @@
  * DEVELOPMENT-ONLY Vite Middleware for AI Studio / Frontend Preview.
  *
  * IMPORTANT ARCHITECTURAL NOTE:
- * - This middleware runs ONLY inside the Vite dev server when `ASPNETCORE_URL` is NOT set.
- * - It is NEVER bundled into `dist/` and NEVER used in production.
+ * - This middleware runs ONLY inside the Vite dev server when `PROMOGEST_VITE_ONLY=1` is explicit,
+ *   with neither `ASPNETCORE_URL` nor any Cloud SQL environment setting present.
+ * - It is a disposable in-memory demo, not a real API/PG18 test, and is NEVER used in production.
  * - Production builds (`vite build`) emit static assets served by ASP.NET Core 10 (`PromoGest.Api`),
- *   which executes all real business logic against PostgreSQL 18.
+ *   which executes all real business logic against the locally owned PostgreSQL 18 system of record.
  */
 import type { Plugin } from 'vite';
 import type { IncomingMessage, ServerResponse } from 'node:http';

@@ -5,6 +5,8 @@
 **State:** WORKING CROSSWALK BUILT — NOT LEGALLY APPROVED  
 **Import boundary:** no commune records imported; the application remains at `communesCount = 0` / `PendingOfficialVerification`. P1-01 remains In Progress / Pending; P1-02 remains Blocked.
 
+> **Methodology correction — 18 November 2026:** The historical `360/975` figure below is a legacy residual-evidence planning bucket, not the denominator for complete JO44/1985 baseline extraction. The repository now records 360 rows across 11 of the 48 original Wilaya sections; the remaining 37 sections and provisional 1,181-row estimate require an official 48-heading/row-count reconciliation. Do not use `615 remaining` as national JO44 coverage. See [P1-01 review addendum — 1985 baseline, Algiers historical row, and 2026–2027 transition](P1-01-2026-11-18-REVIEW-ADDENDUM.md).
+
 ## 1. Deliverables created in this branch
 
 - [P1-01-WORKING-CROSSWALK-1541.csv](P1-01-WORKING-CROSSWALK-1541.csv) — one row for each of the 1,541 bilingual candidate names, carrying the pinned candidate source, Law 26-06 membership result, JO58 code/seat values where a source label was safely joined, and explicit row-level evidence states.

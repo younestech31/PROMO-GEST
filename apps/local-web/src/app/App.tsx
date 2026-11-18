@@ -560,7 +560,7 @@ export function App() {
           : 'La démonstration en mémoire est uniquement disponible en mode aperçu Vite.'
       );
     }
-    const demoSession = await authApi.openPreviewSession();
+    const demoSession = await apiClient.openPreviewSession();
     setSession({
       ...demoSession,
       user: { ...demoSession.user, preferredLanguage: unauthenticatedLanguage },

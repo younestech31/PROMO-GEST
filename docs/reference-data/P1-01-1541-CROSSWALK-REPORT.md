@@ -131,3 +131,12 @@ The 404-row count comprises 296 entries across the ten existing-Wilaya sections 
 The separate 103-row JO79/2021 extract covers W01, W07, W08, W11, W30, W33, W39 and W47. It yields 81 exact normalized name-and-parent matches, four exact French-name matches to current candidate rows under a different parent, and 18 unresolved label/identity rows. Four exact parent/code changes are Branis 0703→6103, El Kantara 0717→6101, Aïn Zaâtout 0718→6102, and El Outaya 0719→6104. Djemorah 0720 vs Djemourah 6105 remains unlinked. The source tables are text-layer only for printed pages 13–16; no visual verification is claimed.
 
 See [the 103-row historical extract](P1-01-JO79-2021-EXISTING-WILAYAS-103-REGISTER-EXTRACT.csv), [the exceptions list](P1-01-JO79-2021-EXISTING-WILAYAS-EXCEPTIONS.csv), and [the Biskra-to-W61 transition controls](P1-01-JO79-TO-JO58-2026-BISKRA-PARENT-TRANSFER-CONTROLS.csv).
+
+
+## 5D. JO79/2021 — visual verification of 59 new-Wilaya register rows
+
+The separate [59-row JO79 new-Wilaya extract](P1-01-JO79-2021-WILAYAS-49-58-59-REGISTER-EXTRACT.csv) covers Wilayas 49–58 with these declared counts: 49:10, 50:2, 51:6, 52:10, 53:3, 54:2, 55:13, 56:2, 57:8 and 58:3. It retains 59 commune names, 59 four-digit register codes and 59 seat values as distinct fields. 42/59 rows have exact normalized French-label joins to a candidate row in the same Wilaya; 17 remain unlinked and must not be fuzzy-merged.
+
+All 59 rows were visually checked against the official French JO79 PDF page images: printed page 17 (Wilayas 49–51), page 18 (Wilayas 52–54), and page 19 (Wilayas 55–58). This image review exposed an extraction-page attribution defect: the Touggourt (55) and Djanet (56) rows were incorrectly assigned printed page 18; their correct printed page is 19. The CSV now records the corrected printed page and zero-based PDF page index (16, 17 or 18) for every row. The official PDF source is https://www.joradp.dz/FTP/jo-francais/2021/F2021079.pdf.
+
+The Tabelbala row remains a material candidate-parent conflict: JO79 places Tabelbala in W52 with code 5206, while the candidate row is under W08. Visual review confirms what the French page prints; it does not itself decide how to reconcile the candidate's legal identity or establish effective dates. The Arabic JO79 PDF could not be retrieved in this review, Arabic row pairing remains pending, and original PDF bytes/SHA-256 remain unrecorded. Do not treat these 59 French visual checks as bilingual legal approval or import authorization.

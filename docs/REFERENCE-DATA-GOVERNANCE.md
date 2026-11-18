@@ -374,3 +374,11 @@ The ONS *Code Géographique National* table provides a later official W./C. cros
 - Four exact W07-to-W61 parent/code changes are preserved (Branis 0703→6103; El Kantara 0717→6101; Aïn Zaâtout 0718→6102; El Outaya 0719→6104). Djemorah 0720 vs Djemourah 6105 remains unlinked.
 - The 27 Biskra records from JO79 are historical and superseded for current state by JO58/2026. The 76 JO79 records from seven other existing Wilayas not modified by JO58 remain in the current source coverage. The 1,137 rows outside JO58 split as 59 JO79 new-Wilaya rows +76 unchanged existing-Wilaya rows +27 historical Biskra rows +975 requiring JO44/1985 and other applicable amendments.
 - Page images for JO79 printed pages 13–16 and Arabic source row pairing remain pending; the 103-row file is French text-layer only. P1-01 remains In Progress/Pending and P1-02 Blocked. No database import is performed.
+
+
+#### JO79/2021 new-Wilaya visual review checkpoint — 18 November 2026
+
+- The separate 59-row JO79/2021 extract for Wilayas 49–58 has now been visually checked against the official French PDF printed pages 17–19: W49–W51 on p.17; W52–W54 on p.18; W55–W58 on p.19. All three columns (commune, register code, administrative seat) were read separately.
+- This review corrected a source-page attribution defect in the extract: the 15 Touggourt (W55) and Djanet (W56) rows had been recorded as printed p.18 but are on printed p.19. The CSV now records printed pages and zero-based PDF page indices 16–18.
+- The 103-row extract for eight existing Wilayas (W01, W07, W08, W11, W30, W33, W39, W47), on JO79 printed pages 13–16, remains text-layer-only; it is not covered by the 59-row screenshot review above.
+- Arabic JO79 row pairing could not be retrieved in this review. All Arabic pairing states remain pending, PDF SHA-256 remains blank, and no effective date is inferred from the order/publication dates. P1-01 remains In Progress/Pending, P1-02 remains Blocked; no commune data is imported.

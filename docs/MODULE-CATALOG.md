@@ -2,9 +2,9 @@
 
 All 12 functional ERP domains required by PROMO GEST, mapped strictly using the 6-state taxonomy against actual inspected code, controllers, EF configurations, and tests.
 
-**Last ASP.NET Core API/Application Runtime Source:** `b41d34aae03e1549ca1963a23d92643ff91bf393` (PR #87; financial-document read authorization and list-denial audit). **EF/schema source remains:** `53c50fbc0db801b9298ec731cfc44f2d4d58ff7f` (PR #59; no migration in PR #87). **Frontend main baseline:** `bf8a47c1cd334ec94807c727c79d10f40f20be7f` (PR #82).
-**Most recent code-bearing Main commit inspected:** `b41d34aae03e1549ca1963a23d92643ff91bf393` (PR #87; PRs #91–#107 after it were documentation/reference-data-only).
-**Latest main CI:** Run [#822](https://github.com/younestech31/PROMO-GEST/actions/runs/44289721946) passed all three jobs on current main SHA `8b40120aaf2f649bb123cd654f88f62250ce02d9` (frontend/static hosting; .NET 10 + PostgreSQL 18; Windows publish/PowerShell). PR #107 CI #821 passed all three jobs on its exact head. Detailed code-test totals from Run #795 remain applicable because PRs #105–#107 did not change application code or schema. Manual browser acceptance remains pending.
+**Last ASP.NET Core API/Application Runtime Source:** `b41d34aae03e1549ca1963a23d92643ff91bf393` (PR #87). **EF/schema source remains:** `53c50fbc0db801b9298ec731cfc44f2d4d58ff7f` (PR #59; no migration in PR #87).  
+**Current frontend/main baseline:** `cd57a5912ccb3631a6e9581d48d1aab2600180d2`; latest project navigation is PR #90, and the 18 November frontend runtime/language/session-state changes are present on main.  
+**Latest main CI:** [#825](https://github.com/younestech31/PROMO-GEST/actions/runs/44310687822) passed all three jobs on exact SHA `cd57a5912ccb3631a6e9581d48d1aab2600180d2`: Frontend 82/82, Domain 34/34, Application 21/21, PostgreSQL 18 Integration 32/32, static hosting, restore and Windows publish/PowerShell. Manual browser acceptance remains pending.
 **Live Preview / Manual Acceptance Evidence:** On 15 November 2026, the Product Owner confirmed the real Google AI Studio development server/API and PostgreSQL development connection operate, and owner-attested successful Arabic RTL / French LTR desktop/mobile workflows for projects, structure, customer interactions, internal holds, documents/SHA-256, authorization, audit, concurrency, safe errors, and persistence. Detailed group mapping is in `PHASE-0-MANUAL-ACCEPTANCE.md`; Phase 0 was administratively closed by owner decision D-010, with P0-A01 and P0-A04 still `NOT_RUN` as accepted residual exceptions.
 
 ---
@@ -28,14 +28,14 @@ All 12 functional ERP domains required by PROMO GEST, mapped strictly using the 
 
 ---
 
-## 2. Frontend platform and module ownership — PR #81 (merged; main CI #730 passed)
+## 2. Frontend platform and module ownership — PRs #81/#82/#90 (merged; current main CI #825 passed)
 
 - Canonical frontend entry points: `core/api/apiClient.ts`, `core/api/csrf.ts`, `core/permissions/permissionPolicy.ts`, `core/modules/registry.ts`, `core/modules/moduleCodes.ts`, `core/modules/routeTypes.ts`, `app/routeRegistry.ts`, and `core/localization/translations.ts`.
 - Legacy `services/apiClient.ts`, CSRF utilities, `utils/permissions.ts`, `utils/moduleCatalog.ts`, `utils/navigation.ts`, `utils/workspaceGuards.ts`, and `localization/translations.ts` are explicit compatibility adapters, not alternate implementations.
 - Active screen implementations now live in owning `modules/` directories for A–E, K, L, auth, setup and technical administration; Login and first-run setup have module-owned page implementations. Former `features/`, root `components/`, `layouts/` and duplicate utility paths are compatibility facades.
 - Reusable visual components are owned by `shared/components/`; active application/module code imports that surface. F–J remain planned business capabilities, with display metadata under module `presentation/workflows.ts` rather than `api/`.
 - Architecture regression tests verify module entry points, import parsing for static/type-only/re-export/side-effect/dynamic imports, public-index-only peer dependencies, acyclic module graph, no active imports from legacy `features/`, unique shared-component/API/CSRF/localization implementations, planned endpoint rejection, and the F–J presentation/API boundary.
-- Post-merge main CI Run #730 passed, but manual Arabic RTL / French LTR desktop/mobile browser acceptance and real dirty-form interaction evidence have not been performed. Navigation remains `IMPLEMENTED_NOT_VERIFIED` for manual UX acceptance.
+- Main CI #825 passed all three jobs on `cd57a591`; manual Arabic RTL / French LTR desktop/mobile browser acceptance and real dirty-form interaction evidence have not been performed. Navigation remains `IMPLEMENTED_NOT_VERIFIED` for manual UX acceptance.
 
 ## 3. Detailed Module Specifications (A–L)
 
@@ -53,7 +53,7 @@ All 12 functional ERP domains required by PROMO GEST, mapped strictly using the 
 - **Target Scope (`PLANNED`):** Active session revocation UI, HR Employee master, and the complete effective-dated 1,541-commune hierarchy (`communesCount = 0`).
 
 ### B. Real Estate Projects (`IMPLEMENTED_NOT_VERIFIED` — workspace shell)
-- **Frontend surface:** `modules/module-b-projects/pages/ProjectsAccessView.tsx`, `pages/ProjectWorkspaceView.tsx`, and `components/ProjectSwitcherModal.tsx` (`Ctrl/Cmd+K` outside editable controls). Former feature/component paths are tested compatibility facades. PR #81 and PR #82 are merged; latest main CI #807 passed all three required jobs. Manual navigation and bilingual budget UI acceptance remain outstanding.
+- **Frontend surface:** `modules/module-b-projects/pages/ProjectsAccessView.tsx`, `pages/ProjectWorkspaceView.tsx`, and `components/ProjectSwitcherModal.tsx`. PRs #81/#82 establish the modular frontend; PR #90 implements the single global-header project switcher and sidebar-only project-section navigation. Latest main CI #825 passes; manual navigation and bilingual budget UI acceptance remain outstanding.
 - **Current Reality:** `GET/POST /api/projects`, `GET/PUT /api/projects/{projectId}`, `PUT /api/projects/{projectId}/members`, `DELETE /api/projects/{projectId}/members/{userId}`. Dynamic `actualBuildingsCount`/`actualUnitsCount`, `ExpectedConcurrencyStamp` CAS protection, last-PM guard, Wilaya `01–69`. Project-access revocation clears cached stale context (`revokeProjectAccessFromState`). `EstimatedBudgetDzd` is redacted unless the actor has an explicit project membership with `CanViewFinancials`; budget writes additionally require `projects.manage` and ProjectManager membership. Null budget on a general master-data update preserves the stored value; unauthorized numeric writes are rejected and audited (PR #80 / D-014 / ADR-0011). Automated PR/main CI passed; manual RTL/LTR browser acceptance remains outstanding.
 - **Target Scope (`PLANNED`):** Structured land parcel references, subdivision/viability certificates, building permits, and VSP eligibility metadata linked to local verified files.
 

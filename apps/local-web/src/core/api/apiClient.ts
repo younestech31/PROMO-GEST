@@ -1,3 +1,4 @@
+import { isViteDevelopmentBuild } from '../shared/utils/appRuntime';
 import type {
   ApiErrorResponse,
   AdministrativeUnitsReferenceDto,
@@ -67,6 +68,7 @@ export class ApiConnectionError extends Error {
 }
 
 let cachedCsrfToken: string | null = null;
+const isViteDevelopmentBuild = import.meta.env?.DEV === true;
 let previewSessionToken: string | null = null;
 
 async function ensureCsrfToken(forceRefresh = false): Promise<string> {
@@ -143,7 +145,7 @@ export async function requestJson<T>(url: string, init?: RequestInit, isRetry = 
   let response: Response;
   try {
     const previewHeaders: Record<string, string> = {};
-    if (previewSessionToken) {
+    if (isViteDevelopmentBuild && previewSessionToken) {
       previewHeaders.Authorization = `Bearer ${previewSessionToken}`;
     }
 
@@ -164,7 +166,7 @@ export async function requestJson<T>(url: string, init?: RequestInit, isRetry = 
   const isAuthTransition = url === '/api/auth/login' || url === '/api/auth/logout';
   syncCsrfCacheFromResponse(response, isAuthTransition);
 
-  if (url === '/api/auth/preview-session' && response.ok) {
+  if (isViteDevelopmentBuild && url === '/api/auth/preview-session' && response.ok) {
     const token = response.headers.get('X-PROMOGEST-PREVIEW-TOKEN');
     if (!token) {
       throw new ApiConnectionError('Preview session response did not include its in-memory access token.');
@@ -172,7 +174,7 @@ export async function requestJson<T>(url: string, init?: RequestInit, isRetry = 
     previewSessionToken = token;
   }
 
-  if ((url === '/api/auth/logout' && response.ok) || (url === '/api/auth/me' && response.status === 401)) {
+  if (isViteDevelopmentBuild && ((url === '/api/auth/logout' && response.ok) || (url === '/api/auth/me' && response.status === 401))) {
     previewSessionToken = null;
   }
 
@@ -202,7 +204,7 @@ export async function requestJson<T>(url: string, init?: RequestInit, isRetry = 
       await ensureCsrfToken(true);
       return requestJson<T>(url, init, true);
     }
-    if (response.status === 403) {
+    if (isViteDevelopmentBuild && response.status === 403) {
       throw new ApiError(
         403,
         'HTTP_403_NON_JSON',
@@ -292,8 +294,12 @@ export const apiClient = {
       body: JSON.stringify(payload),
     }),
 
-  openPreviewSession: () =>
-    requestJson<SessionResponse>('/api/auth/preview-session', { method: 'GET' }),
+  openPreviewSession: () => {
+    if (!isViteDevelopmentBuild) {
+      return Promise.reject(new ApiConnectionError('Vite preview is unavailable in production builds.'));
+    }
+    return requestJson<SessionResponse>('/api/auth/preview-session', { method: 'GET' });
+  },
 
   logout: () => requestJson<void>('/api/auth/logout', { method: 'POST' }),
 

@@ -1,4 +1,3 @@
-import { isViteDevelopmentBuild } from '../shared/utils/appRuntime';
 import type {
   ApiErrorResponse,
   AdministrativeUnitsReferenceDto,

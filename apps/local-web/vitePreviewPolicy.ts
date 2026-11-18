@@ -6,6 +6,7 @@ export interface VitePreviewPolicyInput {
   allowedHosts?: string;
   allowedOrigins?: string;
   requestedHost?: string;
+  staticPreview?: boolean;
 }
 
 export interface VitePreviewPolicy {
@@ -86,13 +87,14 @@ export function readRequestedViteHost(args: readonly string[]): string | undefin
 
 export function resolveVitePreviewPolicy(input: VitePreviewPolicyInput): VitePreviewPolicy {
   const apiTarget = input.apiUrl?.trim() || undefined;
-  const previewEnabled = input.command === 'serve' && input.viteOnlyPreview;
+  const staticPreview = input.staticPreview === true;
+  const previewEnabled = input.command === 'serve' && !staticPreview && input.viteOnlyPreview;
 
-  if (input.command === 'serve' && input.viteOnlyPreview && apiTarget) {
+  if (input.command === 'serve' && !staticPreview && input.viteOnlyPreview && apiTarget) {
     throw new Error('PROMOGEST_VITE_ONLY=1 cannot be combined with ASPNETCORE_URL. Choose either the explicit in-memory Vite demo or the real ASP.NET Core API.');
   }
 
-  if (input.command === 'serve' && !apiTarget && !input.viteOnlyPreview) {
+  if (input.command === 'serve' && !staticPreview && !apiTarget && !input.viteOnlyPreview) {
     throw new Error('Vite dev server is disabled without an API target. Set ASPNETCORE_URL for the real API, or explicitly set PROMOGEST_VITE_ONLY=1 for the disposable in-memory demo.');
   }
 
@@ -102,7 +104,7 @@ export function resolveVitePreviewPolicy(input: VitePreviewPolicyInput): VitePre
     throw new Error('External Vite binding "' + requestedHost + '" is blocked. Keep the listener on loopback, or explicitly set PROMOGEST_VITE_ALLOW_EXTERNAL=1 with exact host and origin allowlists.');
   }
 
-  if (input.allowExternalPreview) {
+  if (input.command === 'serve' && input.allowExternalPreview) {
     const hosts = parseAllowedHosts(input.allowedHosts);
     const origins = parseAllowedOrigins(input.allowedOrigins);
     if (hosts.length === 0 || origins.length === 0) {

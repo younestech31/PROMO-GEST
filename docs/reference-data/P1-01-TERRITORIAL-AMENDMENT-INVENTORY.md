@@ -105,3 +105,10 @@ This supplement is documentation-only. It does not constitute the full amendment
 - P1-02 remains **Blocked**.
 - No commune rows are imported; the API remains `communesCount = 0` / `PendingOfficialVerification`.
 - No application code, API contract, database schema, migration, production data or Google AI Studio Cloud SQL data is changed.
+
+## 5B. JO44/1985 original-register extraction progress — 18 November 2026
+
+- Five bounded French searchable-text source extracts now cover W31 Oran (26 rows), W06 Bejaia (52), W02 Chlef (35), W04 Oum El Bouaghi (29) and W10 Bouira (45): **187/975 planned rows transcribed; 788 remain**, subject to final national row-count reconciliation.
+- This is extraction progress only. No new section in these five tranches has received page-image verification or Arabic row pairing in the extraction passes. Source PDF hash is reused from the existing repository inventory, not recalculated in this work.
+- Preserve text anomalies literally pending official visual/bilingual inspection: W06 `Tirmzrit` and seat `T rouna`; W02 `Labi od Medjadja`. No spelling correction, candidate match, current code, parent assignment or valid-time inference is made.
+- The full intervening register amendments, territorial-composition instruments, source-lineage/effective dates and qualified Algerian practitioner adjudication remain open. All 1,541 candidate workpaper rows remain unapproved; no commune data is imported.

@@ -7,9 +7,12 @@
 
 ## 1. Deliverables created in this branch
 
-- [P1-01-WORKING-CROSSWALK-1541.csv](P1-01-WORKING-CROSSWALK-1541.csv) — one row for each of the 1,541 candidate commune names, with bilingual candidate labels, candidate parent Wilaya, the Law 26-06 article relationship, JO58 French-text-layer code and seat data for all 108 communes in Wilayas 59–69, and explicit per-field evidence states.
-- [P1-01-JO58-NEW-WILAYAS-108-REGISTER-EXTRACT.csv](P1-01-JO58-NEW-WILAYAS-108-REGISTER-EXTRACT.csv) — separate row-level transcription of the JO58 French PDF text layer for all 108 communes in the 11 new Wilayas. Commune name, four-digit register code and seat are kept as distinct source columns.
-- [this report](P1-01-1541-CROSSWALK-REPORT.md) — reproducible methodology, counts, blockers and import boundary.
+- [P1-01-WORKING-CROSSWALK-1541.csv](P1-01-WORKING-CROSSWALK-1541.csv) — one row for each of the 1,541 bilingual candidate names, carrying the pinned candidate source, Law 26-06 membership result, JO58 code/seat values where a source label was safely joined, and explicit row-level evidence states.
+- [P1-01-JO58-NEW-WILAYAS-108-REGISTER-EXTRACT.csv](P1-01-JO58-NEW-WILAYAS-108-REGISTER-EXTRACT.csv) — 108 JO58 French text-layer rows for the eleven new Wilayas.
+- [P1-01-JO58-EXISTING-WILAYAS-296-REGISTER-EXTRACT.csv](P1-01-JO58-EXISTING-WILAYAS-296-REGISTER-EXTRACT.csv) — 296 JO58 French text-layer rows for ten existing Wilayas.
+- [P1-01-JO58-REGISTER-EXTRACT-404.csv](P1-01-JO58-REGISTER-EXTRACT-404.csv) — consolidated 404-row JO58 extract with separate commune-name, register-code and seat fields, candidate-row mapping status and provenance.
+- [P1-01-JO58-NAME-RECONCILIATION-EXCEPTIONS.csv](P1-01-JO58-NAME-RECONCILIATION-EXCEPTIONS.csv) — the five source-label variants kept unresolved and unlinked.
+- [this report](P1-01-1541-CROSSWALK-REPORT.md) — reproducible method, deterministic checks, blockers and import boundary.
 
 ## 2. Primary legal sources and source roles
 
@@ -76,7 +79,7 @@ Name normalization is limited to Unicode normalization, case, diacritic, punctua
 
 The 21 groups contain 404 rows (10 pre-existing Wilayas / 11 newly created Wilayas). The remaining 1137 candidate rows sit in 48 Wilayas not enumerated as newly composed in these Law 26-06 articles. Their absence from those 21 lists is not a complete validation against the current register; each still requires reconciliation against the inherited 1985 register and amendments.
 
-## 5. JO58 108-row French register extraction
+## 5. JO58 404-row French register extraction
 
 The separate [404-row consolidated JO58 extract](P1-01-JO58-REGISTER-EXTRACT-404.csv) combines [108 new-Wilaya rows](P1-01-JO58-NEW-WILAYAS-108-REGISTER-EXTRACT.csv) and [296 existing-Wilaya rows](P1-01-JO58-EXISTING-WILAYAS-296-REGISTER-EXTRACT.csv). It records the French text-layer values in the three JO58 annex columns. The records preserve:
 - the commune label from the register column;
@@ -91,7 +94,7 @@ The 404-row count comprises 296 entries across the ten existing-Wilaya sections 
 
 1. The French JO25 pages 4–9 were reviewed through the official PDF text and page screenshots. The Arabic JO25 screenshots were available only for printed pages 4–6; page-image requests for later pages returned Cache miss. Thus the full row-by-row Arabic/French label pairing is not approved.
 2. JO58 pages for the new-Wilaya section were text-layer extracted only. Their original page images and the corresponding Arabic annex have not been visually verified. The 108 rows have blank PDF SHA-256 fields because the exact original PDF bytes were not obtained in this pass. JO58 image review remains pending for every extracted page, so the exact cell transcription and the two Wilaya 67 string variants still require visual adjudication.
-3. The JO58 register delta contains 296 entries across ten pre-existing Wilaya sections; all 296 code/seat text-layer rows are now transcribed. Three source-label variants in this slice remain unjoined. The source names are not assumed equivalent to the candidate names. This pass records the law membership and candidate rows but does not claim that delta extraction complete.
+3. The JO58 French text-layer delta is now transcribed for all 404 printed entries across 21 Wilaya sections. This completes the text-layer extraction scope identified in this workpaper, not the evidentiary/legal acceptance of the delta. Three existing-Wilaya source-label variants and two new-Wilaya variants remain unjoined. The source labels are not assumed equivalent to candidate labels.
 4. The inherited 48-Wilaya register rows (1,137 candidate rows) require a full row-level join against JO44/1985 and all intervening register amendments, including JO11/1986, JO23/1998 and JO79/2021, plus any additional amendments identified by exhaustive legal search.
 5. The full amendment inventory is not yet legally certified exhaustive. Territorial composition/limits decrees (including 1992, 1993, 2006 and 2021 instruments) must remain separate from code-register amendments. Locality/mechta transfers do not themselves prove a commune code change.
 6. Historical disputes remain open, including Chabet El Ameur (JO44/1985 / JO23/1998 3514 vs 3614 text-layer conflict) and Chihani (JO44 repeated 3624 text-layer anomaly vs later ONS W./C. cross-checks). No canonical correction is selected here.
@@ -107,7 +110,7 @@ The 404-row count comprises 296 entries across the ten existing-Wilaya sections 
 
 ## 8. Next evidence slices
 
-1. Review all 404 JO58 table rows against the original French and Arabic page images; resolve the five name differences and preserve the three-column row cell provenance.
+1. Review all 404 JO58 table rows against the original French and Arabic page images; resolve the five name differences and preserve three-column row/cell provenance.
 2. Acquire original Arabic/French PDFs, compute SHA-256 on exact downloaded bytes, and visually review JO58 printed pages 9–25 in both editions.
 3. Reconcile the 1,137 unchanged candidate rows in 48 Wilayas against the prior 1985 register and full register amendment chain.
 4. Build a row-level source assertion ledger for all 1,541 units, including effective-dated parent/code/name assertions, seat provenance, aliases and conflicts.

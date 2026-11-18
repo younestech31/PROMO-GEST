@@ -37,8 +37,12 @@ A different public 2026 dataset was also inspected; its README has a different a
 | Names enumerated in the corresponding Law 26-06 articles | 404 |
 | Groups with exact normalized French-name set match | 21/21 |
 | JO58 French-text-layer rows transcribed for Wilayas 59–69 | 108 |
+| Rows joined to candidate rows by normalized French label | 106/108 |
+| Unresolved JO58-to-candidate label variants | 2 |
 | Four-digit JO58 codes with matching two-digit Wilaya prefix | 108/108 |
 | Duplicate JO58 codes within the 108-row transcription | 0 |
+
+The machine-readable Law 26-06 list input was the pinned third-party transcription `islam-re/Algeria-wilayas` / `bfb29814117d11a6a101fa07c38911f6675b748b` / `JO Article 2026.md`. Its 404 French list entries were cross-checked against the official French JO25 PDF pages 4–9; the page images were reviewed in this session. Arabic JO25 page images were available only for printed pages 4–6. The code records the third-party transcription blob SHA below so that this input is not mistaken for an official JORADP download.
 
 Name normalization is limited to Unicode normalization, case, diacritic, punctuation and whitespace handling. It does not assert that two source strings are the same legal identity. No Arabic labels are normalized or inferred. The comparison is a set comparison per Wilaya article, not proof of the full amendment lineage.
 
@@ -79,12 +83,12 @@ The separate 108-row file records the French text-layer values in the three JO58
 - JO58 printed page, order date and publication date;
 - text-layer evidence state and pending visual / Arabic review.
 
-The 108 row counts follow the eleven JO58 sections: 59:12, 60:8, 61:5, 62:4, 63:4, 64:6, 65:10, 66:8, 67:21, 68:23, 69:7. All extracted code values are four digits and carry the corresponding Wilaya prefix. **Do not yet treat these rows as visually transcribed or practitioner-approved**: the JORADP page-image requests for JO58 annex pages return Cache miss in the current review session. The legal effective-from date is not filled merely from the order date or publication date.
+The 108 row counts follow the eleven JO58 sections: 59:12, 60:8, 61:5, 62:4, 63:4, 64:6, 65:10, 66:8, 67:21, 68:23, 69:7. All extracted code values are four digits and carry the corresponding Wilaya prefix. 106/108 source rows could be joined to candidate rows by normalized French label. Two rows in Wilaya 67 remain unjoined: JO58 text-layer “Chen iguel” / code 6714 versus candidate “Cheniguel”, and JO58 text-layer “El O uinet” / code 6719 versus candidate “El Ouinet”. These are retained as source-string discrepancies; no fuzzy join or code/seat binding was made. **Do not yet treat these rows as visually transcribed or practitioner-approved**: the JORADP page-image requests for JO58 annex pages return Cache miss in the current review session. The legal effective-from date is not filled merely from the order date or publication date.
 
 ## 6. Critical limitations — this workpaper is not the final legal concordance
 
-1. The French JO25 pages 4–9 were reviewed through the official PDF text and the available page screenshots. The Arabic JO25 screenshots were available only for printed pages 4–6; page-image requests for later pages returned Cache miss. Thus the full row-by-row Arabic/French label pairing is not approved.
-2. JO58 pages for the new-Wilaya section were text-layer extracted only. Their original page images and the corresponding Arabic annex have not been visually verified. The 108 rows have blank PDF SHA-256 fields because the exact original PDF bytes were not obtained in this pass.
+1. The French JO25 pages 4–9 were reviewed through the official PDF text and page screenshots. The Arabic JO25 screenshots were available only for printed pages 4–6; page-image requests for later pages returned Cache miss. Thus the full row-by-row Arabic/French label pairing is not approved.
+2. JO58 pages for the new-Wilaya section were text-layer extracted only. Their original page images and the corresponding Arabic annex have not been visually verified. The 108 rows have blank PDF SHA-256 fields because the exact original PDF bytes were not obtained in this pass. JO58 image review remains pending for every extracted page, so the exact cell transcription and the two Wilaya 67 string variants still require visual adjudication.
 3. The JO58 register delta also contains 296 entries across ten pre-existing Wilaya sections. Their full code/seat rows still must be extracted and matched to the relevant 296 Law 26-06 member rows. This pass records the law membership and candidate rows but does not claim that delta extraction complete.
 4. The inherited 48-Wilaya register rows (1,137 candidate rows) require a full row-level join against JO44/1985 and all intervening register amendments, including JO11/1986, JO23/1998 and JO79/2021, plus any additional amendments identified by exhaustive legal search.
 5. The full amendment inventory is not yet legally certified exhaustive. Territorial composition/limits decrees (including 1992, 1993, 2006 and 2021 instruments) must remain separate from code-register amendments. Locality/mechta transfers do not themselves prove a commune code change.

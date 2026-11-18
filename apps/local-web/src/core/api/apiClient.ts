@@ -228,7 +228,7 @@ export async function requestBlob(url: string): Promise<Blob> {
   let response: Response;
   try {
     const previewHeaders: Record<string, string> = {};
-    if (previewSessionToken) {
+    if (isViteDevelopmentBuild && previewSessionToken) {
       previewHeaders.Authorization = `Bearer ${previewSessionToken}`;
     }
     response = await fetch(url, {

@@ -277,7 +277,7 @@ jo44_assertion_ids: set[str] = set()
 jo44_total = 0
 
 for path in jo44_files:
-    match = re.fullmatch(r"P1-01-JO44-1985-W(\\d{2})-.+\\.csv", path.name)
+    match = re.fullmatch(r"P1-01-JO44-1985-W(\d{2})-.+\.csv", path.name)
     if not match:
         fail(f"unexpected JO44 extract filename: {path.name}")
     expected_wilaya = match.group(1)

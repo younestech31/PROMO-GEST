@@ -31,6 +31,15 @@ EXPECTED_TRIAGE = {
     "MULTIPLE_CANDIDATE_HITS_63": 63,
     "NO_EXACT_HIT_362": 362,
 }
+EXPECTED_DECISIONS = {
+    "PROPOSED_CLEAN_FOR_SIGNOFF": 1431,
+    "EXPLICIT_PRACTITIONER_DECISION_REQUIRED": 110,
+}
+EXPECTED_PENDING_CODES = {
+    "W08-R012": "PENDING_ADJUDICATION_5206_OR_0812",
+    "W35-R023": "PENDING_ADJUDICATION_3514_OR_3614",
+    "W36-R016": "PENDING_ADJUDICATION_3614_OR_3624",
+}
 
 
 def fail(msg: str) -> None:
@@ -86,6 +95,30 @@ if len(set(master_prop_codes)) != EXPECTED_ROWS:
 triage_counts = Counter(r["original_triage_category"] for r in rows)
 if dict(triage_counts) != EXPECTED_TRIAGE:
     fail(f"triage breakdown mismatch: {dict(triage_counts)}")
+
+# Keep the report clean-proposal / explicit-review partition reproducible.
+decision_counts = Counter(r["decision_class"] for r in rows)
+if dict(decision_counts) != EXPECTED_DECISIONS:
+    fail(f"decision-class breakdown mismatch: {dict(decision_counts)}")
+
+# Candidate Arabic anomalies and source-code/parent conflicts must never be
+# classified as clean proposals for practitioner sign-off.
+for r in rows:
+    if r["candidate_arabic_anomaly_flag"] != "NONE" and r["decision_class"] != "EXPLICIT_PRACTITIONER_DECISION_REQUIRED":
+        fail(f"{r['working_row_key']}: candidate Arabic anomaly cannot be clean for sign-off")
+    if r["code_conflict_or_discrepancy_flag"] != "NONE" and r["decision_class"] != "EXPLICIT_PRACTITIONER_DECISION_REQUIRED":
+        fail(f"{r['working_row_key']}: source/code discrepancy cannot be clean for sign-off")
+
+# Numeric code proposals and pending adjudication tokens are different values.
+pending_codes = {
+    r["working_row_key"]: r["proposed_canonical_code"]
+    for r in rows if r["proposed_canonical_code"].startswith("PENDING_")
+}
+if pending_codes != EXPECTED_PENDING_CODES:
+    fail(f"pending adjudication code set mismatch: {pending_codes}")
+numeric_proposals = [r["proposed_canonical_code"] for r in rows if re.fullmatch(r"\\d{4}", r["proposed_canonical_code"])]
+if len(numeric_proposals) != 1538:
+    fail(f"expected 1,538 numeric code proposals plus 3 pending tokens, found {len(numeric_proposals)} numeric proposals")
 
 # Verify cross-register counts
 jo11_count = sum(1 for r in rows if r["jo11_1986_code"])

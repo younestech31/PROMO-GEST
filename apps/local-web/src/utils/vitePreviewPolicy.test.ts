@@ -72,6 +72,20 @@ test('external CLI host overrides are rejected unless external preview is explic
     }),
     /External Vite binding/
   );
+
+  // Unspecified/wildcard bind addresses are not loopback and must not bypass
+  // the explicit external-preview opt-in.
+  for (const wildcardHost of ['0.0.0.0', '::', '[::]']) {
+    assert.throws(
+      () => resolveVitePreviewPolicy({
+        command: 'serve',
+        viteOnlyPreview: true,
+        allowExternalPreview: false,
+        requestedHost: wildcardHost,
+      }),
+      /External Vite binding/
+    );
+  }
 });
 
 test('external preview requires exact non-wildcard host and origin allowlists', () => {

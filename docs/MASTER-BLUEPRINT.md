@@ -77,7 +77,7 @@ Every claim across this blueprint uses **strictly one** of the six evidence-back
 3. **Counterparties (Party), CRM & Holds:** Organization-wide `parties` identity (`id`, `party_kind`, `display_name`), project-scoped `project_customers` & `customer_interactions`, and internal lot/unit holds (`project_sales_reservations`), cleanly separated from future Statutory Reservation Contracts, VSP / *Acte Notarié* sales contracts, regulated payment milestones, and DZD collections.
 4. **Execution, Accounting & Statutory Compliance:** Works/construction tracking (lots, contractor situations, FGCMPI/legal compliance), suppliers/inventory, **Algerian SCF (Système Comptable Financier)** journal generation, VAT/IBS/TAP/IRG tax tracking (Finance Laws 2025/2026 gated on qualified accountant review), and local reporting.
 
-### High-Level Program Status Snapshot (Current Main: `cd57a5912ccb3631a6e9581d48d1aab2600180d2`; main CI #825)
+### High-Level Program Status Snapshot (detailed suite-count evidence baseline: `cd57a5912ccb3631a6e9581d48d1aab2600180d2`; latest full main CI: #969 on `8ad1b03fe1d518c4153d586388c19058c50f0a60`)
 
 | Layer / Domain | Current State | Verification Evidence |
 |---|---|---|

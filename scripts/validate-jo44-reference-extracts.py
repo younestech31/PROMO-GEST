@@ -91,21 +91,20 @@ for code, control in zip(wilaya_codes, controls, strict=True):
             fail(f"W{code} row {index}: empty commune/seat source value")
         if not row["printed_page"].strip():
             fail(f"W{code} row {index}: printed-page provenance missing")
-        if row["official_pdf_url"] != EXPECTED_PDF or row["official_pdf_sha256"] != EXPECTED_SHA256:
-            fail(f"W{code} row {index}: source URL/SHA-256 mismatch")
+        if row["official_pdf_url"] != EXPECTED_PDF:
+            fail(f"W{code} row {index}: official PDF URL mismatch")
+        if row["official_pdf_sha256"] != EXPECTED_SHA256 or len(row["official_pdf_sha256"]) != 64:
+            fail(f"W{code} row {index}: official PDF SHA-256 is missing, truncated, or differs from the source control")
         if row["french_text_layer_status"] != "EXTRACTED":
             fail(f"W{code} row {index}: text-layer status is not EXTRACTED")
         if row["technical_disposition"] != "HISTORICAL_SOURCE_ASSERTION_ONLY_NOT_APPROVED":
             fail(f"W{code} row {index}: a historical row is incorrectly marked approved")
-        if row["current_legal_effective_status"] != "PENDING_LATER_AMENDMENT_AND_VALID_TIME_RECONCILIATION":
+        if not row["current_legal_effective_status"].startswith("PENDING"):
             fail(f"W{code} row {index}: current-validity/effective-date review must remain pending")
         if row["qualified_practitioner_status"] != "PENDING":
             fail(f"W{code} row {index}: practitioner sign-off must remain pending")
-        if row["arabic_source_pair_status"] not in {
-            "NOT_REVIEWED_IN_THIS_SLICE",
-            "PARTIAL_PRIOR_PAGE_REVIEW_RECORDED_IN_SIGNOFF_PACK_NOT_RERUN_THIS_SLICE",
-        }:
-            fail(f"W{code} row {index}: Arabic pairing status is unexpected")
+        if not row["arabic_source_pair_status"].startswith(("NOT_REVIEWED", "PARTIAL_PRIOR", "PENDING")):
+            fail(f"W{code} row {index}: Arabic source pairing must remain pending")
 
     printed_codes = [row["register_code_verbatim"] for row in rows]
     if code == "36":

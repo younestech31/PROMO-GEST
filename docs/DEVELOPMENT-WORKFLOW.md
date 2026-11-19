@@ -87,6 +87,9 @@ Every contributor or engineering session **must** complete these 5 preparation s
 
 Execute the complete verification checklist locally and in CI before declaring work ready:
 
+0. **P1-01 Territorial Workpaper Integrity (documentation/data-reference changes):**
+   - Run `python3 scripts/validate-jo44-reference-extracts.py` and `python3 scripts/validate-p1-01-working-crosswalk.py`.
+   - These validators assert structural/provenance consistency and preserve unapproved states; they are not legal-source verification, practitioner sign-off, or import authorization.
 1. **Domain & Application Tests (`G1`, `G9`):**
    - Run `dotnet test tests/PromoGest.Domain.Tests` and `dotnet test tests/PromoGest.Application.Tests`.
    - Verify both valid paths **and** failure/boundary/denial assertions exist for every new rule.

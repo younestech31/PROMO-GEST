@@ -31,7 +31,7 @@ All 12 functional ERP domains required by PROMO GEST, mapped strictly using the 
 
 ---
 
-## 2. Frontend platform and module ownership — PRs #81/#82/#90 (merged; current main CI #825 passed)
+## 2. Frontend platform and module ownership — PRs #81/#82/#90/#140 (merged; current main CI #989 passed)
 
 - Canonical frontend entry points: `core/api/apiClient.ts`, `core/api/csrf.ts`, `core/permissions/permissionPolicy.ts`, `core/modules/registry.ts`, `core/modules/moduleCodes.ts`, `core/modules/routeTypes.ts`, `app/routeRegistry.ts`, and `core/localization/translations.ts`.
 - Legacy `services/apiClient.ts`, CSRF utilities, `utils/permissions.ts`, `utils/moduleCatalog.ts`, `utils/navigation.ts`, `utils/workspaceGuards.ts`, and `localization/translations.ts` are explicit compatibility adapters, not alternate implementations.

@@ -34,7 +34,7 @@
 
 **Outstanding manual and practitioner gates:** Arabic RTL / French LTR desktop/mobile workflows, budget value redaction/editor visibility, dirty-form Back/Forward/reload/tab-close and project switch/revocation remain unverified in a real browser. P0-A01 and P0-A04 remain `NOT_RUN` for manual first-run/second-initialization and logout/session-revocation. The full official 1,541-commune bilingual crosswalk and qualified review remain pending; Phase 1 stays `IN_PROGRESS` and Phase 2 remains blocked by dependencies.
 
-Run #795 detailed frontend/.NET/PostgreSQL test totals remain the last recorded individual test counts; Run #814 is the latest full CI evidence for the audited main snapshot. PRs #99–#103 are documentation-only and do not certify legal data, page-image review or practitioner acceptance.
+Run #795 detailed frontend/.NET/PostgreSQL test totals remain the last recorded individual per-suite counts. The latest full CI evidence for current main is Run #969 on exact SHA `8ad1b03fe1d518c4153d586388c19058c50f0a60` (3/3 jobs passed); this confirms the required CI jobs, not unexecuted manual browser acceptance. PRs #99–#103 are documentation-only and do not certify legal data, page-image review or practitioner acceptance.
 
 Historical runs below are retained as evidence for earlier source baselines;
 

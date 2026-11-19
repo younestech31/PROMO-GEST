@@ -131,7 +131,15 @@ The machine-readable Law 26-06 list input was the pinned third-party transcripti
 
 Name normalization is limited to Unicode normalization, case, diacritic, punctuation and whitespace handling. It does not assert that two source strings are the same legal identity. No Arabic labels are normalized or inferred. The comparison is a set comparison per Wilaya article, not proof of the full amendment lineage.
 
-### 4.1 Law 26-06 composition comparison
+### 4.1 Automated CI guard for the 1,541-row working candidate file
+
+The repository now includes [`validate-p1-01-working-crosswalk.py`](../../scripts/validate-p1-01-working-crosswalk.py), executed in the frontend CI job beside the JO44 source-extract validator. It checks the 30-column schema, exactly 1,541 candidate rows, unique sequential workpaper keys, coverage of Wilaya codes 01–69, non-empty bilingual candidate labels, duplicate normalized names within each Wilaya, and the pinned candidate-source revision.
+
+For the bounded 404-row JO58 / Law 26-06 slice, the validator checks the 21 recorded article-to-Wilaya groups and their declared counts, normalized French-label joins, four-digit codes and Wilaya prefixes, code uniqueness, recorded JO58 source provenance/page metadata, and the recorded review-state fields. It also prevents the working file from silently changing candidate or practitioner approval flags: all 1,541 rows must remain `CANDIDATE_ONLY_NOT_APPROVED` with practitioner status `PENDING`.
+
+This is a regression guard for the current workpaper, not an independent legal-source check. It does not authenticate the third-party candidate source, determine present-day commune identity or parentage, establish code/effective-date intervals, certify Arabic legal equivalence, or authorize database import. A passing CI result therefore cannot close P1-01 or unblock P1-02.
+
+### 4.2 Law 26-06 composition comparison
 
 | Wilaya code | Law article | Candidate count | Law article count | Set result |
 |---:|---|---:|---:|---|

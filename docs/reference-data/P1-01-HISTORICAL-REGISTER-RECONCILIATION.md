@@ -82,6 +82,10 @@ These buckets sum to 1,137 (59 + 76 + 27 + 975). This is a source-coverage plan,
 - No commune records are imported; no database schema, production data or Google AI Studio Cloud SQL data is changed.
 - Bilingual visual PNG review and exact PDF SHA-256 verification are recorded for: JO58/2026 (pp. 9–25 FR & AR, 404 rows), JO79/2021 (new and existing-Wilaya extracts; FR pp. 13–19 and AR pp. 15–22, 162 rows), JO11/1986 (FR pp. 280–281 & AR pp. 401–402, 4 rows), JO23/1998 (Boumerdès table, FR p. 11 & AR p. 13), and the key disputed JO44/1985 sections (FR pp. 1065–1070 & AR pp. 1631–1635). The JO44 French searchable-text extracts are now complete for all 1,541 rows; the remaining 975-row source-coverage bucket across 30 original Wilayas still requires the full bilingual row-by-row amendment, code, parent and effective-date reconciliation. Do not describe those 975 rows as unextracted French JO44 rows.
 
+### Historical tranche snapshots — interpretation note (19 November 2026)
+
+Sections 5E onward retain dated extraction-tranche notes and their original residual counts as an audit trail. Those counts describe the state at the time each tranche was written; they are **not** the current French JO44 extraction total. The final 19 November checkpoint below and the 48-Wilaya control govern the current extraction status: **48/48 sections, 1,541/1,541 French searchable-text rows extracted**. The separate **975-row** figure in Sections 4 and 6 is the remaining legal/source-lineage reconciliation bucket across 30 original Wilayas, not a count of unextracted French rows. The 975 still requires bilingual source pairing, all applicable amendments, valid-time/code/parent reconciliation, exception adjudication and qualified practitioner sign-off.
+
 ## 5E. JO44/1985 — W31 Oran (26-row French text-layer tranche)
 
 A first bounded tranche of the remaining 1985 baseline work has been transcribed into [the 26-row W31 Oran source extract](P1-01-JO44-1985-W31-ORAN-TEXT-EXTRACT-26.csv).

@@ -41,6 +41,8 @@ EXPECTED_DUPLICATE_SOURCE_CODES = {
 EXPECTED_SPECIAL = "1600 (Ville d'Alger; separately preserved; excluded from 1,541 communes)"
 EXPECTED_ROW_STATUS = "PAGE_IMAGE_MAPPED_NOT_ROW_TRANSCRIBED"
 EXPECTED_PAGE_STATUS = "PAGE_VISUALLY_INSPECTED; ROW_LEVEL_TRANSCRIPTION_NOT_COMPLETED"
+EXPECTED_LOCATOR_BASIS = "LEDGER_SOURCE_CODE_POSITION_RANGE_NOT_ARABIC_ROW_TRANSCRIPTION"
+EXPECTED_VISIBLE_PRINT_EXCEPTION_PAGES = {22, 35, 36, 37, 38}
 
 
 def fail(message: str) -> None:
@@ -107,6 +109,8 @@ for item in manifest:
         fail(f"page {page_index}: printed page number mismatch ({printed_page})")
     if item["image_review_status"] != EXPECTED_PAGE_STATUS:
         fail(f"page {page_index}: image review state must not imply row transcription")
+    if page_index in EXPECTED_VISIBLE_PRINT_EXCEPTION_PAGES and not item["visible_print_exceptions"].strip():
+        fail(f"page {page_index}: known Arabic printed exception must remain disclosed")
     if item["source_pdf_sha256"] != "NOT_CAPTURED":
         fail(f"page {page_index}: source PDF SHA-256 must remain explicitly uncaptured")
 
@@ -118,7 +122,7 @@ for item in manifest:
     if actual_blob != item["image_git_blob_sha1"]:
         fail(f"page {page_index}: Git blob SHA-1 mismatch for {item['image_path']}")
 
-    codes = parse_ranges(item["register_code_ranges"], page_index)
+    codes = parse_ranges(item["ledger_code_position_ranges"], page_index)
     if len(codes) != range_count:
         fail(f"page {page_index}: range count says {range_count}, parsed {len(codes)}")
     for code in codes:
@@ -178,6 +182,7 @@ for key, source in master_by_key.items():
         "arabic_image_path": page["image_path"],
         "arabic_image_git_blob_sha1": page["image_git_blob_sha1"],
         "row_image_mapping_status": EXPECTED_ROW_STATUS,
+        "image_locator_basis": EXPECTED_LOCATOR_BASIS,
     }
     for field, expected in expected_values.items():
         if mapped[field] != expected:
@@ -242,7 +247,7 @@ for number in range(1, 49):
 print(
     "JO44 Arabic page-image validation passed: 29 committed Arabic page images "
     "(PDF pages 12–40 / printed pages 1612–1640); 1,541/1,541 master assertions "
-    "mapped to page images; 48/48 printed Wilaya counts match and sum to 1,541; "
+    "mapped to page images by ledger source-code position ranges (not verbatim Arabic code matching); 48/48 printed Wilaya counts match and sum to 1,541; "
     "W36 duplicate 3624 preserved; 1600 Ville d'Alger excluded; row-level Arabic "
     "transcription and practitioner approval remain outstanding."
 )

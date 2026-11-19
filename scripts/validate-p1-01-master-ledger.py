@@ -67,12 +67,24 @@ if len(jo44_files) != 48:
     fail(f"expected 48 JO44 files, found {len(jo44_files)}")
 
 jo44_ids: set[str] = set()
+master_by_assertion = {r["jo44_assertion_id"]: r for r in rows}
 for p in jo44_files:
     with p.open(encoding="utf-8-sig", newline="") as fh:
         for r in csv.DictReader(fh):
             if r["register_code_verbatim"] == "1600":
                 fail(f"{p.name}: 1600 Ville d'Alger must not be in the 1,541 commune extracts")
-            jo44_ids.add(r["assertion_id"])
+            aid = r["assertion_id"]
+            master = master_by_assertion.get(aid)
+            if not master or aid in jo44_ids:
+                fail(f"{p.name}: missing master link or repeated JO44 assertion {aid}")
+            for src, dest in (("wilaya_code_verbatim", "jo44_wilaya_code"),
+                              ("register_code_verbatim", "jo44_register_code_verbatim"),
+                              ("commune_name_fr_verbatim", "jo44_commune_name_fr_verbatim"),
+                              ("administrative_seat_fr_verbatim", "jo44_seat_fr_verbatim"),
+                              ("printed_page", "jo44_printed_page_fr")):
+                if r[src] != master[dest]:
+                    fail(f"{aid}: master field {dest} no longer matches source field {src}")
+            jo44_ids.add(aid)
 
 if len(jo44_ids) != EXPECTED_ROWS:
     fail(f"unexpected JO44 assertion_id count: {len(jo44_ids)}")
@@ -90,6 +102,23 @@ if len(set(master_jo44_ids)) != EXPECTED_ROWS or set(master_jo44_ids) != jo44_id
 if len(set(master_prop_codes)) != EXPECTED_ROWS:
     dups = {k: v for k, v in Counter(master_prop_codes).items() if v > 1}
     fail(f"duplicate proposed_canonical_code values found: {dups}")
+
+# Round-six corrections apply to source readings, not legal approvals.
+by_key = {r["working_row_key"]: r for r in rows}
+if by_key["W16-R035"]["official_arabic_verified_form"] != "JO23 AR p.12: الحمّامات":
+    fail("W16-R035: Hammamet must cite JO23 Arabic printed/PDF page 12")
+merahna = by_key["W41-R021"]
+if (merahna["official_arabic_verified_form"] !=
+        "JO44 AR p.1637: المراهنة (printed code 4012; French register 4112; pending adjudication)"
+        or merahna["code_conflict_or_discrepancy_flag"] != "JO44_AR_P1637_MISPRINTED_CODE_4012"):
+    fail("W41-R021: preserve the corrected Arabic reading and pending 4012/4112 discrepancy")
+
+jo58_readings = [r for r in rows if "JO58" in r["official_arabic_verified_form"]]
+if sum(r["decision_class"] == "EXPLICIT_PRACTITIONER_DECISION_REQUIRED" for r in jo58_readings) != 36:
+    fail("expected 36 JO58 Arabic readings in the explicit-decision queue")
+for r in jo58_readings:
+    if "[PRELIMINARY: independent row-image review pending] JO58 AR p." not in r["official_arabic_verified_form"]:
+        fail(f"{r['working_row_key']}: unqualified JO58 Arabic reading")
 
 # Verify triage reproduction sums
 triage_counts = Counter(r["original_triage_category"] for r in rows)

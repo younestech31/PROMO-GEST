@@ -23,6 +23,8 @@ jobs:
         run: python3 scripts/validate-p1-01-master-ledger.py
       - name: Validate JO44 Arabic page-image map (page mapping only; not row transcription or legal approval)
         run: python3 scripts/validate-p1-01-jo44-arabic-page-images.py
+      - name: Verify reproducible practitioner review queue (not a seed)
+        run: python3 scripts/prepare-p1-01-review.py
       - uses: actions/setup-node@v7
         with:
           node-version: "22"

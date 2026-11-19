@@ -32,7 +32,7 @@ All 1,541 historical assertions from the initial unlinked French-name-only triag
 - **JO11/1986 (`F1986011.PDF`):** **4 / 4** register deltas linked (`2407 Aïn Sandel`, `2656 Bir Ben Laabed`, `3434 Haraza`, `3919 Béni Guécha`).
 - **JO23/1998 (`F1998023.PDF` / `A1998023.PDF`):** **142 / 142** Algiers/Blida/Boumerdès/Tipaza communes linked (+ `1600` Gouvernorat du Grand-Alger preserved separately; including the 14 annexations transferred to Wilaya `16` under codes `1634`–`1657`).
 - **JO79/2021 (`F2021079.pdf` / `A2021079.pdf`):** **162 / 162** (`103` existing-Wilaya rows + `59` new-Wilaya W49–W58 rows) linked, including all **39** rows of `P1-01-JO79-ARABIC-EXCEPTION-RECONCILIATION.csv` transcribed verbatim from `A2021079.pdf` PNG pages 15–22.
-- **JO58/2026 (`F2026058.pdf` / `A2026058.pdf`):** **404 / 404** communes across 21 Law 26-06 recomposed/new Wilaya articles linked, with **all 17 Arabic annex pages (pp. 9–25)** visually inspected on PNG renders.
+- **JO58/2026 (`F2026058.pdf` / `A2026058.pdf`):** **404 / 404** communes across 21 Law 26-06 recomposed/new Wilaya articles linked, with **all 17 Arabic annex pages (pp. 9–25)** visually inspected on PNG renders. Page inspection does not certify independent row-by-row transcription. The 36 JO58 Arabic readings in the queue remain preliminary.
 
 ---
 
@@ -48,7 +48,7 @@ Direct PNG inspection of `F1985044.PDF` pages proved that **18** anomalies in th
 Visual PNG inspection of `A1985044.PDF` uncovered **5** original 1985 Arabic printing discrepancies / misprints:
 1. **`4403` (`A1985044.PDF` p.1638):** Prints **`بومدفع`** (`Boumedfaa`), confirming French p.1072 `Moumedfa` was a 1985 French print/transliteration variant of `W44-R010 Boumedfaa`.
 2. **`3907` (`W39-R009 Kouinine`, `A1985044.PDF` p.1636):** Prints **`كوينين`** with misprinted code **`4907`** instead of `3907`.
-3. **`4112` (`W41-R021 Merahna`, `A1985044.PDF` p.1637):** Prints **`مراهنة`** with misprinted code **`4012`** instead of `4112`.
+3. **`4112` (`W41-R021 Merahna`, `A1985044.PDF` p.1637):** Prints **`المراهنة`** with code **`4012`**; the French register prints `4112`. The code discrepancy remains pending.
 4. **`4115` (`W41-R014 M'daourouche`, `A1985044.PDF` p.1637):** Prints **`مداوروش`** with misprinted code **`1415`** instead of `4115`.
 5. **`4229` (`W16-R024 Staoueli`, `A1985044.PDF` p.1637):** Prints **`سطاوالي`** with misprinted duplicate code **`4228`** (duplicating `4228 Chéraga` directly above it; later assigned `1645` in `JO23/1998`).
 
@@ -59,32 +59,32 @@ Visual PNG inspection of `A1985044.PDF` uncovered **5** original 1985 Arabic pri
 Comparison against visually inspected **`A2026058.pdf` (pp. 9–25)**, **`A2021079.pdf` (pp. 15–22)**, **`A1998023.PDF` (pp. 9–14)**, and **`A1985044.PDF`** exposed **75** Candidate Arabic anomalies in `P1-01-WORKING-CROSSWALK-1541.csv` (`islam-re/Algeria-wilayas`), including **20 severe semantic/permutation corruptions** that would corrupt official database records if imported verbatim:
 
 ### 3.1 Nine-Commune Arabic Permutation Cycle in Wilaya 26 (Médéa)
-In `P1-01-WORKING-CROSSWALK-1541.csv`, 9 communes of Wilaya `26` have rotated/swapped Arabic labels across rows; `A2026058.pdf` pp. 18–19 establishes the true official Arabic for all 9:
-- `W26-R025` (`2616 El Hamdania`): Candidate `الحوضان` → Official JO58 AR p.18 **`الحمدانية`**
-- `W26-R026` (`2601 Medea`): Candidate `مزغنة` → Official JO58 AR p.18 **`المدية`**
-- `W26-R029` (`2602 Ouzera`): Candidate `المدية` → Official JO58 AR p.18 **`وزرة`**
-- `W26-R032` (`2607 El Omaria`): Candidate `الحمدانية` → Official JO58 AR p.18 **`العمارية`**
-- `W26-R033` (`2624 Baata`): Candidate `وزرة` → Official JO58 AR p.18 **`بعطة`**
-- `W26-R035` (`2661 Sedraia`): Candidate `بعطة` → Official JO58 AR p.19 **`سدراية`**
-- `W26-R036` (`2611 Mezghenna`): Candidate `العمارية` → Official JO58 AR p.18 **`مزغنة`**
-- `W26-R040` (`2626 Sidi Naamane`): Candidate `سدراية` → Official JO58 AR p.18 **`سيدي نعمان`**
-- `W26-R043` (`2653 Deux Bassins`): Candidate `سيدي نعمان` → Official JO58 AR p.19 **`الحوضان`**
+In `P1-01-WORKING-CROSSWALK-1541.csv`, 9 communes of Wilaya `26` have rotated/swapped Arabic labels across rows; `A2026058.pdf` pp. 18–19 is the source cited for these nine preliminary readings:
+- `W26-R025` (`2616 El Hamdania`): Candidate `الحوضان` → Preliminary JO58 AR p.18 **`الحمدانية`**
+- `W26-R026` (`2601 Medea`): Candidate `مزغنة` → Preliminary JO58 AR p.18 **`المدية`**
+- `W26-R029` (`2602 Ouzera`): Candidate `المدية` → Preliminary JO58 AR p.18 **`وزرة`**
+- `W26-R032` (`2607 El Omaria`): Candidate `الحمدانية` → Preliminary JO58 AR p.18 **`العمارية`**
+- `W26-R033` (`2624 Baata`): Candidate `وزرة` → Preliminary JO58 AR p.18 **`بعطة`**
+- `W26-R035` (`2661 Sedraia`): Candidate `بعطة` → Preliminary JO58 AR p.19 **`سدراية`**
+- `W26-R036` (`2611 Mezghenna`): Candidate `العمارية` → Preliminary JO58 AR p.18 **`مزغنة`**
+- `W26-R040` (`2626 Sidi Naamane`): Candidate `سدراية` → Preliminary JO58 AR p.18 **`سيدي نعمان`**
+- `W26-R043` (`2653 Deux Bassins`): Candidate `سيدي نعمان` → Preliminary JO58 AR p.19 **`الحوضان`**
 
 ### 3.2 Eleven Severe Arabic Corruptions / Lexical Substitutions in New Wilayas W60–W68
-- `W60-R006` (`6003 Abdelkader Azil`): Candidate `عبد القادر عزيز` → Official JO58 AR p.21 **`عبد القادر عزيل`**
-- `W61-R004` (`6104 El Outaya`): Candidate `الوتیة` → Official JO58 AR p.22 / JO79 AR p.16 **`الوطاية`**
-- `W65-R005` (`6505 Sidi Ladjel`): Candidate `سيدي لخضر` → Official JO58 AR p.23 **`سيدي لعجال`**
-- `W65-R008` (`6506 Had Sahary`): Candidate `حاضرة` → Official JO58 AR p.23 **`حد الصحاري`**
-- `W67-R005` (`6706 Kef Lakhdar`): Candidate `الكاف الأحمر` *(lit. "Red" instead of "Green"!)* → Official JO58 AR p.23 **`الكاف الأخضر`**
-- `W67-R008` (`6705 Bouaiche`): Candidate `بوطاط` → Official JO58 AR p.23 **`البواعيش`**
-- `W67-R019` (`6721 Saneg`): Candidate `السناقصة` → Official JO58 AR p.24 **`السانق`**
-- `W68-R007` (`6808 Ouled Slimane`): Candidate `أولاد سلامة` → Official JO58 AR p.24 **`أولاد سليمان`**
-- `W68-R009` (`6809 El Houamed`): Candidate `الحمادين` → Official JO58 AR p.25 **`الحوامد`**
-- `W68-R011` (`6811 Zarzour`): Candidate `الزرق` → Official JO58 AR p.25 **`الزرزور`**
-- `W68-R017` (`6817 Menaa`): Candidate `مضاء` → Official JO58 AR p.25 **`مناعة`**
+- `W60-R006` (`6003 Abdelkader Azil`): Candidate `عبد القادر عزيز` → Preliminary JO58 AR p.21 **`عبد القادر عزيل`**
+- `W61-R004` (`6104 El Outaya`): Candidate `الوتیة` → Preliminary JO58 AR p.22 / JO79 AR p.16 **`الوطاية`**
+- `W65-R005` (`6505 Sidi Ladjel`): Candidate `سيدي لخضر` → Preliminary JO58 AR p.23 **`سيدي لعجال`**
+- `W65-R008` (`6506 Had Sahary`): Candidate `حاضرة` → Preliminary JO58 AR p.23 **`حد الصحاري`**
+- `W67-R005` (`6706 Kef Lakhdar`): Candidate `الكاف الأحمر` *(lit. "Red" instead of "Green"!)* → Preliminary JO58 AR p.23 **`الكاف الأخضر`**
+- `W67-R008` (`6705 Bouaiche`): Candidate `بوطاط` → Preliminary JO58 AR p.23 **`البواعيش`**
+- `W67-R019` (`6721 Saneg`): Candidate `السناقصة` → Preliminary JO58 AR p.24 **`السانق`**
+- `W68-R007` (`6808 Ouled Slimane`): Candidate `أولاد سلامة` → Preliminary JO58 AR p.24 **`أولاد سليمان`**
+- `W68-R009` (`6809 El Houamed`): Candidate `الحمادين` → Preliminary JO58 AR p.25 **`الحوامد`**
+- `W68-R011` (`6811 Zarzour`): Candidate `الزرق` → Preliminary JO58 AR p.25 **`الزرزور`**
+- `W68-R017` (`6817 Menaa`): Candidate `مضاء` → Preliminary JO58 AR p.25 **`مناعة`**
 
 ### 3.3 Other Candidate Formatting & Orthographic Flags (55 rows)
-- **Broken punctuation:** `W27-R002` (`2721 Hassiane`) has unclosed parenthesis `الحسيان (بني ياحي`.
+- **Broken punctuation:** `W27-R002` (`2732 El Hassiane`) has unclosed parenthesis `الحسيان (بني ياحي`. The [Arabic JO44 image, printed p.1630](../../.tmp-joradp/jo44_ar_pdf30.png), right-hand Mostaganem table, last row, separates the commune (الحسيان) from its seat (بني ياحى); 2721 is a different commune. Do not repair the candidate by merely closing the parenthesis. This is historical evidence, not a current label approval.
 - **Arabic kashida / tatweel (`ـ`) & extra whitespace:** 20 rows in `W15` + `W36-R017` (`الذرعـان`) contain Unicode tatweel characters; 7 rows contain leading or doubled spaces.
 - **French label truncation/abbreviation:** `W04-R003` (`El Fedjoudj Boughrara Sa` vs `El Fedjoudj Boughrara Saoudi`), `W34-R034` (`B. B. Arreridj` vs `Bordj Bou Arréridj`).
 - **Orthographic / article / `عمر` vs `عامر` variants:** Recorded in `candidate_arabic_anomaly_flag` (e.g., `W14-R006 سي` vs `سيدي`, `W32-R015` / `W42-R005` `سيدي عامر` vs `سيدي عمر`, `W63-R002 الگور` vs `القور`, `W68-R012 بودياف` vs `بوضياف`, `W53/W54/W11` `عين` vs `إن`).
@@ -173,3 +173,5 @@ The project owner explicitly instructed in the PROMO-GEST project conversation o
 **Processing rule:** retain all 1,541 candidates in scope; resolve each incorrect or ambiguous attribute from the highest-ranking applicable official source; preserve original assertions and valid-time lineage; apply corrections through a reviewed, reproducible evidence record; and keep unresolved assertions explicit rather than guessing. A blanket population authorization is not a row-level transcription or a substitute for a source-backed code/parent/effective-date decision.
 
 **System boundary:** this is a documentation/authorization record only. It does not alter practitioner_signoff_status (all 1,541 remain PENDING), decision classes, or the three pending-code tokens; it does not change API/runtime/schema or import/seed data. communesCount = 0 and PendingOfficialVerification remain until the complete, corrected, validated dataset is accepted through the Phase 1 gates. P1-01 remains In Progress / Pending and P1-02 remains Blocked until that evidence and the required authenticated review record are complete.
+
+**Practitioner handoff:** [Arabic review guide and source-linked 110-case queue](P1-01-PRACTITIONER-QUEUE.ar.md). The queue tests the three recommendations together without replacing the pending tokens in the master ledger.

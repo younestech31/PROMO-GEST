@@ -151,7 +151,7 @@ A subsequent audit of the committed `.tmp-joradp/` artifacts found **29 consecut
 
 Three companion workpapers were added:
 - `P1-01-JO44-ARABIC-IMAGE-PAGE-MANIFEST-29.csv`: page index, printed page, image path/blob hash, ledger source-code position ranges (not a verbatim transcription of every Arabic printed code), visible print exceptions, page review state and source-PDF hash boundary.
-- `P1-01-JO44-ARABIC-IMAGE-ROW-MAP-1541.csv`: all 1,541 JO44 assertion IDs and master-ledger keys linked to the Arabic page image containing their source-code range. Every row is deliberately marked `PAGE_IMAGE_MAPPED_NOT_ROW_TRANSCRIBED`.
+- `P1-01-JO44-ARABIC-IMAGE-ROW-MAP-1541.csv`: all 1,541 JO44 assertion IDs and master-ledger keys linked to the Arabic page image associated with the ledger source-code position range. Every row is deliberately marked `PAGE_IMAGE_MAPPED_NOT_ROW_TRANSCRIBED`.
 - `P1-01-JO44-ARABIC-WILAYA-COUNT-CONTROL-48.csv`: the 48 printed Wilaya header counts compared with the master ledger population.
 
 The 48 Arabic printed header counts sum to **1,541**, and each printed Wilaya count matches the corresponding master-ledger row count (**48/48**). The mapping preserves the exact source-code anomaly: the French text-layer ledger has two W36 assertions carrying `3624` (Chihani and Raml Souk), whereas the Arabic page 1635 visibly prints Chihani as `3614` and Raml Souk as `3624`. The mapping therefore identifies the page associated with the ledger source-code position; it does not assert that the Arabic printed code equals the French text-layer code or decide the correct row identity/code. The separate `1600 — Ville d'Alger` special assertion is visible on page 1622 and remains outside the 1,541 commune population.

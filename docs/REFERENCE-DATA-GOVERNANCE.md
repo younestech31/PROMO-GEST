@@ -1,7 +1,8 @@
 # PROMO GEST — Algerian Administrative Reference-Data Governance
 
 **Legal baseline checked:** 19 November 2026.  
-**Status:** The server-owned, bilingual, versioned 69-Wilaya catalogue and its UI integration are implemented and verified (PR #59). The P1-01 master workpaper now structurally links all 1,541 candidate keys to all 1,541 JO44 historical assertions and is validated in CI (PR #141 / main CI #989), but it is not a legally approved canonical commune catalogue. 1,431 rows are proposed clean for practitioner sign-off; 110 require explicit practitioner decision; all 1,541 sign-offs remain PENDING. The API continues to report `PendingOfficialVerification` and `communesCount = 0`; no candidate rows are imported.
+**Current repository evidence anchor:** main `84408377c8de7a3995b82dfba55eda15ab2806dd`; [main CI #992](https://github.com/younestech31/PROMO-GEST/actions/runs/44541533285) passed all three required jobs on the exact SHA.  
+**Status:** The server-owned, bilingual, versioned 69-Wilaya catalogue and its UI integration are implemented and verified (PR #59). The P1-01 master workpaper structurally links 1,541 candidate keys to 1,541 JO44 historical assertions and is covered by CI #992 on main SHA `84408377c8de7a3995b82dfba55eda15ab2806dd`. A separate evidence branch adds 29 Arabic JO44 page images, a 1,541-row page-level locator and 48/48 printed-count reconciliation; every locator is `PAGE_IMAGE_MAPPED_NOT_ROW_TRANSCRIBED`, not Arabic row transcription or legal identity approval. The master ledger records 1,431 proposed-clean rows, 110 practitioner-decision rows, 75 Arabic anomaly flags, and all 1,541 sign-offs PENDING. The API remains `PendingOfficialVerification` / `communesCount = 0`; no candidate rows are imported.
 
 ## 1. Authoritative territorial baseline
 
@@ -392,3 +393,14 @@ The ONS *Code Géographique National* table provides a later official W./C. cros
 - Evidence-scope audit of `primary_source_verification_scope`: 841 rows have only `JO44_FR_TEXT_LAYER_EXTRACTED` and no additional primary visual scope recorded; 27 rows have the explicit `JO44_FR_AR_PNG_SPOT_VERIFIED` marker. Separately scoped JO58/JO79/JO23/JO11 image checks apply to their own linked subsets and may overlap. Do not claim full bilingual page-image verification for all 1,541 rows.
 - PR #140 separately corrects Vite preview bind classification: `0.0.0.0`, `::`, and `[::]` are not loopback; regression tests now require explicit external-preview opt-in for wildcard/unspecified binds. The precise host/origin and platform-ingress manual acceptance remains open.
 - No commune records imported; `communesCount = 0`; P1-01 In Progress / Pending; P1-02 Blocked. Qualified Algerian practitioner review remains a mandatory acceptance gate.
+
+
+### 8.8 JO44/1985 Arabic page-image map and printed-count control — 19 November 2026
+
+- The repository now contains 29 consecutive Arabic PNG page images from `A1985044.PDF`: PDF indices 12–40 / printed pages 1612–1640. Their paths and Git blob SHA-1 values are pinned in `P1-01-JO44-ARABIC-IMAGE-PAGE-MANIFEST-29.csv`. The PDF's byte-level SHA-256 was not recaptured and remains `NOT_CAPTURED`.
+- `P1-01-JO44-ARABIC-IMAGE-ROW-MAP-1541.csv` links every master-ledger assertion/key to the page associated with its ledger source-code position (not a claim that the Arabic printed code is identical). The state for each row is `PAGE_IMAGE_MAPPED_NOT_ROW_TRANSCRIBED`; it is not an Arabic transcription, specific row identity proof or bilingual sign-off.
+- `P1-01-JO44-ARABIC-WILAYA-COUNT-CONTROL-48.csv` records all 48 printed Wilaya header counts. They sum to 1,541 and match the master ledger's row counts for each Wilaya (48/48).
+- The known W36 source-code conflict is retained: French text-layer assertions for Chihani and Raml Souk both say `3624`, while Arabic p.1635 visibly prints Chihani as `3614` and Raml Souk as `3624`. This must remain a practitioner decision; the map does not rewrite either record.
+- Arabic p.1622 visibly retains `1600 — Ville d'Alger` as a separate special assertion; it remains excluded from 1,541 communes. The Arabic page images also show the previously recorded printed-code anomalies W39 `4907` vs `3907`, W41 `4012` vs `4112` and `1415` vs `4115`, W42 `4228` for `4229`, and W44 `4403` / `بومدفع`. These are preserved as print facts, not automatic corrections.
+- Frontend CI now runs `scripts/validate-p1-01-jo44-arabic-page-images.py` after the three existing P1-01 validators. It checks the page-image manifest and Git blob hashes, 1,541 source-key locators, code-range coverage, printed counts, 1600 separation and W36 duplicate preservation. It does not validate handwritten interpretation or practitioner approval.
+- No commune import; `communesCount = 0`; all 1,541 practitioner sign-offs remain PENDING; P1-01 remains In Progress / Pending; P1-02 remains Blocked.

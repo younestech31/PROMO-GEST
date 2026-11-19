@@ -4,7 +4,7 @@
 **Database / Runtime Guardrail:** `communesCount = 0`, `PendingOfficialVerification` unchanged; no unapproved candidate data imported into PostgreSQL or application code.  
 **Audit Date:** 2026-11-19  
 **Companion Ledger:** `docs/reference-data/P1-01-MASTER-1541-RECONCILIATION-LEDGER.csv` (**1,541** rows with unique candidate row keys and JO44 assertion IDs; all proposals remain unapproved)  
-**Automated CI Check:** `scripts/validate-p1-01-master-ledger.py`
+**Automated CI Checks:** `scripts/validate-p1-01-master-ledger.py` + `scripts/validate-p1-01-jo44-arabic-page-images.py` (page availability / code-range map only; not Arabic row transcription or legal approval)
 
 ---
 
@@ -143,3 +143,21 @@ For `P1-02` schema design, the ledger enforces **four distinct temporal authorit
   - [ ] Approval to unblock **`P1-02`** dated canonical register migration & database seed: `____________`
 - **Signature:** `________________________________________`
 - **Overall Sign-Off Status:** **`PENDING`**
+
+
+## 7. JO44 Arabic primary-image availability and page-locator mapping — 19 November 2026
+
+A subsequent audit of the committed `.tmp-joradp/` artifacts found **29 consecutive Arabic PNG page images** for `A1985044.PDF`: `jo44_ar_pdf12.png` through `jo44_ar_pdf40.png`, corresponding to printed pages **1612–1640**. Each image is pinned by its Git blob SHA-1 in `P1-01-JO44-ARABIC-IMAGE-PAGE-MANIFEST-29.csv`. The source PDF byte-level SHA-256 has not been recaptured in this pass and remains explicitly `NOT_CAPTURED`.
+
+Three companion workpapers were added:
+- `P1-01-JO44-ARABIC-IMAGE-PAGE-MANIFEST-29.csv`: page index, printed page, image path/blob hash, ledger source-code position ranges (not a verbatim transcription of every Arabic printed code), visible print exceptions, page review state and source-PDF hash boundary.
+- `P1-01-JO44-ARABIC-IMAGE-ROW-MAP-1541.csv`: all 1,541 JO44 assertion IDs and master-ledger keys linked to the Arabic page image associated with the ledger source-code position range. Every row is deliberately marked `PAGE_IMAGE_MAPPED_NOT_ROW_TRANSCRIBED`.
+- `P1-01-JO44-ARABIC-WILAYA-COUNT-CONTROL-48.csv`: the 48 printed Wilaya header counts compared with the master ledger population.
+
+The 48 Arabic printed header counts sum to **1,541**, and each printed Wilaya count matches the corresponding master-ledger row count (**48/48**). The mapping preserves the exact source-code anomaly: the French text-layer ledger has two W36 assertions carrying `3624` (Chihani and Raml Souk), whereas the Arabic page 1635 visibly prints Chihani as `3614` and Raml Souk as `3624`. The mapping therefore identifies the page associated with the ledger source-code position; it does not assert that the Arabic printed code equals the French text-layer code or decide the correct row identity/code. The separate `1600 — Ville d'Alger` special assertion is visible on page 1622 and remains outside the 1,541 commune population.
+
+The Arabic images also visibly corroborate the previously recorded 1985 Arabic print discrepancies: W39 `3907` printed as `4907` (p.1636); W41 `4112` printed as `4012` and `4115` as `1415` (p.1637); W42 `4229` printed as duplicate `4228` (p.1637); and W44 `4403` name printed as `بومدفع` (p.1638). These observations are preserved as source-print facts, not automatic canonical corrections.
+
+The distinction is mandatory: **all 29 source pages are present and visually inspected; all 1,541 ledger records have a page-level image locator; row-by-row Arabic name/code transcription, semantic bilingual pairing, complete legal lineage and qualified practitioner adjudication are not thereby completed**. The validator `scripts/validate-p1-01-jo44-arabic-page-images.py` checks image presence and Git blob hashes, ledger-code-position/page coverage, exact master-key linkage, header counts, disclosure of the visible print exceptions, the W36 duplicate, and the separate 1600 record. It intentionally preserves `PENDING` practitioner sign-off and does not certify legal identity.
+
+No commune data are imported; `communesCount = 0`; P1-01 remains In Progress / Pending; P1-02 remains Blocked.

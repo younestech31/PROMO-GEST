@@ -286,3 +286,16 @@ All rows remain HISTORICAL_SOURCE_ASSERTION_ONLY_NOT_APPROVED; Arabic pairing, c
 ### Source metadata correction — 19 November 2026
 
 The complete JO44/1985 French PDF SHA-256 in the 48-Wilaya source control is `bc9f42cbf3d7bb1fc576383ea8d7194d6ae7a06945003b5ede31581e9a48daf2` (64 hexadecimal characters). The pre-existing W01–W16 extracts and W31 Oran extract had the same value truncated to 63 characters in their row-level `official_pdf_sha256` fields. This PR restores the 64-character value across 617 source assertions, including the separate one-row W16 `1600` historical special record; commune labels, register codes, seats and dispositions are unchanged. The CI validator requires the exact 64-character source-control value and accepts the repository's earlier `PENDING_...` wording variants for current-validity and Arabic-pairing states. No evidence level is upgraded by this metadata correction.
+
+
+### Superseding JO44 Arabic image availability checkpoint — 19 November 2026
+
+The earlier statements in this report that the JO44 Arabic page-image set was unavailable / not visually checked are historical checkpoints and are superseded for **page availability and page-level locator coverage only**. At main SHA `84408377c8de7a3995b82dfba55eda15ab2806dd`, the repository contains 29 consecutive `A1985044.PDF` Arabic page PNGs (`jo44_ar_pdf12.png`–`jo44_ar_pdf40.png`, printed pp.1612–1640). All 29 pages were visually inspected. Their ledger-code-position page manifest (not a verbatim transcription of every Arabic printed code), per-assertion page locator and 48-Wilaya count control are now recorded in:
+
+- `P1-01-JO44-ARABIC-IMAGE-PAGE-MANIFEST-29.csv`
+- `P1-01-JO44-ARABIC-IMAGE-ROW-MAP-1541.csv`
+- `P1-01-JO44-ARABIC-WILAYA-COUNT-CONTROL-48.csv`
+
+All 48 Arabic printed Wilaya counts sum to 1,541 and match the master-ledger grouped counts (48/48). The 1,541 source assertion rows are linked to the page image associated with their ledger source-code position, but each mapping is explicitly `PAGE_IMAGE_MAPPED_NOT_ROW_TRANSCRIBED`. This is not 1,541/1,541 row-level Arabic transcription or bilingual identity approval. W36's two French-text assertions carrying source code 3624 remain preserved; Arabic p.1635 prints Chihani as 3614 and Raml Souk as 3624. No code, name, parent or effective date is adjudicated by page mapping alone. The 1600 Ville d'Alger special entry remains separate and excluded. Source PDF SHA-256 was not recaptured; individual PNG Git blob SHA-1 values are pinned in the manifest.
+
+The new CI validator `scripts/validate-p1-01-jo44-arabic-page-images.py` verifies 29 PNGs and Git blob hashes, 1,541 page-level mappings, all 48 printed count matches, and preserved exceptions. It does not claim row transcription or legal sign-off. No import; `communesCount = 0`; all practitioner sign-offs remain PENDING; P1-01 In Progress / Pending; P1-02 Blocked.

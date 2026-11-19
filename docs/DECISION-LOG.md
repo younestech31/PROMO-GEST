@@ -1,9 +1,9 @@
 # PROMO GEST — Consolidated Decision Log & Architecture Decision Records (ADRs)
 
 **Document Role:** Single repository of architectural, design, and governance decisions for PROMO GEST.  
-**Current audit evidence anchor:** main `7fbd3a455e9f36d1969d8921621aabb29f280e5d`; [CI #989](https://github.com/younestech31/PROMO-GEST/actions/runs/44528491263) passed 3/3 jobs on exact main SHA.  
+**Current audit evidence anchor:** main `84408377c8de7a3995b82dfba55eda15ab2806dd`; [CI #992](https://github.com/younestech31/PROMO-GEST/actions/runs/44541533285) passed 3/3 jobs on exact main SHA.  
 **Runtime/schema baseline:** ASP.NET Core API/Application runtime remains PR #87 / `b41d34aae03e1549ca1963a23d92643ff91bf393`; EF/schema remains PR #59 / `53c50fbc0db801b9298ec731cfc44f2d4d58ff7f`.  
-**Recent merged corrections:** PR #140 (`a2565e9...`) rejects wildcard Vite bind addresses as loopback; PR #141 (`7fbd3a455e9f36d1969d8921621aabb29f280e5d`) runs the P1-01 master-ledger structural validator in CI and clarifies evidence limits. Neither change alters the accepted ERP architecture, application data model, or legal approval status.  
+**Recent merged corrections:** PR #140 (`a2565e9...`) rejects wildcard Vite bind addresses as loopback; PR #141 (`7fbd3a455e9f36d1969d8921621aabb29f280e5d`) runs the P1-01 master-ledger structural validator in CI and clarifies evidence limits. Neither change alters the accepted ERP architecture, application data model, or legal approval status. The current P1-01 evidence branch adds a page-level locator for 29 Arabic JO44 page images and reconciles printed Wilaya counts, but explicitly does not claim row-level Arabic transcription or practitioner approval.  
 **Outstanding gates:** P1-01 qualified Algerian practitioner sign-off and complete source reconciliation; P1-14 exact preview host/origin/platform ingress; Arabic RTL / French LTR browser acceptance; P0-A01 and P0-A04 manual flows. No commune rows imported; `communesCount = 0`.
 
 ---

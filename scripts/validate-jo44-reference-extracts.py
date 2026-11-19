@@ -51,6 +51,11 @@ if declared_total != EXPECTED_TOTAL:
 extracted_total = 0
 for code, control in zip(wilaya_codes, controls, strict=True):
     declared = int(control["declared_commune_count_jo44"])
+    if control["source_url"] != EXPECTED_PDF:
+        fail(f"W{code}: control source URL differs from the official JO44/1985 PDF")
+    control_sha256 = control["source_pdf_sha256"]
+    if control_sha256 != EXPECTED_SHA256 or len(control_sha256) != 64:
+        fail(f"W{code}: control PDF SHA-256 is missing, truncated, or differs from the expected source")
     matches = sorted(
         path for path in DATA.glob(f"P1-01-JO44-1985-W{code}-*.csv")
         if "SPECIAL-ASSERTION" not in path.name

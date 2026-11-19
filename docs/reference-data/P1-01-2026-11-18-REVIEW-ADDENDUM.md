@@ -20,7 +20,7 @@ These corrections do not change the technical or legal status: all 1,541 workpap
 
 ### 2.1 Existing extracts
 
-The repository now contains 34 bounded JO44/1985 French searchable-text extracts (status refreshed 19 November 2026):
+The repository now contains 40 bounded JO44/1985 French searchable-text extracts (status refreshed 19 November 2026):
 
 | Wilaya code | Section | Extracted rows |
 |---:|---|---:|
@@ -51,18 +51,22 @@ The repository now contains 34 bounded JO44/1985 French searchable-text extracts
 | 25 | Constantine | 12 |
 | 26 | Medea | 64 |
 | 27 | Mostaganem | 32 |
+| 28 | M'Sila | 47 |
+| 29 | Mascara | 47 |
+| 30 | Ouargla | 21 |
 | 31 | Oran | 26 |
 | 32 | El Bayadh | 22 |
 | 33 | Illizi | 6 |
+| 34 | Bordj Bou Arreridj | 34 |
 | 35 | Boumerdes | 38 |
 | 36 | El Tarf | 24 |
 | 37 | Tindouf (French heading text-layer literal `TINDOUE`) | 2 |
 | 38 | Tissemsilt | 22 |
 | 45 | Naama | 12 |
 | 47 | Ghardaia | 13 |
-| **Total** | **36 of the 48 original Wilaya sections** | **1,139** |
+| **Total** | **40 of the 48 original Wilaya sections** | **1,288** |
 
-The Adrar tranche contains 28 unique assertion IDs and 28 unique four-digit codes in sequence 0101–0128. The Biskra tranche contains 33 unique assertion IDs and 33 unique four-digit codes in sequence 0701–0733. The Biskra source heading declares 33 communes; this is distinct from the 27 Biskra rows republished/changed in JO79/2021. All 1,139 numbered rows remain historical source assertions, not verified current commune identities. The JO44 extracts are French searchable-text transcriptions only except for the heading and first three W35 rows on printed p.1068, whose official page image was reviewed. They are not fully Arabic-paired, not candidate-joined as a complete historical crosswalk, and not practitioner-approved. The current 48-Wilaya control table contains 48 section rows; all 48 official declared counts have now been transcribed and sum to 1,541. This is an aggregate count control, not proof of all current identities or legal parent/effective-date relationships.
+The Adrar tranche contains 28 unique assertion IDs and 28 unique four-digit codes in sequence 0101–0128. The Biskra tranche contains 33 unique assertion IDs and 33 unique four-digit codes in sequence 0701–0733. The Biskra source heading declares 33 communes; this is distinct from the 27 Biskra rows republished/changed in JO79/2021. All 1,288 numbered rows remain historical source assertions, not verified current commune identities. The JO44 extracts are French searchable-text transcriptions only except for the heading and first three W35 rows on printed p.1068, whose official page image was reviewed. They are not fully Arabic-paired, not candidate-joined as a complete historical crosswalk, and not practitioner-approved. The current 48-Wilaya control table contains 48 section rows; all 48 official declared counts have now been transcribed and sum to 1,541. This is an aggregate count control, not proof of all current identities or legal parent/effective-date relationships.
 
 ### 2.1A Official heading-count tranche — 18 November 2026
 
@@ -219,3 +223,7 @@ The four new French text-layer extracts add 156 source assertions: W21 Skikda (3
 ### 2.1F Sétif and Médéa — 19 November 2026
 
 The W19 Sétif extract adds 60 French searchable-text assertions (1901–1960) across printed pp.1062–1063; W26 Médéa adds 64 (2601–2664) across pp.1065–1066. Both CSVs have 24 columns and no malformed rows; assertion IDs and codes are unique, and codes are contiguous/ascending with the extract row order matching the declared heading counts. The JORADP screenshot endpoint returned Cache miss for the relevant PDF page requests, so these extracts are not visually verified. Arabic source pairing, amendment chronology, candidate joins, current legal parent/effective dates and qualified practitioner review remain pending. Aggregate extraction now stands at 36/48 sections and 1,139 rows, with 12 source tables remaining; all 48 heading counts still total 1,541.
+
+### 2.1G M'Sila, Mascara, Ouargla and Bordj Bou Arreridj — 19 November 2026
+
+The W28 M'Sila, W29 Mascara, W30 Ouargla and W34 Bordj Bou Arreridj extracts add 149 French searchable-text assertions (47, 47, 21 and 34 respectively). All four files meet the 24-column row schema, with no malformed rows, unique assertion IDs, unique and contiguous code ranges (2801–2847, 2901–2947, 3001–3021 and 3401–3434) and declared heading counts matching the extract lengths. Printed-page references include the continuation pages: pp.1066–1067, pp.1066–1067, pp.1067–1068 and p.1068 respectively. The screenshot endpoint returned Cache miss for the relevant PDF pages; no new image verification is claimed. Arabic row pairing, subsequent legal changes, candidate reconciliation and qualified practitioner approval remain pending. The text-layer spelling for code 3409 is preserved literally as `Bordj Ghd(i)r` for both commune and seat; do not correct or canonicalise it from inference. Aggregate extraction now stands at 40/48 and 1,288 rows, with 8 section tables remaining; all 48 declared headings still total 1,541.

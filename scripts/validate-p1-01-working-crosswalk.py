@@ -15,6 +15,7 @@ from collections import defaultdict
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
+DATA = ROOT / "docs" / "reference-data"
 CROSSWALK = ROOT / "docs" / "reference-data" / "P1-01-WORKING-CROSSWALK-1541.csv"
 EXPECTED_ROWS = 1541
 EXPECTED_SOURCE_REPO = "islam-re/Algeria-wilayas"

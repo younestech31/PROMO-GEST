@@ -1,9 +1,9 @@
 # PROMO GEST — Master Engineering Blueprint
 
 **Document Role:** Single authoritative index & master entry point for the PROMO GEST local-first real estate developer ERP (*promoteur immobilier* — Algeria).  
-**Current main SHA:** `7fbd3a455e9f36d1969d8921621aabb29f280e5d`; [CI #989](https://github.com/younestech31/PROMO-GEST/actions/runs/44528491263) passed all three required jobs on this exact SHA.  
+**Current main SHA:** `84408377c8de7a3995b82dfba55eda15ab2806dd`; [CI #992](https://github.com/younestech31/PROMO-GEST/actions/runs/44541533285) passed all three required jobs on this exact SHA.  
 **Last ASP.NET Core API/Application runtime source:** `b41d34aae03e1549ca1963a23d92643ff91bf393` (PR #87). **EF/schema source:** `53c50fbc0db801b9298ec731cfc44f2d4d58ff7f` (PR #59). PR #140 is the latest Vite preview host-policy correction; PR #141 adds the P1-01 master-ledger validator to frontend CI. Neither changes API runtime or database schema.  
-**P1-01 evidence:** 1,541 structural candidate-key ↔ JO44 assertion links; 1,431 proposed clean for practitioner sign-off; 110 rows require explicit practitioner decision; 75 candidate Arabic anomaly flags; all sign-offs PENDING. This is a master workpaper, not approved reference data and not proof of full bilingual visual verification. 841 rows show JO44 French text-layer-only scope; 27 explicit JO44 Arabic spot-verification; other register checks have distinct scoped coverage.  
+**P1-01 evidence:** 1,541 structural candidate-key ↔ JO44 assertion links; 1,431 proposed clean for practitioner sign-off; 110 rows require explicit practitioner decision; 75 candidate Arabic anomaly flags; all sign-offs PENDING. There are now 29 committed Arabic JO44 page images and a 1,541-row page-level locator with 48/48 printed count control. Each locator explicitly remains `PAGE_IMAGE_MAPPED_NOT_ROW_TRANSCRIBED`; full Arabic row transcription, legal identity review and practitioner approval remain incomplete. This is not approved reference data.  
 **Safety:** no commune records imported; `communesCount = 0`; P1-01 In Progress / Pending; P1-02 Blocked. Phase 1 remains open. Manual browser RTL/LTR, dirty-form, project-switch/revocation, budget-redaction and Vite platform-ingress acceptance remain outstanding.  
 **Governing Charter:** Local-first, on-premises per organization, PostgreSQL 18 single source of truth, single System Administrator (`SYSTEM_ADMIN`), HTTP-only `SameSite=Strict` cookie sessions (`promogest_session`) + CSRF, local filesystem storage with SHA-256 verification, Arabic RTL primary / French LTR secondary, Algerian DZD & legal context.
 
@@ -134,3 +134,8 @@ PR #105 merged the 1,541-row working crosswalk; PR #106 merged the 404-row JO58/
 - Main SHA `7fbd3a455e9f36d1969d8921621aabb29f280e5d`; CI #989 passed all three required jobs, including master-ledger validation. PR #140 fixes the Vite wildcard-host classification and PR #141 adds the master-ledger structural CI guard. Neither changes application module capability states, runtime API, or database schema.
 - Module capability states in the catalog remain unchanged. In particular F–J remain PLANNED; K remains PARTIALLY_IMPLEMENTED; legal/accounting work remains gated by K-Min and qualified practitioner review.
 - P1-01 is still an unapproved workpaper, not a loaded reference dataset. All 1,541 sign-offs remain PENDING; P1-02 remains Blocked; no commune import.
+
+
+## Current JO44 Arabic image-map evidence — 19 November 2026
+
+Main CI #992 verifies the pre-existing main state. The PR now in review adds a separate CI validator for 29 committed Arabic page images, their Git blob hashes, a 1,541 assertion-to-page locator, all 48 printed Wilaya counts and preservation of known W36/1600 exceptions. No API runtime, EF schema, business data or module capability state is changed. The evidence state is page-level mapping only, not row-level Arabic transcription or legal acceptance.

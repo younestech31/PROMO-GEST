@@ -2,7 +2,7 @@
 
 **Legal baseline checked:** 19 November 2026.  
 **Current repository evidence anchor:** main `84408377c8de7a3995b82dfba55eda15ab2806dd`; [main CI #992](https://github.com/younestech31/PROMO-GEST/actions/runs/44541533285) passed all three required jobs on the exact SHA.  
-**Status:** The server-owned, bilingual, versioned 69-Wilaya catalogue and its UI integration are implemented and verified (PR #59). The P1-01 master workpaper now structurally links all 1,541 candidate keys to all 1,541 JO44 historical assertions and is validated in CI (PR #141 / main CI #989), but it is not a legally approved canonical commune catalogue. 1,431 rows are proposed clean for practitioner sign-off; 110 require explicit practitioner decision; all 1,541 sign-offs remain PENDING. The API continues to report `PendingOfficialVerification` and `communesCount = 0`; no candidate rows are imported.
+**Status:** The server-owned, bilingual, versioned 69-Wilaya catalogue and its UI integration are implemented and verified (PR #59). The P1-01 master workpaper structurally links 1,541 candidate keys to 1,541 JO44 historical assertions and is covered by CI #992 on main SHA `84408377c8de7a3995b82dfba55eda15ab2806dd`. A separate evidence branch adds 29 Arabic JO44 page images, a 1,541-row page-level locator and 48/48 printed-count reconciliation; every locator is `PAGE_IMAGE_MAPPED_NOT_ROW_TRANSCRIBED`, not Arabic row transcription or legal identity approval. The master ledger records 1,431 proposed-clean rows, 110 practitioner-decision rows, 75 Arabic anomaly flags, and all 1,541 sign-offs PENDING. The API remains `PendingOfficialVerification` / `communesCount = 0`; no candidate rows are imported.
 
 ## 1. Authoritative territorial baseline
 

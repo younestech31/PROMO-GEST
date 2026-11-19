@@ -116,7 +116,7 @@ pending_codes = {
 }
 if pending_codes != EXPECTED_PENDING_CODES:
     fail(f"pending adjudication code set mismatch: {pending_codes}")
-numeric_proposals = [r["proposed_canonical_code"] for r in rows if re.fullmatch(r"\\d{4}", r["proposed_canonical_code"])]
+numeric_proposals = [r["proposed_canonical_code"] for r in rows if re.fullmatch(r"\d{4}", r["proposed_canonical_code"])]
 if len(numeric_proposals) != 1538:
     fail(f"expected 1,538 numeric code proposals plus 3 pending tokens, found {len(numeric_proposals)} numeric proposals")
 

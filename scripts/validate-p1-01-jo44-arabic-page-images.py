@@ -64,7 +64,7 @@ def git_blob_sha1(payload: bytes) -> str:
 def parse_ranges(text: str, page_index: int) -> list[str]:
     codes: list[str] = []
     for part in text.split(";"):
-        match = re.fullmatch(r"(\\d{4})-(\\d{4})", part.strip())
+        match = re.fullmatch(r"(\d{4})-(\d{4})", part.strip())
         if not match:
             fail(f"page {page_index}: malformed code range {part!r}")
         start, end = map(int, match.groups())

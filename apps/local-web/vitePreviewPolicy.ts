@@ -27,7 +27,7 @@ export const CLOUD_SQL_ENVIRONMENT_VARIABLES = [
   'SQL_ADMIN_PASSWORD',
 ] as const;
 
-const LOOPBACK_HOSTS = new Set(['localhost', '127.0.0.1', '0.0.0.0', '::1', '[::1]', '::', '[::]']);
+const LOOPBACK_HOSTS = new Set(['localhost', '127.0.0.1', '::1', '[::1]']);
 
 function splitList(value?: string): string[] {
   return (value ?? '').split(',').map((item) => item.trim()).filter(Boolean);

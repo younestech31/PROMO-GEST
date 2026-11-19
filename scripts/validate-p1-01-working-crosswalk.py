@@ -247,10 +247,94 @@ for article, (expected_wilaya, expected_count) in EXPECTED_JO58_ARTICLES.items()
 if any(row["technical_row_disposition"] != CANDIDATE_ONLY for row in rows):
     fail("one or more candidate rows are not marked CANDIDATE_ONLY_NOT_APPROVED")
 
+# Reproduce the French name-only triage report across all 48 JO44 sections.
+# Name hits are comparison categories only; they do not establish legal identity,
+# a territorial transfer, current parentage, code continuity or effective dates.
+EXPECTED_JO44_NAME_ONLY = {
+    "single_hit_same_wilaya": 967,
+    "single_hit_different_wilaya": 149,
+    "multiple_candidate_hits": 63,
+    "no_exact_normalized_hit": 362,
+}
+JO44_EXTRACT_GLOB = "P1-01-JO44-1985-W??-*.csv"
+JO44_SPECIAL_MARKER = "SPECIAL-ASSERTION"
+
+jo44_files = sorted(
+    path for path in DATA.glob(JO44_EXTRACT_GLOB)
+    if JO44_SPECIAL_MARKER not in path.name
+)
+if len(jo44_files) != 48:
+    fail(f"expected 48 JO44/1985 commune extracts, found {len(jo44_files)}")
+
+candidate_wilayas_by_name: dict[str, list[str]] = defaultdict(list)
+for row in rows:
+    candidate_wilayas_by_name[normalize_label(row["commune_name_fr_candidate"])].append(
+        row["wilaya_code_candidate"]
+    )
+
+name_only_counts = {key: 0 for key in EXPECTED_JO44_NAME_ONLY}
+jo44_assertion_ids: set[str] = set()
+jo44_total = 0
+
+for path in jo44_files:
+    match = re.fullmatch(r"P1-01-JO44-1985-W(\\d{2})-.+\\.csv", path.name)
+    if not match:
+        fail(f"unexpected JO44 extract filename: {path.name}")
+    expected_wilaya = match.group(1)
+    with path.open(encoding="utf-8-sig", newline="") as handle:
+        reader = csv.DictReader(handle)
+        required_fields = {
+            "assertion_id", "wilaya_code_verbatim", "commune_name_fr_verbatim"
+        }
+        if reader.fieldnames is None or not required_fields.issubset(reader.fieldnames):
+            fail(f"{path.name}: required JO44 assertion columns are missing")
+        source_rows = list(reader)
+
+    if not source_rows:
+        fail(f"{path.name}: source extract is empty")
+    for row in source_rows:
+        assertion_id = row["assertion_id"]
+        if not assertion_id or assertion_id in jo44_assertion_ids:
+            fail(f"{path.name}: missing or duplicate JO44 assertion ID {assertion_id!r}")
+        jo44_assertion_ids.add(assertion_id)
+        if row["wilaya_code_verbatim"] != expected_wilaya:
+            fail(f"{path.name}: source row has an unexpected Wilaya code")
+        source_label = row["commune_name_fr_verbatim"].strip()
+        if not source_label:
+            fail(f"{path.name}: JO44 French source label is empty")
+
+        hits = candidate_wilayas_by_name.get(normalize_label(source_label), [])
+        if not hits:
+            category = "no_exact_normalized_hit"
+        elif len(hits) > 1:
+            category = "multiple_candidate_hits"
+        elif hits[0] == expected_wilaya:
+            category = "single_hit_same_wilaya"
+        else:
+            category = "single_hit_different_wilaya"
+        name_only_counts[category] += 1
+        jo44_total += 1
+
+if jo44_total != EXPECTED_ROWS or len(jo44_assertion_ids) != EXPECTED_ROWS:
+    fail(
+        f"expected {EXPECTED_ROWS} unique JO44 assertions for name-only triage, "
+        f"found {jo44_total} rows / {len(jo44_assertion_ids)} unique IDs"
+    )
+if name_only_counts != EXPECTED_JO44_NAME_ONLY:
+    fail(
+        "JO44-to-candidate French name-only categories differ from the reviewed "
+        f"triage report: {name_only_counts}"
+    )
+
 print(
     "P1-01 candidate crosswalk consistency passed: "
     "1,541/1,541 bilingual candidate rows across 69 Wilayas; "
     "404/404 JO58-linked rows across 21 recorded Law 26-06 article groups; "
     "no duplicate candidate names or JO58 codes; all rows remain unapproved "
     "and practitioner review remains pending. No legal approval or import implied."
+)
+print(
+    "P1-01 JO44 French name-only triage passed: "
+    "1,541/1,541 assertions; 967 same-Wilaya, 149 different-Wilaya, "
+    "63 multiple-hit, 362 no-hit. Label matching only; no legal conclusion."
 )

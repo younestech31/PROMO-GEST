@@ -68,7 +68,7 @@ test('external CLI host overrides are rejected unless external preview is explic
       command: 'serve',
       viteOnlyPreview: true,
       allowExternalPreview: false,
-      requestedHost: '0.0.0.0',
+      requestedHost: 'external.domain.test',
     }),
     /External Vite binding/
   );

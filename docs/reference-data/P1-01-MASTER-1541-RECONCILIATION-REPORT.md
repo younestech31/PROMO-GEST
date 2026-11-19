@@ -4,7 +4,7 @@
 **Database / Runtime Guardrail:** `communesCount = 0`, `PendingOfficialVerification` unchanged; no unapproved candidate data imported into PostgreSQL or application code.  
 **Audit Date:** 2026-11-19  
 **Companion Ledger:** `docs/reference-data/P1-01-MASTER-1541-RECONCILIATION-LEDGER.csv` (**1,541** rows with unique candidate row keys and JO44 assertion IDs; all proposals remain unapproved)  
-**Automated CI Check:** `scripts/validate-p1-01-master-ledger.py`
+**Automated CI Checks:** `scripts/validate-p1-01-master-ledger.py` + `scripts/validate-p1-01-jo44-arabic-page-images.py` (page availability / code-range map only; not Arabic row transcription or legal approval)
 
 ---
 

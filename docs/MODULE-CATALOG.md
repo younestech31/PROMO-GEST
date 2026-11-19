@@ -2,15 +2,13 @@
 
 All 12 functional ERP domains required by PROMO GEST, mapped strictly using the 6-state taxonomy against actual inspected code, controllers, EF configurations, and tests.
 
-**Last ASP.NET Core API/Application Runtime Source:** `b41d34aae03e1549ca1963a23d92643ff91bf393` (PR #87). **EF/schema source remains:** `53c50fbc0db801b9298ec731cfc44f2d4d58ff7f` (PR #59; no migration in PR #87).  
-**Current main:** `8ad1b03fe1d518c4153d586388c19058c50f0a60`; PR #137 added a CI integrity guard for the 1,541-row candidate workpaper. The latest code-bearing frontend/runtime source remains PR #112 `293476cbdbf3c4c3fbcae87d7c9c682a493ca436`; the latest EF/schema source remains PR #59 `53c50fbc0db801b9298ec731cfc44f2d4d58ff7f`. PR #137 is a CI/documentation-only change; it does not alter application capability status or legally approve the commune catalogue.
-**Recent CI:** PR #137 CI [#968](https://github.com/younestech31/PROMO-GEST/actions/runs/44499057654) passed 3/3 on PR head `411b56eca2f77de0986fd6615440503409e429a0`; post-merge main CI [#969](https://github.com/younestech31/PROMO-GEST/actions/runs/44499785759) passed 3/3 on exact current main SHA `8ad1b03fe1d518c4153d586388c19058c50f0a60`. This verifies the CI run, not manual browser acceptance, legal correctness or practitioner approval.
-**Live Preview / Manual Acceptance Evidence:**
-**Live Preview / Manual Acceptance Evidence:** On 15 November 2026, the Product Owner confirmed the real Google AI Studio development server/API and PostgreSQL development connection operate, and owner-attested successful Arabic RTL / French LTR desktop/mobile workflows for projects, structure, customer interactions, internal holds, documents/SHA-256, authorization, audit, concurrency, safe errors, and persistence. Detailed group mapping is in `PHASE-0-MANUAL-ACCEPTANCE.md`; Phase 0 was administratively closed by owner decision D-010, with P0-A01 and P0-A04 still `NOT_RUN` as accepted residual exceptions.
+**Current main:** `7fbd3a455e9f36d1969d8921621aabb29f280e5d`; [CI #989](https://github.com/younestech31/PROMO-GEST/actions/runs/44528491263) passed all three required jobs.  
+**Last ASP.NET Core API/Application runtime source:** `b41d34aae03e1549ca1963a23d92643ff91bf393` (PR #87). **EF/schema source:** `53c50fbc0db801b9298ec731cfc44f2d4d58ff7f` (PR #59). PR #140 updates Vite preview binding safety; PR #141 adds master-ledger validation to CI. These changes do not upgrade business-module capability states.  
+**Delivery boundary:** Phase 1 remains IN_PROGRESS; Phases 2–5 remain PLANNED. P1-01 is In Progress / Pending; P1-02 Blocked; no commune records loaded (`communesCount = 0`). Manual RTL/LTR browser acceptance remains pending.
 
 ---
 
-**Administrative reference delivery:** the server-owned bilingual 69-Wilaya catalogue remains implemented. JO44/1985 provides 48/48 sections and 1,541 French historical source assertions, while the candidate workpaper contains 1,541 unapproved bilingual labels. The latest French name-only comparison classifies 967 unique same-Wilaya hits, 149 unique hits under a different candidate Wilaya, 63 ambiguous labels and 362 exact-label non-hits; it is triage only, not a canonical current commune catalogue. Full JO44 Arabic/page-image pairing, exhaustive later amendments and effective-dated parentage, source-backed exception resolution and qualified Algerian practitioner approval remain pending. No commune rows are imported; `communesCount = 0`; municipality remains free text; P1-01 is In Progress / Pending and P1-02 remains Blocked. See `docs/reference-data/P1-01-1541-CROSSWALK-REPORT.md` and the name-only comparison report.
+**Administrative reference delivery:** the server-owned bilingual 69-Wilaya catalogue remains implemented. The P1-01 master ledger now structurally links 1,541 candidate row keys to 1,541 JO44 historical assertion IDs and executes validation in CI (PR #141; main CI #989). It records 1,431 proposed-clean rows and 110 explicit practitioner-decision rows; all sign-offs remain PENDING. Evidence scope does not establish full JO44 bilingual page-image review: 841 rows have French text-layer-only scope and 27 explicit JO44 Arabic spot-verification, with other register visual reviews separately scoped. The 75 candidate Arabic anomaly flags are routed to explicit review. No commune data are imported; `communesCount = 0`; P1-01 remains In Progress / Pending, P1-02 remains Blocked. See `docs/reference-data/P1-01-MASTER-1541-RECONCILIATION-REPORT.md` and the master ledger.
 
 
 
@@ -33,14 +31,14 @@ All 12 functional ERP domains required by PROMO GEST, mapped strictly using the 
 
 ---
 
-## 2. Frontend platform and module ownership — PRs #81/#82/#90 (merged; current main CI #825 passed)
+## 2. Frontend platform and module ownership — PRs #81/#82/#90/#140 (merged; current main CI #989 passed)
 
 - Canonical frontend entry points: `core/api/apiClient.ts`, `core/api/csrf.ts`, `core/permissions/permissionPolicy.ts`, `core/modules/registry.ts`, `core/modules/moduleCodes.ts`, `core/modules/routeTypes.ts`, `app/routeRegistry.ts`, and `core/localization/translations.ts`.
 - Legacy `services/apiClient.ts`, CSRF utilities, `utils/permissions.ts`, `utils/moduleCatalog.ts`, `utils/navigation.ts`, `utils/workspaceGuards.ts`, and `localization/translations.ts` are explicit compatibility adapters, not alternate implementations.
 - Active screen implementations now live in owning `modules/` directories for A–E, K, L, auth, setup and technical administration; Login and first-run setup have module-owned page implementations. Former `features/`, root `components/`, `layouts/` and duplicate utility paths are compatibility facades.
 - Reusable visual components are owned by `shared/components/`; active application/module code imports that surface. F–J remain planned business capabilities, with display metadata under module `presentation/workflows.ts` rather than `api/`.
 - Architecture regression tests verify module entry points, import parsing for static/type-only/re-export/side-effect/dynamic imports, public-index-only peer dependencies, acyclic module graph, no active imports from legacy `features/`, unique shared-component/API/CSRF/localization implementations, planned endpoint rejection, and the F–J presentation/API boundary.
-- Main CI #825 passed all three jobs on `cd57a591`; manual Arabic RTL / French LTR desktop/mobile browser acceptance and real dirty-form interaction evidence have not been performed. Navigation remains `IMPLEMENTED_NOT_VERIFIED` for manual UX acceptance.
+- Main CI #989 passed all three jobs on exact main SHA `7fbd3a4`; manual Arabic RTL / French LTR desktop/mobile browser acceptance and real dirty-form interaction evidence have not been performed. Navigation remains `IMPLEMENTED_NOT_VERIFIED` for manual UX acceptance.
 
 ## 3. Detailed Module Specifications (A–L)
 

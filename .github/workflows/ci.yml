@@ -17,6 +17,8 @@ jobs:
       - uses: actions/checkout@v7
       - name: Validate complete JO44/1985 source extracts
         run: python3 scripts/validate-jo44-reference-extracts.py
+      - name: Validate P1-01 candidate crosswalk structure (not legal approval)
+        run: python3 scripts/validate-p1-01-working-crosswalk.py
       - uses: actions/setup-node@v7
         with:
           node-version: "22"

@@ -275,6 +275,7 @@ for row in rows:
 
 name_only_counts = {key: 0 for key in EXPECTED_JO44_NAME_ONLY}
 jo44_assertion_ids: set[str] = set()
+jo44_wilaya_codes: set[str] = set()
 jo44_total = 0
 
 for path in jo44_files:
@@ -282,6 +283,11 @@ for path in jo44_files:
     if not match:
         fail(f"unexpected JO44 extract filename: {path.name}")
     expected_wilaya = match.group(1)
+    if expected_wilaya not in {f"{number:02d}" for number in range(1, 49)}:
+        fail(f"{path.name}: unexpected JO44 Wilaya section {expected_wilaya}")
+    if expected_wilaya in jo44_wilaya_codes:
+        fail(f"duplicate JO44 source extract for Wilaya {expected_wilaya}")
+    jo44_wilaya_codes.add(expected_wilaya)
     with path.open(encoding="utf-8-sig", newline="") as handle:
         reader = csv.DictReader(handle)
         required_fields = {
@@ -316,6 +322,8 @@ for path in jo44_files:
         name_only_counts[category] += 1
         jo44_total += 1
 
+if jo44_wilaya_codes != {f"{number:02d}" for number in range(1, 49)}:
+    fail(f"JO44 extract coverage differs from Wilaya sections 01–48: {sorted(jo44_wilaya_codes)}")
 if jo44_total != EXPECTED_ROWS or len(jo44_assertion_ids) != EXPECTED_ROWS:
     fail(
         f"expected {EXPECTED_ROWS} unique JO44 assertions for name-only triage, "

@@ -48,7 +48,7 @@ The source coverage plan now separates:
 - 59 JO79/2021 entries for newly created Wilayas 49–58;
 - 76 entries across seven older Wilaya tables in JO79 (01, 08, 11, 30, 33, 39, 47), not subsequently modified by JO58/2026;
 - 27 Biskra entries in JO79, historical for 2021 and superseded for current values by JO58/2026;
-- 975 rows in 30 remaining older Wilaya sections requiring JO44/1985 and applicable register amendments.
+- 975 candidate rows across 30 other original Wilayas require row-level JO44/1985 and applicable amendment/code/parent/effective-date reconciliation. The French JO44 text-layer extraction is now complete (48/48 sections, 1,541 rows); this 975 figure is a residual source-lineage bucket, not an unextracted-row count.
 
 Total: 59 + 76 + 27 + 975 = 1,137. These are source-coverage buckets, not a final legal-acceptance count.
 

@@ -87,7 +87,7 @@ def normalize_label(value: str) -> str:
         "\u2018": "'", "\u2019": "'", "\u201b": "'", "\u02bc": "'",
         "\u02bb": "'", "\u0060": "'", "\u00b4": "'",
     }))
-    return re.sub(r"\\s+", " ", apostrophes.casefold()).strip()
+    return re.sub(r"\s+", " ", apostrophes.casefold()).strip()
 
 
 if not CROSSWALK.is_file():
@@ -121,7 +121,7 @@ jo58_codes: set[str] = set()
 
 for line_number, row in enumerate(rows, start=2):
     key = row["working_row_key"]
-    key_match = re.fullmatch(r"W(\\d{2})-R(\\d{3})", key)
+    key_match = re.fullmatch(r"W(\d{2})-R(\d{3})", key)
     if not key_match:
         fail(f"line {line_number}: malformed working row key {key!r}")
     wilaya_code, row_sequence = key_match.groups()
@@ -172,7 +172,7 @@ for line_number, row in enumerate(rows, start=2):
         if normalize_label(row["commune_name_fr_candidate"]) != normalize_label(row["jo58_2026_commune_name_fr"]):
             fail(f"line {line_number}: JO58/candidate French label does not match under the recorded normalization")
         code = row["jo58_2026_code_verbatim"]
-        if not re.fullmatch(r"\\d{4}", code) or not code.startswith(wilaya_code):
+        if not re.fullmatch(r"\d{4}", code) or not code.startswith(wilaya_code):
             fail(f"line {line_number}: malformed JO58 code or Wilaya prefix: {code!r}")
         if code in jo58_codes:
             fail(f"line {line_number}: duplicate JO58 code {code}")
@@ -223,7 +223,7 @@ if set(wilaya_rows) != expected_wilayas:
     fail(f"expected all Wilaya codes 01–69; missing={missing}, extra={extra}")
 
 for code, group in wilaya_rows.items():
-    actual_sequences = [int(re.fullmatch(r"W\\d{2}-R(\\d{3})", row["working_row_key"]).group(1)) for row in group]
+    actual_sequences = [int(re.fullmatch(r"W\d{2}-R(\d{3})", row["working_row_key"]).group(1)) for row in group]
     expected_sequences = list(range(1, len(group) + 1))
     if actual_sequences != expected_sequences:
         fail(f"W{code}: working row keys are not ordered and contiguous from R001")

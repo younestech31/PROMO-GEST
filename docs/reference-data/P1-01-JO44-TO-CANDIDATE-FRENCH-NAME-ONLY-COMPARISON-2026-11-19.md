@@ -70,4 +70,8 @@ Examples include JO44 source forms `Han ancha`, `Quillen`, `Agnbal`, `Tamanghass
 - All source assertions and candidate rows remain unapproved. No commune records were imported; `communesCount = 0`. P1-01 remains In Progress / Pending; P1-02 remains Blocked.
 - Page-image review, authenticated official Arabic row pairing for the full source set, exhaustive amendment/code/parent/effective-date lineage, source-backed resolution of all exception classes and qualified Algerian practitioner approval remain acceptance gates.
 
+## Reproducibility check
+
+The CI step `python3 scripts/validate-p1-01-working-crosswalk.py` independently replays this classification from the 48 JO44 source extracts and the pinned 1,541-row candidate workpaper. It requires exactly 1,541 unique JO44 assertions and the four category totals above; a mismatch fails the frontend CI job. This verifies that the comparison remains exhaustive and reproducible against the committed workpapers, not that any hit represents a legally identical current commune.
+
 **Outcome:** the comparison classifies all 1,541 JO44 French labels into four non-legal triage groups. It makes the name-only exceptions visible without changing, correcting or approving any source row.

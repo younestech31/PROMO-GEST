@@ -139,6 +139,8 @@ For the bounded 404-row JO58 / Law 26-06 slice, the validator checks the 21 reco
 
 This is a regression guard for the current workpaper, not an independent legal-source check. It does not authenticate the third-party candidate source, determine present-day commune identity or parentage, establish code/effective-date intervals, certify Arabic legal equivalence, or authorize database import. A passing CI result therefore cannot close P1-01 or unblock P1-02.
 
+The same validator also replays the French name-only triage across all 48 JO44 extracts. It checks 1,541 unique source assertions and asserts the report's exhaustive categories: 967 single hits in the same candidate Wilaya, 149 single hits in a different candidate Wilaya, 63 multiple-candidate labels and 362 labels with no exact normalized hit. This guards the arithmetic and source-file coverage of the triage report; it does not change any candidate row or infer legal identity or a Wilaya transfer.
+
 ### 4.2 Law 26-06 composition comparison
 
 | Wilaya code | Law article | Candidate count | Law article count | Set result |

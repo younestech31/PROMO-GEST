@@ -67,12 +67,24 @@ if len(jo44_files) != 48:
     fail(f"expected 48 JO44 files, found {len(jo44_files)}")
 
 jo44_ids: set[str] = set()
+master_by_assertion = {r["jo44_assertion_id"]: r for r in rows}
 for p in jo44_files:
     with p.open(encoding="utf-8-sig", newline="") as fh:
         for r in csv.DictReader(fh):
             if r["register_code_verbatim"] == "1600":
                 fail(f"{p.name}: 1600 Ville d'Alger must not be in the 1,541 commune extracts")
-            jo44_ids.add(r["assertion_id"])
+            aid = r["assertion_id"]
+            master = master_by_assertion.get(aid)
+            if not master or aid in jo44_ids:
+                fail(f"{p.name}: missing master link or repeated JO44 assertion {aid}")
+            for src, dest in (("wilaya_code_verbatim", "jo44_wilaya_code"),
+                              ("register_code_verbatim", "jo44_register_code_verbatim"),
+                              ("commune_name_fr_verbatim", "jo44_commune_name_fr_verbatim"),
+                              ("administrative_seat_fr_verbatim", "jo44_seat_fr_verbatim"),
+                              ("printed_page", "jo44_printed_page_fr")):
+                if r[src] != master[dest]:
+                    fail(f"{aid}: master field {dest} no longer matches source field {src}")
+            jo44_ids.add(aid)
 
 if len(jo44_ids) != EXPECTED_ROWS:
     fail(f"unexpected JO44 assertion_id count: {len(jo44_ids)}")

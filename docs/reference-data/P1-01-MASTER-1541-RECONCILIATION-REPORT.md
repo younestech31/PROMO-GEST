@@ -84,7 +84,7 @@ In `P1-01-WORKING-CROSSWALK-1541.csv`, 9 communes of Wilaya `26` have rotated/sw
 - `W68-R017` (`6817 Menaa`): Candidate `مضاء` → Official JO58 AR p.25 **`مناعة`**
 
 ### 3.3 Other Candidate Formatting & Orthographic Flags (55 rows)
-- **Broken punctuation:** `W27-R002` (`2721 Hassiane`) has unclosed parenthesis `الحسيان (بني ياحي`.
+- **Broken punctuation:** `W27-R002` (`2732 El Hassiane`) has unclosed parenthesis `الحسيان (بني ياحي`. The [Arabic JO44 image, printed p.1630](../../.tmp-joradp/jo44_ar_pdf30.png), right-hand Mostaganem table, last row, separates the commune (الحسيان) from its seat (بني ياحى); 2721 is a different commune. Do not repair the candidate by merely closing the parenthesis. This is historical evidence, not a current label approval.
 - **Arabic kashida / tatweel (`ـ`) & extra whitespace:** 20 rows in `W15` + `W36-R017` (`الذرعـان`) contain Unicode tatweel characters; 7 rows contain leading or doubled spaces.
 - **French label truncation/abbreviation:** `W04-R003` (`El Fedjoudj Boughrara Sa` vs `El Fedjoudj Boughrara Saoudi`), `W34-R034` (`B. B. Arreridj` vs `Bordj Bou Arréridj`).
 - **Orthographic / article / `عمر` vs `عامر` variants:** Recorded in `candidate_arabic_anomaly_flag` (e.g., `W14-R006 سي` vs `سيدي`, `W32-R015` / `W42-R005` `سيدي عامر` vs `سيدي عمر`, `W63-R002 الگور` vs `القور`, `W68-R012 بودياف` vs `بوضياف`, `W53/W54/W11` `عين` vs `إن`).
@@ -173,3 +173,5 @@ The project owner explicitly instructed in the PROMO-GEST project conversation o
 **Processing rule:** retain all 1,541 candidates in scope; resolve each incorrect or ambiguous attribute from the highest-ranking applicable official source; preserve original assertions and valid-time lineage; apply corrections through a reviewed, reproducible evidence record; and keep unresolved assertions explicit rather than guessing. A blanket population authorization is not a row-level transcription or a substitute for a source-backed code/parent/effective-date decision.
 
 **System boundary:** this is a documentation/authorization record only. It does not alter practitioner_signoff_status (all 1,541 remain PENDING), decision classes, or the three pending-code tokens; it does not change API/runtime/schema or import/seed data. communesCount = 0 and PendingOfficialVerification remain until the complete, corrected, validated dataset is accepted through the Phase 1 gates. P1-01 remains In Progress / Pending and P1-02 remains Blocked until that evidence and the required authenticated review record are complete.
+
+**Practitioner handoff:** [Arabic review guide and source-linked 110-case queue](P1-01-PRACTITIONER-QUEUE.ar.md). The queue tests the three recommendations together without replacing the pending tokens in the master ledger.

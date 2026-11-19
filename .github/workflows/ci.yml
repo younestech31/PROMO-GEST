@@ -19,6 +19,8 @@ jobs:
         run: python3 scripts/validate-jo44-reference-extracts.py
       - name: Validate P1-01 candidate crosswalk structure (not legal approval)
         run: python3 scripts/validate-p1-01-working-crosswalk.py
+      - name: Validate P1-01 master reconciliation ledger (structural checks; not legal approval)
+        run: python3 scripts/validate-p1-01-master-ledger.py
       - uses: actions/setup-node@v7
         with:
           node-version: "22"

@@ -2,7 +2,7 @@
 
 All 12 functional ERP domains required by PROMO GEST, mapped strictly using the 6-state taxonomy against actual inspected code, controllers, EF configurations, and tests.
 
-**Current main:** `7fbd3a455e9f36d1969d8921621aabb29f280e5d`; [CI #989](https://github.com/younestech31/PROMO-GEST/actions/runs/44528491263) passed all three required jobs.  
+**Current main:** `84408377c8de7a3995b82dfba55eda15ab2806dd`; [CI #992](https://github.com/younestech31/PROMO-GEST/actions/runs/44541533285) passed all three required jobs.  
 **Last ASP.NET Core API/Application runtime source:** `b41d34aae03e1549ca1963a23d92643ff91bf393` (PR #87). **EF/schema source:** `53c50fbc0db801b9298ec731cfc44f2d4d58ff7f` (PR #59). PR #140 updates Vite preview binding safety; PR #141 adds master-ledger validation to CI. These changes do not upgrade business-module capability states.  
 **Delivery boundary:** Phase 1 remains IN_PROGRESS; Phases 2–5 remain PLANNED. P1-01 is In Progress / Pending; P1-02 Blocked; no commune records loaded (`communesCount = 0`). Manual RTL/LTR browser acceptance remains pending.
 

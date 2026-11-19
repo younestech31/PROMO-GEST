@@ -1,7 +1,10 @@
 # PROMO GEST — Consolidated Decision Log & Architecture Decision Records (ADRs)
 
 **Document Role:** Single repository of architectural, design, and governance decisions for PROMO GEST.  
-**Current Audit Evidence Anchor:** Current main is `cd57a5912ccb3631a6e9581d48d1aab2600180d2`; [CI #825](https://github.com/younestech31/PROMO-GEST/actions/runs/44310687822) passed all three jobs on that exact SHA (Frontend 82/82, Domain 34/34, Application 21/21, PostgreSQL 18 Integration 32/32). The latest ASP.NET Core API/Application runtime source remains PR #87 merge `b41d34aae03e1549ca1963a23d92643ff91bf393`; the EF/schema source remains PR #59 `53c50fbc0db801b9298ec731cfc44f2d4d58ff7f`. The latest frontend navigation refinement is PR #90; the 18 November frontend runtime/language/session update is on current main. Manual RTL/LTR browser acceptance and the P1-01 qualified legal sign-off remain pending; the Vite preview isolation gap is tracked separately as P1-14.
+**Current audit evidence anchor:** main `7fbd3a455e9f36d1969d8921621aabb29f280e5d`; [CI #989](https://github.com/younestech31/PROMO-GEST/actions/runs/44528491263) passed 3/3 jobs on exact main SHA.  
+**Runtime/schema baseline:** ASP.NET Core API/Application runtime remains PR #87 / `b41d34aae03e1549ca1963a23d92643ff91bf393`; EF/schema remains PR #59 / `53c50fbc0db801b9298ec731cfc44f2d4d58ff7f`.  
+**Recent merged corrections:** PR #140 (`a2565e9...`) rejects wildcard Vite bind addresses as loopback; PR #141 (`7fbd3a455e9f36d1969d8921621aabb29f280e5d`) runs the P1-01 master-ledger structural validator in CI and clarifies evidence limits. Neither change alters the accepted ERP architecture, application data model, or legal approval status.  
+**Outstanding gates:** P1-01 qualified Algerian practitioner sign-off and complete source reconciliation; P1-14 exact preview host/origin/platform ingress; Arabic RTL / French LTR browser acceptance; P0-A01 and P0-A04 manual flows. No commune rows imported; `communesCount = 0`.
 
 ---
 

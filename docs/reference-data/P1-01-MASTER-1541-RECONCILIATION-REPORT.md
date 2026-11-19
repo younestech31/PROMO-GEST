@@ -3,19 +3,21 @@
 **Status:** `PENDING_PRACTITIONER_SIGNOFF` (`P1-01` **In Progress**; `P1-02` **Blocked**)  
 **Database / Runtime Guardrail:** `communesCount = 0`, `PendingOfficialVerification` unchanged; no unapproved candidate data imported into PostgreSQL or application code.  
 **Audit Date:** 2026-11-19  
-**Companion Ledger:** `docs/reference-data/P1-01-MASTER-1541-RECONCILIATION-LEDGER.csv` (**1,541** rows, 1-to-1 bijection)  
+**Companion Ledger:** `docs/reference-data/P1-01-MASTER-1541-RECONCILIATION-LEDGER.csv` (**1,541** rows with unique candidate row keys and JO44 assertion IDs; all proposals remain unapproved)  
 **Automated CI Check:** `scripts/validate-p1-01-master-ledger.py`
 
 ---
 
-## 1. Executive Summary & Bijection Closure (1,541 / 1,541)
+> **Evidence-scope and CI clarification — 19 November 2026:** The master validator is now explicitly run by the frontend CI job. Its automated checks cover workpaper structure, unique row-key/source-ID populations, counts, decision-class partitions, preservation of flagged anomalies and pending sign-off; they do not independently prove legal identity, semantic correctness of every cross-register row pairing, visual page inspection, OCR interpretation or practitioner acceptance. In the ledger's primary_source_verification_scope, 841 rows are recorded with only JO44 French text-layer extraction and no additional primary visual scope; 27 rows carry the explicit JO44 Arabic spot-verification marker. Separately scoped JO58/JO79/JO23/JO11 visual checks cover their linked records and can overlap. Therefore this workpaper must not be described as 1,541/1,541 fully bilingual page-image verified rows. The 75 candidate Arabic anomaly flags are all routed to explicit practitioner decision; all 1,541 sign-offs remain PENDING.
+
+## 1. Executive Summary & Exhaustive Workpaper Linkage (1,541 / 1,541)
 
 This report and its companion CSV ledger (`P1-01-MASTER-1541-RECONCILIATION-LEDGER.csv`) close the full-population reconciliation between:
 1. All **1,541** historical commune entries in the 22 June 1985 founding register (**JO44/1985**, `F1985044.PDF`, 48 Wilaya sections), excluding **`1600 — Ville d'Alger`** (`P1-01-JO44-1985-W16-ALGER-1600-SPECIAL-ASSERTION.csv`), which is preserved separately as an urban-community / governorate special entry and not counted in 1,541 communes.
 2. All **1,541** current candidate commune entries across **69 Wilayas** in the working crosswalk (`P1-01-WORKING-CROSSWALK-1541.csv`, derived from `islam-re/Algeria-wilayas`).
 
 ### Original French Name-Only Triage Closure
-All 1,541 historical assertions from the initial unlinked French-name-only triage (`P1-01-JO44-TO-CANDIDATE-FRENCH-NAME-ONLY-COMPARISON-2026-11-19.md`) are deterministically resolved into a verified **1-to-1 bijection** (1,541 unique `jo44_assertion_id` ↔ 1,541 unique `working_row_key` ↔ 1,541 unique `proposed_canonical_code`):
+All 1,541 historical assertions from the initial unlinked French-name-only triage (`P1-01-JO44-TO-CANDIDATE-FRENCH-NAME-ONLY-COMPARISON-2026-11-19.md`) are now linked in a structurally exhaustive working ledger: 1,541 unique `jo44_assertion_id` values and 1,541 unique `working_row_key` values, with one distinct `proposed_canonical_code` field value per row. This proves population/key uniqueness, not by itself the legal correctness of every row pairing. The 1,541 distinct field values comprise 1,538 four-digit numeric proposals plus three explicit `PENDING_ADJUDICATION_*` tokens:
 
 | Original Triage Category | Count | Disposition in Master Ledger |
 | --- | ---: | --- |

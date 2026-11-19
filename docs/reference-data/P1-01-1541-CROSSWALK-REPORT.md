@@ -290,7 +290,7 @@ The complete JO44/1985 French PDF SHA-256 in the 48-Wilaya source control is `bc
 
 ### Superseding JO44 Arabic image availability checkpoint — 19 November 2026
 
-The earlier statements in this report that the JO44 Arabic page-image set was unavailable / not visually checked are historical checkpoints and are superseded for **page availability and page-level locator coverage only**. At main SHA `84408377c8de7a3995b82dfba55eda15ab2806dd`, the repository contains 29 consecutive `A1985044.PDF` Arabic page PNGs (`jo44_ar_pdf12.png`–`jo44_ar_pdf40.png`, printed pp.1612–1640). All 29 pages were visually inspected. Their code-range manifest, per-assertion page locator and 48-Wilaya count control are now recorded in:
+The earlier statements in this report that the JO44 Arabic page-image set was unavailable / not visually checked are historical checkpoints and are superseded for **page availability and page-level locator coverage only**. At main SHA `84408377c8de7a3995b82dfba55eda15ab2806dd`, the repository contains 29 consecutive `A1985044.PDF` Arabic page PNGs (`jo44_ar_pdf12.png`–`jo44_ar_pdf40.png`, printed pp.1612–1640). All 29 pages were visually inspected. Their ledger-code-position page manifest (not a verbatim transcription of every Arabic printed code), per-assertion page locator and 48-Wilaya count control are now recorded in:
 
 - `P1-01-JO44-ARABIC-IMAGE-PAGE-MANIFEST-29.csv`
 - `P1-01-JO44-ARABIC-IMAGE-ROW-MAP-1541.csv`

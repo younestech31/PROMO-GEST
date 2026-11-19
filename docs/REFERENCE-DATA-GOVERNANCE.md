@@ -1,7 +1,7 @@
 # PROMO GEST — Algerian Administrative Reference-Data Governance
 
-**Legal baseline checked:** 18 November 2026.  
-**Status:** The server-owned, bilingual, versioned 69-Wilaya catalogue and its UI integration are implemented and verified (PR #59). The canonical commune catalogue remains pending official extraction/reconciliation: the API reports `PendingOfficialVerification` and `communesCount = 0`; the 1,541 figure is the statutory baseline, not a loaded record count.
+**Legal baseline checked:** 19 November 2026.  
+**Status:** The server-owned, bilingual, versioned 69-Wilaya catalogue and its UI integration are implemented and verified (PR #59). The P1-01 master workpaper now structurally links all 1,541 candidate keys to all 1,541 JO44 historical assertions and is validated in CI (PR #141 / main CI #989), but it is not a legally approved canonical commune catalogue. 1,431 rows are proposed clean for practitioner sign-off; 110 require explicit practitioner decision; all 1,541 sign-offs remain PENDING. The API continues to report `PendingOfficialVerification` and `communesCount = 0`; no candidate rows are imported.
 
 ## 1. Authoritative territorial baseline
 
@@ -382,3 +382,13 @@ The ONS *Code Géographique National* table provides a later official W./C. cros
 - This review corrected a source-page attribution defect in the extract: the 15 Touggourt (W55) and Djanet (W56) rows had been recorded as printed p.18 but are on printed p.19. The CSV now records printed pages and zero-based PDF page indices 16–18.
 - The 103-row extract for eight existing Wilayas (W01, W07, W08, W11, W30, W33, W39, W47), on JO79 printed pages 13–16, remains text-layer-only; it is not covered by the 59-row screenshot review above.
 - Arabic JO79 row pairing could not be retrieved in this review. All Arabic pairing states remain pending, PDF SHA-256 remains blank, and no effective date is inferred from the order/publication dates. P1-01 remains In Progress/Pending, P1-02 remains Blocked; no commune data is imported.
+
+
+### 8.7 Master reconciliation ledger and evidence boundary — 19 November 2026
+
+- PR #141 merged at main SHA `7fbd3a455e9f36d1969d8921621aabb29f280e5d` and main CI #989 passed all three required jobs on that exact SHA. The frontend CI now runs `scripts/validate-p1-01-master-ledger.py` in addition to the JO44 and candidate-crosswalk validators.
+- The master ledger contains 1,541 rows, 1,541 unique `working_row_key` values, 1,541 unique `jo44_assertion_id` values, and 1,541 distinct `proposed_canonical_code` field values. Of the latter, 1,538 are four-digit numeric proposals and three remain explicit `PENDING_ADJUDICATION_*` tokens (W08-R012, W35-R023 and W36-R016). Structural uniqueness does not prove legal identity or parentage for each row.
+- The workpaper classifies 1,431 rows as `PROPOSED_CLEAN_FOR_SIGNOFF` and 110 as `EXPLICIT_PRACTITIONER_DECISION_REQUIRED`. The 110 are mixed exceptions (candidate Arabic anomalies, code/parent conflicts, rename clusters and related evidence decisions), not necessarily 110 separate legal defects. All 75 `candidate_arabic_anomaly_flag` rows are routed to explicit practitioner decision. All 1,541 `practitioner_signoff_status` values remain `PENDING`.
+- Evidence-scope audit of `primary_source_verification_scope`: 841 rows have only `JO44_FR_TEXT_LAYER_EXTRACTED` and no additional primary visual scope recorded; 27 rows have the explicit `JO44_FR_AR_PNG_SPOT_VERIFIED` marker. Separately scoped JO58/JO79/JO23/JO11 image checks apply to their own linked subsets and may overlap. Do not claim full bilingual page-image verification for all 1,541 rows.
+- PR #140 separately corrects Vite preview bind classification: `0.0.0.0`, `::`, and `[::]` are not loopback; regression tests now require explicit external-preview opt-in for wildcard/unspecified binds. The precise host/origin and platform-ingress manual acceptance remains open.
+- No commune records imported; `communesCount = 0`; P1-01 In Progress / Pending; P1-02 Blocked. Qualified Algerian practitioner review remains a mandatory acceptance gate.

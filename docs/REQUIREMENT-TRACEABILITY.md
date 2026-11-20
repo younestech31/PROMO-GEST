@@ -1,6 +1,8 @@
 # PROMO GEST — Requirement Traceability Matrix
 
 **Document Role:** End-to-end engineering traceability matrix linking requirements (Domains A–L and Operations) to code, UI, authorization, tests, release gates and verified state. Latest ASP.NET Core API/Application runtime source: PR #163 merge `711a05282869b8ebfe6965921045c9225dcecb17`. Latest password-lifecycle EF/schema source: PR #161 merge `03d1288a391ba72e49faf2cf8aa82d604e1ddc6e`. SPA bootstrap fix: PR #176 merge `696c1ec1a4f50057607874b9dd35952c4db2e017`; test-only follow-up: PR #177 merge `875f4a178f24d36a4d3fa8a6620a526c33a763c6`. Current main CI #1109 and CodeQL #25 passed on exact main SHA `875f4a178f24d36a4d3fa8a6620a526c33a763c6`. Full manual Arabic RTL / French LTR acceptance remains pending. 
+**Current Phase-1 gate:** P1-18 is Done / Verified after PR #176/#177 and post-merge main CI #1109 plus CodeQL #25 passed on `875f4a178f24d36a4d3fa8a6620a526c33a763c6`. P1-01 remains In Progress / Pending; all 1,541 practitioner sign-offs remain PENDING; P1-02 remains Blocked; `communesCount = 0`; no commune records are imported. Automated PR-head evidence: Domain 42/42, Application 24/24, PostgreSQL 18 Integration 35/35 in CI #1108; post-merge CI #1109 passed all three required jobs. These results do not replace manual AR/FR acceptance or legal practitioner review.
+
 **Status Legend (Strict 6-State Taxonomy):**  
 - `IMPLEMENTED_AND_VERIFIED`: Code exists AND passed automated verification in the audited repository baseline.  
 - `IMPLEMENTED_NOT_VERIFIED`: Code exists, but one or more required acceptance gates remain outstanding (for example browser/manual UX, real installation, or practitioner review), even when applicable automated CI passes.  

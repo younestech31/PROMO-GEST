@@ -53,6 +53,10 @@ public sealed class UserConfiguration : IEntityTypeConfiguration<User>
             table.HasCheckConstraint("ck_users_failed_attempts_non_negative", "failed_login_attempts >= 0");
             table.HasCheckConstraint("ck_users_preferred_language", "preferred_language IN ('ar', 'fr')");
             table.HasCheckConstraint("ck_users_username_length", "char_length(username) >= 3");
+            table.HasCheckConstraint(
+                "ck_users_password_change_deadline_consistent",
+                "(must_change_password_at_next_login = TRUE AND password_change_required_until_utc IS NOT NULL) OR " +
+                "(must_change_password_at_next_login = FALSE AND password_change_required_until_utc IS NULL)");
         });
 
         builder.HasKey(x => x.Id);

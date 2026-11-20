@@ -147,6 +147,9 @@ jobs:
           printf 'counts\nquit\n' | bash "$tmp/phase0-manual/start-session.sh" ar-desktop > "$tmp/result"
           grep -E '^Open on this machine: http://127\.0\.0\.1:[0-9]+$' "$tmp/result"
           test "$(grep -cxF 'Counts: 0|0|0' "$tmp/result")" -eq 2
+          printf 'token\nquit\n' | bash "$tmp/phase0-manual/start-session.sh" ar-mobile --private-forward > "$tmp/forwarded"
+          grep -qxF 'Token display requires a private-forward session in an interactive terminal.' "$tmp/forwarded"
+          if grep -Eq '[[:xdigit:]]{48}' "$tmp/forwarded"; then exit 1; fi
           test -z "$(docker ps -aq --filter label=promogest.role=manual-p0)"
       - name: Publish manual operator kit (not a production release)
         uses: actions/upload-artifact@v7

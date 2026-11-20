@@ -23,6 +23,7 @@ Read these documents before making architectural or data-model changes:
 8. [Organization-wide Party and master-data design](docs/PARTY-MASTER-DATA.md)
 9. [Algerian administrative reference-data governance](docs/REFERENCE-DATA-GOVERNANCE.md)
 10. [Algerian real-estate legal domain baseline](docs/ALGERIAN-REAL-ESTATE-LEGAL-DOMAIN.md)
+11. [Independent engineering audit — 20 November 2026](docs/AUDIT-2026-11-20.ar.md) (Arabic; lifecycle, operations, supply-chain and frontend findings with a P0/P1/P2 plan)
 
 ## Technology stack
 

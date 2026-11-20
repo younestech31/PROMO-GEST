@@ -3,7 +3,7 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from p1_01_decision_book import initialize, validate
+from p1_01_decision_book import DATA, indexed, initialize, proposals, validate
 
 
 class DecisionBookTests(unittest.TestCase):
@@ -11,7 +11,7 @@ class DecisionBookTests(unittest.TestCase):
         tmp = tempfile.TemporaryDirectory()
         self.addCleanup(tmp.cleanup)
         self.path = Path(tmp.name) / 'book.csv'
-        self.source = {k: {'working_row_key': k, 'proposed_code': c}
+        self.source = {k: {'working_row_key': k, 'proposed_code': c, 'initial_question': ''}
                        for k, c in [('a', '0101'), ('b', '0102')]}
         initialize(self.path, self.source)
 
@@ -23,6 +23,38 @@ class DecisionBookTests(unittest.TestCase):
             writer = csv.DictWriter(f, fieldnames=data[0].keys())
             writer.writeheader()
             writer.writerows(data)
+
+    def test_round_six_questions_and_evidence(self):
+        source = proposals()
+        path = self.path.with_name('national.csv')
+        initialize(path, source)
+        records = indexed(path)
+        self.assertEqual({k for k, r in records.items() if r['open_question']},
+                         {'W08-R012', 'W35-R023', 'W36-R016', 'W30-R007'})
+        borma = records['W30-R007']
+        self.assertEqual(borma['work_status'], 'PENDING')
+        self.assertEqual(borma['valid_from'], '')
+        self.assertEqual(borma['proposed_code'], '3021')
+        self.assertEqual(borma['conflict_printed_page_ar'],
+                         'JO78/2019 art. 3 / 52 bis 6 pp.15-16 | JO79/2021 p.17 (Ouargla); p.21 (Touggourt)')
+        for file, digest in zip(('A2019078.pdf', 'A2021079.pdf'), borma['conflict_source_pdf_sha256'].split(' | '), strict=True):
+            manifest = (DATA / 'P1-01-DISCREPANCIES-FOR-SIGNOFF.md').read_text(encoding='utf-8')
+            self.assertIn(f'`{file}`: `{digest}`', manifest)
+            self.assertIn('/' + file, borma['conflict_source_ar_pdf'])
+        self.path = path
+        self.change(open_question='')
+        with self.assertRaisesRegex(ValueError, 'retain initial question'):
+            validate(path, source)
+
+    def test_failed_initialization_leaves_destination_absent(self):
+        path = self.path.with_name('new.csv')
+        bad_source = {k: v.copy() for k, v in self.source.items()}
+        bad_source['b']['unexpected'] = 'simulated mid-write failure'
+        with self.assertRaises(ValueError):
+            initialize(path, bad_source)
+        self.assertFalse(path.exists())
+        initialize(path, self.source)
+        validate(path, self.source)
 
     def test_no_overwrite(self):
         self.change(work_status='NEEDS_EVIDENCE', open_question='Which page?')

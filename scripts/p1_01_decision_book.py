@@ -2,7 +2,9 @@
 """Initialize once, or validate the editable P1-01 decision book. Never import or sign."""
 import argparse
 import csv
+import os
 import re
+import tempfile
 from datetime import date
 from pathlib import Path
 
@@ -29,6 +31,9 @@ def proposals():
     master = indexed(DATA / 'P1-01-MASTER-1541-RECONCILIATION-LEDGER.csv')
     queue = indexed(DATA / 'P1-01-PRACTITIONER-QUEUE-110.csv')
     pages = indexed(DATA / 'P1-01-JO44-ARABIC-IMAGE-ROW-MAP-1541.csv')
+    prompts = indexed(DATA / 'P1-01-DECISION-BOOK-PROMPTS.csv')
+    if set(prompts) != {*PRIORITY, 'W30-R007'} or any(not p['initial_question'].strip() for p in prompts.values()):
+        raise ValueError('Expected four non-empty round-six questions')
     explicit = {k for k, r in master.items() if r['decision_class'] == 'EXPLICIT_PRACTITIONER_DECISION_REQUIRED'}
     if (len(master) != 1541 or set(pages) != set(master) or len(queue) != 110 or set(queue) != explicit
             or not set(PRIORITY) <= explicit):
@@ -38,6 +43,7 @@ def proposals():
         m, q, page = master[key], queue.get(key, {}), pages[key]
         if page['jo44_assertion_id'] != m['jo44_assertion_id']:
             raise ValueError(f'{key}: wrong historical page locator')
+        prompt = prompts.get(key, {})
         result[key] = {
             KEY: key, 'decision_class': m['decision_class'],
             **{f: m[f] for f in ('commune_name_ar_candidate', 'commune_name_fr_candidate', 'wilaya_code_candidate',
@@ -49,19 +55,28 @@ def proposals():
             'proposed_code': q.get('review_code_proposal', m['proposed_canonical_code']),
             'proposed_parent': q.get('review_parent_proposal', m['wilaya_code_candidate']),
             'proposal_rationale': m['resolution_rationale'],
-            **{f: q.get(f, '') for f in ('conflict_source_ar_pdf', 'conflict_printed_page_ar', 'conflict_source_pdf_sha256')},
+            **{f: prompt.get('additional_' + f) or q.get(f, '')
+               for f in ('conflict_source_ar_pdf', 'conflict_printed_page_ar', 'conflict_source_pdf_sha256')},
+            'initial_question': prompt.get('initial_question', ''),
         }
     return result
 
 
 def initialize(path, source):
-    # Exclusive creation: never truncate a practitioner's decisions.
-    with path.open('x', encoding='utf-8', newline='') as f:
-        w = csv.DictWriter(f, fieldnames=[*next(iter(source.values())), 'work_status', *OUTCOME, 'open_question'],
-                           lineterminator='\n')
-        w.writeheader()
-        for row in source.values():
-            w.writerow({**row, 'work_status': 'PENDING'})
+    # Publish only a complete, validated sibling file. A hard link fails atomically
+    # if the destination exists (unlike replace); concurrent initializers cannot clobber it.
+    with tempfile.TemporaryDirectory(dir=path.parent, prefix='.decision-book-') as staging:
+        draft = Path(staging) / 'book.csv'
+        with draft.open('x', encoding='utf-8', newline='') as f:
+            w = csv.DictWriter(f, fieldnames=[*next(iter(source.values())), 'work_status', *OUTCOME, 'open_question'],
+                               lineterminator='\n')
+            w.writeheader()
+            for row in source.values():
+                w.writerow({**row, 'work_status': 'PENDING', 'open_question': row['initial_question']})
+            f.flush()
+            os.fsync(f.fileno())
+        validate(draft, source)
+        os.link(draft, path)
 
 
 def validate(path, source):
@@ -76,6 +91,8 @@ def validate(path, source):
             raise ValueError(f'{key}: evidence or column mismatch; do not regenerate over existing decisions')
         status = r['work_status']
         if status in ('PENDING', 'NEEDS_EVIDENCE'):
+            if fixed['initial_question'] and not r['open_question'].startswith(fixed['initial_question']):
+                raise ValueError(f'{key}: retain initial question until a decision is recorded')
             if any(r[f] for f in OUTCOME) or (status == 'NEEDS_EVIDENCE' and not r['open_question'].strip()):
                 raise ValueError(f'{key}: document the open question separately from a decision')
         elif status == 'DECISION_RECORDED':  # an analysis record, not an authenticated signature

@@ -160,6 +160,9 @@ public sealed class PasswordChangeRequiredMiddleware
               path.Equals("/api/auth/csrf", StringComparison.OrdinalIgnoreCase) ||
               path.Equals("/health/live", StringComparison.OrdinalIgnoreCase) ||
               path.Equals("/health/ready", StringComparison.OrdinalIgnoreCase))) ||
+            (HttpMethods.IsGet(context.Request.Method) &&
+             !path.StartsWithSegments("/api", StringComparison.OrdinalIgnoreCase) &&
+             !path.StartsWithSegments("/health", StringComparison.OrdinalIgnoreCase)) ||
             (HttpMethods.IsPost(context.Request.Method) &&
              (path.Equals("/api/auth/change-password", StringComparison.OrdinalIgnoreCase) ||
               path.Equals("/api/auth/logout", StringComparison.OrdinalIgnoreCase)));

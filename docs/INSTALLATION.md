@@ -66,12 +66,18 @@ This runs the unified workspace lint/test/build in `apps/local-web`, copies stat
    - `http://127.0.0.1:5080/health/ready` -> `200 OK` (`databaseConnected: true`, `isInitialized: false`)
 
 ## 6. Step 4 — Automated Daily Backups (Windows Task Scheduler)
-Register a daily local backup task running as `SYSTEM`. Configure the SYSTEM account's protected PostgreSQL `pgpass` file with the `promogest_owner` credential; the restore drill also needs `postgres` for provisioning and `promogest_app` for runtime verification. The backup task stops `PromoGestLocalErp` during the backup window and restarts it automatically after the database, storage, Data Protection keys, and Caddy configuration have been archived:
+Register a daily local backup task running as `SYSTEM`. Configure the SYSTEM account's protected PostgreSQL `pgpass` file with the `promogest_owner` credential; the restore drill also needs `postgres` for provisioning and `promogest_app` for runtime verification. The backup task stops `PromoGestLocalErp` for the snapshot window, restarts it as soon as the database, storage, Data Protection keys, and Caddy configuration are sealed in a manifest, and only then encrypts and replicates the artefact:
 ```powershell
-$action = New-ScheduledTaskAction -Execute "PowerShell.exe" -Argument "-NoProfile -ExecutionPolicy Bypass -File C:\PromoGest\scripts\backup-promogest.ps1 -BackupRoot D:\PromoGestBackups"
+$action = New-ScheduledTaskAction -Execute "PowerShell.exe" -Argument @(
+  "-NoProfile -ExecutionPolicy Bypass -File C:\PromoGest\scripts\backup-promogest.ps1",
+  "-BackupRoot D:\PromoGestBackups",
+  "-RecipientCertPath C:\PromoGest\backup\backup-recipient.cer",
+  "-OffsiteDir E:\PromoGestOffsite"
+) -join " "
 $trigger = New-ScheduledTaskTrigger -Daily -At 22:00
 Register-ScheduledTask -TaskName "PromoGestNightlyBackup" -Action $action -Trigger $trigger -User "SYSTEM" -RunLevel Highest
 ```
+The nightly task is fail-closed: it stops before dumping anything when no recipient certificate or no offsite target is configured, when the certificate carries a private key, when the offsite path shares a volume with the backup root, or when the offsite path overlaps storage or the key ring. Install only the public `.cer` on the server; keep the `.pfx` on offline media used by the restore drill. Setting `PROMOGEST_BACKUP_ALLOW_PLAINTEXT=1` or `PROMOGEST_BACKUP_ALLOW_LOCAL_ONLY=1` in the task environment is the only way to acknowledge those risks explicitly, and doing so defeats the purpose of this control. The service is restarted as soon as the snapshot is sealed, so long offsite copies no longer extend the maintenance window.
 
 ## 7. Step 5 — Local LAN HTTPS & First-Run Wizard
 1. Start Caddy using the staged `C:\PromoGest\caddy\Caddyfile` and distribute Caddy's local root CA certificate to office workstations.

@@ -1168,3 +1168,14 @@ jobs:
           Write-Host "Verified the production restore script rejects overlapping destinations before database access."
 
 
+
+      - name: Verify Windows encrypted-backup and restore contract
+        shell: pwsh
+        run: |
+          $output = & pwsh -NoProfile -File ./scripts/test-backup-crypto.ps1 2>&1 | Out-String
+          Write-Host $output
+          if ($LASTEXITCODE -ne 0) {
+            $tail = (($output -split "`n" | Where-Object { $_ -match '\S' }) | Select-Object -Last 6) -join ' / '
+            Write-Host "::error title=Windows backup contract::$tail"
+            exit 1
+          }

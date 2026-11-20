@@ -102,9 +102,13 @@ These gates were added after the 20 November review (`AUD-05`, `AUD-06`, `AUD-07
 | **S3. Production dependency audit** | `npm audit --omit=dev --audit-level=high` must report zero high/critical advisories. | CI step *Audit production dependencies for known vulnerabilities*. |
 | **S4. Dependency review cadence** | npm, NuGet and GitHub Actions updates are proposed weekly, grouped for minor/patch, and never merged automatically. | `.github/dependabot.yml`. |
 | **S5. NuGet vulnerability report** | `dotnet list src/PromoGest.sln package --vulnerable --include-transitive` runs on every CI build and its output is part of the build log. | CI step *Report vulnerable NuGet packages*. |
+| **S6. Backup parity (Windows)** | Windows backups are sealed, CMS-encrypted to a public recipient certificate, replicated to an independent offsite target, verified, and pruned; the restore script consumes the encrypted artefact. Encryption and offsite are fail-closed. | `scripts/backup-promogest.ps1`, `scripts/restore-promogest.ps1`, CI step *Verify Windows encrypted-backup and restore contract* (`scripts/test-backup-crypto.ps1`). |
+| **S7. Backup parity (Linux)** | The systemd job produces `promogest_backup_<UTC>.tar.gz.cms` plus a sidecar, verifies the offsite copy, prunes by retention, and never deletes a sealed snapshot after a later-stage failure. | `scripts/backup-promogest.sh`, `scripts/verify-backup-restore.sh`, CI restore drill. |
 
 **Measured effect:** the entry bundle fell from 667 kB to ~440 kB (gzip ~121 kB), with `module-b-projects` (156 kB) and `module-l-reporting` (6 kB) loaded on demand.
 
 **Known limitation (tracked, not claimed as fixed):** `module-a-organization`, `module-d-customers-parties` and `technical-admin` are statically imported by pages of other modules, so the bundler emits `INEFFECTIVE_DYNAMIC_IMPORT` warnings and keeps those pages in a shared chunk. Removing that limitation requires decoupling shared page components between modules; the current split already removes the warning-generating single-chunk build and the >500 kB entry.
 
 **Not covered here:** JavaScript/CSS style linting (ESLint/Prettier) and automated accessibility auditing remain open; `npm run lint` is the strict TypeScript gate only.
+
+**Residual backup gaps (declared, not fixed):** no point-in-time recovery (WAL archiving), so the recovery point objective remains the last nightly artefact; no cross-platform decrypt drill in CI (the Windows and Linux artefacts use the same CMS/AES-256-CBC format, but decrypting a Windows artefact on Linux has not been exercised); and the quarterly restore drill remains a manual operator obligation.

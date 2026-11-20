@@ -14,7 +14,7 @@ Backing up only PostgreSQL leaves documents orphaned. Backing up database and do
 
 **Linux production path (implemented 2026-11-20):** the backup job now seals, packs, and encrypts the bundle with an X.509 recipient certificate, writes it together with a SHA-256 sidecar, copies and verifies it on an independent offsite mount, applies a retention policy that never prunes below the newest configured artefacts, and removes the unencrypted bundle by default. Encryption and offsite replication are fail-closed: the job refuses to run without a recipient certificate and an offsite target unless an operator explicitly acknowledges the risk in configuration.
 
-**Windows path (not yet at parity):** `backup-promogest.ps1` still writes an unencrypted bundle directory on the local server, with ACL-restricted access, and performs no offsite replication or pruning. Treat the Windows backup as a same-host recovery source only, copy it manually to independent media, and note that this part of AUD-01 remains open for Windows installations.
+**Windows path (parity implemented 2026-11-20):** `backup-promogest.ps1` applies the same contract as the Linux job: seal, package as `promogest_backup_<UTC>.tar.gz`, CMS-envelope to an X.509 recipient certificate (AES-256-CBC, DER — the same artefact format the Linux tooling produces), write a `sha256sum`-compatible sidecar, copy to an independent offsite target and verify that copy, apply retention in both locations, and delete the plaintext bundle unless an operator asks to keep it. Encryption and offsite replication are fail-closed. The private key must not exist on the Windows server.
 
 ## 2. Database identities
 
@@ -28,13 +28,43 @@ Do not put production passwords in scripts, source control, command history, or 
 
 ## 3. Creating backups
 
-On Windows Server, run the backup script from an elevated maintenance session. By default it stops the `PromoGestLocalErp` Windows service before dumping PostgreSQL and archiving storage/key files, then restarts it in a `finally` block. This short maintenance window prevents database rows, document files, and the Data Protection key ring from being captured at different points while the application is writing. Do not use `-SkipServiceStop` unless the service has already been stopped and will remain stopped for the entire backup:
+On Windows Server, run the backup script from an elevated maintenance session. By default it stops the `PromoGestLocalErp` Windows service before dumping PostgreSQL and archiving storage/key files, restarts it as soon as the snapshot is sealed, and restarts it again from a `finally` block if it failed earlier. This short maintenance window prevents database rows, document files, and the Data Protection key ring from being captured at different points while the application is writing. Do not use `-SkipServiceStop` unless the service has already been stopped and will remain stopped for the entire backup:
 
 ```powershell
-.\scripts\backup-promogest.ps1 -DatabaseName promogest -StorageDir C:\PromoGest\storage -BackupRoot D:\PromoGestBackups
+.\scripts\backup-promogest.ps1 `
+  -DatabaseName promogest `
+  -StorageDir C:\PromoGest\storage `
+  -BackupRoot D:\PromoGestBackups `
+  -RecipientCertPath C:\PromoGest\backup\backup-recipient.cer `
+  -OffsiteDir E:\PromoGestOffsite
 ```
 
-Confirm that the resulting bundle contains the database dump, storage archive, Data Protection key archive, sanitized configuration archive, and manifest. If backup creation fails, the script removes only the incomplete bundle it created and still attempts to restart a service it stopped; a completed bundle is retained even if service restart then fails, and the service state must be checked immediately.
+| Parameter / environment variable | Default | Meaning |
+|---|---|---|
+| `-RecipientCertPath` / `PROMOGEST_BACKUP_RECIPIENT_CERT` | none | Public X.509 certificate used for CMS enveloping. A file that contains or references a private key is rejected. |
+| `-OffsiteDir` / `PROMOGEST_BACKUP_OFFSITE_DIR` | none | Existing independent destination; the copy is verified against the sidecar before success is reported. |
+| `-EncryptionMode` / `PROMOGEST_BACKUP_ENCRYPTION` | `required` | `disabled` is honoured only with `-AllowPlaintext` |
+| `-AllowPlaintext` / `PROMOGEST_BACKUP_ALLOW_PLAINTEXT` | off | Explicit acknowledgement when encryption is disabled |
+| `-AllowLocalOnly` / `PROMOGEST_BACKUP_ALLOW_LOCAL_ONLY` | off | Explicit acknowledgement when no offsite target exists |
+| `-AllowSameDeviceOffsite` / `PROMOGEST_BACKUP_ALLOW_SAME_DEVICE_OFFSITE` | off | Test/DR exception when the offsite path shares a volume with the backup root |
+| `-RetentionDays` / `PROMOGEST_BACKUP_RETENTION_DAYS` | `30` | Minimum 7 |
+| `-RetentionMinKeep` / `PROMOGEST_BACKUP_RETENTION_MIN_KEEP` | `3` | Newest artefacts are never pruned |
+| `-KeepPlaintextBundle` / `PROMOGEST_BACKUP_KEEP_PLAINTEXT` | off | Test/diagnostic only; production keeps no plaintext bundle |
+
+Execution order matches the Linux job: dump, archives, sanitized configuration, four-component manifest; restart the service once the snapshot is sealed; package into `promogest_backup_<UTC>.tar.gz`; CMS-envelope into `…tar.gz.cms`; write `…tar.gz.cms.sha256`; copy artefact and sidecar to the offsite target and verify; apply retention in both locations; remove the plaintext bundle. A sealed bundle is never deleted because encryption, offsite copy, or retention failed; only an incomplete bundle from an earlier stage is removed. Restrict the backup root to SYSTEM and Administrators — the script applies that ACL to the root and to every artefact it writes.
+
+Provisioning the Windows recipient certificate (on the operator workstation, never on the server):
+
+```powershell
+$cert = New-SelfSignedCertificate -Type Custom -KeyAlgorithm RSA -KeyLength 3072 `
+  -Subject "CN=PromoGest Backup Recipient" -KeyExportPolicy Exportable `
+  -CertStoreLocation Cert:\CurrentUser\My -NotAfter (Get-Date).AddYears(10)
+Export-Certificate -Cert $cert -FilePath backup-recipient.cer          # server gets only this file
+Export-PfxCertificate -Cert $cert -FilePath backup-recipient.pfx `
+  -Password (Read-Host -AsSecureString "PFX password")                 # stays offline
+```
+
+The `.cms` file is the artefact of record. Because the private key is absent from the server, decryptability is proven by the restore drill on the operator workstation; the backup itself only performs a structural envelope check. The CMS container and the AES-256-CBC content algorithm are the same as the Linux job's, so either platform's artefact can be opened with standard CMS tooling; a cross-platform decrypt drill is not yet part of CI.
 
 ### Linux
 
@@ -91,10 +121,19 @@ A backup is not considered verified until it has been restored into a separate s
 Configure PostgreSQL client credentials for the provisioning user (`postgres`), migration owner (`promogest_owner`), and runtime role (`promogest_app`) in the protected pgpass file. The runtime identity is used for the post-restore access and privilege checks. The restore script deliberately refuses to overwrite an existing target database.
 
 ```powershell
-.\scripts\restore-promogest.ps1 -BackupBundleDir D:\PromoGestBackups\promogest_backup_YYYYMMDD_HHMMSS -TargetDatabase promogest_restore_verify -ProvisionUser postgres -DatabaseUser promogest_owner
+# Verify the production artefact directly (recommended): sidecar check, decrypt with the
+# offline private key, validate archive paths, extract to a temporary directory.
+.\scripts\restore-promogest.ps1 `
+  -BackupArtifactPath E:\PromoGestOffsite\promogest_backup_YYYYMMDD_HHMMSS.tar.gz.cms `
+  -RecipientPfxPath C:\Offline\backup-recipient.pfx `
+  -RecipientPfxPassword (Read-Host -AsSecureString "PFX password" | ConvertFrom-SecureString -AsPlainText) `
+  -TargetDatabase promogest_restore_verify -ProvisionUser postgres -DatabaseUser promogest_owner
+
+# Already-materialized plaintext bundle (for example -KeepPlaintextBundle output):
+.\scripts\restore-promogest.ps1 -BackupBundleDir D:\PromoGestBackups\promogest_backup_YYYYMMDD_HHMMSS_abcdef12 -TargetDatabase promogest_restore_verify
 ```
 
-The script requires all four archive components and a complete SHA-256 manifest, validates the PostgreSQL dump, and refuses to reuse an existing target database or restore directory. It creates the new database with the migration owner, restores as that owner, then explicitly re-applies runtime `CONNECT`, schema, table, sequence, and default privileges for `promogest_app`. It reasserts the `audit_logs` restriction (runtime can `SELECT`/`INSERT`, not `UPDATE`/`DELETE`/`TRUNCATE`/manage triggers) and proves the restored database can be read by the runtime identity without schema/database creation privileges. It restores storage and Data Protection keys, requires the sanitized configuration to omit the entire `ConnectionStrings` object (not merely redact one password), validates the required configuration sections, and verifies every stored file by existence, byte length, and SHA-256. Re-enter the `promogest_app` runtime connection string and any environment-specific secrets from the protected secret store before starting the recovered service.
+With `-BackupArtifactPath` the script first verifies the artifact's SHA-256 sidecar, decrypts the CMS envelope with the supplied PFX (an empty password is passed through unchanged for password-less PFX files), rejects absolute paths and `..` members in the archive, extracts into a per-invocation temporary directory, and deletes that plaintext directory on success and on failure. Encryption is never optional here: a `.cms` artifact without `-RecipientPfxPath` is refused. The script requires all four archive components and a complete SHA-256 manifest, validates the PostgreSQL dump, and refuses to reuse an existing target database or restore directory. It creates the new database with the migration owner, restores as that owner, then explicitly re-applies runtime `CONNECT`, schema, table, sequence, and default privileges for `promogest_app`. It reasserts the `audit_logs` restriction (runtime can `SELECT`/`INSERT`, not `UPDATE`/`DELETE`/`TRUNCATE`/manage triggers) and proves the restored database can be read by the runtime identity without schema/database creation privileges. It restores storage and Data Protection keys, requires the sanitized configuration to omit the entire `ConnectionStrings` object (not merely redact one password), validates the required configuration sections, and verifies every stored file by existence, byte length, and SHA-256. Re-enter the `promogest_app` runtime connection string and any environment-specific secrets from the protected secret store before starting the recovered service.
 
 Restore output defaults to isolated directories under `C:\PromoGest-Restore\`, outside the live `C:\PromoGest\` installation. Pass `-ProtectedInstallRoot` when the actual installation root differs, and `-ServiceName` when the Windows service is not named `PromoGestLocalErp`. The script rejects overlapping destinations, destinations inside the live installation root, and paths traversing junctions/symbolic links. It applies SYSTEM/Administrators ACLs to all restored directories and grants the configured `NT SERVICE\PromoGestLocalErp` identity Modify access only to the restored document and Data Protection directories. Run the restore under an elevated maintenance account after the service identity has been installed. After a successful drill, the scratch database and restored output directories are deliberately retained for inspection; remove them manually after review. If the restore fails after creating its scratch database or any output directory, it attempts to remove only the database and directories created by that invocation.
 

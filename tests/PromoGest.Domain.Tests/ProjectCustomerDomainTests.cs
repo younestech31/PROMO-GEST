@@ -42,6 +42,19 @@ public sealed class ProjectCustomerDomainTests
     }
 
     [Theory]
+    [InlineData("0555123456", "213555123456")]
+    [InlineData("0 555 123 456", "213555123456")]
+    [InlineData("+213555123456", "213555123456")]
+    [InlineData("213 555 123 456", "213555123456")]
+    [InlineData("+33 1 23 45 67 89", "33123456789")]
+    [InlineData("0033 1 23 45 67 89", "0033123456789")]
+    public void ProjectCustomer_CanonicalizesOnlyAlgerianNationalFormat(string phone, string expected)
+    {
+        var customer = CreateCustomer(phone: phone);
+        Assert.Equal(expected, customer.NormalizedPhone);
+    }
+
+    [Theory]
     [InlineData("0550123A56")]
     [InlineData("055012")]
     [InlineData("0550123456789012")]
@@ -98,7 +111,7 @@ public sealed class ProjectCustomerDomainTests
             FixedNow.AddMinutes(10));
 
         Assert.Equal("مدير المبيعات", customer.ContactPerson);
-        Assert.Equal("0550123456", customer.NormalizedPhone);
+        Assert.Equal("213550123456", customer.NormalizedPhone);
         Assert.Equal(ProjectCustomerStatus.Qualified, customer.Status);
         Assert.NotEqual(initialStamp, customer.ConcurrencyStamp);
         Assert.Equal(FixedNow.AddMinutes(10), customer.UpdatedAtUtc);

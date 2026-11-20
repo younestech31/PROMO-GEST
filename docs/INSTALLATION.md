@@ -58,7 +58,7 @@ This runs the unified workspace lint/test/build in `apps/local-web`, copies stat
    Do not run the service as the owner identity. Normal service operation must use `promogest_app`.
 5. Run in an elevated PowerShell prompt:
    ```powershell
-    .\deploy\windows\install-service.ps1 -ConfigureFirewall -BackupRoot "D:\PromoGestBackups" -BackupOffsiteDir "E:\PromoGestOffsite"
+   .\deploy\windows\install-service.ps1 -ConfigureFirewall -BackupRoot "D:\PromoGestBackups" -BackupOffsiteDir "E:\PromoGestOffsite"
    ```
    `BackupOffsiteDir` must already exist on the independently mounted offsite target and must match the nightly backup task -OffsiteDir parameter. The installer rejects an offsite path that overlaps `InstallRoot` or `BackupRoot`; the backup job separately enforces independent-volume and protected-source boundaries. A custom `BackupRoot` must be a dedicated directory outside `InstallRoot`. When omitting `-BackupRoot`, the default `C:\PromoGest\backups` directory is used and receives maintenance-only ACLs. The installer requires both monitoring scripts in `C:\PromoGest\scripts`, creates a read-only scripts ACL for the service identity, and registers the freshness monitor under SYSTEM.
 6. Verify local loopback health endpoints:

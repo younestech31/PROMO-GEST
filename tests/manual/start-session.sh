@@ -3,6 +3,13 @@
 set -euo pipefail
 umask 077
 case ${1:-} in ar-desktop|fr-desktop|ar-mobile|fr-mobile) ;; *) echo 'Usage: bash start-session.sh {ar-desktop|fr-desktop|ar-mobile|fr-mobile}' >&2; exit 2;; esac
+# A private browser port forward is still remote from the API's point of view.
+forwarded=0
+case ${2:-} in
+  --private-forward) forwarded=1;;
+  '') if [[ ${CODESPACES:-false} == true ]]; then forwarded=1; fi;;
+  *) echo 'Unknown option. Use --private-forward for a private port forward.' >&2; exit 2;;
+esac
 kit=$(cd "$(dirname "$0")" && pwd)
 [[ $(uname -sm) == 'Linux x86_64' && -x "$kit/api/PromoGest.Api" && -s "$kit/api/wwwroot/index.html" ]] || { echo 'Use the extracted Linux x64 manual kit.' >&2; exit 1; }
 # Only the local Unix socket: remote Docker endpoints are not test targets.
@@ -50,6 +57,10 @@ SELECT (SELECT count(*) FROM organization_settings), (SELECT count(*) FROM users
 SQL
 }
 [[ $(counts) == '0|0|0' ]]
+if (( forwarded )); then
+  bootstrap=$(openssl rand -hex 24)
+  clean+=("PROMOGEST_SETUP_TOKEN=$bootstrap")
+fi
 "${clean[@]}" "ConnectionStrings__DefaultConnection=$conn;Username=p0_app;Password=$app" \
   ./PromoGest.Api --urls http://127.0.0.1:0 >"$work/api.log" 2>&1 & pid=$!
 url=''
@@ -59,10 +70,17 @@ for ((i=0; i<60; i++)); do
   if [[ -n $url ]] && curl -fsS "$url/api/setup/status" >"$work/status.json"; then break; fi
   sleep 1
 done
-python3 -c 'import json,sys; sys.exit(json.load(open(sys.argv[1]))["isInitialized"] is not False)' "$work/status.json"
+python3 -c 'import json,sys; s=json.load(open(sys.argv[1])); sys.exit(not (s["isInitialized"] is False and s["requiresBootstrapToken"] is bool(int(sys.argv[2]))))' "$work/status.json" "$forwarded"
 curl -fsS "$url/" | grep -qi '<!doctype html>'
 printf 'Profile: %s | build: %s\nOpen on this machine: %s\nCounts: 0|0|0\n' "$1" "$(cat "$kit/BUILD_SHA")" "$url"
+if (( forwarded )); then echo 'Private forwarding: keep the port Private. Enter token here to view your temporary setup token.'; fi
 echo 'Use fictional data only. Enter counts to check the DB, or quit to destroy this session.'
 while IFS= read -r cmd; do
-  case $cmd in counts) printf 'Counts: %s\n' "$(counts)";; quit) break;; *) echo 'Commands: counts, quit';; esac
+  case $cmd in
+    token) if (( forwarded )) && [[ -t 0 && -t 1 ]]; then
+             printf 'Setup token (do not share or screenshot): %s\n' "$bootstrap"
+           else
+             echo 'Token display requires a private-forward session in an interactive terminal.'
+           fi;;
+    counts) printf 'Counts: %s\n' "$(counts)";; quit) break;; *) echo 'Commands: counts, quit';; esac
 done

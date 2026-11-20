@@ -4,6 +4,7 @@ All 12 functional ERP domains required by PROMO GEST, mapped strictly using the 
 
 **Last verified code-bearing main baseline:** `5010a31c8bd4c470c14411867feca164cce0ff78` (PR #179 squash merge); [post-merge CI #1129](https://github.com/younestech31/PROMO-GEST/actions/runs/44812777592) and [CodeQL #31](https://github.com/younestech31/PROMO-GEST/actions/runs/44812777559) passed on this exact SHA.
 **Last ASP.NET Core API/Application runtime source:** PR #163 merge `711a05282869b8ebfe6965921045c9225dcecb17`. **Latest password-lifecycle EF/schema source:** PR #161 merge `03d1288a391ba72e49faf2cf8aa82d604e1ddc6e`. PR #161 adds mandatory temporary-password fields; PR #163 adds voluntary rotation and configurable session/credential lifetimes. PR #176 fixes SPA session bootstrap on reload without widening the temporary-session API allowlist; PR #177 is tests-only and adds deadline/session-token and existing-user migration-upgrade coverage.
+
 **Delivery boundary:** Phase 1 remains IN_PROGRESS; Phases 2–5 remain PLANNED. P1-18 and P1-26 are Done / Verified. P1-25 Windows daily backup monitoring is merged in PR #179 but remains In Review / Pending until a local-admin installation and deliberate failure-case verification on a disposable on-premises Windows host are recorded. P1-27 is the active docs-only baseline synchronization. P1-01 is In Progress / Pending; P1-02 Blocked; no commune records loaded (`communesCount = 0`). Manual RTL/LTR browser acceptance remains pending. Decision-book statuses are 1,540 PENDING + one NEEDS_EVIDENCE; all 1,541 master-ledger practitioner sign-offs remain PENDING.
 
 ---
@@ -13,7 +14,8 @@ All 12 functional ERP domains required by PROMO GEST, mapped strictly using the 
 
 
 **Operations capability — daily backup freshness:** `IMPLEMENTED_NOT_VERIFIED`. PR #173 provides cross-platform freshness checks and Linux systemd scheduling; PR #179 wires Windows Task Scheduler registration daily at 06:00 as SYSTEM. The registrar requires explicit, existing local/offsite roots, and surfaces failures via Task Scheduler history / `LastTaskResult`. PR-head CI #1128 and post-merge main CI #1129 passed; Windows freshness tests 9/9, Task Scheduler contract 9/9 and encrypted backup/restore 22/22. The code is not operationally deployed until an administrator installs it and verifies SYSTEM access and a deliberate failure case against the actual offsite target. No email/SMS notification forwarding exists.
-**P1-18 evidence boundary:** PR #176 restored temporary-password session state on browser reload without widening the server allowlist. PR #177 proves the exact 24-hour expiry boundary/session-token rejection and PostgreSQL 18 existing-user migration upgrade. PR-head CI #1108 and post-merge main CI #1129 passed; full human Arabic RTL/French LTR acceptance of user-management workflows remains pending, so that capability stays `IMPLEMENTED_NOT_VERIFIED`.
+
+**P1-18 evidence boundary:** PR #176 restored temporary-password session state on browser reload without widening the server allowlist. PR #177 proves the exact 24-hour expiry boundary/session-token rejection and PostgreSQL 18 existing-user migration upgrade. Historical PR-head CI #1108 and post-merge main CI #1109 passed on the PR #177 baseline; current main CI #1129 and CodeQL #31 passed on `5010a31`. Full human Arabic RTL/French LTR acceptance of user-management workflows remains pending, so that capability stays `IMPLEMENTED_NOT_VERIFIED`.
 
 ## 1. Overview Matrix
 

@@ -235,7 +235,7 @@ public sealed partial class PostgresEndToEndTests
         const string resourceName =
             "PromoGest.IntegrationTests.P1_11PhoneNormalizationPreflight.sql";
 
-        await using var stream = typeof(PhoneNormalizationMigrationTests).Assembly
+        await using var stream = typeof(PostgresEndToEndTests).Assembly
             .GetManifestResourceStream(resourceName)
             ?? throw new InvalidOperationException($"Missing embedded SQL resource: {resourceName}");
         using var textReader = new StreamReader(stream);

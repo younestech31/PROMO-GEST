@@ -196,6 +196,11 @@ public sealed class PostgreSql18IntegrationFixture : IAsyncLifetime
                 throw new InvalidOperationException(
                     "The CanonicalizeAlgerianProjectCustomerPhones migration was not discovered and applied.");
             }
+            if (targetMigration is not null && !applied.Contains(targetMigration))
+            {
+                throw new InvalidOperationException(
+                    $"The requested PostgreSQL test migration checkpoint '{targetMigration}' was not applied.");
+            }
         }
 
         // Apply the same post-migration grants used by the Google AI Studio Cloud SQL path.

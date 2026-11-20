@@ -15,6 +15,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
+      - name: Scan tracked files for committed credentials
+        run: |
+          python3 scripts/test_scan_secrets.py
+          python3 scripts/scan-secrets.py
       - name: Validate complete JO44/1985 source extracts
         run: python3 scripts/validate-jo44-reference-extracts.py
       - name: Validate P1-01 candidate crosswalk structure (not legal approval)

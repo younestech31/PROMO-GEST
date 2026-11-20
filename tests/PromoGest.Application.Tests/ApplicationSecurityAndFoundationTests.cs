@@ -1514,7 +1514,7 @@ public sealed class ApplicationSecurityAndFoundationTests
         var recovery = new AdminRecoveryService(store, store, hasher, store, clock);
         var meta = new RequestMetadata("127.0.0.1", "xUnit");
 
-        await setup.InitializeAsync(ValidInitRequest(), meta);
+        var init = await setup.InitializeAsync(ValidInitRequest(), meta);
         var login = await authSvc.LoginAsync(new LoginRequest("sysadmin", "StrongPass123"), meta);
         Assert.NotNull(await authSvc.ValidateSessionAsync(login.OpaqueSessionToken));
 

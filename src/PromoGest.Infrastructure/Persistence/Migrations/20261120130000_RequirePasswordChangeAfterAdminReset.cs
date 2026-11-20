@@ -1,13 +1,8 @@
-using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Migrations;
-using PromoGest.Infrastructure.Persistence;
-
 #nullable disable
 
 namespace PromoGest.Infrastructure.Persistence.Migrations;
 
-[DbContext(typeof(AppDbContext))]
-[Migration("20261120130000_RequirePasswordChangeAfterAdminReset")]
 public partial class RequirePasswordChangeAfterAdminReset : Migration
 {
     protected override void Up(MigrationBuilder migrationBuilder)

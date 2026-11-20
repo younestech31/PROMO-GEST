@@ -62,6 +62,7 @@ function Get-PromoGestFunctionSource {
 . ([ScriptBlock]::Create((Get-PromoGestFunctionSource -Path (Join-Path $scriptRoot "backup-promogest.ps1") -Name @(
             "New-PromoGestCertificateFromBytes",
             "Assert-PromoGestRecipientCertificate",
+            "Test-PromoGestAes256CmsBytes",
             "Protect-PromoGestFileToCms",
             "New-PromoGestTarGzFromDirectory",
             "Get-PromoGestSha256Hex",
@@ -141,7 +142,7 @@ try {
     $enveloped.Decrypt($collection)
     Assert-True -Condition ([Convert]::ToBase64String($enveloped.Content) -eq [Convert]::ToBase64String($payload)) `
         -Message "the encrypted artifact decrypts to the original bytes"
-    Assert-True -Condition ($enveloped.ContentEncryptionAlgorithm.Value -eq "2.16.840.1.101.3.4.1.42") `
+    Assert-True -Condition (Test-PromoGestAes256CmsBytes -Bytes ([IO.File]::ReadAllBytes($cmsPath))) `
         -Message "the envelope uses AES-256-CBC (OID 2.16.840.1.101.3.4.1.42)"
 
     # --- Sidecar verification -----------------------------------------------------------

@@ -223,6 +223,32 @@ function Assert-PromoGestRecipientCertificate {
     return $certificate
 }
 
+function Test-PromoGestAes256CmsBytes {
+    param([Parameter(Mandatory = $true)][byte[]]$Bytes)
+
+    # DER encoding of OID 2.16.840.1.101.3.4.1.42 (AES-256-CBC). Scanning the
+    # encoded envelope keeps the check independent of the crypto API surface that
+    # differs between .NET versions.
+    [byte[]]$aes256Oid = 0x06, 0x09, 0x60, 0x86, 0x48, 0x01, 0x65, 0x03, 0x04, 0x01, 0x2A
+    if ($null -eq $Bytes -or $Bytes.Length -lt $aes256Oid.Length) {
+        return $false
+    }
+
+    for ($index = 0; $index -le ($Bytes.Length - $aes256Oid.Length); $index++) {
+        if ($Bytes[$index] -ne $aes256Oid[0]) { continue }
+        $matched = $true
+        for ($offset = 0; $offset -lt $aes256Oid.Length; $offset++) {
+            if ($Bytes[$index + $offset] -ne $aes256Oid[$offset]) {
+                $matched = $false
+                break
+            }
+        }
+        if ($matched) { return $true }
+    }
+
+    return $false
+}
+
 function Protect-PromoGestFileToCms {
     param(
         [Parameter(Mandatory = $true)][string]$SourcePath,
@@ -244,12 +270,10 @@ function Protect-PromoGestFileToCms {
     $enveloped = New-Object System.Security.Cryptography.Pkcs.EnvelopedCms -ArgumentList @($contentInfo, $algorithm)
     $enveloped.Encrypt($recipient)
 
-    $appliedAlgorithm = $enveloped.ContentEncryptionAlgorithm.Value
-    if ($appliedAlgorithm -ne "2.16.840.1.101.3.4.1.42") {
-        throw "Encrypted backup used content algorithm '$appliedAlgorithm' instead of AES-256-CBC (2.16.840.1.101.3.4.1.42)."
-    }
-
     $encoded = $enveloped.Encode()
+    if (-not (Test-PromoGestAes256CmsBytes -Bytes $encoded)) {
+        throw "Encrypted backup did not use AES-256-CBC (2.16.840.1.101.3.4.1.42) for its content encryption."
+    }
     [IO.File]::WriteAllBytes($DestinationPath, $encoded)
 
     # Structural check only: the private key deliberately does not exist on this

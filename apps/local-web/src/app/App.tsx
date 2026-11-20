@@ -614,7 +614,9 @@ export function App() {
         language={language}
         fullName={session.user.fullName}
         username={session.user.username}
+        logoutFailed={logoutFailed}
         onCompleted={() => {
+          setUnauthenticatedLanguage(language);
           setSession(null);
           setProjects([]);
           setPasswordChangedNotice(true);

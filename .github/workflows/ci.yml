@@ -131,6 +131,30 @@ jobs:
           set -euo pipefail
           test -x artifacts/linux-x64/PromoGest.Api
           test -s artifacts/linux-x64/PromoGest.Api.dll
+      - name: Package and smoke-test the isolated manual acceptance kit
+        shell: bash
+        run: |
+          set -euo pipefail
+          kit="$RUNNER_TEMP/phase0-manual"
+          mkdir "$kit"
+          cp -a artifacts/linux-x64 "$kit/api"
+          cp tests/manual/start-session.sh docs/PHASE-0-OPERATOR-CHECKLIST.ar.md "$kit/"
+          git rev-parse HEAD > "$kit/BUILD_SHA"
+          tar -C "$RUNNER_TEMP" -czf "$RUNNER_TEMP/phase0-manual-linux-x64.tar.gz" phase0-manual
+          # Exercise the same extracted archive and foreground command used by the operator.
+          tmp=$(mktemp -d)
+          tar -xzf "$RUNNER_TEMP/phase0-manual-linux-x64.tar.gz" -C "$tmp"
+          printf 'counts\nquit\n' | bash "$tmp/phase0-manual/start-session.sh" ar-desktop > "$tmp/result"
+          grep -E '^Open on this machine: http://127\.0\.0\.1:[0-9]+$' "$tmp/result"
+          test "$(grep -cxF 'Counts: 0|0|0' "$tmp/result")" -eq 2
+          test -z "$(docker ps -aq --filter label=promogest.role=manual-p0)"
+      - name: Publish manual operator kit (not a production release)
+        uses: actions/upload-artifact@v7
+        with:
+          name: phase0-manual-linux-x64
+          path: ${{ runner.temp }}/phase0-manual-linux-x64.tar.gz
+          if-no-files-found: error
+          retention-days: 14
       - name: Validate Linux shell scripts
         shell: bash
         run: |

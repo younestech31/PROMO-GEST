@@ -3244,4 +3244,87 @@ public sealed class PostgresEndToEndTests : IClassFixture<PostgreSql18Integratio
         }
     }
 
+
+    [Fact]
+    public async Task PasswordRotationMigration_PreservesExistingUsersWithoutForcingRotation()
+    {
+        var runtimeConnectionString = await _fixture.CreateIsolatedDatabaseConnectionStringAsync();
+        var migrationConnectionString = _fixture.GetMigrationConnectionString(runtimeConnectionString);
+        var options = new DbContextOptionsBuilder<AppDbContext>()
+            .UseNpgsql(
+                migrationConnectionString,
+                npgsql => npgsql.MigrationsAssembly(typeof(AppDbContext).Assembly.FullName))
+            .Options;
+
+        await using var db = new AppDbContext(options);
+        var migrator = db.GetService<IMigrator>();
+        const string previousMigration = "20261116120000_EnforceProjectCustomerIdentityUniqueness";
+        const string passwordRotationMigration = "20261120130000_RequirePasswordChangeAfterAdminReset";
+
+        // Return this isolated database to the schema immediately before password rotation.
+        await migrator.MigrateAsync(previousMigration);
+
+        var existingUserId = Guid.NewGuid();
+        const string existingPasswordHash = "existing-password-hash-must-be-preserved";
+        var createdAtUtc = new DateTimeOffset(2026, 11, 20, 12, 0, 0, TimeSpan.Zero);
+        var securityStamp = Guid.NewGuid();
+        var concurrencyStamp = Guid.NewGuid();
+        await db.Database.ExecuteSqlInterpolatedAsync($"""
+            INSERT INTO users (
+                id,
+                username,
+                normalized_username,
+                full_name,
+                email,
+                normalized_email,
+                phone,
+                password_hash,
+                is_system_administrator,
+                is_active,
+                preferred_language,
+                failed_login_attempts,
+                lockout_end_utc,
+                last_login_at_utc,
+                security_stamp,
+                created_at_utc,
+                updated_at_utc,
+                concurrency_stamp
+            )
+            VALUES (
+                {existingUserId},
+                {"upgrade.employee"},
+                {"UPGRADE.EMPLOYEE"},
+                {"Existing Employee"},
+                {"upgrade.employee@elbahdja.dz"},
+                {"UPGRADE.EMPLOYEE@ELBAHDJA.DZ"},
+                {(string?)null},
+                {existingPasswordHash},
+                {false},
+                {true},
+                {"ar"},
+                {0},
+                {(DateTimeOffset?)null},
+                {(DateTimeOffset?)null},
+                {securityStamp},
+                {createdAtUtc},
+                {createdAtUtc},
+                {concurrencyStamp}
+            );
+            """);
+
+        // The migration must add the new marker with a false default and leave stored credentials intact.
+        await migrator.MigrateAsync(passwordRotationMigration);
+        db.ChangeTracker.Clear();
+
+        var upgradedUser = await db.Users.AsNoTracking()
+            .SingleAsync(user => user.Id == existingUserId);
+        Assert.Equal("upgrade.employee", upgradedUser.Username);
+        Assert.Equal(existingPasswordHash, upgradedUser.PasswordHash);
+        Assert.False(upgradedUser.MustChangePasswordAtNextLogin);
+        Assert.Null(upgradedUser.PasswordChangeRequiredUntilUtc);
+        Assert.Equal(createdAtUtc, upgradedUser.CreatedAtUtc);
+        Assert.Contains(passwordRotationMigration, await db.Database.GetAppliedMigrationsAsync());
+    }
+
+
 }

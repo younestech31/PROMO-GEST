@@ -2129,5 +2129,84 @@ public sealed class ApplicationSecurityAndFoundationTests
         Assert.Equal(alpha.Id, Assert.Single(scopedQueryForAssigned).Id);
         Assert.NotEqual(beta.Id, singleAdmin.Id);
     }
-}
 
+    [Fact]
+    public async Task TemporaryPassword_ExpiresAtInclusiveDeadline_AndSessionIsBoundedByDeadline()
+    {
+        var store = new InMemoryStore();
+        var clock = new FakeClock();
+        var hasher = new Pbkdf2PasswordHasher();
+        var tokenGenerator = new CryptoSessionTokenGenerator();
+        var setup = new SetupService(store, hasher, store, clock);
+        var users = new UserManagementService(store, store, hasher, store, clock);
+        var auth = new AuthService(
+            store,
+            store,
+            hasher,
+            tokenGenerator,
+            store,
+            clock,
+            new SessionPolicy(
+                TimeSpan.FromHours(48),
+                TimeSpan.FromHours(24),
+                TimeSpan.FromMinutes(1)));
+        var metadata = new RequestMetadata("127.0.0.1", "xUnit");
+
+        var init = await setup.InitializeAsync(ValidInitRequest(), metadata);
+        const string temporaryPassword = "Temporary#Pass2026";
+        var created = await users.CreateEmployeeAsync(
+            init.SystemAdminUserId,
+            new CreateEmployeeRequest(
+                "deadline.user",
+                "Deadline Employee",
+                "deadline@elbahdja.dz",
+                null,
+                temporaryPassword,
+                "ar",
+                new[] { Role.CommercialManagerCode }),
+            metadata);
+
+        var storedUser = await store.GetByIdWithRolesAsync(created.Id);
+        Assert.NotNull(storedUser);
+        var deadline = storedUser!.PasswordChangeRequiredUntilUtc;
+        Assert.NotNull(deadline);
+        Assert.Equal(clock.UtcNow.AddHours(24), deadline.Value);
+
+        // One tick before the inclusive deadline, login and session validation are allowed.
+        clock.UtcNow = deadline.Value.AddTicks(-1);
+        var beforeDeadline = await auth.LoginAsync(
+            new LoginRequest("deadline.user", temporaryPassword),
+            metadata);
+        Assert.Equal(deadline.Value, beforeDeadline.ExpiresAtUtc);
+        Assert.True(beforeDeadline.Session.User.MustChangePasswordAtNextLogin);
+        Assert.NotNull(await auth.ValidateSessionAsync(beforeDeadline.OpaqueSessionToken));
+
+        // The deadline is exclusive for authentication: equality is already expired.
+        clock.UtcNow = deadline.Value;
+        var atDeadline = await Assert.ThrowsAsync<UnauthorizedDomainException>(
+            () => auth.LoginAsync(
+                new LoginRequest("deadline.user", temporaryPassword),
+                metadata));
+        Assert.Equal("AUTH_INVALID_CREDENTIALS", atDeadline.Code);
+
+        var changeAtDeadline = await Assert.ThrowsAsync<UnauthorizedDomainException>(
+            () => auth.ChangePasswordAsync(
+                created.Id,
+                new ChangePasswordRequest(temporaryPassword, "EmployeePersonal#2026"),
+                metadata));
+        Assert.Equal("TEMPORARY_PASSWORD_EXPIRED", changeAtDeadline.Code);
+        Assert.NotEmpty(store.Sessions.Where(session => session.UserId == created.Id));
+        Assert.All(
+            store.Sessions.Where(session => session.UserId == created.Id),
+            session => Assert.True(session.IsRevoked));
+
+        clock.UtcNow = deadline.Value.AddTicks(1);
+        var afterDeadline = await Assert.ThrowsAsync<UnauthorizedDomainException>(
+            () => auth.LoginAsync(
+                new LoginRequest("deadline.user", temporaryPassword),
+                metadata));
+        Assert.Equal("AUTH_INVALID_CREDENTIALS", afterDeadline.Code);
+    }
+
+
+}

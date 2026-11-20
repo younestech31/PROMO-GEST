@@ -54,6 +54,15 @@ export interface TranslationBundle {
     setupCompletedNotice: string;
     logoutFailed: string;
     retryLogout: string;
+    passwordChangeRequiredTitle: string;
+    passwordChangeRequiredDescription: string;
+    currentPassword: string;
+    newPassword: string;
+    confirmNewPassword: string;
+    changePassword: string;
+    changingPassword: string;
+    passwordChangedNotice: string;
+    temporaryPasswordExpired: string;
   };
   nav: {
     overview: string;
@@ -115,6 +124,8 @@ export interface TranslationBundle {
     cancel: string;
     emptyTitle: string;
     emptyBody: string;
+    temporaryPasswordNotice: string;
+    mustChangePasswordBadge: string;
   };
   projects: {
     title: string;
@@ -274,6 +285,15 @@ const AR: TranslationBundle = {
     setupCompletedNotice: 'اكتملت تهيئة المؤسسة وإنشاء حساب مدير النظام. سجّل الدخول الآن ببيانات الحساب الذي أنشأته.',
     logoutFailed: 'تعذّر تأكيد تسجيل الخروج من الخادم. بقيت الجلسة نشطة؛ تحقق من الاتصال ثم أعد المحاولة.',
     retryLogout: 'إعادة المحاولة',
+    passwordChangeRequiredTitle: 'يجب تغيير كلمة المرور المؤقتة',
+    passwordChangeRequiredDescription: 'هذه كلمة مرور مؤقتة أنشأها مسؤول النظام. يجب تعيين كلمة مرور شخصية قبل الوصول إلى بيانات المؤسسة أو المشاريع. تنتهي صلاحيتها خلال 24 ساعة من إصدارها.',
+    currentPassword: 'كلمة المرور الحالية المؤقتة',
+    newPassword: 'كلمة المرور الشخصية الجديدة',
+    confirmNewPassword: 'تأكيد كلمة المرور الجديدة',
+    changePassword: 'تغيير كلمة المرور',
+    changingPassword: 'جارٍ تحديث كلمة المرور...',
+    passwordChangedNotice: 'تم تغيير كلمة المرور وإبطال الجلسات السابقة. سجّل الدخول مجدداً بكلمة المرور الجديدة.',
+    temporaryPasswordExpired: 'انتهت صلاحية كلمة المرور المؤقتة. اطلب من مدير النظام إعادة تعيينها.',
   },
   nav: {
     overview: 'مساحة المؤسسة',
@@ -335,6 +355,8 @@ const AR: TranslationBundle = {
     cancel: 'إلغاء',
     emptyTitle: 'لا توجد حسابات موظفين إضافية بعد',
     emptyBody: 'أنشئ حسابات لمسؤولي المبيعات والمالية والمهندسين لمنحهم صلاحيات محددة.',
+    temporaryPasswordNotice: 'كلمة المرور التي تدخلها مؤقتة لمدة 24 ساعة. يجب على الموظف تغييرها عند أول دخول قبل الوصول إلى بيانات النظام. سلّمها له عبر قناة محلية آمنة ولا تسجلها في الملاحظات.',
+    mustChangePasswordBadge: 'يتطلب تغيير كلمة المرور',
   },
   projects: {
     title: 'المشاريع العقارية والتحكم في الوصول',
@@ -494,6 +516,15 @@ const FR: TranslationBundle = {
     setupCompletedNotice: 'L’organisation est initialisée et le compte Administrateur Système est créé. Connectez-vous avec les identifiants que vous venez de définir.',
     logoutFailed: 'Le serveur n’a pas confirmé la déconnexion. La session reste active ; vérifiez la connexion puis réessayez.',
     retryLogout: 'Réessayer',
+    passwordChangeRequiredTitle: 'Changement du mot de passe temporaire obligatoire',
+    passwordChangeRequiredDescription: 'Ce mot de passe temporaire a été défini par un administrateur. Définissez un mot de passe personnel avant d’accéder aux données de l’organisation ou des projets. Il expire 24 heures après son émission.',
+    currentPassword: 'Mot de passe temporaire actuel',
+    newPassword: 'Nouveau mot de passe personnel',
+    confirmNewPassword: 'Confirmer le nouveau mot de passe',
+    changePassword: 'Changer le mot de passe',
+    changingPassword: 'Mise à jour du mot de passe...',
+    passwordChangedNotice: 'Le mot de passe a été modifié et les anciennes sessions révoquées. Connectez-vous à nouveau avec votre nouveau mot de passe.',
+    temporaryPasswordExpired: 'Le mot de passe temporaire a expiré. Demandez une nouvelle réinitialisation à l’Administrateur Système.',
   },
   nav: {
     overview: 'Espace Organisation',
@@ -555,6 +586,8 @@ const FR: TranslationBundle = {
     cancel: 'Annuler',
     emptyTitle: 'Aucun compte employé supplémentaire',
     emptyBody: 'Créez les comptes de vos responsables commerciaux, financiers et ingénieurs.',
+    temporaryPasswordNotice: 'Le mot de passe saisi est temporaire pendant 24 heures. L’employé doit le remplacer à sa première connexion avant tout accès aux données. Transmettez-le par un canal local sécurisé et ne le consignez pas dans les notes.',
+    mustChangePasswordBadge: 'Changement de mot de passe requis',
   },
   projects: {
     title: 'Projets immobiliers & Contrôle d\'accès',
@@ -666,6 +699,22 @@ const API_ERROR_MESSAGES: Record<string, { ar: string; fr: string }> = {
   SETUP_ALREADY_INITIALIZED: {
     ar: 'تمت تهيئة هذا التثبيت مسبقاً ولا يمكن إعادة تشغيل معالج التثبيت.',
     fr: 'Cette installation est déjà initialisée et ne peut pas être réinitialisée.',
+  },
+  PASSWORD_CURRENT_INVALID: {
+    ar: 'كلمة المرور الحالية غير صحيحة.',
+    fr: 'Le mot de passe actuel est incorrect.',
+  },
+  PASSWORD_REUSE_NOT_ALLOWED: {
+    ar: 'اختر كلمة مرور تختلف عن كلمة المرور المؤقتة.',
+    fr: 'Choisissez un mot de passe différent du mot de passe temporaire.',
+  },
+  PASSWORD_CHANGE_REQUIRED: {
+    ar: 'يجب تغيير كلمة المرور المؤقتة قبل متابعة العمل.',
+    fr: 'Vous devez changer le mot de passe temporaire avant de continuer.',
+  },
+  TEMPORARY_PASSWORD_EXPIRED: {
+    ar: 'انتهت صلاحية كلمة المرور المؤقتة. اطلب إعادة تعيينها.',
+    fr: 'Le mot de passe temporaire a expiré. Demandez sa réinitialisation.',
   },
   AUTH_INVALID_CREDENTIALS: {
     ar: 'اسم المستخدم أو كلمة المرور غير صحيحة.',

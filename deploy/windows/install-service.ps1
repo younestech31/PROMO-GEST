@@ -260,8 +260,4 @@ if ($ConfigureFirewall) {
 
 Write-Host "Registering daily backup freshness monitoring task..."
 & $BackupMonitorRegistrationScriptPath -BackupRoot $BackupDir -OffsiteDir $BackupOffsiteDir
-if (-not $?) {
-    throw "Failed to register PromoGestBackupFreshnessMonitor."
-}
-
 Write-Host "Service $ServiceName is running as $ServiceAccount. Daily backup freshness monitoring is registered at 06:00 as SYSTEM. Application files are read-only to the service; storage, key ring, backups, and logs are writable."

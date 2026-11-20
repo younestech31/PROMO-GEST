@@ -1,6 +1,7 @@
 using System.Security.Cryptography.X509Certificates;
 using System.Threading.RateLimiting;
 using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.EntityFrameworkCore;
@@ -184,7 +185,12 @@ builder.Services.AddAuthentication(SessionCookieDefaults.AuthenticationScheme)
         SessionCookieDefaults.AuthenticationScheme,
         _ => { });
 
-builder.Services.AddAuthorization();
+builder.Services.AddAuthorization(options =>
+{
+    options.FallbackPolicy = new AuthorizationPolicyBuilder()
+        .RequireAuthenticatedUser()
+        .Build();
+});
 builder.Services.AddControllers();
 
 builder.Services.AddRateLimiter(options =>
@@ -321,7 +327,7 @@ app.MapFallback("/health/{**slug}", (HttpContext context) =>
     return context.Response.WriteAsJsonAsync(new ApiErrorResponse("ENDPOINT_NOT_FOUND", "The requested health endpoint does not exist."));
 }).AllowAnonymous();
 
-app.MapFallbackToFile("index.html");
+app.MapFallbackToFile("index.html").AllowAnonymous();
 
 app.Run();
 

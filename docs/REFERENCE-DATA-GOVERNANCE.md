@@ -1,12 +1,12 @@
 # PROMO GEST — Algerian Administrative Reference-Data Governance
 
-**Legal baseline checked:** 19 November 2026.  
-**Current repository evidence anchor:** main `0a3bbadb7269989531adb4b5ace8e990e00cf055`; [main CI #1038](https://github.com/younestech31/PROMO-GEST/actions/runs/44733222758) passed all three required jobs on the exact SHA.
-l=>l.replace("covered by main CI #1034 on SHA `34826b7d22857e5f7709ffc56f4d954425b68e42`","covered by main CI #1038 on SHA `0a3bbadb7269989531adb4b5ace8e990e00cf055`")
+**Legal baseline checked:** 20 November 2026.
+**Last verified code-bearing repository evidence anchor:** `0a3bbadb7269989531adb4b5ace8e990e00cf055`; [main CI #1038](https://github.com/younestech31/PROMO-GEST/actions/runs/44733222758) passed all three required jobs on the exact PR #157 merge SHA. PR #158 is a docs-only current-baseline synchronization.
+**Status:** The server-owned, bilingual, versioned 69-Wilaya catalogue and its UI integration are implemented and verified (PR #59). The P1-01 master workpaper structurally links 1,541 candidate keys to 1,541 JO44 historical assertions and is covered by main CI #1038 on code-bearing baseline SHA `0a3bbadb7269989531adb4b5ace8e990e00cf055`. A separate evidence set adds 29 Arabic JO44 page images, a 1,541-row page-level locator and 48/48 printed-count reconciliation; every locator remains `PAGE_IMAGE_MAPPED_NOT_ROW_TRANSCRIBED`. PR #146 adds 51 bounded bilingual readings; PR #155 adds 26 W41 Arabic/French row readings plus four collision controls. PR #157 clarifies the ONS 2008 / JO58 source roles and records the ONS 1984 vs Law26-06 2026 endpoint-count comparison; PR #158 synchronizes baseline anchors only. These remain partial historical/source-role evidence, not full row transcription or legal approval. The master ledger records 1,431 proposed-clean rows, 110 practitioner-decision rows, 75 Arabic anomaly flags, and all 1,541 sign-offs PENDING. The API remains `PendingOfficialVerification` / `communesCount = 0`; no candidate rows are imported.
 
 > **Historical-to-current total comparison — 20 November 2026:** ONS *Annuaire Statistique de l'Algérie* No. 35, Chapter I / Table 2, states that Law 84-09 of 4 February 1984 established 48 Wilayas and 1,541 communes ([ONS, official PDF](https://www.ons.dz/IMG/pdf/territoire_2017.pdf)). Current Law 26-06, JO No. 25 of 5 April 2026, Article 3 states 69 Wilayas and 1,541 communes ([official JORADP French PDF](https://www.joradp.dz/FTP/jo-francais/2026/F2026025.pdf)). Thus the 1984 and 2026 **published endpoint totals** agree at 1,541 while the Wilaya structure differs. This endpoint comparison supports the statement that the 2026 law retained the 1,541 total relative to the 1984 baseline; it does not, by itself, prove that no intermediate-year administrative instrument ever changed the total. The exhaustive amendment inventory remains a P1-01 requirement.
 
-## 1. Authoritative territorial baseline## 1. Authoritative territorial baseline
+## 1. Authoritative territorial baseline
 
 Law No. 26-06 of 4 April 2026, published in Official Journal No. 25 dated 5 April 2026, amends Law No. 84-09 on the territorial organization. Article 3 states that the new territorial division contains 69 Wilayas and 1,541 communes.
 

@@ -134,9 +134,11 @@ try {
         $installerText.Contains('& $BackupMonitorRegistrationScriptPath -BackupRoot $BackupDir -OffsiteDir $BackupOffsiteDir')
     Write-Result $installerWiresMonitor "Windows service installer requires both monitor scripts and registers the task with configured roots"
 
+    $nestedOffsite = Join-Path $backupRoot "nested-offsite"
+    New-Item -ItemType Directory -Path $nestedOffsite | Out-Null
     $callsBeforeInvalid = $script:captured.RegisterCalls
     $overlapRejected = Test-ThrowsContaining {
-        & $registerScript -BackupRoot $backupRoot -OffsiteDir (Join-Path $backupRoot "nested-offsite") -CheckScriptPath $checkScript
+        & $registerScript -BackupRoot $backupRoot -OffsiteDir $nestedOffsite -CheckScriptPath $checkScript
     } "separate, non-overlapping"
     Write-Result ($overlapRejected -and $script:captured.RegisterCalls -eq $callsBeforeInvalid) "overlapping primary and offsite directories are rejected before registration"
 

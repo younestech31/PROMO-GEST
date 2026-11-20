@@ -164,6 +164,8 @@ test('Permission helpers enforce System Admin and project-level roles', () => {
     roles: ['SYSTEM_ADMIN'],
     permissions: [],
     lastLoginAtUtc: null,
+    mustChangePasswordAtNextLogin: false,
+    passwordChangeRequiredUntilUtc: null,
   };
   const regularUser: AuthenticatedUser = {
     ...sysAdmin,

@@ -6,6 +6,7 @@ using System.Net.Http.Json;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.TestHost;
 using Microsoft.AspNetCore.Mvc.Testing;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Migrations;
@@ -32,6 +33,14 @@ using Testcontainers.PostgreSql;
 using Xunit;
 
 namespace PromoGest.IntegrationTests;
+
+[ApiController]
+[Route("api/test/default-deny")]
+public sealed class DefaultDenyProbeController : ControllerBase
+{
+    [HttpGet]
+    public IActionResult Get() => Ok(new { reachable = true });
+}
 
 public sealed class PostgreSql18IntegrationFixture : IAsyncLifetime
 {
@@ -409,7 +418,8 @@ public sealed class PostgresEndToEndTests : IClassFixture<PostgreSql18Integratio
         string tempRoot,
         string environmentName = "Development",
         IDictionary<string, string?>? extraConfiguration = null,
-        IPAddress? simulatedRemoteIp = null)
+        IPAddress? simulatedRemoteIp = null,
+        bool includeAuthorizationProbe = false)
     {
         Directory.CreateDirectory(tempRoot);
         return new WebApplicationFactory<Program>().WithWebHostBuilder(builder =>
@@ -448,6 +458,11 @@ public sealed class PostgresEndToEndTests : IClassFixture<PostgreSql18Integratio
                 if (simulatedRemoteIp is not null)
                 {
                     services.AddSingleton<IStartupFilter>(new SimulatedRemoteIpStartupFilter(simulatedRemoteIp));
+                }
+
+                if (includeAuthorizationProbe)
+                {
+                    services.AddControllers().AddApplicationPart(typeof(DefaultDenyProbeController).Assembly);
                 }
             });
         });
@@ -498,6 +513,82 @@ public sealed class PostgresEndToEndTests : IClassFixture<PostgreSql18Integratio
         "admin@atlasimmo.dz",
         "+213550102030",
         "AtlasAdmin#2026");
+
+    [Fact]
+    public async Task AuthorizationFallback_DeniesUnannotatedControllerAndPreservesIntentionalAnonymousRoutes()
+    {
+        var connectionString = await _fixture.CreateIsolatedDatabaseConnectionStringAsync();
+        var tempRoot = Path.Combine(Path.GetTempPath(), $"promogest_default_deny_it_{Guid.NewGuid():N}");
+        var configuration = new Dictionary<string, string?>
+        {
+            ["Security:SetupBootstrapToken"] = "test-only-bootstrap-token"
+        };
+
+        using var factory = CreateFactory(
+            connectionString,
+            tempRoot,
+            extraConfiguration: configuration,
+            simulatedRemoteIp: IPAddress.Parse("192.0.2.25"),
+            includeAuthorizationProbe: true);
+        using var client = factory.CreateClient(new WebApplicationFactoryClientOptions { HandleCookies = true });
+
+        // The test-only controller has no [Authorize] or [AllowAnonymous].
+        // FallbackPolicy must reject it before its action can execute.
+        var unannotatedProbe = await client.GetAsync("/api/test/default-deny");
+        Assert.Equal(HttpStatusCode.Unauthorized, unannotatedProbe.StatusCode);
+
+        // Authentication bootstrap endpoints remain intentionally anonymous.
+        await AttachCsrfTokenAsync(client);
+
+        var login = await client.PostAsJsonAsync(
+            "/api/auth/login",
+            new LoginRequest("not-initialized", "not-a-real-password"));
+        Assert.Equal(HttpStatusCode.Conflict, login.StatusCode);
+        var loginError = await login.Content.ReadFromJsonAsync<ApiErrorResponse>();
+        Assert.Equal("SETUP_REQUIRED", loginError!.Code);
+
+        var csrf = await client.GetAsync("/api/auth/csrf");
+        Assert.Equal(HttpStatusCode.OK, csrf.StatusCode);
+
+        // Setup status remains public; initialization reaches its own bootstrap-token
+        // guard (403) rather than being rejected by the authorization fallback (401).
+        var setupStatus = await client.GetAsync("/api/setup/status");
+        Assert.Equal(HttpStatusCode.OK, setupStatus.StatusCode);
+
+        await AttachCsrfTokenAsync(client);
+        var initialize = await client.PostAsJsonAsync("/api/setup/initialize", ValidInitRequest());
+        Assert.Equal(HttpStatusCode.Forbidden, initialize.StatusCode);
+        var initializeError = await initialize.Content.ReadFromJsonAsync<ApiErrorResponse>();
+        Assert.Equal("SETUP_BOOTSTRAP_FORBIDDEN", initializeError!.Code);
+
+        var reference = await client.GetAsync("/api/reference/administrative-units");
+        Assert.Equal(HttpStatusCode.OK, reference.StatusCode);
+
+        var live = await client.GetAsync("/health/live");
+        Assert.Equal(HttpStatusCode.OK, live.StatusCode);
+
+        var ready = await client.GetAsync("/health/ready");
+        Assert.Equal(HttpStatusCode.OK, ready.StatusCode);
+
+        // Logout is intentionally anonymous but still requires the existing CSRF token.
+        var logout = await client.PostAsync("/api/auth/logout", content: null);
+        Assert.Equal(HttpStatusCode.NoContent, logout.StatusCode);
+
+        // Unknown API/health paths keep their explicit anonymous 404 endpoints.
+        var apiNotFound = await client.GetAsync("/api/nonexistent-endpoint");
+        Assert.Equal(HttpStatusCode.NotFound, apiNotFound.StatusCode);
+        var apiNotFoundError = await apiNotFound.Content.ReadFromJsonAsync<ApiErrorResponse>();
+        Assert.Equal("ENDPOINT_NOT_FOUND", apiNotFoundError!.Code);
+
+        var healthNotFound = await client.GetAsync("/health/nonexistent");
+        Assert.Equal(HttpStatusCode.NotFound, healthNotFound.StatusCode);
+
+        // The SPA shell must stay reachable without a session so the login page and
+        // client-side deep links can render before authentication.
+        var spaShell = await client.GetAsync("/login");
+        Assert.Equal(HttpStatusCode.OK, spaShell.StatusCode);
+        Assert.Equal("text/html", spaShell.Content.Headers.ContentType?.MediaType);
+    }
 
     [Fact]
     public async Task AdministrativeReference_ExposesCanonical69WilayaCatalogueWithoutAuthentication()

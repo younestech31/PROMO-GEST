@@ -22,7 +22,7 @@ import {
 import { useUnsavedGuard } from '../shared/hooks/useUnsavedGuard';
 import { getDocumentPresentation, isViteDevelopmentBuild, isVitePreviewRuntime } from '../shared/utils/appRuntime';
 import { ErpShellLayout } from './ErpShellLayout';
-import { LoginScreen, authApi } from '../modules/auth';
+import { ChangePasswordRequiredScreen, LoginScreen, authApi } from '../modules/auth';
 import { FirstRunSetupWizard, setupApi } from '../modules/setup';
 import {
   OverviewView,
@@ -229,6 +229,7 @@ export function App() {
   } | null>(null);
   const [unauthenticatedLanguage, setUnauthenticatedLanguage] = useState<AppLanguage>('ar');
   const [setupCompletedNotice, setSetupCompletedNotice] = useState(false);
+  const [passwordChangedNotice, setPasswordChangedNotice] = useState(false);
   const [loadingInitial, setLoadingInitial] = useState(true);
   const [projects, setProjects] = useState<ProjectDto[]>([]);
   const [activeRoute, setActiveRoute] = useState<AppRouteState>(() =>
@@ -464,11 +465,15 @@ export function App() {
             const currentSession = await authApi.getSession();
             if (!active) return;
             setSession(currentSession);
-            try {
-              const authorizedProjects = await apiClient.listProjects();
-              if (active) setProjects(authorizedProjects);
-            } catch {
-              // Session can still be used when the project directory is temporarily unavailable.
+            if (currentSession.user.mustChangePasswordAtNextLogin) {
+              setProjects([]);
+            } else {
+              try {
+                const authorizedProjects = await apiClient.listProjects();
+                if (active) setProjects(authorizedProjects);
+              } catch {
+                // Session can still be used when the project directory is temporarily unavailable.
+              }
             }
           } catch {
             if (active) setSession(null);
@@ -603,6 +608,23 @@ export function App() {
     );
   }
 
+  if (session?.user.mustChangePasswordAtNextLogin) {
+    return (
+      <ChangePasswordRequiredScreen
+        language={language}
+        fullName={session.user.fullName}
+        username={session.user.username}
+        onCompleted={() => {
+          setSession(null);
+          setProjects([]);
+          setPasswordChangedNotice(true);
+          setSetupCompletedNotice(false);
+        }}
+        onLogout={() => void performLogout()}
+      />
+    );
+  }
+
   if (!session) {
     return (
       <LoginScreen
@@ -610,6 +632,7 @@ export function App() {
         onLanguageChange={handleLanguageChange}
         organizationName={setupState.organizationLegalName ?? null}
         setupCompleted={setupCompletedNotice}
+        passwordChangedNotice={passwordChangedNotice}
         isPreviewMode={isPreviewMode}
         onPreviewLogin={handlePreviewLogin}
         onLoggedIn={(newSession) => {
@@ -618,7 +641,12 @@ export function App() {
             user: { ...newSession.user, preferredLanguage: unauthenticatedLanguage },
           });
           setSetupCompletedNotice(false);
-          void apiClient.listProjects().then(setProjects);
+          setPasswordChangedNotice(false);
+          if (newSession.user.mustChangePasswordAtNextLogin) {
+            setProjects([]);
+          } else {
+            void apiClient.listProjects().then(setProjects);
+          }
         }}
       />
     );

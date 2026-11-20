@@ -229,6 +229,39 @@ try {
     Assert-True -Condition (-not [string]::IsNullOrWhiteSpace($rootIdentity)) -Message "a volume identity is derived for the backup root"
     Assert-True -Condition ($rootIdentity -eq $childIdentity) -Message "paths on the same volume share one identity"
 
+    # --- Fail-closed policy, exercised against the real script entry point -------------
+    $policyRoot = Join-Path $workRoot "policy-root"
+    $backupScript = Join-Path $scriptRoot "backup-promogest.ps1"
+
+    function Invoke-PromoGestBackupExpectingFailure {
+        param([Parameter(Mandatory = $true)][string[]]$Arguments)
+
+        $output = & pwsh -NoProfile -File $backupScript @Arguments 2>&1
+        return [PSCustomObject]@{
+            ExitCode = $LASTEXITCODE
+            Output   = ($output | Out-String)
+        }
+    }
+
+    $noCertificate = Invoke-PromoGestBackupExpectingFailure -Arguments @("-BackupRoot", $policyRoot)
+    Assert-True -Condition ($noCertificate.ExitCode -ne 0 -and $noCertificate.Output -match "recipient certificate is required") `
+        -Message "a backup without a recipient certificate fails before touching the database"
+
+    $noOffsite = Invoke-PromoGestBackupExpectingFailure -Arguments @(
+        "-BackupRoot", $policyRoot, "-RecipientCertPath", $publicCertPath)
+    Assert-True -Condition ($noOffsite.ExitCode -ne 0 -and $noOffsite.Output -match "offsite directory is required") `
+        -Message "a backup without an offsite target fails unless the risk is acknowledged explicitly"
+
+    $plaintextRefused = Invoke-PromoGestBackupExpectingFailure -Arguments @(
+        "-BackupRoot", $policyRoot, "-EncryptionMode", "disabled", "-AllowLocalOnly")
+    Assert-True -Condition ($plaintextRefused.ExitCode -ne 0 -and $plaintextRefused.Output -match "cleartext") `
+        -Message "disabling encryption without an explicit acknowledgement is refused"
+
+    $privateKeyRefused = Invoke-PromoGestBackupExpectingFailure -Arguments @(
+        "-BackupRoot", $policyRoot, "-RecipientCertPath", $privateKeyPath, "-AllowLocalOnly")
+    Assert-True -Condition ($privateKeyRefused.ExitCode -ne 0 -and $privateKeyRefused.Output -match "private key|certificate") `
+        -Message "a recipient container holding the private key is refused by the script itself"
+
     Write-Host "All $checks Windows backup-contract checks passed."
 }
 catch {

@@ -60,7 +60,7 @@ ASP.NET Core Data Protection secures Antiforgery/CSRF tokens and server-side pro
 
 ## 5. Backup, Restore & Disaster Recovery Drills
 
-- **Backup Scripts (`scripts/backup-promogest.sh`, `backup-promogest.ps1`):** Captures consistent PostgreSQL custom dump (`pg_dump -Fc`) + local document storage directory + manifest checksums.
+- **Backup Scripts (`scripts/backup-promogest.sh`, `backup-promogest.ps1`):** Capture a consistent PostgreSQL custom dump (`pg_dump -Fc`), the local document storage directory, the Data Protection key ring, and the sanitized configuration into a manifest-sealed bundle, then CMS-encrypt it (AES-256-CBC) to an offline recipient certificate, replicate it to an independent offsite target, and apply retention. Both platforms are fail-closed on missing encryption or offsite configuration.
 - **Restore & Verification (`scripts/verify-backup-restore.sh`, `restore-promogest.ps1`):** Creates/targets an isolated verification database, restores dump via `pg_restore`, validates table row counts and `stored_files` SHA-256 digests against storage files.
 - **Offline Boundary (`apps/local-web/public/sw.js` & [OFFLINE-OPERATION.md](OFFLINE-OPERATION.md)):**
   - Service worker caches **only static UI shell assets** (`/`, `/index.html`, `/manifest.webmanifest`, local fonts/icons).

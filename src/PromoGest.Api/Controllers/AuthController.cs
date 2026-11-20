@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.RateLimiting;
 using PromoGest.Api.Security;
 using PromoGest.Application.Services;
 using PromoGest.Contracts.Auth;
+using PromoGest.Contracts.Users;
 
 namespace PromoGest.Api.Controllers;
 

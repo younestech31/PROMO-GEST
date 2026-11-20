@@ -61,7 +61,7 @@ export function LoginScreen({
       } else if (err instanceof ApiError) {
         setAuthError(translateApiError(err.code, err.message, language));
       } else {
-        setAuthError(language === 'ar' ? 'تعذر تسجيل الدخول.' : 'Échec de la connexion.');
+        setAuthError(t.loginFailedGeneric);
       }
     } finally {
       setIsSubmitting(false);

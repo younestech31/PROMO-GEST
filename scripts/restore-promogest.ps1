@@ -260,7 +260,7 @@ function Expand-PromoGestBackupArtifact {
             $enveloped.Decrypt($certificates)
 
             $plaintextArchive = Join-Path $workRoot "bundle.tar.gz"
-            [IO.File]::WriteAllBytes($plaintextArchive, $enveloped.Content)
+            [IO.File]::WriteAllBytes($plaintextArchive, $enveloped.ContentInfo.Content)
         }
         elseif (-not $ArtifactPath.EndsWith(".tar.gz", [StringComparison]::OrdinalIgnoreCase)) {
             throw "Unsupported backup artifact type (expected .cms or .tar.gz): $ArtifactPath"

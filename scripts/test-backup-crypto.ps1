@@ -140,7 +140,7 @@ try {
     $collection = New-Object System.Security.Cryptography.X509Certificates.X509Certificate2Collection
     $collection.Add($decryptCertificate) | Out-Null
     $enveloped.Decrypt($collection)
-    Assert-True -Condition ([Convert]::ToBase64String($enveloped.Content) -eq [Convert]::ToBase64String($payload)) `
+    Assert-True -Condition ([Convert]::ToBase64String($enveloped.ContentInfo.Content) -eq [Convert]::ToBase64String($payload)) `
         -Message "the encrypted artifact decrypts to the original bytes"
     Assert-True -Condition (Test-PromoGestAes256CmsBytes -Bytes ([IO.File]::ReadAllBytes($cmsPath))) `
         -Message "the envelope uses AES-256-CBC (OID 2.16.840.1.101.3.4.1.42)"

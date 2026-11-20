@@ -89,6 +89,8 @@ Execute the complete verification checklist locally and in CI before declaring w
 
 0. **P1-01 Territorial Workpaper Integrity (documentation/data-reference changes):**
    - Run `python3 scripts/validate-jo44-reference-extracts.py` and `python3 scripts/validate-p1-01-working-crosswalk.py`.
+   - Run `python3 scripts/p1_01_decision_book.py` (read-only validation) and `python3 scripts/test_p1_01_decision_book.py`.
+   - Use `--init` only when the decision book does not exist; never delete or overwrite an existing reviewer workbook to recover from a failed initialization. Preserve its decisions and make an explicit reconciled copy.
    - These validators assert structural/provenance consistency and preserve unapproved states; they are not legal-source verification, practitioner sign-off, or import authorization.
 1. **Domain & Application Tests (`G1`, `G9`):**
    - Run `dotnet test tests/PromoGest.Domain.Tests` and `dotnet test tests/PromoGest.Application.Tests`.

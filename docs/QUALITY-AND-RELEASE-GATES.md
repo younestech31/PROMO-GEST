@@ -23,7 +23,13 @@
 
 ## 2. Current Gate Status Against the Audited Main Baseline
 
-**Current main:** `84408377c8de7a3995b82dfba55eda15ab2806dd`. [Main CI #992](https://github.com/younestech31/PROMO-GEST/actions/runs/44541533285) passed all three jobs on this exact SHA: Frontend (JO44, candidate-crosswalk and master-ledger validators, TypeScript/tests/build/static hosting), .NET 10 + PostgreSQL 18 least-privilege/integration/restore, and Windows publish/PowerShell. PR #141 merged the master-ledger validator into frontend CI; PR #140 merged the Vite wildcard-host correction. The ledger contains 1,541 unique candidate keys and JO44 assertion IDs, 1,431 proposed-clean rows and 110 practitioner-decision rows; all 1,541 sign-offs remain PENDING. Its automated validator proves structural checks and review-state invariants, not legal identity, full bilingual page-image verification, or practitioner acceptance. Current recorded scope includes 841 rows with JO44 French text-layer only and 27 with explicit JO44 Arabic spot-verification; other instrument checks are scoped separately. P1-01 remains In Progress / Pending; P1-02 remains Blocked; no commune import (`communesCount = 0`).
+**Current main:** `04654851ed7ac790dc600833aa2e8d2d4f6e3b3a`. [Main CI #1006](https://github.com/younestech31/PROMO-GEST/actions/runs/44646491919) passed all three required jobs on this exact SHA: frontend validators/build/static hosting, .NET 10 + PostgreSQL 18 least-privilege/integration/restore, and Windows publish/PowerShell. PR #146 merged the separate 1,541-row practitioner decision book, four source-backed prompts, 51-row JO44 bilingual image-reading supplement and 21-row Ouargla/Touggourt comparison. The frontend job reported 1,541 decision records checked and six decision-book tests passed. These checks prove workpaper consistency only; they do not prove legal correctness, row-by-row bilingual coverage, effective date or practitioner sign-off.
+
+**P1-01 work-status distinction:** the decision book has 1,540 `PENDING` work statuses and one `NEEDS_EVIDENCE` row (`W30-R007` El Borma); the master ledger still has all 1,541 practitioner sign-offs `PENDING`. The proposed El Borma code remains `3021`, with no `valid_from` or review outcome. No commune data are imported; `communesCount = 0`; P1-01 remains In Progress / Pending and P1-02 remains Blocked.
+
+
+
+**Previous audited baseline (19 November 2026):** Main CI #992 passed on SHA `84408377c8de7a3995b82dfba55eda15ab2806dd`; this is retained as historical evidence and is superseded by the 20 November main checkpoint above.
 
 
 

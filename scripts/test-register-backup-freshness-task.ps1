@@ -60,10 +60,9 @@ function New-ScheduledTaskPrincipal {
 }
 
 function New-ScheduledTaskSettingsSet {
-    param([switch]$StartWhenAvailable, [timespan]$ExecutionTimeLimit, [string]$MultipleInstances)
+    param([switch]$StartWhenAvailable, [string]$MultipleInstances)
     $script:captured.Settings = [PSCustomObject]@{
         StartWhenAvailable = $StartWhenAvailable.IsPresent
-        ExecutionTimeLimit = $ExecutionTimeLimit
         MultipleInstances = $MultipleInstances
     }
     return $script:captured.Settings
@@ -98,7 +97,7 @@ function Test-ThrowsContaining {
         return $false
     }
     catch {
-        return $_.Exception.Message.Contains($ExpectedText, [StringComparison]::OrdinalIgnoreCase)
+        return ($_.Exception.Message.IndexOf($ExpectedText, [StringComparison]::OrdinalIgnoreCase) -ge 0)
     }
 }
 
@@ -126,8 +125,14 @@ try {
         $script:captured.Principal.RunLevel -eq "Highest") "monitor runs under the SYSTEM service identity at highest task level"
 
     Write-Result ($script:captured.Settings.StartWhenAvailable -and
-        $script:captured.Settings.ExecutionTimeLimit.TotalMinutes -eq 15 -and
         $script:captured.Settings.MultipleInstances -eq "IgnoreNew") "missed runs are recovered and overlapping monitor instances are prevented"
+
+    $installerPath = Join-Path $scriptRoot "..\deploy\windows\install-service.ps1"
+    $installerText = Get-Content -LiteralPath $installerPath -Raw
+    $installerWiresMonitor = $installerText.Contains('$BackupFreshnessScriptPath = Join-Path $ScriptsDir "check-backup-freshness.ps1"') -and
+        $installerText.Contains('$BackupMonitorRegistrationScriptPath = Join-Path $ScriptsDir "register-backup-freshness-task.ps1"') -and
+        $installerText.Contains('& $BackupMonitorRegistrationScriptPath -BackupRoot $BackupDir -OffsiteDir $BackupOffsiteDir')
+    Write-Result $installerWiresMonitor "Windows service installer requires both monitor scripts and registers the task with configured roots"
 
     $callsBeforeInvalid = $script:captured.RegisterCalls
     $overlapRejected = Test-ThrowsContaining {

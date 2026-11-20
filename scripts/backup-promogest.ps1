@@ -166,15 +166,19 @@ function New-PromoGestCertificateFromBytes {
     $loaderType = [type]::GetType(
         "System.Security.Cryptography.X509Certificates.X509CertificateLoader, System.Security.Cryptography",
         $false)
+    # An unbound [string] parameter becomes an empty string, so presence of the
+    # switch determines whether the container is a PFX (needs a password) or a bare certificate.
+    $hasPassword = $PSBoundParameters.ContainsKey("Password")
+
     if ($null -ne $loaderType) {
-        if ($null -ne $Password) {
+        if ($hasPassword) {
             return [System.Security.Cryptography.X509Certificates.X509CertificateLoader]::LoadPkcs12($Bytes, $Password, $KeyFlags)
         }
         return [System.Security.Cryptography.X509Certificates.X509CertificateLoader]::LoadCertificate($Bytes)
     }
 
     $certificate = New-Object System.Security.Cryptography.X509Certificates.X509Certificate2
-    if ($null -ne $Password) {
+    if ($hasPassword) {
         $certificate.Import($Bytes, $Password, $KeyFlags)
     }
     else {

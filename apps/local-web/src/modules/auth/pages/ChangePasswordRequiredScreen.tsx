@@ -12,6 +12,7 @@ interface ChangePasswordRequiredScreenProps {
   username: string;
   onCompleted: () => void;
   onLogout: () => void;
+  logoutFailed: boolean;
 }
 
 export function ChangePasswordRequiredScreen({
@@ -20,6 +21,7 @@ export function ChangePasswordRequiredScreen({
   username,
   onCompleted,
   onLogout,
+  logoutFailed,
 }: ChangePasswordRequiredScreenProps) {
   const t = getTranslations(language);
   const [currentPassword, setCurrentPassword] = useState('');
@@ -105,6 +107,12 @@ export function ChangePasswordRequiredScreen({
           <p className="mb-6 rounded-md border border-amber-200 bg-amber-50 px-4 py-3 text-sm leading-6 text-amber-950">
             {t.auth.passwordChangeRequiredDescription}
           </p>
+
+          {logoutFailed && (
+            <div role="alert" className="mb-5 rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">
+              {t.auth.logoutFailed}
+            </div>
+          )}
 
           {error && (
             <div role="alert" className="mb-5 rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">

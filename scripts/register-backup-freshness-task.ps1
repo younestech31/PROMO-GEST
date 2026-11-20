@@ -67,7 +67,7 @@ $arguments = '-NoProfile -NonInteractive -ExecutionPolicy Bypass -File "{0}" -Ba
 $action = New-ScheduledTaskAction -Execute "PowerShell.exe" -Argument $arguments
 $trigger = New-ScheduledTaskTrigger -Daily -At ([datetime]::Today.AddHours(6))
 $principal = New-ScheduledTaskPrincipal -UserId "SYSTEM" -LogonType ServiceAccount -RunLevel Highest
-$settings = New-ScheduledTaskSettingsSet -StartWhenAvailable -ExecutionTimeLimit ([timespan]::FromMinutes(15)) -MultipleInstances IgnoreNew
+$settings = New-ScheduledTaskSettingsSet -StartWhenAvailable -MultipleInstances IgnoreNew
 
 Register-ScheduledTask -TaskName "PromoGestBackupFreshnessMonitor" -Action $action -Trigger $trigger -Principal $principal -Settings $settings -Description "Daily PROMO GEST backup freshness and SHA-256 sidecar verification." -Force | Out-Null
 

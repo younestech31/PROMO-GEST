@@ -25,7 +25,7 @@ Set-StrictMode -Version Latest
 
 $scriptRoot = Split-Path -Parent $MyInvocation.MyCommand.Path
 
-function Import-PromoGestFunction {
+function Get-PromoGestFunctionSource {
     param(
         [Parameter(Mandatory = $true)][string]$Path,
         [Parameter(Mandatory = $true)][string[]]$Name
@@ -47,28 +47,32 @@ function Import-PromoGestFunction {
                 $Name -contains $node.Name
             }, $true))
 
-    foreach ($required in $Name) {
-        if (-not ($definitions | Where-Object { $_.Name -eq $required })) {
+    $blocks = foreach ($required in $Name) {
+        $definition = $definitions | Where-Object { $_.Name -eq $required } | Select-Object -First 1
+        if ($null -eq $definition) {
             throw "Function '$required' was not found in $Path."
         }
-        . ([ScriptBlock]::Create(($definitions | Where-Object { $_.Name -eq $required }).Extent.Text))
+        $definition.Extent.Text
     }
+
+    return ($blocks -join "`n`n")
 }
 
-Import-PromoGestFunction -Path (Join-Path $scriptRoot "backup-promogest.ps1") -Name @(
-    "Assert-PromoGestRecipientCertificate",
-    "Protect-PromoGestFileToCms",
-    "New-PromoGestTarGzFromDirectory",
-    "Get-PromoGestSha256Hex",
-    "Write-PromoGestSha256Sidecar",
-    "Test-PromoGestSha256Sidecar",
-    "Get-PromoGestVolumeIdentity",
-    "Invoke-PromoGestBackupRetention"
-)
-Import-PromoGestFunction -Path (Join-Path $scriptRoot "restore-promogest.ps1") -Name @(
-    "Test-PromoGestArtifactSidecar",
-    "Expand-PromoGestBackupArtifact"
-)
+# Dot-sourced at script scope so the lifted functions stay visible for the whole run.
+. ([ScriptBlock]::Create((Get-PromoGestFunctionSource -Path (Join-Path $scriptRoot "backup-promogest.ps1") -Name @(
+            "Assert-PromoGestRecipientCertificate",
+            "Protect-PromoGestFileToCms",
+            "New-PromoGestTarGzFromDirectory",
+            "Get-PromoGestSha256Hex",
+            "Write-PromoGestSha256Sidecar",
+            "Test-PromoGestSha256Sidecar",
+            "Get-PromoGestVolumeIdentity",
+            "Invoke-PromoGestBackupRetention"
+        ))))
+. ([ScriptBlock]::Create((Get-PromoGestFunctionSource -Path (Join-Path $scriptRoot "restore-promogest.ps1") -Name @(
+            "Test-PromoGestArtifactSidecar",
+            "Expand-PromoGestBackupArtifact"
+        ))))
 
 $workRoot = Join-Path ([IO.Path]::GetTempPath()) ("promogest-crypto-test-" + [Guid]::NewGuid().ToString("N"))
 New-Item -ItemType Directory -Path $workRoot -ErrorAction Stop | Out-Null
@@ -225,6 +229,11 @@ try {
     Assert-True -Condition ($rootIdentity -eq $childIdentity) -Message "paths on the same volume share one identity"
 
     Write-Host "All $checks Windows backup-contract checks passed."
+}
+catch {
+    # Surface the failure as a CI annotation; the job log is not always retrievable.
+    Write-Host "::error title=Windows backup contract::$($_.Exception.Message)"
+    throw
 }
 finally {
     if (Test-Path -LiteralPath $workRoot) {

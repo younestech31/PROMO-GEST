@@ -317,6 +317,28 @@ public sealed class AuthService
         if (string.IsNullOrWhiteSpace(request.CurrentPassword) ||
             !_passwordHasher.VerifyPassword(request.CurrentPassword, user.PasswordHash))
         {
+            var lockedNow = user.RecordFailedLogin(nowUtc);
+            await _auditWriter.WriteAsync(
+                AuditLog.Record(
+                    nowUtc,
+                    user.Id,
+                    user.Username,
+                    lockedNow ? "AUTH_LOCKOUT" : "AUTH_PASSWORD_CHANGE_FAILED",
+                    AuditSeverity.Security,
+                    "User",
+                    user.Id.ToString(),
+                    lockedNow
+                        ? $"Account '{user.Username}' locked for {User.LockoutDuration.TotalMinutes} minutes after {User.MaxFailedLoginAttempts} failed temporary-password change attempts."
+                        : "A failed current-password verification was recorded during mandatory password change.",
+                    null,
+                    metadata.IpAddress,
+                    metadata.UserAgent),
+                ct);
+            if (lockedNow)
+            {
+                await _userRepository.RevokeAllUserSessionsAsync(user.Id, nowUtc, ct);
+            }
+            await _userRepository.SaveChangesAsync(ct);
             throw new UnauthorizedDomainException("PASSWORD_CURRENT_INVALID", "The current password is incorrect.");
         }
 

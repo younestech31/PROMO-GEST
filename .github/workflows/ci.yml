@@ -49,12 +49,27 @@ jobs:
           cache: npm
       - name: Install locked dependencies
         run: npm ci --no-audit --no-fund
+      - name: Audit production dependencies for known vulnerabilities
+        run: npm audit --omit=dev --audit-level=high
       - name: TypeScript strict check
         run: npm run lint
       - name: Frontend unit tests
         run: npm test
       - name: Build frontend
         run: npm run build
+      - name: Enforce entry bundle budget
+        shell: bash
+        run: |
+          set -euo pipefail
+          entry="$(find apps/local-web/dist/assets -maxdepth 1 -name 'index-*.js' -print -quit)"
+          test -n "$entry"
+          size="$(stat -c '%s' "$entry")"
+          limit=$((500 * 1024))
+          echo "Entry bundle: $entry ($size bytes, budget $limit)"
+          if (( size >= limit )); then
+            echo "Entry bundle exceeds the 500 KiB budget; keep heavy modules behind a dynamic import." >&2
+            exit 1
+          fi
       - name: Verify frontend production output
         shell: bash
         run: |
@@ -125,6 +140,8 @@ jobs:
           dotnet-version: "10.0.x"
       - name: Restore solution
         run: dotnet restore src/PromoGest.sln
+      - name: Report vulnerable NuGet packages
+        run: dotnet list src/PromoGest.sln package --vulnerable --include-transitive
       - name: Build solution with warnings as errors
         run: dotnet build src/PromoGest.sln --configuration Release --no-restore
       - name: Publish Linux runtime artifact

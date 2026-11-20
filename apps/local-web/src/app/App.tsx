@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { lazy, Suspense, useCallback, useEffect, useRef, useState } from 'react';
 import type { MutableRefObject } from 'react';
 import type { AppLanguage, HealthStatusResponse, ProjectDto, SessionResponse } from '../types/erp';
 import { ApiError, apiClient } from '../core/api/apiClient';
@@ -24,26 +24,57 @@ import { getDocumentPresentation, isViteDevelopmentBuild, isVitePreviewRuntime }
 import { ErpShellLayout } from './ErpShellLayout';
 import { ChangePasswordModal, ChangePasswordRequiredScreen, LoginScreen, authApi } from '../modules/auth';
 import { FirstRunSetupWizard, setupApi } from '../modules/setup';
-import {
-  OverviewView,
-  OrganizationProfileView,
-  TerritorialReferenceView,
-  EmployeesPlannedView,
-  canManageOrganizationProfile,
-} from '../modules/module-a-organization';
-import {
-  ProjectsAccessView,
-  ProjectWorkspaceView,
-  ProjectSwitcherModal,
-} from '../modules/module-b-projects';
-import { PartiesDirectoryView } from '../modules/module-d-customers-parties';
-import {
-  UsersManagementView,
-  AuditLogView,
-  SystemDiagnosticsView,
-} from '../modules/technical-admin';
-import { ReportsWorkspaceView } from '../modules/module-l-reporting';
+import { canManageOrganizationProfile } from '../core/permissions/permissionPolicy';
 import { ConfirmDialog, ErrorBanner } from '../shared/components/StateViews';
+import { ErrorBoundary } from '../shared/components/ErrorBoundary';
+
+// Route-level code splitting: the authenticated workspace modules are only downloaded when the
+// operator actually opens them, so the login screen and the shell stay small on LAN hardware.
+// Each module barrel is imported at most once; components of the same module share its chunk.
+const OverviewView = lazy(() =>
+  import('../modules/module-a-organization').then((module) => ({ default: module.OverviewView }))
+);
+const OrganizationProfileView = lazy(() =>
+  import('../modules/module-a-organization').then((module) => ({ default: module.OrganizationProfileView }))
+);
+const TerritorialReferenceView = lazy(() =>
+  import('../modules/module-a-organization').then((module) => ({ default: module.TerritorialReferenceView }))
+);
+const EmployeesPlannedView = lazy(() =>
+  import('../modules/module-a-organization').then((module) => ({ default: module.EmployeesPlannedView }))
+);
+const ProjectsAccessView = lazy(() =>
+  import('../modules/module-b-projects').then((module) => ({ default: module.ProjectsAccessView }))
+);
+const ProjectWorkspaceView = lazy(() =>
+  import('../modules/module-b-projects').then((module) => ({ default: module.ProjectWorkspaceView }))
+);
+const ProjectSwitcherModal = lazy(() =>
+  import('../modules/module-b-projects').then((module) => ({ default: module.ProjectSwitcherModal }))
+);
+const PartiesDirectoryView = lazy(() =>
+  import('../modules/module-d-customers-parties').then((module) => ({ default: module.PartiesDirectoryView }))
+);
+const UsersManagementView = lazy(() =>
+  import('../modules/technical-admin').then((module) => ({ default: module.UsersManagementView }))
+);
+const AuditLogView = lazy(() =>
+  import('../modules/technical-admin').then((module) => ({ default: module.AuditLogView }))
+);
+const SystemDiagnosticsView = lazy(() =>
+  import('../modules/technical-admin').then((module) => ({ default: module.SystemDiagnosticsView }))
+);
+const ReportsWorkspaceView = lazy(() =>
+  import('../modules/module-l-reporting').then((module) => ({ default: module.ReportsWorkspaceView }))
+);
+
+function WorkspaceFallback({ language }: { language: AppLanguage }) {
+  return (
+    <div role="status" aria-live="polite" className="rounded-lg border border-slate-200 bg-white px-4 py-6 text-sm text-slate-600">
+      {getTranslations(language).loadingWorkspace}
+    </div>
+  );
+}
 
 type PendingNavigation =
   | { kind: 'route'; route: AppRouteState; fromHistory?: boolean }
@@ -598,14 +629,16 @@ export function App() {
 
   if (!setupState?.isInitialized) {
     return (
-      <FirstRunSetupWizard
-        language={language}
-        onLanguageChange={handleLanguageChange}
-        requiresBootstrapToken={setupState?.requiresBootstrapToken}
-        isPreviewMode={isPreviewMode}
-        onPreviewLogin={handlePreviewLogin}
-        onInitialized={handleInitialized}
-      />
+      <ErrorBoundary language={language} scope="first-run-setup">
+        <FirstRunSetupWizard
+          language={language}
+          onLanguageChange={handleLanguageChange}
+          requiresBootstrapToken={setupState?.requiresBootstrapToken}
+          isPreviewMode={isPreviewMode}
+          onPreviewLogin={handlePreviewLogin}
+          onInitialized={handleInitialized}
+        />
+      </ErrorBoundary>
     );
   }
 
@@ -682,23 +715,27 @@ export function App() {
         />
       )}
 
-      <AppContentRouter
-        session={session}
-        language={language}
-        health={health}
-        projects={projects}
-        activeRoute={activeRoute}
-        onNavigate={requestNavigation}
-        onOpenSwitcher={() => setSwitcherOpen(true)}
-        onProjectVerified={handleProjectVerified}
-        onProjectVerificationFailed={handleProjectVerificationFailed}
-        onDirtyChange={handleDirtyChange}
-        onOrganizationUpdated={(organization) =>
-          setSession((current) => (current ? { ...current, organization } : current))
-        }
-        saveActionRef={saveActionRef}
-        discardActionRef={discardActionRef}
-      />
+      <ErrorBoundary language={language} scope={`route:${activeRoute.kind}`} key={JSON.stringify(activeRoute)}>
+        <Suspense fallback={<WorkspaceFallback language={language} />}>
+          <AppContentRouter
+            session={session}
+            language={language}
+            health={health}
+            projects={projects}
+            activeRoute={activeRoute}
+            onNavigate={requestNavigation}
+            onOpenSwitcher={() => setSwitcherOpen(true)}
+            onProjectVerified={handleProjectVerified}
+            onProjectVerificationFailed={handleProjectVerificationFailed}
+            onDirtyChange={handleDirtyChange}
+            onOrganizationUpdated={(organization) =>
+              setSession((current) => (current ? { ...current, organization } : current))
+            }
+            saveActionRef={saveActionRef}
+            discardActionRef={discardActionRef}
+          />
+        </Suspense>
+      </ErrorBoundary>
 
       {changePasswordOpen && (
         <ChangePasswordModal
@@ -714,22 +751,24 @@ export function App() {
         />
       )}
 
-      <ProjectSwitcherModal
-        open={switcherOpen}
-        language={language}
-        currentProjectId={activeRoute.kind === 'project' ? activeRoute.projectId : null}
-        authorizedProjects={projects}
-        preferences={loadProjectNavigationPreferences(session.user.id)}
-        onSelectProject={(project) => {
-          setSwitcherOpen(false);
-          requestNavigation({ kind: 'project', projectId: project.id, section: 'overview' });
-        }}
-        onBrowseDirectory={() => {
-          setSwitcherOpen(false);
-          requestNavigation({ kind: 'org', section: 'projects' });
-        }}
-        onClose={() => setSwitcherOpen(false)}
-      />
+      <Suspense fallback={null}>
+        <ProjectSwitcherModal
+          open={switcherOpen}
+          language={language}
+          currentProjectId={activeRoute.kind === 'project' ? activeRoute.projectId : null}
+          authorizedProjects={projects}
+          preferences={loadProjectNavigationPreferences(session.user.id)}
+          onSelectProject={(project) => {
+            setSwitcherOpen(false);
+            requestNavigation({ kind: 'project', projectId: project.id, section: 'overview' });
+          }}
+          onBrowseDirectory={() => {
+            setSwitcherOpen(false);
+            requestNavigation({ kind: 'org', section: 'projects' });
+          }}
+          onClose={() => setSwitcherOpen(false)}
+        />
+      </Suspense>
 
       <ConfirmDialog
         open={navigationGuardOpen}

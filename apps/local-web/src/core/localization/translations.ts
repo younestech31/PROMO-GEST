@@ -6,6 +6,11 @@ export interface TranslationBundle {
   languageArabic: string;
   languageFrench: string;
   operationTemporarilyUnavailable: string;
+  loadingWorkspace: string;
+  unexpectedErrorTitle: string;
+  unexpectedErrorDescription: string;
+  unexpectedErrorRetry: string;
+  unexpectedErrorReload: string;
   setup: {
     eyebrow: string;
     title: string;
@@ -243,6 +248,11 @@ const AR: TranslationBundle = {
   languageArabic: 'العربية',
   languageFrench: 'Français',
   operationTemporarilyUnavailable: 'تعذّر إتمام العملية حالياً. يرجى المحاولة مجدداً.',
+  loadingWorkspace: 'جارٍ تحميل مساحة العمل...',
+  unexpectedErrorTitle: 'حدث خطأ غير متوقع في هذه الشاشة',
+  unexpectedErrorDescription: 'تعذّر عرض هذا الجزء من الواجهة. يمكنك إعادة المحاولة، أو إعادة تحميل التطبيق. لم تُفقد البيانات المحفوظة على الخادم.',
+  unexpectedErrorRetry: 'إعادة المحاولة',
+  unexpectedErrorReload: 'إعادة تحميل التطبيق',
   setup: {
     eyebrow: 'التثبيت الأولي للنظام المحلي',
     title: 'تهيئة مؤسسة الترقية العقارية',
@@ -482,6 +492,11 @@ const FR: TranslationBundle = {
   languageArabic: 'العربية',
   languageFrench: 'Français',
   operationTemporarilyUnavailable: "Opération impossible pour le moment. Veuillez réessayer.",
+  loadingWorkspace: "Chargement de l'espace de travail...",
+  unexpectedErrorTitle: "Une erreur inattendue s'est produite dans cet écran",
+  unexpectedErrorDescription: "Cette partie de l'interface n'a pas pu être affichée. Réessayez ou rechargez l'application. Les données enregistrées sur le serveur ne sont pas perdues.",
+  unexpectedErrorRetry: "Réessayer",
+  unexpectedErrorReload: "Recharger l'application",
   setup: {
     eyebrow: 'Installation initiale locale',
     title: 'Initialisation de l\'entreprise immobilière',

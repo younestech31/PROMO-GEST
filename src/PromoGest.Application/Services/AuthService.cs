@@ -1,6 +1,7 @@
 using PromoGest.Application.Interfaces;
 using PromoGest.Application.Validators;
 using PromoGest.Contracts.Auth;
+using PromoGest.Contracts.Users;
 using PromoGest.Domain.Entities;
 using PromoGest.Domain.Enums;
 using PromoGest.Domain.Exceptions;

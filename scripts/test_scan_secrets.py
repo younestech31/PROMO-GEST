@@ -39,7 +39,9 @@ class DetectionTests(unittest.TestCase):
         self.assertIn("aws-access-key-id", self.findings(f"aws_access_key_id = {example_key}"))
 
     def test_detects_private_key_block(self) -> None:
-        self.assertIn("private-key-block", self.findings("-----BEGIN RSA PRIVATE KEY-----"))
+        # Assembled at runtime so this file never contains a real key header.
+        header = "-" * 5 + "BEGIN RSA PRIVATE KEY" + "-" * 5
+        self.assertIn("private-key-block", self.findings(header))
 
     def test_detects_json_web_token(self) -> None:
         token = (
@@ -50,15 +52,17 @@ class DetectionTests(unittest.TestCase):
         self.assertIn("json-web-token", self.findings(f"Authorization: Bearer {token}"))
 
     def test_detects_connection_string_password(self) -> None:
+        value = "S3cr3t" + "!Value9"
         self.assertIn(
             "connection-string-password",
-            self.findings("Host=db;Database=promogest;Username=app;Password=S3cr3t!Value9"),
+            self.findings(f"Host=db;Database=promogest;Username=app;Password={value}"),
         )
 
     def test_detects_quoted_secret_assignment(self) -> None:
+        value = "9f8a7b6c" + "5d4e3f2a1b0c"
         self.assertIn(
             "generic-assignment",
-            self.findings('client_secret: "9f8a7b6c5d4e3f2a1b0c"'),
+            self.findings(f'client_secret: "{value}"'),
         )
 
 
@@ -80,7 +84,8 @@ class PlaceholderTests(unittest.TestCase):
                 self.assertEqual([], scanner.scan(sample, scanner.RULES))
 
     def test_placeholder_detection_rejects_real_values(self) -> None:
-        for value in ("9f8a7b6c5d4e3f2a", "Tr0ub4dor&3xample", "A1b2C3d4E5f6G7h8"):
+        values = ("9f8a7b6c" + "5d4e3f2a", "Tr0ub4dor" + "&3xample", "A1b2C3d4" + "E5f6G7h8")
+        for value in values:
             with self.subTest(value=value):
                 self.assertFalse(scanner.is_ignorable(value))
 

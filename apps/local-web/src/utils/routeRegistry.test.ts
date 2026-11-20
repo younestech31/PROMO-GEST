@@ -28,6 +28,8 @@ function makeUser(overrides: Partial<AuthenticatedUser> = {}): AuthenticatedUser
     roles: ['COMMERCIAL_MANAGER'],
     permissions: ['projects.read', 'customers.read'],
     lastLoginAtUtc: null,
+    mustChangePasswordAtNextLogin: false,
+    passwordChangeRequiredUntilUtc: null,
     ...overrides,
   };
 }

@@ -65,6 +65,11 @@ export interface LoginRequest {
   password: string;
 }
 
+export interface ChangePasswordRequest {
+  currentPassword: string;
+  newPassword: string;
+}
+
 export interface AuthenticatedUser {
   id: string;
   username: string;
@@ -77,6 +82,8 @@ export interface AuthenticatedUser {
   roles: string[];
   permissions: string[];
   lastLoginAtUtc: string | null;
+  mustChangePasswordAtNextLogin: boolean;
+  passwordChangeRequiredUntilUtc: string | null;
 }
 
 export interface OrganizationSummary {
@@ -146,6 +153,8 @@ export interface UserDto {
   lastLoginAtUtc: string | null;
   createdAtUtc: string;
   roleCodes: string[];
+  mustChangePasswordAtNextLogin: boolean;
+  passwordChangeRequiredUntilUtc: string | null;
 }
 
 export interface CreateEmployeeRequest {

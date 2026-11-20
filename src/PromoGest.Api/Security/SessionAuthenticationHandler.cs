@@ -25,7 +25,8 @@ public static class SessionClaimsFactory
             new(ClaimTypes.NameIdentifier, session.User.Id.ToString()),
             new(ClaimTypes.Name, session.User.Username),
             new(ClaimTypes.Email, session.User.Email),
-            new("is_system_admin", session.User.IsSystemAdministrator ? "true" : "false")
+            new("is_system_admin", session.User.IsSystemAdministrator ? "true" : "false"),
+            new("must_change_password", session.User.MustChangePasswordAtNextLogin ? "true" : "false")
         };
 
         foreach (var role in session.User.Roles)

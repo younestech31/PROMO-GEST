@@ -22,7 +22,9 @@ public sealed record UserDto(
     DateTimeOffset? LockoutEndUtc,
     DateTimeOffset? LastLoginAtUtc,
     DateTimeOffset CreatedAtUtc,
-    IReadOnlyList<string> RoleCodes);
+    IReadOnlyList<string> RoleCodes,
+    bool MustChangePasswordAtNextLogin,
+    DateTimeOffset? PasswordChangeRequiredUntilUtc);
 
 public sealed record CreateEmployeeRequest(
     string Username,
@@ -43,3 +45,5 @@ public sealed record UpdateEmployeeRequest(
 public sealed record SetUserStatusRequest(bool IsActive);
 
 public sealed record ResetUserPasswordRequest(string NewPassword);
+
+public sealed record ChangePasswordRequest(string CurrentPassword, string NewPassword);

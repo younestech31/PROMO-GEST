@@ -16,6 +16,7 @@ import type {
   AssignProjectMemberRequest,
   AuditLogDto,
   CreateEmployeeRequest,
+  ChangePasswordRequest,
   CreateProjectRequest,
   CreateBuildingRequest,
   CreateBuildingFloorRequest,
@@ -303,6 +304,12 @@ export const apiClient = {
   logout: () => requestJson<void>('/api/auth/logout', { method: 'POST' }),
 
   getSession: () => requestJson<SessionResponse>('/api/auth/me', { method: 'GET' }),
+
+  changePassword: (payload: ChangePasswordRequest) =>
+    requestJson<void>('/api/auth/change-password', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    }),
 
   updateOrganizationProfile: (payload: UpdateOrganizationProfileRequest) =>
     requestJson<SessionResponse['organization']>('/api/organization', {

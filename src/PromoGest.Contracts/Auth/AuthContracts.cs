@@ -15,7 +15,9 @@ public sealed record AuthenticatedUserResponse(
     string PreferredLanguage,
     IReadOnlyList<string> Roles,
     IReadOnlyList<string> Permissions,
-    DateTimeOffset? LastLoginAtUtc);
+    DateTimeOffset? LastLoginAtUtc,
+    bool MustChangePasswordAtNextLogin,
+    DateTimeOffset? PasswordChangeRequiredUntilUtc);
 
 public sealed record OrganizationSummaryResponse(
     Guid Id,

@@ -52,6 +52,7 @@ canonical AS (
         customer_id,
         project_id,
         party_id,
+        normalized_display_name,
         CASE
             WHEN length(digits) = 10 AND left(digits, 1) = '0'
                 THEN '213' || substr(digits, 2)
@@ -62,16 +63,13 @@ canonical AS (
 collisions AS (
     SELECT
         project_id,
+        normalized_display_name,
         canonical_phone,
         COUNT(*) AS customer_count,
         ARRAY_AGG(customer_id::text ORDER BY customer_id) AS customer_ids,
         ARRAY_AGG(party_id::text ORDER BY customer_id) AS party_ids
     FROM canonical
-    GROUP BY project_id, canonical_phone, (
-        SELECT party.normalized_display_name
-        FROM parties AS party
-        WHERE party.id = canonical.party_id
-    )
+    GROUP BY project_id, normalized_display_name, canonical_phone
     HAVING COUNT(*) > 1
 )
 SELECT

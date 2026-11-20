@@ -168,10 +168,7 @@ with sync_playwright() as pw:
     expect(employee_page.locator('#login-username')).to_have_count(0)
     assert not employee_errors, 'Temporary-password browser flow reported an uncaught application error'
 
-    evidence.update({
-        'A05': 'temporary session sanitized; deep-link reload served SPA; business API 403 PASSWORD_CHANGE_REQUIRED; rotation 204; old cookie replay 401; personal password login 200',
-    })
-    (out/'result.json').write_text(json.dumps(evidence, indent=2) + '\n')
+    a05_evidence = 'temporary session sanitized; deep-link reload served SPA; business API 403 PASSWORD_CHANGE_REQUIRED; rotation 204; old cookie replay 401; personal password login 200'
     employee_ctx.close()
     replay_ctx.dispose()
     if device == 'mobile':
@@ -203,6 +200,7 @@ with sync_playwright() as pw:
                     commit=os.environ['GITHUB_SHA'], run=os.environ['GITHUB_RUN_ID'],
                     A01='201; anonymous login handoff; duplicate 409; counts org/user/admin-role 1/1/1; explicit login 200',
                     A04='unconfirmed logout retained session; retry 204; current and prior session 401; protected route returned to login',
+                    A05=a05_evidence,
                     mode='automated real-browser; not manual acceptance')
     (out/'result.json').write_text(json.dumps(evidence, indent=2)+'\n')
     print(json.dumps(evidence))

@@ -2,7 +2,7 @@
 
 All 12 functional ERP domains required by PROMO GEST, mapped strictly using the 6-state taxonomy against actual inspected code, controllers, EF configurations, and tests.
 
-**Last verified code-bearing main baseline:** `0a3bbadb7269989531adb4b5ace8e990e00cf055`; [CI #1038](https://github.com/younestech31/PROMO-GEST/actions/runs/44733222758) passed all three required jobs on this exact SHA. PR #158 changes documentation only.
+**Last verified code-bearing main baseline:** `2089f48a99268a81226023c912fbb5f0902a2a12` (PR #174 merge, following PR #172 at `22f7e071cbe2a3df96b911cff41e10ea6f834665` / [CI #1090](https://github.com/younestech31/PROMO-GEST/actions/runs/44793566535)); [CI run 44796363470](https://github.com/younestech31/PROMO-GEST/actions/runs/44796363470) covers this exact SHA.
 **Last ASP.NET Core API/Application runtime source:** `b41d34aae03e1549ca1963a23d92643ff91bf393` (PR #87). **EF/schema source:** `53c50fbc0db801b9298ec731cfc44f2d4d58ff7f` (PR #59). PRs #140–#158 do not change runtime/schema capability; PRs #155 and #157 add bounded administrative-reference historical evidence and source-role documentation; PR #158 synchronizes baseline anchors only.
 **Delivery boundary:** Phase 1 remains IN_PROGRESS; Phases 2–5 remain PLANNED. P1-01 is In Progress / Pending; P1-02 Blocked; no commune records loaded (`communesCount = 0`). Manual RTL/LTR browser acceptance remains pending. Decision-book statuses are 1,540 PENDING + one NEEDS_EVIDENCE; all 1,541 master-ledger practitioner sign-offs remain PENDING. PR #155 adds 26 W41 row readings and four collision controls, but does not upgrade any ERP module state or establish legal approval.
 

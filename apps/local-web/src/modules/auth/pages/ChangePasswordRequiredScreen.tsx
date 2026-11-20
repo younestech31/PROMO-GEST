@@ -3,7 +3,7 @@ import { KeyRound, ShieldCheck, LogOut } from 'lucide-react';
 import type { AppLanguage } from '@/types/erp';
 import { ApiConnectionError, ApiError, apiClient } from '@/core/api/apiClient';
 import { getTranslations, translateApiError } from '@/core/localization/translations';
-import { checkPasswordStrength, PASSWORD_MAX_LENGTH } from '@/shared/utils/validation';
+import { checkPasswordStrength } from '@/shared/utils/validation';
 import { FormField, inputBaseClass } from '@/shared/components/FormField';
 
 interface ChangePasswordRequiredScreenProps {
@@ -35,17 +35,13 @@ export function ChangePasswordRequiredScreen({
     setError(null);
 
     if (!currentPassword) {
-      setError(language === 'ar' ? 'يرجى إدخال كلمة المرور المؤقتة الحالية.' : 'Saisissez le mot de passe temporaire actuel.');
+      setError(t.auth.passwordCurrentRequired);
       return;
     }
 
     const strength = checkPasswordStrength(newPassword);
     if (!strength.maxLength) {
-      setError(
-        language === 'ar'
-          ? `كلمة المرور يجب ألا تتجاوز ${PASSWORD_MAX_LENGTH} حرفاً.`
-          : `Le mot de passe ne doit pas dépasser ${PASSWORD_MAX_LENGTH} caractères.`
-      );
+      setError(t.auth.passwordTooLong);
       return;
     }
     if (!strength.valid) {
@@ -53,11 +49,7 @@ export function ChangePasswordRequiredScreen({
       return;
     }
     if (newPassword !== confirmPassword) {
-      setError(
-        language === 'ar'
-          ? 'تأكيد كلمة المرور الجديدة غير مطابق.'
-          : 'La confirmation du nouveau mot de passe ne correspond pas.'
-      );
+      setError(t.auth.passwordMismatch);
       return;
     }
 
@@ -71,7 +63,7 @@ export function ChangePasswordRequiredScreen({
       } else if (err instanceof ApiError) {
         setError(translateApiError(err.code, err.message, language));
       } else {
-        setError(language === 'ar' ? 'تعذر تغيير كلمة المرور.' : 'Impossible de modifier le mot de passe.');
+        setError(t.auth.passwordChangeFailed);
       }
     } finally {
       setSubmitting(false);

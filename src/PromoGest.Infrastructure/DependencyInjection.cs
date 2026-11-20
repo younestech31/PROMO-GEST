@@ -32,6 +32,20 @@ public static class DependencyInjection
         var storageRoot = configuration["Storage:RootDirectory"] ?? Path.Combine(AppContext.BaseDirectory, "storage");
         services.AddSingleton(new LocalStorageOptions { RootDirectory = storageRoot });
         services.AddSingleton<IClock, SystemClock>();
+
+        // Absolute lifetime, idle timeout and touch interval are all server-enforced. They are
+        // clamped to safe ranges here so a mistyped configuration cannot silently disable the
+        // idle lock, and an inconsistent combination fails at startup instead of at first request.
+        var sessionPolicy = new SessionPolicy(
+            AbsoluteLifetime: TimeSpan.FromHours(Math.Clamp(configuration.GetValue("Security:SessionAbsoluteLifetimeHours", 12), 1, 72)),
+            IdleTimeout: TimeSpan.FromMinutes(Math.Clamp(configuration.GetValue("Security:SessionIdleTimeoutMinutes", 30), 5, 480)),
+            TouchInterval: TimeSpan.FromMinutes(Math.Clamp(configuration.GetValue("Security:SessionTouchIntervalMinutes", 1), 1, 30)));
+        sessionPolicy.EnsureConsistent();
+        services.AddSingleton(sessionPolicy);
+
+        var temporaryPasswordLifetimeHours = Math.Clamp(
+            configuration.GetValue("Security:TemporaryPasswordLifetimeHours", 24), 1, 168);
+        services.AddSingleton(new PasswordLifecyclePolicy(TimeSpan.FromHours(temporaryPasswordLifetimeHours)));
         services.AddSingleton<IPasswordHasher, Pbkdf2PasswordHasher>();
         services.AddSingleton<ISessionTokenGenerator, CryptoSessionTokenGenerator>();
         services.AddSingleton<LocalFileStorageService>();

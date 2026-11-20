@@ -218,6 +218,12 @@ public sealed class UserSession
     public bool IsValid(DateTimeOffset nowUtc)
         => !IsRevoked && ExpiresAtUtc > nowUtc;
 
+    public bool IsValid(DateTimeOffset nowUtc, TimeSpan idleTimeout)
+        => IsValid(nowUtc) && nowUtc - LastSeenAtUtc < idleTimeout;
+
+    public bool IsIdleExpired(DateTimeOffset nowUtc, TimeSpan idleTimeout)
+        => !IsRevoked && ExpiresAtUtc > nowUtc && nowUtc - LastSeenAtUtc >= idleTimeout;
+
     public void Touch(DateTimeOffset nowUtc)
     {
         LastSeenAtUtc = nowUtc;

@@ -91,7 +91,10 @@ public sealed class AdminRecoveryService
                 ?? throw new NotFoundDomainException("SYSTEM_ADMIN_NOT_FOUND", "Single System Administrator account was not found.");
 
             var passwordHash = _passwordHasher.HashPassword(newPassword);
-            admin.ResetPassword(passwordHash, nowUtc);
+            // Local console recovery is already root-equivalent: the operator holds physical access to
+            // the host and the database. Keep the issued password usable and require a voluntary
+            // rotation after login instead of a deadline that would silently invalidate it.
+            admin.ResetPasswordFromLocalConsole(passwordHash, nowUtc);
             await _userRepository.RevokeAllUserSessionsAsync(admin.Id, nowUtc, innerCt);
             username = admin.Username;
 
@@ -104,7 +107,7 @@ public sealed class AdminRecoveryService
                     AuditSeverity.Security,
                     "User",
                     admin.Id.ToString(),
-                    $"System Administrator '{admin.Username}' password recovered and active sessions revoked via local server console by OS operator '{localOperator}'.",
+                    $"System Administrator '{admin.Username}' password recovered and active sessions revoked via local server console by OS operator '{localOperator}'. The operator must rotate it after signing in.",
                     null,
                     "127.0.0.1",
                     "PromoGest.LocalConsoleRecovery"),

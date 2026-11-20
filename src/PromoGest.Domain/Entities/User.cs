@@ -8,7 +8,16 @@ public sealed partial class User : BaseEntity
 {
     public const int MaxFailedLoginAttempts = 5;
     public static readonly TimeSpan LockoutDuration = TimeSpan.FromMinutes(15);
+
+    /// <summary>
+    /// Default deadline for the forced rotation of an issued temporary password.
+    /// Installations may override it through <c>Security:TemporaryPasswordLifetimeHours</c>;
+    /// the value is bounded by <see cref="MinimumTemporaryPasswordLifetime"/> and
+    /// <see cref="MaximumTemporaryPasswordLifetime"/>.
+    /// </summary>
     public static readonly TimeSpan TemporaryPasswordLifetime = TimeSpan.FromHours(24);
+    public static readonly TimeSpan MinimumTemporaryPasswordLifetime = TimeSpan.FromHours(1);
+    public static readonly TimeSpan MaximumTemporaryPasswordLifetime = TimeSpan.FromDays(7);
 
     private readonly List<UserRole> _userRoles = new();
     private readonly List<ProjectMember> _projectMemberships = new();
@@ -194,31 +203,42 @@ public sealed partial class User : BaseEntity
     }
 
     public void RequirePasswordChange(DateTimeOffset nowUtc)
+        => RequirePasswordChange(nowUtc, TemporaryPasswordLifetime);
+
+    public void RequirePasswordChange(DateTimeOffset nowUtc, TimeSpan lifetime)
     {
+        EnsureTemporaryPasswordLifetime(lifetime);
         MustChangePasswordAtNextLogin = true;
-        PasswordChangeRequiredUntilUtc = nowUtc.Add(TemporaryPasswordLifetime);
+        PasswordChangeRequiredUntilUtc = nowUtc.Add(lifetime);
         SecurityStamp = Guid.NewGuid();
         Touch(nowUtc);
     }
 
     public void ResetPassword(string newPasswordHash, DateTimeOffset nowUtc)
+        => ResetPassword(newPasswordHash, nowUtc, TemporaryPasswordLifetime);
+
+    public void ResetPassword(string newPasswordHash, DateTimeOffset nowUtc, TimeSpan lifetime)
     {
-        if (string.IsNullOrWhiteSpace(newPasswordHash))
-            throw new DomainException("USER_PASSWORD_HASH_REQUIRED", "Password hash is required.");
+        EnsureTemporaryPasswordLifetime(lifetime);
+        EnsurePasswordHash(newPasswordHash);
 
         PasswordHash = newPasswordHash;
         FailedLoginAttempts = 0;
         LockoutEndUtc = null;
         MustChangePasswordAtNextLogin = true;
-        PasswordChangeRequiredUntilUtc = nowUtc.Add(TemporaryPasswordLifetime);
+        PasswordChangeRequiredUntilUtc = nowUtc.Add(lifetime);
         SecurityStamp = Guid.NewGuid();
         Touch(nowUtc);
     }
 
-    public void ChangePassword(string newPasswordHash, DateTimeOffset nowUtc)
+    /// <summary>
+    /// Recovery performed from the local server console. Physical access to the host is already
+    /// root-equivalent, so the issued password stays usable; the operator is instructed to rotate
+    /// it through the normal authenticated change-password flow after the next login.
+    /// </summary>
+    public void ResetPasswordFromLocalConsole(string newPasswordHash, DateTimeOffset nowUtc)
     {
-        if (string.IsNullOrWhiteSpace(newPasswordHash))
-            throw new DomainException("USER_PASSWORD_HASH_REQUIRED", "Password hash is required.");
+        EnsurePasswordHash(newPasswordHash);
 
         PasswordHash = newPasswordHash;
         FailedLoginAttempts = 0;
@@ -227,6 +247,33 @@ public sealed partial class User : BaseEntity
         PasswordChangeRequiredUntilUtc = null;
         SecurityStamp = Guid.NewGuid();
         Touch(nowUtc);
+    }
+
+    public void ChangePassword(string newPasswordHash, DateTimeOffset nowUtc)
+    {
+        EnsurePasswordHash(newPasswordHash);
+
+        PasswordHash = newPasswordHash;
+        FailedLoginAttempts = 0;
+        LockoutEndUtc = null;
+        MustChangePasswordAtNextLogin = false;
+        PasswordChangeRequiredUntilUtc = null;
+        SecurityStamp = Guid.NewGuid();
+        Touch(nowUtc);
+    }
+
+    private static void EnsurePasswordHash(string newPasswordHash)
+    {
+        if (string.IsNullOrWhiteSpace(newPasswordHash))
+            throw new DomainException("USER_PASSWORD_HASH_REQUIRED", "Password hash is required.");
+    }
+
+    private static void EnsureTemporaryPasswordLifetime(TimeSpan lifetime)
+    {
+        if (lifetime < MinimumTemporaryPasswordLifetime || lifetime > MaximumTemporaryPasswordLifetime)
+            throw new DomainException(
+                "PASSWORD_CHANGE_LIFETIME_INVALID",
+                $"Temporary password lifetime must be between {MinimumTemporaryPasswordLifetime.TotalHours:0} and {MaximumTemporaryPasswordLifetime.TotalHours:0} hours.");
     }
 
     [GeneratedRegex(@"^[a-zA-Z0-9._-]{3,64}$")]

@@ -1535,7 +1535,9 @@ public sealed class ApplicationSecurityAndFoundationTests
         // Login works with recovered password
         var newLogin = await authSvc.LoginAsync(new LoginRequest("sysadmin", "RecoveredPass#2026"), meta);
         Assert.Equal("sysadmin", newLogin.Session.User.Username);
-        Assert.True(newLogin.Session.User.MustChangePasswordAtNextLogin);
+        // Local console recovery keeps the issued password usable: the operator already holds
+        // root-equivalent access, and a hidden deadline would silently lock the account again.
+        Assert.False(newLogin.Session.User.MustChangePasswordAtNextLogin);
         await authSvc.ChangePasswordAsync(
             init.SystemAdminUserId,
             new ChangePasswordRequest("RecoveredPass#2026", "AdminPersonal#2026"),
@@ -1544,6 +1546,56 @@ public sealed class ApplicationSecurityAndFoundationTests
         Assert.False(fullyAuthenticated.Session.User.MustChangePasswordAtNextLogin);
         Assert.Contains(store.AuditLogs, a => a.EventType == "ADMIN_LOCAL_UNLOCK");
         Assert.Contains(store.AuditLogs, a => a.EventType == "ADMIN_LOCAL_PASSWORD_RECOVERY");
+    }
+
+    [Fact]
+    public async Task AuthService_AllowsVoluntaryPasswordChange_AndRevokesAllSessions()
+    {
+        var store = new InMemoryStore();
+        var clock = new FakeClock();
+        var hasher = new Pbkdf2PasswordHasher();
+        var tokenGen = new CryptoSessionTokenGenerator();
+        var setup = new SetupService(store, hasher, store, clock);
+        var authSvc = new AuthService(store, store, hasher, tokenGen, store, clock);
+        var meta = new RequestMetadata("127.0.0.1", "xUnit");
+
+        var init = await setup.InitializeAsync(ValidInitRequest(), meta);
+        var login = await authSvc.LoginAsync(new LoginRequest("sysadmin", "StrongPass123"), meta);
+        Assert.False(login.Session.User.MustChangePasswordAtNextLogin);
+
+        await authSvc.ChangePasswordAsync(
+            init.SystemAdminUserId,
+            new ChangePasswordRequest("StrongPass123", "VoluntaryPass#2026"),
+            meta);
+
+        Assert.Null(await authSvc.ValidateSessionAsync(login.OpaqueSessionToken));
+        Assert.Contains(store.AuditLogs, a => a.EventType == "USER_PASSWORD_CHANGED");
+
+        var relogin = await authSvc.LoginAsync(new LoginRequest("sysadmin", "VoluntaryPass#2026"), meta);
+        Assert.False(relogin.Session.User.MustChangePasswordAtNextLogin);
+    }
+
+    [Fact]
+    public async Task ValidateSession_RevokesIdleSession_AndAuditsTheReason()
+    {
+        var store = new InMemoryStore();
+        var clock = new FakeClock();
+        var hasher = new Pbkdf2PasswordHasher();
+        var tokenGen = new CryptoSessionTokenGenerator();
+        var setup = new SetupService(store, hasher, store, clock);
+        var authSvc = new AuthService(
+            store, store, hasher, tokenGen, store, clock,
+            new SessionPolicy(TimeSpan.FromHours(12), TimeSpan.FromMinutes(30), TimeSpan.FromMinutes(1)));
+        var meta = new RequestMetadata("127.0.0.1", "xUnit");
+
+        await setup.InitializeAsync(ValidInitRequest(), meta);
+        var login = await authSvc.LoginAsync(new LoginRequest("sysadmin", "StrongPass123"), meta);
+        Assert.NotNull(await authSvc.ValidateSessionAsync(login.OpaqueSessionToken));
+
+        clock.UtcNow = clock.UtcNow.AddMinutes(31);
+
+        Assert.Null(await authSvc.ValidateSessionAsync(login.OpaqueSessionToken));
+        Assert.Contains(store.AuditLogs, a => a.EventType == "AUTH_SESSION_IDLE_EXPIRED");
     }
 
     [Fact]

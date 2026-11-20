@@ -63,6 +63,14 @@ export interface TranslationBundle {
     changingPassword: string;
     passwordChangedNotice: string;
     temporaryPasswordExpired: string;
+    changePasswordAction: string;
+    changePasswordModalTitle: string;
+    changePasswordModalDescription: string;
+    changePasswordCancel: string;
+    passwordCurrentRequired: string;
+    passwordTooLong: string;
+    passwordMismatch: string;
+    passwordChangeFailed: string;
   };
   nav: {
     overview: string;
@@ -287,13 +295,21 @@ const AR: TranslationBundle = {
     retryLogout: 'إعادة المحاولة',
     passwordChangeRequiredTitle: 'يجب تغيير كلمة المرور المؤقتة',
     passwordChangeRequiredDescription: 'هذه كلمة مرور مؤقتة أنشأها مسؤول النظام. يجب تعيين كلمة مرور شخصية قبل الوصول إلى بيانات المؤسسة أو المشاريع. تنتهي صلاحيتها خلال 24 ساعة من إصدارها.',
-    currentPassword: 'كلمة المرور الحالية المؤقتة',
+    currentPassword: 'كلمة المرور الحالية',
     newPassword: 'كلمة المرور الشخصية الجديدة',
     confirmNewPassword: 'تأكيد كلمة المرور الجديدة',
     changePassword: 'تغيير كلمة المرور',
     changingPassword: 'جارٍ تحديث كلمة المرور...',
     passwordChangedNotice: 'تم تغيير كلمة المرور وإبطال الجلسات السابقة. سجّل الدخول مجدداً بكلمة المرور الجديدة.',
     temporaryPasswordExpired: 'انتهت صلاحية كلمة المرور المؤقتة. اطلب من مدير النظام إعادة تعيينها.',
+    changePasswordAction: 'تغيير كلمة المرور',
+    changePasswordModalTitle: 'تغيير كلمة المرور',
+    changePasswordModalDescription: 'أدخل كلمة المرور الحالية ثم كلمة مرور شخصية جديدة. بعد الحفظ تُغلق كل الجلسات وتعود إلى شاشة الدخول لتسجيل الدخول بكلمة المرور الجديدة.',
+    changePasswordCancel: 'إلغاء',
+    passwordCurrentRequired: 'يرجى إدخال كلمة المرور الحالية.',
+    passwordTooLong: 'كلمة المرور تتجاوز الحد الأقصى المسموح به.',
+    passwordMismatch: 'تأكيد كلمة المرور الجديدة غير مطابق.',
+    passwordChangeFailed: 'تعذر تغيير كلمة المرور.',
   },
   nav: {
     overview: 'مساحة المؤسسة',
@@ -518,13 +534,21 @@ const FR: TranslationBundle = {
     retryLogout: 'Réessayer',
     passwordChangeRequiredTitle: 'Changement du mot de passe temporaire obligatoire',
     passwordChangeRequiredDescription: 'Ce mot de passe temporaire a été défini par un administrateur. Définissez un mot de passe personnel avant d’accéder aux données de l’organisation ou des projets. Il expire 24 heures après son émission.',
-    currentPassword: 'Mot de passe temporaire actuel',
+    currentPassword: 'Mot de passe actuel',
     newPassword: 'Nouveau mot de passe personnel',
     confirmNewPassword: 'Confirmer le nouveau mot de passe',
     changePassword: 'Changer le mot de passe',
     changingPassword: 'Mise à jour du mot de passe...',
     passwordChangedNotice: 'Le mot de passe a été modifié et les anciennes sessions révoquées. Connectez-vous à nouveau avec votre nouveau mot de passe.',
     temporaryPasswordExpired: 'Le mot de passe temporaire a expiré. Demandez une nouvelle réinitialisation à l’Administrateur Système.',
+    changePasswordAction: 'Changer le mot de passe',
+    changePasswordModalTitle: 'Changer le mot de passe',
+    changePasswordModalDescription: 'Saisissez votre mot de passe actuel puis un nouveau mot de passe personnel. Après validation, toutes les sessions sont fermées et vous revenez à l’écran de connexion.',
+    changePasswordCancel: 'Annuler',
+    passwordCurrentRequired: 'Saisissez votre mot de passe actuel.',
+    passwordTooLong: 'Le mot de passe dépasse la longueur maximale autorisée.',
+    passwordMismatch: 'La confirmation du nouveau mot de passe ne correspond pas.',
+    passwordChangeFailed: 'Impossible de modifier le mot de passe.',
   },
   nav: {
     overview: 'Espace Organisation',

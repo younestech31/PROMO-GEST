@@ -16,9 +16,6 @@ public sealed record AuthLoginResult(
 
 public sealed class AuthService
 {
-    public static readonly TimeSpan SessionLifetime = TimeSpan.FromHours(12);
-    public static readonly TimeSpan SessionTouchInterval = TimeSpan.FromMinutes(1);
-
     // Precomputed PBKDF2-SHA512 hash (310,000 iterations) used strictly for constant-time dummy verification
     // when an account does not exist or is locked/inactive, preventing timing-based username enumeration.
     private const string DummyTimingResistanceHash =
@@ -30,6 +27,7 @@ public sealed class AuthService
     private readonly ISessionTokenGenerator _tokenGenerator;
     private readonly IAuditWriter _auditWriter;
     private readonly IClock _clock;
+    private readonly SessionPolicy _sessionPolicy;
 
     public AuthService(
         IUserRepository userRepository,
@@ -37,7 +35,8 @@ public sealed class AuthService
         IPasswordHasher passwordHasher,
         ISessionTokenGenerator tokenGenerator,
         IAuditWriter auditWriter,
-        IClock clock)
+        IClock clock,
+        SessionPolicy? sessionPolicy = null)
     {
         _userRepository = userRepository;
         _installationRepository = installationRepository;
@@ -45,6 +44,7 @@ public sealed class AuthService
         _tokenGenerator = tokenGenerator;
         _auditWriter = auditWriter;
         _clock = clock;
+        _sessionPolicy = sessionPolicy ?? SessionPolicy.Default;
     }
 
     public async Task<AuthLoginResult> LoginAsync(
@@ -196,7 +196,7 @@ public sealed class AuthService
 
         var opaqueToken = _tokenGenerator.GenerateOpaqueToken();
         var tokenHash = _tokenGenerator.HashToken(opaqueToken);
-        var expiresAtUtc = nowUtc.Add(SessionLifetime);
+        var expiresAtUtc = nowUtc.Add(_sessionPolicy.AbsoluteLifetime);
         if (user.MustChangePasswordAtNextLogin &&
             user.PasswordChangeRequiredUntilUtc is { } passwordChangeDeadline &&
             passwordChangeDeadline < expiresAtUtc)
@@ -246,6 +246,27 @@ public sealed class AuthService
         if (session is null || !session.IsValid(nowUtc))
             return null;
 
+        if (session.IsIdleExpired(nowUtc, _sessionPolicy.IdleTimeout))
+        {
+            session.Revoke(nowUtc);
+            await _auditWriter.WriteAsync(
+                AuditLog.Record(
+                    nowUtc,
+                    session.UserId,
+                    null,
+                    "AUTH_SESSION_IDLE_EXPIRED",
+                    AuditSeverity.Security,
+                    "UserSession",
+                    session.Id.ToString(),
+                    $"Session was revoked after {_sessionPolicy.IdleTimeout.TotalMinutes:0} minutes without activity.",
+                    null,
+                    null,
+                    null),
+                ct);
+            await _userRepository.SaveChangesAsync(ct);
+            return null;
+        }
+
         var user = await _userRepository.GetByIdWithRolesAsync(session.UserId, ct);
         if (user is null || !user.IsActive || user.SecurityStamp != session.SecurityStamp)
         {
@@ -281,7 +302,7 @@ public sealed class AuthService
         if (org is null || !org.IsInitialized)
             return null;
 
-        if (nowUtc - session.LastSeenAtUtc >= SessionTouchInterval)
+        if (nowUtc - session.LastSeenAtUtc >= _sessionPolicy.TouchInterval)
         {
             session.Touch(nowUtc);
             await _userRepository.SaveChangesAsync(ct);
@@ -304,11 +325,11 @@ public sealed class AuthService
             throw new UnauthorizedDomainException("AUTH_INVALID_CREDENTIALS", "Invalid username or password.");
 
         var nowUtc = _clock.UtcNow;
-        if (!user.MustChangePasswordAtNextLogin)
-            throw new ConflictDomainException("PASSWORD_CHANGE_NOT_REQUIRED", "This account does not require a temporary-password change.");
+        var isForcedRotation = user.MustChangePasswordAtNextLogin;
 
-        if (!user.PasswordChangeRequiredUntilUtc.HasValue ||
-            user.PasswordChangeRequiredUntilUtc.Value <= nowUtc)
+        if (isForcedRotation &&
+            (!user.PasswordChangeRequiredUntilUtc.HasValue ||
+             user.PasswordChangeRequiredUntilUtc.Value <= nowUtc))
         {
             await _userRepository.RevokeAllUserSessionsAsync(user.Id, nowUtc, ct);
             await _auditWriter.WriteAsync(
@@ -343,8 +364,8 @@ public sealed class AuthService
                     "User",
                     user.Id.ToString(),
                     lockedNow
-                        ? $"Account '{user.Username}' locked for {User.LockoutDuration.TotalMinutes} minutes after {User.MaxFailedLoginAttempts} failed temporary-password change attempts."
-                        : "A failed current-password verification was recorded during mandatory password change.",
+                        ? $"Account '{user.Username}' locked for {User.LockoutDuration.TotalMinutes} minutes after {User.MaxFailedLoginAttempts} failed password change attempts."
+                        : "A failed current-password verification was recorded during a password change.",
                     null,
                     metadata.IpAddress,
                     metadata.UserAgent),
@@ -359,7 +380,7 @@ public sealed class AuthService
 
         PasswordPolicyValidator.EnsureValid(request.NewPassword);
         if (_passwordHasher.VerifyPassword(request.NewPassword, user.PasswordHash))
-            throw new DomainException("PASSWORD_REUSE_NOT_ALLOWED", "Choose a password different from the temporary password.");
+            throw new DomainException("PASSWORD_REUSE_NOT_ALLOWED", "Choose a password different from the current password.");
 
         user.ChangePassword(_passwordHasher.HashPassword(request.NewPassword), nowUtc);
         await _userRepository.RevokeAllUserSessionsAsync(user.Id, nowUtc, ct);
@@ -373,7 +394,9 @@ public sealed class AuthService
                 AuditSeverity.Security,
                 "User",
                 user.Id.ToString(),
-                "User completed the mandatory temporary-password change; all sessions were revoked.",
+                isForcedRotation
+                    ? "User completed the mandatory temporary-password change; all sessions were revoked."
+                    : "User changed their own password; all sessions were revoked.",
                 null,
                 metadata.IpAddress,
                 metadata.UserAgent),

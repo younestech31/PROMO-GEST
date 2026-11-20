@@ -15,19 +15,22 @@ public sealed class UserManagementService
     private readonly IPasswordHasher _passwordHasher;
     private readonly IAuditWriter _auditWriter;
     private readonly IClock _clock;
+    private readonly PasswordLifecyclePolicy _passwordPolicy;
 
     public UserManagementService(
         IUserRepository userRepository,
         IInstallationRepository installationRepository,
         IPasswordHasher passwordHasher,
         IAuditWriter auditWriter,
-        IClock clock)
+        IClock clock,
+        PasswordLifecyclePolicy? passwordPolicy = null)
     {
         _userRepository = userRepository;
         _installationRepository = installationRepository;
         _passwordHasher = passwordHasher;
         _auditWriter = auditWriter;
         _clock = clock;
+        _passwordPolicy = passwordPolicy ?? PasswordLifecyclePolicy.Default;
     }
 
     public async Task<IReadOnlyList<RoleDto>> ListRolesAsync(
@@ -95,7 +98,7 @@ public sealed class UserManagementService
             passwordHash,
             request.PreferredLanguage,
             nowUtc);
-        employee.RequirePasswordChange(nowUtc);
+        employee.RequirePasswordChange(nowUtc, _passwordPolicy.TemporaryPasswordLifetime);
 
         await _userRepository.AddUserAsync(employee, ct);
         await _userRepository.ReplaceUserRolesAsync(
@@ -263,7 +266,7 @@ public sealed class UserManagementService
         }
 
         var nowUtc = _clock.UtcNow;
-        target.ResetPassword(_passwordHasher.HashPassword(newPassword), nowUtc);
+        target.ResetPassword(_passwordHasher.HashPassword(newPassword), nowUtc, _passwordPolicy.TemporaryPasswordLifetime);
         await _userRepository.RevokeAllUserSessionsAsync(target.Id, nowUtc, ct);
 
         await _auditWriter.WriteAsync(

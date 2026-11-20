@@ -10,6 +10,7 @@ import {
   FileText,
   FolderKanban,
   HardHat,
+  KeyRound,
   Layers3,
   LayoutDashboard,
   LogOut,
@@ -54,6 +55,7 @@ interface ErpShellLayoutProps {
   onNavigate: (route: AppRouteState) => void;
   onOpenSwitcher: () => void;
   onLanguageChange: (lang: AppLanguage) => void;
+  onChangePassword: () => void;
   onLogout: () => void;
   children: ReactNode;
 }
@@ -97,6 +99,7 @@ export function ErpShellLayout({
   onNavigate,
   onOpenSwitcher,
   onLanguageChange,
+  onChangePassword,
   onLogout,
   children,
 }: ErpShellLayoutProps) {
@@ -272,8 +275,16 @@ export function ErpShellLayout({
         </div>
         <button
           type="button"
-          onClick={onLogout}
+          onClick={onChangePassword}
           className="mt-3 w-full inline-flex items-center justify-center gap-2 rounded-md border border-slate-700 bg-slate-800/80 px-3 py-1.5 text-xs font-medium text-slate-200 hover:bg-slate-800 hover:text-white transition-colors focus-visible:outline-2 focus-visible:outline-teal-400"
+        >
+          <KeyRound className="w-3.5 h-3.5 shrink-0" aria-hidden="true" />
+          <span>{t.auth.changePasswordAction}</span>
+        </button>
+        <button
+          type="button"
+          onClick={onLogout}
+          className="mt-2 w-full inline-flex items-center justify-center gap-2 rounded-md border border-slate-700 bg-slate-800/80 px-3 py-1.5 text-xs font-medium text-slate-200 hover:bg-slate-800 hover:text-white transition-colors focus-visible:outline-2 focus-visible:outline-teal-400"
         >
           <LogOut className="w-3.5 h-3.5 shrink-0" aria-hidden="true" />
           <span>{t.auth.signOut}</span>

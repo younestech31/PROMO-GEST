@@ -280,7 +280,7 @@ if (args.Contains("--reset-admin-password", StringComparer.OrdinalIgnoreCase))
         }
 
         var username = await recovery.ResetSystemAdministratorPasswordAsync(newPassword, Environment.UserName);
-        Console.WriteLine($"Password recovered and active sessions revoked for System Administrator '{username}'.");
+        Console.WriteLine($"Password recovered and active sessions revoked for System Administrator '{username}'. Sign in and change this password from the user menu.");
     }
     catch (Exception ex)
     {

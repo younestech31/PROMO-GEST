@@ -22,7 +22,7 @@ import {
 import { useUnsavedGuard } from '../shared/hooks/useUnsavedGuard';
 import { getDocumentPresentation, isViteDevelopmentBuild, isVitePreviewRuntime } from '../shared/utils/appRuntime';
 import { ErpShellLayout } from './ErpShellLayout';
-import { ChangePasswordRequiredScreen, LoginScreen, authApi } from '../modules/auth';
+import { ChangePasswordModal, ChangePasswordRequiredScreen, LoginScreen, authApi } from '../modules/auth';
 import { FirstRunSetupWizard, setupApi } from '../modules/setup';
 import {
   OverviewView,
@@ -230,6 +230,7 @@ export function App() {
   const [unauthenticatedLanguage, setUnauthenticatedLanguage] = useState<AppLanguage>('ar');
   const [setupCompletedNotice, setSetupCompletedNotice] = useState(false);
   const [passwordChangedNotice, setPasswordChangedNotice] = useState(false);
+  const [changePasswordOpen, setChangePasswordOpen] = useState(false);
   const [loadingInitial, setLoadingInitial] = useState(true);
   const [projects, setProjects] = useState<ProjectDto[]>([]);
   const [activeRoute, setActiveRoute] = useState<AppRouteState>(() =>
@@ -670,6 +671,7 @@ export function App() {
       onNavigate={requestNavigation}
       onOpenSwitcher={() => setSwitcherOpen(true)}
       onLanguageChange={handleLanguageChange}
+      onChangePassword={() => setChangePasswordOpen(true)}
       onLogout={requestLogout}
     >
       {logoutFailed && (
@@ -697,6 +699,20 @@ export function App() {
         saveActionRef={saveActionRef}
         discardActionRef={discardActionRef}
       />
+
+      {changePasswordOpen && (
+        <ChangePasswordModal
+          language={language}
+          onClose={() => setChangePasswordOpen(false)}
+          onCompleted={() => {
+            setChangePasswordOpen(false);
+            setSession(null);
+            setProjects([]);
+            setSetupCompletedNotice(false);
+            setPasswordChangedNotice(true);
+          }}
+        />
+      )}
 
       <ProjectSwitcherModal
         open={switcherOpen}

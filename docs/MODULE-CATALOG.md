@@ -33,14 +33,14 @@ All 12 functional ERP domains required by PROMO GEST, mapped strictly using the 
 
 ---
 
-## 2. Frontend platform and module ownership — PRs #81/#82/#90/#140 (merged; code-bearing baseline CI #1038 passed)
+## 2. Frontend platform and module ownership — PRs #81/#82/#90/#140 (merged; historical CI #1038, current main CI #1109 passed)
 
 - Canonical frontend entry points: `core/api/apiClient.ts`, `core/api/csrf.ts`, `core/permissions/permissionPolicy.ts`, `core/modules/registry.ts`, `core/modules/moduleCodes.ts`, `core/modules/routeTypes.ts`, `app/routeRegistry.ts`, and `core/localization/translations.ts`.
 - Legacy `services/apiClient.ts`, CSRF utilities, `utils/permissions.ts`, `utils/moduleCatalog.ts`, `utils/navigation.ts`, `utils/workspaceGuards.ts`, and `localization/translations.ts` are explicit compatibility adapters, not alternate implementations.
 - Active screen implementations now live in owning `modules/` directories for A–E, K, L, auth, setup and technical administration; Login and first-run setup have module-owned page implementations. Former `features/`, root `components/`, `layouts/` and duplicate utility paths are compatibility facades.
 - Reusable visual components are owned by `shared/components/`; active application/module code imports that surface. F–J remain planned business capabilities, with display metadata under module `presentation/workflows.ts` rather than `api/`.
 - Architecture regression tests verify module entry points, import parsing for static/type-only/re-export/side-effect/dynamic imports, public-index-only peer dependencies, acyclic module graph, no active imports from legacy `features/`, unique shared-component/API/CSRF/localization implementations, planned endpoint rejection, and the F–J presentation/API boundary.
-- Main CI #1038 passed all three jobs on exact code-bearing baseline SHA `0a3bbadb`; manual Arabic RTL / French LTR desktop/mobile browser acceptance and real dirty-form interaction evidence have not been performed. Navigation remains `IMPLEMENTED_NOT_VERIFIED` for manual UX acceptance.
+- Historical main CI #1038 passed all three jobs on its exact baseline SHA `0a3bbadb`; current main CI #1109 also passes all three required jobs on `875f4a1`. Manual Arabic RTL / French LTR desktop/mobile browser acceptance and real dirty-form interaction evidence have not been performed. Navigation remains `IMPLEMENTED_NOT_VERIFIED` for manual UX acceptance.
 
 ## 3. Detailed Module Specifications (A–L)
 

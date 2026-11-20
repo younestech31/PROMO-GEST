@@ -13,6 +13,7 @@ interface LoginScreenProps {
   onLanguageChange: (lang: AppLanguage) => void;
   organizationName: string | null;
   setupCompleted?: boolean;
+  passwordChangedNotice?: boolean;
   onLoggedIn: (session: SessionResponse) => void;
   isPreviewMode: boolean;
   onPreviewLogin: () => Promise<void>;
@@ -23,6 +24,7 @@ export function LoginScreen({
   onLanguageChange,
   organizationName,
   setupCompleted = false,
+  passwordChangedNotice = false,
   onLoggedIn,
   isPreviewMode,
   onPreviewLogin,
@@ -101,6 +103,15 @@ export function LoginScreen({
               className="mb-5 rounded-md border border-teal-200 bg-teal-50 px-3.5 py-2.5 text-xs font-medium text-teal-900"
             >
               {t.auth.setupCompletedNotice}
+            </div>
+          )}
+
+          {passwordChangedNotice && (
+            <div
+              role="status"
+              className="mb-5 rounded-md border border-teal-200 bg-teal-50 px-3.5 py-2.5 text-xs font-medium text-teal-900"
+            >
+              {t.auth.passwordChangedNotice}
             </div>
           )}
 

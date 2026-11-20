@@ -77,8 +77,8 @@ namespace PromoGest.Infrastructure.Persistence.Migrations
                             'Cannot canonicalize customer phones: % project/name/phone collision group(s) would be created. No customer rows were changed. Run scripts/p1-11-phone-normalization-preflight.sql and reconcile each group manually before retrying.',
                             v_collision_group_count;
                     END IF;
-                END
-                $$;
+                END;
+                $;
 
                 WITH digitized AS (
                     SELECT
@@ -153,8 +153,8 @@ namespace PromoGest.Infrastructure.Persistence.Migrations
                             'Cannot restore legacy customer phone keys: % project/name/phone collision group(s) would be created. No customer rows were changed.',
                             v_collision_group_count;
                     END IF;
-                END
-                $$;
+                END;
+                $;
 
                 WITH digitized AS (
                     SELECT

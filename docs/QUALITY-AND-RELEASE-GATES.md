@@ -23,9 +23,11 @@
 
 ## 2. Current Gate Status Against the Audited Main Baseline
 
-**Last verified code-bearing main baseline:** `0a3bbadb7269989531adb4b5ace8e990e00cf055`. [Main CI #1038](https://github.com/younestech31/PROMO-GEST/actions/runs/44733222758) passed all three required jobs on this exact SHA: frontend validators/build/static hosting, .NET 10 + PostgreSQL 18 least-privilege/integration/restore, and Windows publish/PowerShell. PR #158 is documentation-only and does not alter these executable baselines.
+**Last verified code-bearing main baseline:** `875f4a178f24d36a4d3fa8a6620a526c33a763c6`. [Main CI #1109](https://github.com/younestech31/PROMO-GEST/actions/runs/44805079826) and [CodeQL #25](https://github.com/younestech31/PROMO-GEST/actions/runs/44805079753) passed on this exact SHA: frontend validators/build/static hosting, .NET 10 + PostgreSQL 18 least-privilege/integration/restore, and Windows publish/PowerShell.
 
 **P1-01 work-status distinction:** the decision book has 1,540 `PENDING` work statuses and one `NEEDS_EVIDENCE` row (`W30-R007` El Borma); the master ledger still has all 1,541 practitioner sign-offs `PENDING`. The proposed El Borma code remains `3021`, with no `valid_from` or review outcome. No commune data are imported; `communesCount = 0`; P1-01 remains In Progress / Pending and P1-02 remains Blocked.
+
+**P1-18 authentication verification:** Done / Verified. PR #176 restores the temporary-password session on SPA reload without widening the temporary-session API allowlist. PR #177 adds test-only deadline-boundary/session-token and existing-user migration-upgrade coverage. PR-head CI #1108 and post-merge main CI #1109 passed 3/3; CodeQL #25 passed on the exact current main SHA. This automated result does not replace human Arabic RTL/French LTR user-management acceptance, which remains outstanding.
 
 
 
@@ -36,11 +38,11 @@
 **P1-14 preview-boundary correction (PR #140 merged):** PR #140 removed `0.0.0.0`, `::`, and `[::]` from the loopback-host allowlist and added regression tests proving these wildcard/unspecified bind addresses require the explicit external-preview opt-in. The listener remains loopback by default; external binding still requires explicit opt-in plus exact non-wildcard host and origin allowlists. This fixes the classification regression, but P1-14 remains In Review / Verification Blocked until the exact Google AI Studio preview hostname, browser origin and restrictive platform-ingress controls are independently accepted. Do not relax production API/authentication/CSRF controls; allowlists/CORS are not authentication.
 
 
-**Runtime/schema distinction:** PR #80 / D-014 changed ASP.NET Core application/API behavior and merged at `61bcf8b0a0b2e3967fa5b7add904afd9bc1b0da3`; it introduced no EF migration. The current EF/schema source remains PR #59 / `53c50fbc0db801b9298ec731cfc44f2d4d58ff7f`. PR #80 CI #707 and post-merge main CI #708 passed. PR #81 navigation and PR #82 module-boundary checks are also merged and their CI is green.
+**Runtime/schema distinction:** the latest ASP.NET Core API/Application runtime source is PR #163 / `711a05282869b8ebfe6965921045c9225dcecb17`; the latest password-lifecycle EF/schema source is PR #161 / `03d1288a391ba72e49faf2cf8aa82d604e1ddc6e`. PR #161 adds mandatory temporary-password columns/backfill; PR #163 adds voluntary rotation plus configurable session/credential lifetime rules. PR #176 is a SPA bootstrap fix; PR #177 is tests-only. PRs #80–#82 remain historical implementation evidence.
 
 **Outstanding manual and practitioner gates:** Arabic RTL / French LTR desktop/mobile workflows, budget value redaction/editor visibility, dirty-form Back/Forward/reload/tab-close and project switch/revocation remain unverified in a real browser. P0-A01 and P0-A04 remain `NOT_RUN` for manual first-run/second-initialization and logout/session-revocation. The full official 1,541-commune bilingual crosswalk and qualified review remain pending; Phase 1 stays `IN_PROGRESS` and Phase 2 remains blocked by dependencies.
 
-Run #795 detailed frontend/.NET/PostgreSQL test totals remain the last recorded individual test counts; Run #814 is the latest full CI evidence for the audited main snapshot. PRs #99–#103 are documentation-only and do not certify legal data, page-image review or practitioner acceptance.
+PR-head CI #1108 recorded Domain 42/42, Application 24/24 and PostgreSQL 18 Integration 35/35; post-merge main CI #1109 passed all three required jobs on exact main SHA `875f4a1`. CodeQL #25 passed on that same SHA. Historical runs below remain evidence for their earlier baselines only; none certifies legal data, page-image review or practitioner acceptance.
 
 Historical runs below are retained as evidence for earlier source baselines;
 

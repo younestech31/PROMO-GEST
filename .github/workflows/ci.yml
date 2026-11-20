@@ -25,6 +25,10 @@ jobs:
         run: python3 scripts/validate-p1-01-jo44-arabic-page-images.py
       - name: Verify reproducible practitioner review queue (not a seed)
         run: python3 scripts/prepare-p1-01-review.py
+      - name: Validate independent commune decision book (no sign-off)
+        run: |
+          python3 scripts/p1_01_decision_book.py
+          python3 scripts/test_p1_01_decision_book.py
       - uses: actions/setup-node@v7
         with:
           node-version: "22"

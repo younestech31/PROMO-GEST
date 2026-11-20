@@ -92,7 +92,7 @@ Completed vs remaining visual/bilingual work:
 
 ## 5A. JO44/1985 original-table extraction progress — 18 November 2026
 
-- The repository now contains 26 French searchable-text rows for W31 Oran (printed p. 1068; PR #113 merged) and 52 for W06 Bejaia (printed pp. 1055–1056; PR #114 in review). Commune name, register code and administrative seat are stored as separate verbatim fields.
+- The repository now contains 26 French searchable-text rows for W31 Oran (printed p. 1067; PR #113 merged) and 52 for W06 Bejaia (printed pp. 1055–1056; PR #114 in review). Commune name, register code and administrative seat are stored as separate verbatim fields.
 - Combined bounded progress: 78/975 planning rows transcribed; 897 remain, subject to final national row-count reconciliation. These extracts are historical source assertions only, not a current legal register.
 - Neither W31 nor W06 table rows are page-image verified or Arabic-row-paired in these extraction passes. Source-image rendering returned `Cache miss`; the PDF checksum is re-used from the existing source inventory, not recalculated.
 - Candidate matching, code/parent/effective-date lineage, full intervening amendments and qualified practitioner adjudication remain open. W06 text-layer anomalies `Tirmzrit` and seat `T rouna` are preserved verbatim pending verification.

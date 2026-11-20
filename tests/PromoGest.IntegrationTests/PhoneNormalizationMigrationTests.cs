@@ -5,21 +5,15 @@ using Xunit;
 
 namespace PromoGest.IntegrationTests;
 
-public sealed class PhoneNormalizationMigrationTests : IClassFixture<PostgreSql18IntegrationFixture>
+public sealed partial class PostgresEndToEndTests
 {
-    private const string PreviousMigration = "20261116120000_EnforceProjectCustomerIdentityUniqueness";
+    private const string PreviousPhoneMigration = "20261116120000_EnforceProjectCustomerIdentityUniqueness";
     private const string PhoneNormalizationMigration = "20261121120000_CanonicalizeAlgerianProjectCustomerPhones";
-    private readonly PostgreSql18IntegrationFixture _fixture;
-
-    public PhoneNormalizationMigrationTests(PostgreSql18IntegrationFixture fixture)
-    {
-        _fixture = fixture;
-    }
 
     [Fact]
     public async Task PhoneNormalizationMigration_RewritesDerivedKeysAndDownRestoresLegacyKeys()
     {
-        var runtimeConnection = await _fixture.CreateIsolatedDatabaseConnectionStringAsync(PreviousMigration);
+        var runtimeConnection = await _fixture.CreateIsolatedDatabaseConnectionStringAsync(PreviousPhoneMigration);
         var migrationConnection = _fixture.GetMigrationConnectionString(runtimeConnection);
         var ids = await SeedProjectCustomerAsync(
             migrationConnection,
@@ -41,7 +35,7 @@ public sealed class PhoneNormalizationMigrationTests : IClassFixture<PostgreSql1
         Assert.Contains(PhoneNormalizationMigration, await db.Database.GetAppliedMigrationsAsync());
 
         // Down is a reversible re-derivation from the unchanged source Phone field.
-        await db.Database.MigrateAsync(PreviousMigration);
+        await db.Database.MigrateAsync(PreviousPhoneMigration);
         var restoredPhone = await ReadNormalizedPhoneAsync(migrationConnection, ids.CustomerId);
         var originalPhone = await ReadSourcePhoneAsync(migrationConnection, ids.CustomerId);
         Assert.Equal("0555123456", restoredPhone);
@@ -52,7 +46,7 @@ public sealed class PhoneNormalizationMigrationTests : IClassFixture<PostgreSql1
     [Fact]
     public async Task PhoneNormalizationMigration_FailsClosedOnNewCanonicalCollisionWithoutChangingRows()
     {
-        var runtimeConnection = await _fixture.CreateIsolatedDatabaseConnectionStringAsync(PreviousMigration);
+        var runtimeConnection = await _fixture.CreateIsolatedDatabaseConnectionStringAsync(PreviousPhoneMigration);
         var migrationConnection = _fixture.GetMigrationConnectionString(runtimeConnection);
         var first = await SeedProjectCustomerAsync(
             migrationConnection,

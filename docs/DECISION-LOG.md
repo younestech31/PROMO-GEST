@@ -1,9 +1,9 @@
 # PROMO GEST — Consolidated Decision Log & Architecture Decision Records (ADRs)
 
 **Document Role:** Single repository of architectural, design, and governance decisions for PROMO GEST.  
-**Current audit evidence anchor:** main `84408377c8de7a3995b82dfba55eda15ab2806dd`; [CI #992](https://github.com/younestech31/PROMO-GEST/actions/runs/44541533285) passed 3/3 jobs on exact main SHA.  
+**Current audit evidence anchor:** main `a306487d06068649bbffbc2b5ef2e05c4dcac102` (PR #155); [CI #1029](https://github.com/younestech31/PROMO-GEST/actions/runs/44728401646) passed all 3 required jobs on this exact merge SHA.  
 **Runtime/schema baseline:** ASP.NET Core API/Application runtime remains PR #87 / `b41d34aae03e1549ca1963a23d92643ff91bf393`; EF/schema remains PR #59 / `53c50fbc0db801b9298ec731cfc44f2d4d58ff7f`.  
-**Recent merged corrections:** PR #140 (`a2565e9...`) rejects wildcard Vite bind addresses as loopback; PR #141 (`7fbd3a455e9f36d1969d8921621aabb29f280e5d`) runs the P1-01 master-ledger structural validator in CI and clarifies evidence limits. Neither change alters the accepted ERP architecture, application data model, or legal approval status. The current P1-01 evidence branch adds a page-level locator for 29 Arabic JO44 page images and reconciles printed Wilaya counts, but explicitly does not claim row-level Arabic transcription or practitioner approval.  
+**Recent merged corrections:** PR #140 (`a2565e9...`) rejects wildcard Vite bind addresses as loopback; PR #141 adds the P1-01 master-ledger structural validator to frontend CI; PR #146 adds the 1,541-row practitioner decision book and bounded evidence; PRs #152–#154 add a disposable Phase 0 operator kit and repeat-setup helper; PR #155 adds 26 W41 bilingual historical row readings and four collision controls. These workpaper/operations updates do not alter ERP runtime, schema, module capability state, legal approval or practitioner sign-off. The W41 validator explicitly preserves Arabic/French printed-code discrepancies and image-reading limits.
 **Outstanding gates:** P1-01 qualified Algerian practitioner sign-off and complete source reconciliation; P1-14 exact preview host/origin/platform ingress; Arabic RTL / French LTR browser acceptance; P0-A01 and P0-A04 manual flows. No commune rows imported; `communesCount = 0`.
 
 ---

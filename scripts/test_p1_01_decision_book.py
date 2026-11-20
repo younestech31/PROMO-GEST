@@ -46,6 +46,31 @@ class DecisionBookTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, 'retain initial question'):
             validate(path, source)
 
+    def test_ouargla_touggourt_comparison(self):
+        comparison = indexed(DATA / 'P1-01-OUARGLA-TOUGGOURT-2019-2021.csv')
+        master = indexed(DATA / 'P1-01-MASTER-1541-RECONCILIATION-LEDGER.csv')
+        self.assertEqual(set(comparison), {k for k, m in master.items() if m['jo44_wilaya_code'] == '30'})
+        for article, count in [('34', 7), ('52 bis 6', 14)]:
+            self.assertEqual(sorted(int(r['jo78_item']) for r in comparison.values() if r['jo78_article'] == article),
+                             list(range(1, count + 1)))
+        differences = set()
+        for key, r in comparison.items():
+            m = master[key]
+            self.assertEqual((r['jo44_assertion_id'], r['jo44_code_fr'], r['jo79_wilaya'], r['jo79_code'], r['jo79_commune_fr']),
+                             (m['jo44_assertion_id'], m['jo44_register_code_verbatim'], m['jo79_2021_wilaya'],
+                              m['jo79_2021_code'], m['jo79_2021_commune_fr']))
+            self.assertEqual(r['jo78_commune_fr'].replace('’', "'"), r['jo79_commune_fr'].replace('’', "'"))
+            group = {'34': ('Ouargla', '30'), '52 bis 6': ('Touggourt', '55')}[r['jo78_article']]
+            self.assertEqual(r['jo78_list_name'], group[0])
+            self.assertEqual(r['jo79_fr_page'], {'30': '15', '55': '19'}[r['jo79_wilaya']])
+            if r['jo79_wilaya'] != group[1]:
+                differences.add(key)
+                self.assertEqual(r['comparison'], 'DIFFERENT_GROUP_REQUIRES_EVIDENCE')
+            else:
+                self.assertEqual(r['comparison'], 'SAME_GROUP_ONLY')
+        self.assertEqual(differences, {'W30-R007'})
+        self.assertEqual(comparison['W30-R007']['jo78_item'], '14')
+
     def test_failed_initialization_leaves_destination_absent(self):
         path = self.path.with_name('new.csv')
         bad_source = {k: v.copy() for k, v in self.source.items()}

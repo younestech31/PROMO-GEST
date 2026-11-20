@@ -2,13 +2,13 @@
 
 All 12 functional ERP domains required by PROMO GEST, mapped strictly using the 6-state taxonomy against actual inspected code, controllers, EF configurations, and tests.
 
-**Current main:** `34826b7d22857e5f7709ffc56f4d954425b68e42`; [CI #1034](https://github.com/younestech31/PROMO-GEST/actions/runs/44731226111) passed all three required jobs on this exact SHA.
+**Current main:** `0a3bbadb7269989531adb4b5ace8e990e00cf055`; [CI #1038](https://github.com/younestech31/PROMO-GEST/actions/runs/44733222758) passed all three required jobs on this exact SHA.
 **Last ASP.NET Core API/Application runtime source:** `b41d34aae03e1549ca1963a23d92643ff91bf393` (PR #87). **EF/schema source:** `53c50fbc0db801b9298ec731cfc44f2d4d58ff7f` (PR #59). PRs #140–#155 do not change runtime/schema capability; PR #155 adds bounded P1-01 historical evidence and CI validation only.
 **Delivery boundary:** Phase 1 remains IN_PROGRESS; Phases 2–5 remain PLANNED. P1-01 is In Progress / Pending; P1-02 Blocked; no commune records loaded (`communesCount = 0`). Manual RTL/LTR browser acceptance remains pending. Decision-book statuses are 1,540 PENDING + one NEEDS_EVIDENCE; all 1,541 master-ledger practitioner sign-offs remain PENDING. PR #155 adds 26 W41 row readings and four collision controls, but does not upgrade any ERP module state or establish legal approval.
 
 ---
 
-**Administrative reference delivery:** the server-owned bilingual 69-Wilaya catalogue remains implemented. The P1-01 master ledger now structurally links 1,541 candidate row keys to 1,541 JO44 historical assertion IDs and executes validation in CI (PR #141; current main CI #1034). PR #146 adds the decision book and bounded image-reading/temporal comparison workpapers; PR #155 adds a further bounded W41 reading set and collision controls. Neither changes module capability states. It records 1,431 proposed-clean rows and 110 explicit practitioner-decision rows; all sign-offs remain PENDING. Evidence scope does not establish full JO44 bilingual page-image review: 841 rows have French text-layer-only scope and 27 explicit JO44 Arabic spot-verification, with other register visual reviews separately scoped. The 75 candidate Arabic anomaly flags are routed to explicit review. PR #146 adds 51 bounded JO44 bilingual image-reading observations and the 21-row Ouargla/Touggourt compare; PR #155 adds the 26-row W41 reading set and four historical collision controls; these do not establish full 1,541-row bilingual transcription or legal sign-off. El Borma W30-R007 remains NEEDS_EVIDENCE with proposed 3021 and no effective date. No commune data are imported; `communesCount = 0`; P1-01 remains In Progress / Pending, P1-02 remains Blocked. See the master report, decision book and El Borma timeline memo.
+**Administrative reference delivery:** the server-owned bilingual 69-Wilaya catalogue remains implemented. The P1-01 master ledger now structurally links 1,541 candidate row keys to 1,541 JO44 historical assertion IDs and executes validation in CI (PR #141; current main CI #1038). PR #146 adds the decision book and bounded image-reading/temporal comparison workpapers; PR #155 adds a further bounded W41 reading set and collision controls. Neither changes module capability states. It records 1,431 proposed-clean rows and 110 explicit practitioner-decision rows; all sign-offs remain PENDING. Evidence scope does not establish full JO44 bilingual page-image review: 841 rows have French text-layer-only scope and 27 explicit JO44 Arabic spot-verification, with other register visual reviews separately scoped. The 75 candidate Arabic anomaly flags are routed to explicit review. PR #146 adds 51 bounded JO44 bilingual image-reading observations and the 21-row Ouargla/Touggourt compare; PR #155 adds the 26-row W41 reading set and four historical collision controls; these do not establish full 1,541-row bilingual transcription or legal sign-off. El Borma W30-R007 remains NEEDS_EVIDENCE with proposed 3021 and no effective date. No commune data are imported; `communesCount = 0`; P1-01 remains In Progress / Pending, P1-02 remains Blocked. See the master report, decision book and El Borma timeline memo.
 
 
 
@@ -31,14 +31,14 @@ All 12 functional ERP domains required by PROMO GEST, mapped strictly using the 
 
 ---
 
-## 2. Frontend platform and module ownership — PRs #81/#82/#90/#140 (merged; current main CI #1034 passed)
+## 2. Frontend platform and module ownership — PRs #81/#82/#90/#140 (merged; current main CI #1038 passed)
 
 - Canonical frontend entry points: `core/api/apiClient.ts`, `core/api/csrf.ts`, `core/permissions/permissionPolicy.ts`, `core/modules/registry.ts`, `core/modules/moduleCodes.ts`, `core/modules/routeTypes.ts`, `app/routeRegistry.ts`, and `core/localization/translations.ts`.
 - Legacy `services/apiClient.ts`, CSRF utilities, `utils/permissions.ts`, `utils/moduleCatalog.ts`, `utils/navigation.ts`, `utils/workspaceGuards.ts`, and `localization/translations.ts` are explicit compatibility adapters, not alternate implementations.
 - Active screen implementations now live in owning `modules/` directories for A–E, K, L, auth, setup and technical administration; Login and first-run setup have module-owned page implementations. Former `features/`, root `components/`, `layouts/` and duplicate utility paths are compatibility facades.
 - Reusable visual components are owned by `shared/components/`; active application/module code imports that surface. F–J remain planned business capabilities, with display metadata under module `presentation/workflows.ts` rather than `api/`.
 - Architecture regression tests verify module entry points, import parsing for static/type-only/re-export/side-effect/dynamic imports, public-index-only peer dependencies, acyclic module graph, no active imports from legacy `features/`, unique shared-component/API/CSRF/localization implementations, planned endpoint rejection, and the F–J presentation/API boundary.
-- Main CI #1034 passed all three jobs on exact main SHA `34826b7d`; manual Arabic RTL / French LTR desktop/mobile browser acceptance and real dirty-form interaction evidence have not been performed. Navigation remains `IMPLEMENTED_NOT_VERIFIED` for manual UX acceptance.
+- Main CI #1038 passed all three jobs on exact main SHA `0a3bbadb`; manual Arabic RTL / French LTR desktop/mobile browser acceptance and real dirty-form interaction evidence have not been performed. Navigation remains `IMPLEMENTED_NOT_VERIFIED` for manual UX acceptance.
 
 ## 3. Detailed Module Specifications (A–L)
 

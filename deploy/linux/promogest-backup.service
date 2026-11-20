@@ -11,6 +11,11 @@ WorkingDirectory=/opt/promogest/app
 EnvironmentFile=/etc/promogest/promogest.env
 Environment=PGPASSFILE=/etc/promogest/pgpass
 Environment=PROMOGEST_BACKUP_ROOT=/var/backups/promogest
+# Independent offsite mount. The backup script refuses to run when this path is
+# absent, unwritable, or on the same filesystem as the primary backup root.
+Environment=PROMOGEST_BACKUP_OFFSITE_DIR=/mnt/promogest-offsite
+Environment=PROMOGEST_BACKUP_RECIPIENT_CERT=/etc/promogest/backup-recipient.pem
+RequiresMountsFor=/mnt/promogest-offsite
 Environment=PROMOGEST_SYSTEMD_PROTECT_HOME=true
 ExecStart=/usr/local/sbin/backup-promogest.sh
 UMask=0077
@@ -24,4 +29,4 @@ ProtectControlGroups=true
 RestrictSUIDSGID=true
 LockPersonality=true
 ReadOnlyPaths=/opt/promogest/app /var/lib/promogest /etc/caddy
-ReadWritePaths=/var/backups/promogest
+ReadWritePaths=/var/backups/promogest /mnt/promogest-offsite

@@ -69,6 +69,12 @@ public sealed class UserConfiguration : IEntityTypeConfiguration<User>
         builder.Property(x => x.PreferredLanguage).HasColumnName("preferred_language").HasMaxLength(4).IsRequired();
         builder.Property(x => x.FailedLoginAttempts).HasColumnName("failed_login_attempts").IsRequired();
         builder.Property(x => x.LockoutEndUtc).HasColumnName("lockout_end_utc");
+        builder.Property(x => x.MustChangePasswordAtNextLogin)
+            .HasColumnName("must_change_password_at_next_login")
+            .HasDefaultValue(false)
+            .IsRequired();
+        builder.Property(x => x.PasswordChangeRequiredUntilUtc)
+            .HasColumnName("password_change_required_until_utc");
         builder.Property(x => x.LastLoginAtUtc).HasColumnName("last_login_at_utc");
         builder.Property(x => x.SecurityStamp).HasColumnName("security_stamp").IsRequired();
         builder.Property(x => x.CreatedAtUtc).HasColumnName("created_at_utc").IsRequired();

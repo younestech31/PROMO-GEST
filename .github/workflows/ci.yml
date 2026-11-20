@@ -29,6 +29,16 @@ jobs:
         run: |
           python3 scripts/p1_01_decision_book.py
           python3 scripts/test_p1_01_decision_book.py
+      - name: Build and test offline commune review database (not a production seed)
+        run: |
+          python3 scripts/test_commune_review_db.py
+          python3 scripts/build_commune_review_db.py storage/communes-review.sqlite3
+      - name: Publish commune review snapshot
+        uses: actions/upload-artifact@v7
+        with:
+          name: communes-review-sqlite
+          path: storage/communes-review.sqlite3
+          if-no-files-found: error
       - uses: actions/setup-node@v7
         with:
           node-version: "22"

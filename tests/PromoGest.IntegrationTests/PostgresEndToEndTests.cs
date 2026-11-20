@@ -409,7 +409,7 @@ internal sealed class BufferingLoggerProvider : ILoggerProvider
     }
 }
 
-public sealed class PostgresEndToEndTests : IClassFixture<PostgreSql18IntegrationFixture>
+public sealed partial class PostgresEndToEndTests : IClassFixture<PostgreSql18IntegrationFixture>
 {
     private readonly PostgreSql18IntegrationFixture _fixture;
     private readonly BufferingLoggerProvider _serverLogs = new();

@@ -1,5 +1,18 @@
 # PROMO GEST — Current State Baseline
 
+## Latest repository checkpoint — 21 November 2026
+
+- **Current GitHub main:** `f8d4bdbd6cf47d4f1566833a528b1ac602554576`. PR #182 (Arabic JO22/2021 and JO79/2021 El Borma text-layer note) and PR #183 (nine name-lineage checks plus W10 alias reconciliation) are documentation-only and merged. PR-head CI/CodeQL passed for both: PR #182 CI #44836572980 / CodeQL #44836573057; PR #183 CI #44837187492 / CodeQL #44837187396.
+- **Post-merge verification for current main:** CI #44838257158 and CodeQL #44838257401 are still in progress on exact SHA `f8d4bdbd6cf47d4f1566833a528b1ac602554576`. Frontend passed; .NET 10/PostgreSQL 18 and Windows were restoring; CodeQL analysis had not completed at this snapshot. Do not mark this main SHA fully verified until both workflows conclude successfully.
+- **Last verified code-bearing main SHA:** `24b9324fd16995f0192a9de5800675da21b6b8d5` (PR #181). CI #44835309828 and CodeQL #44835309849 passed on that exact SHA. PR #182/#183 add documentation only and do not change runtime code/schema.
+- **P1-11 — in progress on a feature branch, not yet on main:** canonicalization maps only a 10-digit national phone beginning with `0` to `213` + nine digits; an already international `+213`/ `213` value remains the same canonical digits; other international numbers retain their own digit sequence. The branch adds a read-only PostgreSQL 18 preflight report, fail-closed reversible Migration #14 updating only `project_customers.normalized_phone`, Domain tests and PostgreSQL 18 integration tests for migration, rollback and collision rejection. No Party/ProjectCustomer merges or deletions. This is not yet CI-verified, and no on-premises/customer database preflight or migration has been run.
+- **Release boundary:** existing Migration #13 deferred duplicate guard remains the enforcement mechanism; the new migration preflights `(project_id, Party.normalized_display_name, canonical normalized_phone)` collisions before changing data. Any collisions must be reconciled by a human, never automatically merged. The EF model snapshot remains unchanged because no schema is added.
+- **Governance:** Phase 1 remains IN_PROGRESS. P1-01 remains In Progress/Pending (all 1,541 practitioner sign-offs PENDING); P1-02 remains Blocked; no commune records imported and `communesCount = 0`. GitHub `main` is currently unprotected and required status checks are disabled; this was not changed in this work.
+- **Scope:** no production data, Cloud SQL business data, secrets, runtime settings, database instance, or security policy changed.
+
+---
+
+
 **Document Role:** Evidence-backed snapshot of the repository, not a product roadmap.  
 **Operational Roadmap:** [Notion Master Roadmap](https://app.notion.com/p/41a13e9ed3688127a157dceb9a0b655f) · [Notion Execution Backlog](https://app.notion.com/p/41a13e9ed3688121adbff807d29d4e46). Notion governs work sequencing and task tracking; this file and the current repository remain the source of implementation and verification truth.  
 **Last ASP.NET Core API/Application runtime source:** `711a05282869b8ebfe6965921045c9225dcecb17` (PR #163). **Latest password-lifecycle EF/schema source:** `03d1288a391ba72e49faf2cf8aa82d604e1ddc6e` (PR #161).

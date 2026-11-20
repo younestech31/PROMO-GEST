@@ -168,9 +168,16 @@ export function updateProjectInStore(
   const estimatedBudgetDzd = request.estimatedBudgetDzd === null || request.estimatedBudgetDzd === undefined
     ? project.estimatedBudgetDzd
     : Number(request.estimatedBudgetDzd);
+  // numeric(18,2) allows 9,999,999,999,999,999.99, which JavaScript cannot represent
+  // exactly (it exceeds Number.MAX_SAFE_INTEGER). Reject anything beyond the safe range
+  // so a rounded value can never pass this check and then fail the server's exact check.
   if (estimatedBudgetDzd !== null &&
-      (!Number.isFinite(estimatedBudgetDzd) || estimatedBudgetDzd < 0 || estimatedBudgetDzd > 9_999_999_999_999_999.99)) {
-    throw new DevPreviewStoreError(400, 'PROJECT_BUDGET_INVALID', 'Estimated budget must fit the supported non-negative DZD range.');
+      (!Number.isFinite(estimatedBudgetDzd) || estimatedBudgetDzd < 0 || estimatedBudgetDzd > Number.MAX_SAFE_INTEGER)) {
+    throw new DevPreviewStoreError(
+      400,
+      'PROJECT_BUDGET_INVALID',
+      'Estimated budget must be a non-negative DZD amount no larger than 9 007 199 254 740 991.'
+    );
   }
 
   const plannedBlocksCount = Number(request.plannedBlocksCount ?? 0);

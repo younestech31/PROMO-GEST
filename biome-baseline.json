@@ -1,0 +1,6 @@
+{
+  "$comment": "Lint debt ceiling. Errors must stay at zero; warning/info counts may only shrink. Regenerate with: node scripts/check-biome-ratchet.mjs --update",
+  "error": 0,
+  "warning": 51,
+  "info": 42
+}

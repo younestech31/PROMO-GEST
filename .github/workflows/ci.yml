@@ -59,6 +59,8 @@ jobs:
         run: npm audit --omit=dev --audit-level=high
       - name: TypeScript strict check
         run: npm run lint
+      - name: Lint the SPA with the debt ratchet
+        run: npm run lint:js:guard
       - name: Frontend unit tests
         run: npm test
       - name: Build frontend

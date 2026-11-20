@@ -23,3 +23,7 @@ storage/
 backups/
 appsettings.Local.json
 appsettings.*.Local.json
+
+# Python bytecode from repository scripts
+__pycache__/
+*.pyc

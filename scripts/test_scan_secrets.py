@@ -13,6 +13,9 @@ import sys
 import unittest
 from pathlib import Path
 
+# Importing a hyphenated script must not leave __pycache__ inside the repository.
+sys.dont_write_bytecode = True
+
 MODULE_PATH = Path(__file__).resolve().parent / "scan-secrets.py"
 SPEC = importlib.util.spec_from_file_location("promogest_secret_scan", MODULE_PATH)
 assert SPEC and SPEC.loader
@@ -31,7 +34,9 @@ class DetectionTests(unittest.TestCase):
         self.assertIn("github-token", self.findings(f'GITHUB_TOKEN = "{token}"'))
 
     def test_detects_aws_access_key(self) -> None:
-        self.assertIn("aws-access-key-id", self.findings("aws_access_key_id = AKIAIOSFODNN7EXAMPLE"))
+        # Assembled at runtime so this file never contains a literal key-shaped string.
+        example_key = "AKIA" + "IOSFODNN7EXAMPLE"
+        self.assertIn("aws-access-key-id", self.findings(f"aws_access_key_id = {example_key}"))
 
     def test_detects_private_key_block(self) -> None:
         self.assertIn("private-key-block", self.findings("-----BEGIN RSA PRIVATE KEY-----"))

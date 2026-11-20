@@ -26,7 +26,7 @@ SKIP_SUFFIXES = {
     ".png", ".jpg", ".jpeg", ".gif", ".webp", ".ico", ".bmp", ".pdf", ".zip", ".gz",
     ".tar", ".tgz", ".pfx", ".p12", ".cer", ".crt", ".der", ".dll", ".exe", ".so",
     ".dylib", ".woff", ".woff2", ".ttf", ".otf", ".mp3", ".mp4", ".sqlite", ".sqlite3",
-    ".db", ".dmp", ".snk",
+    ".db", ".dmp", ".snk", ".pyc", ".pyo",
 }
 
 MAX_FILE_BYTES = 2 * 1024 * 1024

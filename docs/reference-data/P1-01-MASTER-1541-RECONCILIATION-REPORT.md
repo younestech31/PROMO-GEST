@@ -20,7 +20,9 @@
 >
 > **JO58/2026 scope clarification:** The official issue identifies the interministerial order dated 5 May 2026 and published in JO No. 58 on 12 August 2026. Article 1 amends/completes the annex to the 22 June 1985 register order; the annex has separate commune, numeric-code and seat columns and explicit `sans changement` blocks. This is an amendment layer over the historical register, not a self-contained re-publication of all 1,541 rows. Keep signed date, publication date and legally confirmed effective-from date separate. The available French text layer is not a visual transcription; screenshot attempts for the relevant annex pages returned `Cache miss`.
 
-## 1. Executive Summary & Exhaustive Workpaper Linkage (1,541 / 1,541)
+> **1984-to-2026 commune-count endpoints — 20 November 2026:** ONS *Annuaire Statistique de l'Algérie* No. 35, Chapter I / Table 2, records 48 Wilayas and 1,541 communes under Law 84-09 of 4 February 1984 ([official ONS yearbook](https://www.ons.dz/IMG/pdf/territoire_2017.pdf)). Law 26-06, JO25/2026 Article 3, records 69 Wilayas and 1,541 communes ([official JORADP French PDF](https://www.joradp.dz/FTP/jo-francais/2026/F2026025.pdf)). The two documented endpoints therefore share the same national commune count while the Wilaya count changes from 48 to 69. Do not upgrade this endpoint comparison into a claim that every intervening administrative instrument left the total unchanged; that stronger historical claim requires the complete amendment inventory and dated source chain.
+
+## 1. Executive Summary & Exhaustive Workpaper Linkage (1,541 / 1,541)## 1. Executive Summary & Exhaustive Workpaper Linkage (1,541 / 1,541)
 
 This report and its companion CSV ledger (`P1-01-MASTER-1541-RECONCILIATION-LEDGER.csv`) close the full-population reconciliation between:
 1. All **1,541** historical commune entries in the 22 June 1985 founding register (**JO44/1985**, `F1985044.PDF`, 48 Wilaya sections), excluding **`1600 — Ville d'Alger`** (`P1-01-JO44-1985-W16-ALGER-1600-SPECIAL-ASSERTION.csv`), which is preserved separately as an urban-community / governorate special entry and not counted in 1,541 communes.

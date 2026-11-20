@@ -155,7 +155,10 @@ The Linux deployment uses the supplied systemd units and the self-contained Linu
    sudo install -m 0644 deploy/linux/promogest.service /etc/systemd/system/promogest.service
    sudo install -m 0644 deploy/linux/promogest-backup.service /etc/systemd/system/promogest-backup.service
    sudo install -m 0644 deploy/linux/promogest-backup.timer /etc/systemd/system/promogest-backup.timer
+   sudo install -m 0644 deploy/linux/promogest-backup-verify.service /etc/systemd/system/promogest-backup-verify.service
+   sudo install -m 0644 deploy/linux/promogest-backup-verify.timer /etc/systemd/system/promogest-backup-verify.timer
    sudo install -o root -g root -m 0750 scripts/backup-promogest.sh /usr/local/sbin/backup-promogest.sh
+   sudo install -o root -g root -m 0750 scripts/check-backup-freshness.sh /usr/local/sbin/check-backup-freshness.sh
    sudo install -m 0644 deploy/linux/Caddyfile /etc/caddy/Caddyfile
    ```
 
@@ -167,8 +170,11 @@ The Linux deployment uses the supplied systemd units and the self-contained Linu
    sudo systemctl enable --now promogest.service
    sudo systemctl enable --now caddy.service
    sudo systemctl enable --now promogest-backup.timer
+   sudo systemctl enable --now promogest-backup-verify.timer
    ```
-   The timer starts the consistent backup service daily at 22:00 with a randomized delay. The backup includes the database, local documents, Data Protection key ring/certificate, sanitized settings, Caddy configuration, and a SHA-256 manifest.
+   The backup timer starts the consistent backup service daily at 22:00 with a randomized delay. The backup includes the database, local documents, Data Protection key ring/certificate, sanitized settings, Caddy configuration, and a SHA-256 manifest, and it is CMS-encrypted and replicated offsite before it reports success.
+
+   The verify timer runs at 06:00 and fails the unit when the newest artefact is older than 26 hours, when its SHA-256 sidecar no longer matches, or when the required offsite copy is missing. **A failed unit is the alert**: check `systemctl --failed` and `journalctl -u promogest-backup-verify.service` daily, or wire that state into your monitoring. Without this check a silently broken backup looks identical to a healthy one until a restore is attempted.
 
 8. **Validate LAN access and recovery.** Confirm the API is healthy on `127.0.0.1:5080`, open `https://promogest.lan` from a workstation whose DNS/hosts entry points to the server, and install Caddy's internal root CA certificate on trusted workstations. Allow inbound LAN TCP `443` only; keep `5080` and `5432` on loopback. Before production use, perform the mandatory Linux restore drill in [BACKUP-AND-RESTORE.md](BACKUP-AND-RESTORE.md).
 

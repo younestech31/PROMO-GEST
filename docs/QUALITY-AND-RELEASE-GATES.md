@@ -23,7 +23,7 @@
 
 ## 2. Current Gate Status Against the Audited Main Baseline
 
-**Current main:** `a306487d06068649bbffbc2b5ef2e05c4dcac102`. [Main CI #1029](https://github.com/younestech31/PROMO-GEST/actions/runs/44728401646) passed all three required jobs on this exact SHA: frontend validators/build/static hosting, .NET 10 + PostgreSQL 18 least-privilege/integration/restore, and Windows publish/PowerShell. The frontend job also validates the bounded PR #155 W41 readings and collision controls. PR #146 merged the separate 1,541-row practitioner decision book, four source-backed prompts, 51-row JO44 bilingual image-reading supplement and 21-row Ouargla/Touggourt comparison. The earlier PR #146 checkpoint reported 1,541 decision records checked and six decision-book tests passed; CI #1029 additionally passed the W41 reading/collision validator. These checks prove workpaper consistency and source-link integrity only; they do not prove legal correctness, complete 1,541-row bilingual coverage, effective date or practitioner sign-off.
+**Current main:** `34826b7d22857e5f7709ffc56f4d954425b68e42`. [Main CI #1034](https://github.com/younestech31/PROMO-GEST/actions/runs/44731226111) passed all three required jobs on this exact SHA: frontend validators/build/static hosting, .NET 10 + PostgreSQL 18 least-privilege/integration/restore, and Windows publish/PowerShell.
 
 **P1-01 work-status distinction:** the decision book has 1,540 `PENDING` work statuses and one `NEEDS_EVIDENCE` row (`W30-R007` El Borma); the master ledger still has all 1,541 practitioner sign-offs `PENDING`. The proposed El Borma code remains `3021`, with no `valid_from` or review outcome. No commune data are imported; `communesCount = 0`; P1-01 remains In Progress / Pending and P1-02 remains Blocked.
 

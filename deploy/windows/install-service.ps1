@@ -90,6 +90,10 @@ if (($offsiteItem.Attributes -band [IO.FileAttributes]::ReparsePoint) -ne 0) {
     throw "BackupOffsiteDir must not be a junction or symbolic link: $BackupOffsiteDir"
 }
 $offsiteNormalized = $BackupOffsiteDir.TrimEnd([IO.Path]::DirectorySeparatorChar, [IO.Path]::AltDirectorySeparatorChar)
+$offsiteVolumeRoot = [IO.Path]::GetPathRoot($BackupOffsiteDir).TrimEnd([IO.Path]::DirectorySeparatorChar, [IO.Path]::AltDirectorySeparatorChar)
+if ([string]::Equals($offsiteNormalized, $offsiteVolumeRoot, [StringComparison]::OrdinalIgnoreCase)) {
+    throw "BackupOffsiteDir must be a dedicated directory, not a volume root."
+}
 $separator = [IO.Path]::DirectorySeparatorChar
 if ([string]::Equals($offsiteNormalized, $installRootNormalized, [StringComparison]::OrdinalIgnoreCase) -or
     $offsiteNormalized.StartsWith($installRootNormalized + $separator, [StringComparison]::OrdinalIgnoreCase) -or

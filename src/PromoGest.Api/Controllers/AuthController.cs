@@ -67,6 +67,38 @@ public sealed class AuthController : ControllerBase
         return Ok(result.Session);
     }
 
+    [HttpPost("change-password")]
+    [Authorize]
+    public async Task<IActionResult> ChangePassword(
+        [FromBody] ChangePasswordRequest request,
+        CancellationToken ct)
+    {
+        var rawUserId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        if (!Guid.TryParse(rawUserId, out var userId))
+            return Unauthorized();
+
+        var metadata = new RequestMetadata(
+            HttpContext.Connection.RemoteIpAddress?.ToString(),
+            Request.Headers.UserAgent.ToString());
+
+        await _authService.ChangePasswordAsync(userId, request, metadata, ct);
+
+        var requireHttps = _configuration.GetValue<bool>("Security:RequireHttpsCookies", true);
+        Response.Cookies.Delete(
+            SessionCookieDefaults.CookieName,
+            new CookieOptions
+            {
+                HttpOnly = true,
+                Secure = requireHttps,
+                SameSite = SameSiteMode.Strict,
+                Path = "/"
+            });
+
+        HttpContext.User = new ClaimsPrincipal(new ClaimsIdentity());
+        SessionClaimsFactory.IssueCsrfToken(HttpContext, _antiforgery, requireHttps);
+        return NoContent();
+    }
+
     [HttpPost("logout")]
     [AllowAnonymous]
     public async Task<IActionResult> Logout(CancellationToken ct)

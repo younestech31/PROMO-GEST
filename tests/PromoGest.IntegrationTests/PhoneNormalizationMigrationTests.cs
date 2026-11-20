@@ -69,6 +69,19 @@ public sealed class PhoneNormalizationMigrationTests : IClassFixture<PostgreSql1
             existingUserId: first.UserId,
             existingProjectId: first.ProjectId);
 
+        var report = await RunPhonePreflightAsync(migrationConnection);
+        Assert.Equal(2L, report.CustomerRows);
+        Assert.Equal(1L, report.RowsToRewrite);
+        Assert.Equal(0L, report.InvalidPhoneRows);
+        var collision = Assert.Single(report.Collisions);
+        Assert.Equal(2L, collision.CustomerCount);
+        Assert.Contains(first.CustomerId.ToString(), collision.CustomerIds);
+        Assert.Contains(second.CustomerId.ToString(), collision.CustomerIds);
+        Assert.Equal(new[] { "project_id", "customer_count", "customer_ids", "party_ids" }, report.CollisionColumns);
+        Assert.DoesNotContain(report.CollisionColumns, column =>
+            column.Contains("phone", StringComparison.OrdinalIgnoreCase) ||
+            column.Contains("name", StringComparison.OrdinalIgnoreCase));
+
         var options = new DbContextOptionsBuilder<AppDbContext>()
             .UseNpgsql(migrationConnection, npgsql =>
                 npgsql.MigrationsAssembly(typeof(AppDbContext).Assembly.FullName))
@@ -207,6 +220,106 @@ public sealed class PhoneNormalizationMigrationTests : IClassFixture<PostgreSql1
         }
 
         return (userId, projectId, customerId);
+    }
+
+    private sealed record PhoneCollisionGroup(
+        Guid ProjectId,
+        long CustomerCount,
+        string[] CustomerIds,
+        string[] PartyIds);
+
+    private sealed record PhonePreflightReport(
+        long CustomerRows,
+        long RowsToRewrite,
+        long LegacyKeyDriftRows,
+        long InvalidPhoneRows,
+        string[] CollisionColumns,
+        IReadOnlyList<PhoneCollisionGroup> Collisions);
+
+    private static async Task<PhonePreflightReport> RunPhonePreflightAsync(string connectionString)
+    {
+        const string resourceName =
+            "PromoGest.IntegrationTests.P1_11PhoneNormalizationPreflight.sql";
+
+        await using var stream = typeof(PhoneNormalizationMigrationTests).Assembly
+            .GetManifestResourceStream(resourceName)
+            ?? throw new InvalidOperationException($"Missing embedded SQL resource: {resourceName}");
+        using var textReader = new StreamReader(stream);
+        var source = await textReader.ReadToEndAsync();
+
+        // The source is also a psql script. Remove psql meta-commands and SQL
+        // comments before executing its statements individually through Npgsql.
+        var sql = string.Join(
+            Environment.NewLine,
+            source.Split('\n')
+                .Where(line =>
+                    !line.TrimStart().StartsWith("\\set", StringComparison.Ordinal) &&
+                    !line.TrimStart().StartsWith("--", StringComparison.Ordinal)));
+        var statements = sql.Split(';', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+
+        await using var connection = new NpgsqlConnection(connectionString);
+        await connection.OpenAsync();
+
+        long customerRows = -1;
+        long rowsToRewrite = -1;
+        long legacyKeyDriftRows = -1;
+        long invalidPhoneRows = -1;
+        string[] collisionColumns = Array.Empty<string>();
+        var collisions = new List<PhoneCollisionGroup>();
+
+        foreach (var statement in statements)
+        {
+            if (statement.StartsWith("BEGIN TRANSACTION", StringComparison.OrdinalIgnoreCase) ||
+                statement.StartsWith("COMMIT", StringComparison.OrdinalIgnoreCase))
+            {
+                await using var transactionCommand = new NpgsqlCommand(statement, connection);
+                await transactionCommand.ExecuteNonQueryAsync();
+                continue;
+            }
+
+            if (!statement.StartsWith("WITH", StringComparison.OrdinalIgnoreCase))
+                throw new InvalidOperationException("Unexpected statement in the P1-11 preflight script.");
+
+            await using var command = new NpgsqlCommand(statement, connection);
+            await using var reader = await command.ExecuteReaderAsync();
+
+            if (customerRows < 0)
+            {
+                if (!await reader.ReadAsync())
+                    throw new InvalidOperationException("The preflight summary query returned no row.");
+
+                customerRows = reader.GetInt64(0);
+                rowsToRewrite = reader.GetInt64(1);
+                legacyKeyDriftRows = reader.GetInt64(2);
+                invalidPhoneRows = reader.GetInt64(3);
+            }
+            else
+            {
+                collisionColumns = Enumerable.Range(0, reader.FieldCount)
+                    .Select(reader.GetName)
+                    .ToArray();
+
+                while (await reader.ReadAsync())
+                {
+                    collisions.Add(new PhoneCollisionGroup(
+                        reader.GetGuid(0),
+                        reader.GetInt64(1),
+                        reader.GetFieldValue<string[]>(2),
+                        reader.GetFieldValue<string[]>(3)));
+                }
+            }
+        }
+
+        if (customerRows < 0 || collisionColumns.Length != 4)
+            throw new InvalidOperationException("The P1-11 preflight script did not return both expected reports.");
+
+        return new PhonePreflightReport(
+            customerRows,
+            rowsToRewrite,
+            legacyKeyDriftRows,
+            invalidPhoneRows,
+            collisionColumns,
+            collisions);
     }
 
     private static async Task<string> ReadNormalizedPhoneAsync(string connectionString, Guid customerId)

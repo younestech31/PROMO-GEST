@@ -1347,6 +1347,16 @@ namespace PromoGest.Infrastructure.Persistence.Migrations
                     b.Property<DateTimeOffset?>("LockoutEndUtc")
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("lockout_end_utc");
+ 
+                    b.Property<bool>("MustChangePasswordAtNextLogin")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(false)
+                        .HasColumnName("must_change_password_at_next_login");
+
+                    b.Property<DateTimeOffset?>("PasswordChangeRequiredUntilUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("password_change_required_until_utc");
 
                     b.Property<string>("NormalizedEmail")
                         .IsRequired()

@@ -11,6 +11,7 @@ import type {
 import { getTranslations, translateApiError } from '@/core/localization/translations';
 import { apiClient, ApiError } from '@/core/api/apiClient';
 import { FormField, inputBaseClass } from '@/shared/components/FormField';
+import { Modal } from '@/shared/components/Modal';
 import { ConfirmDialog } from '@/shared/components/StateViews';
 
 interface ProjectStructureModalProps {
@@ -1026,13 +1027,14 @@ export function ProjectStructureModal({
 
   return (
     <>
-      <div
-        className="fixed inset-0 z-[60] bg-slate-950/60 flex items-center justify-center p-3 sm:p-5"
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby="project-structure-title"
+      <Modal
+        open
+        titleId="project-structure-title"
+        onClose={requestClose}
+        closeDisabled={submitting}
+        overlayClassName="fixed inset-0 z-[60] bg-slate-950/60 flex items-center justify-center p-3 sm:p-5"
+        panelClassName="bg-white w-full max-w-7xl max-h-[94vh] rounded-xl shadow-2xl flex flex-col overflow-hidden outline-none"
       >
-        <div className="bg-white w-full max-w-7xl max-h-[94vh] rounded-xl shadow-2xl flex flex-col overflow-hidden">
           <div className="px-5 py-4 border-b border-slate-200 flex items-center justify-between gap-4">
             <div className="min-w-0">
               <h2 id="project-structure-title" className="font-bold text-slate-900">
@@ -1060,8 +1062,7 @@ export function ProjectStructureModal({
               {language === 'ar' ? 'إغلاق' : 'Fermer'}
             </button>
           </div>
-        </div>
-      </div>
+      </Modal>
       {discardConfirmDialog}
     </>
   );

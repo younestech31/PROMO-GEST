@@ -5,6 +5,9 @@ import { defineConfig, loadEnv } from 'vite';
 import { CLOUD_SQL_ENVIRONMENT_VARIABLES, readRequestedViteHost, resolveVitePreviewPolicy } from './vitePreviewPolicy';
 
 export default defineConfig(async ({ command, mode }) => {
+  if (command === 'build' && mode === 'production') {
+    process.env.NODE_ENV = 'production';
+  }
   const repositoryRoot = path.resolve(__dirname, '../..');
   const env = loadEnv(mode, repositoryRoot, '');
   const value = (name: string) => process.env[name] ?? env[name] ?? '';

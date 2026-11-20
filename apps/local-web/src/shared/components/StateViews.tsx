@@ -1,6 +1,7 @@
-import { useEffect, type ReactNode } from 'react';
+import type { ReactNode } from 'react';
 import { AlertTriangle, ShieldAlert, X } from 'lucide-react';
 import type { AppLanguage } from '../../types/erp';
+import { Modal } from './Modal';
 
 export function LoadingSkeleton({ rows = 3 }: { rows?: number }) {
   return (
@@ -124,27 +125,15 @@ export function ConfirmDialog({
   onConfirm,
   onCancel,
 }: ConfirmDialogProps) {
-  useEffect(() => {
-    if (!open) return;
-    const handleKey = (event: KeyboardEvent) => {
-      if (event.key === 'Escape' && !savingConfirm) {
-        onCancel();
-      }
-    };
-    window.addEventListener('keydown', handleKey);
-    return () => window.removeEventListener('keydown', handleKey);
-  }, [open, savingConfirm, onCancel]);
-
-  if (!open) return null;
-
   return (
-    <div
-      className="fixed inset-0 z-[90] flex items-center justify-center bg-slate-950/50 p-4"
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby="confirm-dialog-title"
+    <Modal
+      open={open}
+      titleId="confirm-dialog-title"
+      onClose={onCancel}
+      closeDisabled={savingConfirm}
+      overlayClassName="fixed inset-0 z-[90] flex items-center justify-center bg-slate-950/50 p-4"
+      panelClassName="w-full max-w-md rounded-lg border border-slate-200 bg-white p-5 shadow-xl outline-none"
     >
-      <div className="w-full max-w-md rounded-lg border border-slate-200 bg-white p-5 shadow-xl">
         <div className="flex items-start justify-between gap-3">
           <div className="flex items-center gap-2.5">
             <AlertTriangle
@@ -198,8 +187,7 @@ export function ConfirmDialog({
             </button>
           )}
         </div>
-      </div>
-    </div>
+    </Modal>
   );
 }
 

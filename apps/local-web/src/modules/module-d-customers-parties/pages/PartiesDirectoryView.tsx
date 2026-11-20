@@ -7,6 +7,7 @@ import { canManagePartyIdentity, canReadPartyDirectory } from '../permissions';
 import { PageHeader } from '@/shared/components/PageHeader';
 import { ConfirmDialog, EmptyState, ErrorBanner } from '@/shared/components/StateViews';
 import { FormField, inputBaseClass } from '@/shared/components/FormField';
+import { Modal } from '@/shared/components/Modal';
 
 interface PartiesDirectoryViewProps {
   currentUser: AuthenticatedUser;
@@ -289,15 +290,15 @@ export function PartiesDirectoryView({
       )}
 
       {/* Edit Canonical Identity Modal */}
-      {editingParty && (
-        <div
-          className="fixed inset-0 z-50 bg-slate-950/50 flex items-center justify-center p-4"
-          role="dialog"
-          aria-modal="true"
-          aria-labelledby="edit-party-title"
-        >
-          <div className="bg-white border border-slate-200 rounded-lg w-full max-w-lg p-6">
-            <div className="flex items-center justify-between pb-4 border-b border-slate-100">
+      <Modal
+        open={editingParty !== null}
+        titleId="edit-party-title"
+        onClose={requestCloseEditor}
+        closeDisabled={saving}
+        overlayClassName="fixed inset-0 z-50 bg-slate-950/50 flex items-center justify-center p-4"
+        panelClassName="bg-white border border-slate-200 rounded-lg w-full max-w-lg p-6 outline-none"
+      >
+        <div className="flex items-center justify-between pb-4 border-b border-slate-100">
               <h2 id="edit-party-title" className="text-base font-bold text-slate-900">
                 {isArabic ? 'تعديل الهوية المركزية للطرف' : 'Modifier l’identité centrale du tiers'}
               </h2>
@@ -358,9 +359,7 @@ export function PartiesDirectoryView({
                 </button>
               </div>
             </form>
-          </div>
-        </div>
-      )}
+      </Modal>
 
       <ConfirmDialog
         open={confirmDiscardOpen}

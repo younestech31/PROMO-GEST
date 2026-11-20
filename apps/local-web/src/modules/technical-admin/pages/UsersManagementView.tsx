@@ -12,6 +12,7 @@ import { formatLocalDateTime } from '@/shared/utils/algerianFormat';
 import { checkPasswordStrength, PASSWORD_MAX_LENGTH, validateCreateEmployee, type ValidationErrors } from '@/shared/utils/validation';
 import { apiClient, ApiError } from '@/core/api/apiClient';
 import { FormField, inputBaseClass } from '@/shared/components/FormField';
+import { Modal } from '@/shared/components/Modal';
 import { ConfirmDialog } from '@/shared/components/StateViews';
 
 interface UsersManagementViewProps {
@@ -418,15 +419,15 @@ export function UsersManagementView({ language, onDirtyChange }: UsersManagement
       </div>
 
       {/* Create Employee Modal */}
-      {createOpen && (
-        <div
-          className="fixed inset-0 z-50 bg-slate-950/50 flex items-center justify-center p-4"
-          role="dialog"
-          aria-modal="true"
-          aria-labelledby="create-employee-title"
-        >
-          <div className="bg-white border border-slate-200 rounded-lg w-full max-w-xl p-6 max-h-[90vh] overflow-y-auto">
-            <div className="flex items-center justify-between gap-4 pb-4 border-b border-slate-100">
+      <Modal
+        open={createOpen}
+        titleId="create-employee-title"
+        onClose={requestCloseCreate}
+        closeDisabled={submitting}
+        overlayClassName="fixed inset-0 z-50 bg-slate-950/50 flex items-center justify-center p-4"
+        panelClassName="bg-white border border-slate-200 rounded-lg w-full max-w-xl p-6 max-h-[90vh] overflow-y-auto outline-none"
+      >
+        <div className="flex items-center justify-between gap-4 pb-4 border-b border-slate-100">
               <h2 id="create-employee-title" className="text-base font-bold text-slate-900">
                 {t.users.modalCreateTitle}
               </h2>
@@ -575,19 +576,19 @@ export function UsersManagementView({ language, onDirtyChange }: UsersManagement
                 </button>
               </div>
             </form>
-          </div>
-        </div>
-      )}
+      </Modal>
 
       {/* Edit Employee Modal */}
-      {editingUser && (
-        <div
-          className="fixed inset-0 z-50 bg-slate-950/50 flex items-center justify-center p-4"
-          role="dialog"
-          aria-modal="true"
-          aria-labelledby="edit-employee-title"
-        >
-          <div className="bg-white border border-slate-200 rounded-lg w-full max-w-lg p-6">
+      <Modal
+        open={editingUser !== null}
+        titleId="edit-employee-title"
+        onClose={requestCloseEdit}
+        closeDisabled={submitting}
+        overlayClassName="fixed inset-0 z-50 bg-slate-950/50 flex items-center justify-center p-4"
+        panelClassName="bg-white border border-slate-200 rounded-lg w-full max-w-lg p-6 outline-none"
+      >
+        {editingUser && (
+          <>
             <div className="flex items-center justify-between pb-4 border-b border-slate-100">
               <h2 id="edit-employee-title" className="text-base font-bold text-slate-900">
                 {t.users.modalEditTitle} ({editingUser.username})
@@ -675,19 +676,21 @@ export function UsersManagementView({ language, onDirtyChange }: UsersManagement
                 </button>
               </div>
             </form>
-          </div>
-        </div>
-      )}
+          </>
+        )}
+      </Modal>
 
       {/* Reset Password Modal */}
-      {resetUser && (
-        <div
-          className="fixed inset-0 z-50 bg-slate-950/50 flex items-center justify-center p-4"
-          role="dialog"
-          aria-modal="true"
-          aria-labelledby="reset-pw-title"
-        >
-          <div className="bg-white border border-slate-200 rounded-lg w-full max-w-md p-6">
+      <Modal
+        open={resetUser !== null}
+        titleId="reset-pw-title"
+        onClose={requestCloseReset}
+        closeDisabled={submitting}
+        overlayClassName="fixed inset-0 z-50 bg-slate-950/50 flex items-center justify-center p-4"
+        panelClassName="bg-white border border-slate-200 rounded-lg w-full max-w-md p-6 outline-none"
+      >
+        {resetUser && (
+          <>
             <div className="flex items-center justify-between pb-4 border-b border-slate-100">
               <h2 id="reset-pw-title" className="text-base font-bold text-slate-900">
                 {t.users.modalResetTitle} ({resetUser.username})
@@ -744,9 +747,9 @@ export function UsersManagementView({ language, onDirtyChange }: UsersManagement
                 </button>
               </div>
             </form>
-          </div>
-        </div>
-      )}
+          </>
+        )}
+      </Modal>
 
       <ConfirmDialog
         open={pendingCloseModal !== null}

@@ -1,5 +1,5 @@
 import type { AppLanguage, AuthenticatedUser } from '@/types/erp';
-import { canManageUsers } from '@/modules/technical-admin';
+import { canManageUsers } from '@/core/permissions/permissionPolicy';
 import { PageHeader } from '@/shared/components/PageHeader';
 import { PlannedModuleWorkspace } from '@/shared/components/PlannedModuleWorkspace';
 

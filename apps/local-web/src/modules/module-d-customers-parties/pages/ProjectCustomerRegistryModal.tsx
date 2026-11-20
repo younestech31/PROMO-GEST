@@ -12,6 +12,7 @@ import type {
 } from '@/types/erp';
 import { apiClient, ApiError } from '@/core/api/apiClient';
 import { translateApiError } from '@/core/localization/translations';
+import { Modal } from '@/shared/components/Modal';
 import { ConfirmDialog } from '@/shared/components/StateViews';
 
 interface ProjectCustomerRegistryModalProps {
@@ -791,14 +792,15 @@ export function ProjectCustomerRegistryModal({
 
   return (
     <>
-      <div
-        className="fixed inset-0 z-[75] flex items-center justify-center bg-slate-950/50 p-3 sm:p-5"
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby="project-customers-title"
+      <Modal
+        open
+        titleId="project-customers-title"
+        onClose={requestClose}
+        closeDisabled={saving}
         dir={isArabic ? 'rtl' : 'ltr'}
+        overlayClassName="fixed inset-0 z-[75] flex items-center justify-center bg-slate-950/50 p-3 sm:p-5"
+        panelClassName="flex max-h-[94vh] w-full max-w-6xl flex-col overflow-hidden rounded-lg border border-slate-200 bg-white shadow-xl outline-none"
       >
-        <div className="flex max-h-[94vh] w-full max-w-6xl flex-col overflow-hidden rounded-lg border border-slate-200 bg-white shadow-xl">
           <header className="flex items-start justify-between gap-4 border-b border-slate-200 px-5 py-4">
             <div className="min-w-0">
               <div className="flex items-center gap-2 text-teal-800">
@@ -815,8 +817,7 @@ export function ProjectCustomerRegistryModal({
           </header>
 
           {registryContent}
-        </div>
-      </div>
+      </Modal>
       {discardConfirmDialog}
     </>
   );

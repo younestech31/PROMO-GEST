@@ -58,3 +58,67 @@ test('authentication pages keep user-facing text in the translation bundle', () 
 
   assert.deepEqual(offenders, [], `move inline bilingual strings into translations.ts: ${offenders.join(', ')}`);
 });
+
+function walkCsFiles(dir: string): string[] {
+  return readdirSync(dir, { withFileTypes: true }).flatMap((entry) => {
+    if (entry.name === 'bin' || entry.name === 'obj') return [];
+    const full = path.join(dir, entry.name);
+    return entry.isDirectory() ? walkCsFiles(full) : full.endsWith('.cs') ? [full] : [];
+  });
+}
+
+test('every C# backend and preview middleware API error code has AR and FR translations', () => {
+  const repoRoot = path.resolve(srcRoot, '..', '..', '..');
+  const csFiles = walkCsFiles(path.join(repoRoot, 'src')).filter((file) => !file.includes('Tests'));
+  const codes = new Set<string>();
+
+  for (const file of csFiles) {
+    const content = readFileSync(file, 'utf8');
+    for (const match of content.matchAll(
+      /\b(?:new\s+(?:\w*DomainException|ApiErrorResponse)|DomainException)\s*\(\s*"([A-Z][A-Z0-9_]+)"/gs,
+    )) {
+      codes.add(match[1]);
+    }
+    for (const match of content.matchAll(
+      /\b(?:new\s+\w*DomainException|new\s+ApiErrorResponse)\s*\(\s*\r?\n\s*"([A-Z][A-Z0-9_]+)"/gs,
+    )) {
+      codes.add(match[1]);
+    }
+    for (const match of content.matchAll(
+      /\b(?:RequireValidWilaya|TryNormalizeWilaya|Validate(?:Length|Name|Code))\([^;]*?"([A-Z][A-Z0-9_]+)"/gs,
+    )) {
+      codes.add(match[1]);
+    }
+    for (const match of content.matchAll(/"((?:ORG|PROJECT)_WILAYA_[A-Z0-9_]+)"/g)) {
+      codes.add(match[1]);
+    }
+  }
+
+  const middlewareSource = readFileSync(path.resolve(srcRoot, '..', 'dev-api-middleware.ts'), 'utf8');
+  for (const match of middlewareSource.matchAll(
+    /sendJson\(\s*res\s*,\s*(?:4\d\d|5\d\d)\s*,\s*\{\s*code:\s*['"]([A-Z][A-Z0-9_]+)['"]/gs,
+  )) {
+    codes.add(match[1]);
+  }
+  for (const match of middlewareSource.matchAll(/sendError\([\s\S]{0,120}?,\s*\d+,\s*['"]([A-Z][A-Z0-9_]+)['"]/g)) {
+    codes.add(match[1]);
+  }
+
+  const untranslated: string[] = [];
+  for (const code of [...codes].sort()) {
+    const ar = translateApiError(code, '__UNMAPPED__', 'ar');
+    const fr = translateApiError(code, '__UNMAPPED__', 'fr');
+    if (ar === '__UNMAPPED__' || !/[\u0600-\u06FF]/.test(ar)) {
+      untranslated.push(`${code} (ar)`);
+    }
+    if (fr === '__UNMAPPED__' || fr.trim().length === 0) {
+      untranslated.push(`${code} (fr)`);
+    }
+  }
+
+  assert.deepEqual(
+    untranslated,
+    [],
+    `API error codes missing AR/FR localization: ${untranslated.join(', ')}`,
+  );
+});

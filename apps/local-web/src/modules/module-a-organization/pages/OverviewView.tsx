@@ -13,8 +13,11 @@ import {
 import type { AppLanguage, ProjectDto, SessionResponse } from '@/types/erp';
 import { getTranslations } from '@/core/localization/translations';
 import { formatDzd, formatLocalDateTime } from '@/shared/utils/algerianFormat';
-import { canReadPartyDirectory } from '@/modules/module-d-customers-parties';
-import { canManageUsers, canViewAuditLogs } from '@/modules/technical-admin';
+import {
+  canManageUsers,
+  canReadPartyDirectory,
+  canViewAuditLogs,
+} from '@/core/permissions/permissionPolicy';
 import {
   filterAuthorizedPreferenceIds,
   type ProjectNavigationPreferences,

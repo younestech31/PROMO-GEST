@@ -1203,6 +1203,322 @@ const API_ERROR_MESSAGES: Record<string, { ar: string; fr: string }> = {
     ar: 'نقطة النهاية المطلوبة غير موجودة.',
     fr: 'Le point de terminaison demandé est introuvable.',
   },
+  AUTH_REQUIRED: {
+    ar: 'يجب تسجيل الدخول للمتابعة.',
+    fr: 'Authentification requise pour poursuivre.',
+  },
+  INTERNAL_ERROR: {
+    ar: 'حدث خطأ داخلي غير متوقع في الخادم.',
+    fr: 'Une erreur interne inattendue est survenue sur le serveur.',
+  },
+  VALIDATION_ERROR: {
+    ar: 'البيانات المدخلة غير صالحة أو غير مكتملة.',
+    fr: 'Les données saisies sont invalides ou incomplètes.',
+  },
+  PREVIEW_DEMO_NOT_AVAILABLE: {
+    ar: 'حساب المعاينة التجريبي غير متاح في هذه البيئة.',
+    fr: 'Le compte de démonstration d’aperçu n’est pas disponible dans cet environnement.',
+  },
+  SETUP_REQUIRED: {
+    ar: 'يجب إكمال التهيئة الأولية للنظام قبل المتابعة.',
+    fr: 'L’initialisation du système doit être effectuée avant de continuer.',
+  },
+  ORGANIZATION_NOT_FOUND: {
+    ar: 'بيانات المؤسسة غير موجودة.',
+    fr: 'Le profil de l’organisation est introuvable.',
+  },
+  SETTING_KEY_REQUIRED: {
+    ar: 'مفتاح الإعداد مطلوب.',
+    fr: 'La clé du paramètre est obligatoire.',
+  },
+  ORG_NIF_INVALID: {
+    ar: 'رقم التعريف الجبائي (NIF) يجب أن يتكون من 15 إلى 20 رقماً.',
+    fr: 'Le numéro d’identification fiscale (NIF) doit contenir entre 15 et 20 chiffres.',
+  },
+  ORG_WILAYA_NAME_REQUIRED: {
+    ar: 'اسم الولاية للمؤسسة مطلوب.',
+    fr: 'Le nom de la wilaya de l’organisation est obligatoire.',
+  },
+  ORG_WILAYA_NAME_MISMATCH: {
+    ar: 'اسم الولاية لا يطابق رمز الولاية الرسمي المحدد للمؤسسة.',
+    fr: 'Le nom de la wilaya ne correspond pas au code officiel sélectionné pour l’organisation.',
+  },
+  FORBIDDEN_AUDIT_READ: {
+    ar: 'لا تملك صلاحية الاطلاع على سجل التدقيق الأمني.',
+    fr: 'Vous n’êtes pas autorisé à consulter le journal d’audit.',
+  },
+  FORBIDDEN_USER_MANAGEMENT: {
+    ar: 'لا تملك صلاحية إدارة حسابات الموظفين والأدوار.',
+    fr: 'Vous n’êtes pas autorisé à gérer les comptes utilisateurs et les rôles.',
+  },
+  FORBIDDEN_PROJECT_CREATE: {
+    ar: 'لا تملك صلاحية إنشاء مشاريع عقارية جديدة.',
+    fr: 'Vous n’êtes pas autorisé à créer de nouveaux projets immobiliers.',
+  },
+  FORBIDDEN_PROJECT_ACCESS_ADMIN: {
+    ar: 'لا تملك صلاحية إدارة أعضاء المشروع وصلاحيات الوصول إليه.',
+    fr: 'Vous n’êtes pas autorisé à gérer les membres et accès de ce projet.',
+  },
+  USER_NOT_FOUND: {
+    ar: 'حساب الموظف غير موجود.',
+    fr: 'Le compte utilisateur est introuvable.',
+  },
+  USER_INACTIVE: {
+    ar: 'تم تعطيل حساب المستخدم. تواصل مع مدير النظام.',
+    fr: 'Ce compte utilisateur est désactivé. Contactez l’administrateur système.',
+  },
+  USER_USERNAME_INVALID: {
+    ar: 'اسم المستخدم يجب أن يتكون من 3 إلى 64 حرفاً باستخدام الأحرف والأرقام و(.) أو (_) أو (-).',
+    fr: 'Le nom d’utilisateur doit contenir de 3 à 64 caractères (lettres, chiffres, ".", "_" ou "-").',
+  },
+  USER_FULLNAME_REQUIRED: {
+    ar: 'الاسم الكامل للموظف مطلوب.',
+    fr: 'Le nom complet de l’utilisateur est obligatoire.',
+  },
+  USER_EMAIL_INVALID: {
+    ar: 'عنوان البريد الإلكتروني للموظف غير صالح.',
+    fr: 'L’adresse e-mail de l’utilisateur est invalide.',
+  },
+  USER_EMAIL_CONFLICT: {
+    ar: 'عنوان البريد الإلكتروني مستخدم مسبقاً من طرف حساب آخر.',
+    fr: 'Cette adresse e-mail est déjà utilisée par un autre compte.',
+  },
+  USER_PASSWORD_HASH_REQUIRED: {
+    ar: 'كلمة المرور المشفرة مطلوبة لهذا الحساب.',
+    fr: 'L’empreinte du mot de passe est obligatoire pour ce compte.',
+  },
+  USER_ROLE_REQUIRED: {
+    ar: 'يجب إسناد دور واحد على الأقل لحساب الموظف.',
+    fr: 'Au moins un rôle doit être attribué au compte utilisateur.',
+  },
+  ROLE_NOT_FOUND: {
+    ar: 'أحد الأدوار المحددة غير موجود في النظام.',
+    fr: 'L’un des rôles sélectionnés est introuvable dans le système.',
+  },
+  CANNOT_REVOKE_SYSTEM_ADMIN_ROLE: {
+    ar: 'لا يمكن سحب صلاحية مدير النظام من الحساب الإداري الوحيد.',
+    fr: 'Le rôle Administrateur Système ne peut pas être retiré au compte administrateur unique.',
+  },
+  SYSTEM_ADMIN_NOT_FOUND: {
+    ar: 'حساب مدير النظام غير موجود.',
+    fr: 'Le compte Administrateur Système est introuvable.',
+  },
+  SYSTEM_ADMIN_ROLE_MISSING: {
+    ar: 'دور مدير النظام غير مهيأ في قاعدة البيانات.',
+    fr: 'Le rôle Administrateur Système est absent de la base de données.',
+  },
+  PASSWORD_CHANGE_LIFETIME_INVALID: {
+    ar: 'مدة صلاحية كلمة المرور المؤقتة يجب أن تكون موجبة.',
+    fr: 'La durée de validité du mot de passe temporaire doit être positive.',
+  },
+  PROJECT_NOT_FOUND: {
+    ar: 'المشروع العقاري المطلوب غير موجود.',
+    fr: 'Le projet immobilier demandé est introuvable.',
+  },
+  PROJECT_CODE_REQUIRED: {
+    ar: 'رمز المشروع مطلوب.',
+    fr: 'Le code du projet est obligatoire.',
+  },
+  PROJECT_CODE_TOO_LONG: {
+    ar: 'رمز المشروع يتجاوز الحد الأقصى المسموح به.',
+    fr: 'Le code du projet dépasse la longueur maximale autorisée.',
+  },
+  PROJECT_NAME_REQUIRED: {
+    ar: 'اسم المشروع بالعربية أو الفرنسية مطلوب.',
+    fr: 'Le nom du projet en arabe ou en français est obligatoire.',
+  },
+  PROJECT_WILAYA_INVALID: {
+    ar: 'رمز ولاية المشروع غير صالح. اختر ولاية رسمية من القائمة.',
+    fr: 'Le code de wilaya du projet est invalide. Sélectionnez une wilaya officielle.',
+  },
+  PROJECT_WILAYA_NAME_REQUIRED: {
+    ar: 'اسم ولاية المشروع مطلوب.',
+    fr: 'Le nom de la wilaya du projet est obligatoire.',
+  },
+  PROJECT_WILAYA_NAME_MISMATCH: {
+    ar: 'اسم الولاية لا يطابق رمز الولاية الرسمي المحدد للمشروع.',
+    fr: 'Le nom de la wilaya ne correspond pas au code officiel sélectionné pour le projet.',
+  },
+  PROJECT_MUNICIPALITY_REQUIRED: {
+    ar: 'اسم بلدية المشروع مطلوب.',
+    fr: 'La commune du projet est obligatoire.',
+  },
+  PROJECT_CREATOR_REQUIRED: {
+    ar: 'معرّف منشئ المشروع مطلوب.',
+    fr: 'L’identifiant du créateur du projet est obligatoire.',
+  },
+  PROJECT_CONCURRENCY_CONFLICT: {
+    ar: 'تم تعديل بيانات المشروع من طرف عملية أخرى. أعد تحميل البيانات قبل الحفظ.',
+    fr: 'Les données du projet ont été modifiées par une autre opération. Rechargez les données avant d’enregistrer.',
+  },
+  PROJECT_FINANCIAL_ACCESS_DENIED: {
+    ar: 'لا تملك صلاحية الاطلاع على البيانات المالية أو تعديل ميزانية هذا المشروع.',
+    fr: 'Vous n’êtes pas autorisé à consulter ou modifier les données financières de ce projet.',
+  },
+  PROJECT_LAST_MANAGER_REQUIRED: {
+    ar: 'يجب أن يحتفظ المشروع بمدير مشروع واحد نشط على الأقل.',
+    fr: 'Le projet doit conserver au moins un chef de projet actif.',
+  },
+  PROJECT_MEMBER_ID_REQUIRED: {
+    ar: 'معرّف الموظف مطلوب لإسناد صلاحية على المشروع.',
+    fr: 'L’identifiant du membre est obligatoire pour l’affectation au projet.',
+  },
+  PROJECT_MEMBER_ASSIGNER_REQUIRED: {
+    ar: 'معرّف المسؤول المسنِد للصلاحية مطلوب.',
+    fr: 'L’identifiant du responsable effectuant l’affectation est obligatoire.',
+  },
+  PROJECT_MEMBER_NOT_FOUND: {
+    ar: 'عضو المشروع المطلوب غير موجود.',
+    fr: 'Le membre du projet demandé est introuvable.',
+  },
+  PROJECT_ROLE_INVALID: {
+    ar: 'الدور المحدد داخل المشروع غير صالح.',
+    fr: 'Le rôle sélectionné dans le projet est invalide.',
+  },
+  BUILDING_NOT_FOUND: {
+    ar: 'العمارة المطلوبة غير موجودة ضمن هذا المشروع.',
+    fr: 'Le bâtiment demandé est introuvable dans ce projet.',
+  },
+  BUILDING_PROJECT_REQUIRED: {
+    ar: 'يجب ربط العمارة بمشروع عقاري صالح.',
+    fr: 'Le bâtiment doit être rattaché à un projet immobilier valide.',
+  },
+  BUILDING_CREATOR_REQUIRED: {
+    ar: 'معرّف منشئ العمارة مطلوب.',
+    fr: 'L’identifiant du créateur du bâtiment est obligatoire.',
+  },
+  FLOOR_NOT_FOUND: {
+    ar: 'الطابق المطلوب غير موجود ضمن هذه العمارة.',
+    fr: 'L’étage demandé est introuvable dans ce bâtiment.',
+  },
+  FLOOR_BUILDING_REQUIRED: {
+    ar: 'يجب ربط الطابق بعمارة صالحة.',
+    fr: 'L’étage doit être rattaché à un bâtiment valide.',
+  },
+  UNIT_NOT_FOUND: {
+    ar: 'الوحدة العقارية المطلوبة غير موجودة.',
+    fr: 'L’unité immobilière demandée est introuvable.',
+  },
+  PROPERTY_UNIT_NOT_FOUND: {
+    ar: 'الوحدة العقارية المحددة غير موجودة ضمن هذا المشروع.',
+    fr: 'L’unité immobilière sélectionnée est introuvable dans ce projet.',
+  },
+  UNIT_FLOOR_REQUIRED: {
+    ar: 'يجب ربط الوحدة العقارية بطابق صالح.',
+    fr: 'L’unité immobilière doit être rattachée à un étage valide.',
+  },
+  UNIT_CREATOR_REQUIRED: {
+    ar: 'معرّف منشئ الوحدة العقارية مطلوب.',
+    fr: 'L’identifiant du créateur de l’unité immobilière est obligatoire.',
+  },
+  UNIT_NOT_AVAILABLE_FOR_RESERVATION: {
+    ar: 'هذه الوحدة غير متاحة حالياً لإنشاء حجز جديد.',
+    fr: 'Cette unité n’est pas disponible pour une nouvelle réservation.',
+  },
+  UNIT_NOT_RESERVED: {
+    ar: 'الوحدة ليست في حالة حجز نشط.',
+    fr: 'L’unité n’est pas en statut réservé actif.',
+  },
+  FILE_NAME_REQUIRED: {
+    ar: 'اسم الملف مطلوب.',
+    fr: 'Le nom du fichier est obligatoire.',
+  },
+  FILE_CONTENT_REQUIRED: {
+    ar: 'محتوى الملف أو نوعه مطلوب.',
+    fr: 'Le contenu ou le type du fichier est obligatoire.',
+  },
+  FILE_PATH_REQUIRED: {
+    ar: 'المسار الداخلي لحفظ الملف مطلوب.',
+    fr: 'Le chemin interne de stockage du fichier est obligatoire.',
+  },
+  FILE_CHECKSUM_INVALID: {
+    ar: 'بصمة التحقق (SHA-256) للملف غير صالحة.',
+    fr: 'L’empreinte de contrôle (SHA-256) du fichier est invalide.',
+  },
+  PROJECT_DOCUMENT_NOT_FOUND: {
+    ar: 'وثيقة المشروع المطلوبة غير موجودة.',
+    fr: 'Le document du projet demandé est introuvable.',
+  },
+  PROJECT_DOCUMENT_CATEGORY_FORBIDDEN: {
+    ar: 'لا تملك صلاحية الاطلاع على هذه الفئة من وثائق المشروع.',
+    fr: 'Vous n’êtes pas autorisé à accéder à cette catégorie de documents du projet.',
+  },
+  DOCUMENT_NOT_FOUND: {
+    ar: 'الوثيقة المطلوبة غير موجودة.',
+    fr: 'Le document demandé est introuvable.',
+  },
+  DOCUMENT_EMPTY: {
+    ar: 'الملف المرفوع فارغ ولا يحتوي على بيانات.',
+    fr: 'Le fichier téléversé est vide.',
+  },
+  DOCUMENT_TOO_LARGE: {
+    ar: 'حجم الملف يتجاوز الحد الأقصى المسموح به.',
+    fr: 'La taille du fichier dépasse la limite autorisée.',
+  },
+  DOCUMENT_EXTENSION_NOT_ALLOWED: {
+    ar: 'امتداد الملف غير مسموح به.',
+    fr: 'L’extension du fichier n’est pas autorisée.',
+  },
+  DOCUMENT_CATEGORY_INVALID: {
+    ar: 'تصنيف الوثيقة غير صالح.',
+    fr: 'La catégorie du document est invalide.',
+  },
+  PARTY_ID_REQUIRED: {
+    ar: 'معرّف الطرف مطلوب.',
+    fr: 'L’identifiant du tiers est obligatoire.',
+  },
+  PARTY_NOT_FOUND: {
+    ar: 'الطرف المطلوب غير موجود في الدليل المركزي.',
+    fr: 'Le tiers demandé est introuvable dans le répertoire central.',
+  },
+  PARTY_KIND_INVALID: {
+    ar: 'الطبيعة القانونية للطرف غير صالحة (شخص طبيعي أو معنوي).',
+    fr: 'La nature du tiers est invalide (personne physique ou morale).',
+  },
+  PARTY_NAME_REQUIRED: {
+    ar: 'الاسم القانوني أو الكامل للطرف مطلوب.',
+    fr: 'Le nom complet ou la raison sociale du tiers est obligatoire.',
+  },
+  PARTY_NAME_TOO_LONG: {
+    ar: 'اسم الطرف يجب ألا يتجاوز 200 حرف.',
+    fr: 'Le nom du tiers ne doit pas dépasser 200 caractères.',
+  },
+  PARTY_SEARCH_QUERY_INVALID: {
+    ar: 'أدخل حرفين على الأقل للبحث في دليل الأطراف المركزي.',
+    fr: 'Saisissez au moins 2 caractères pour rechercher dans le répertoire des tiers.',
+  },
+  PARTY_IDENTITY_MANAGE_REQUIRED: {
+    ar: 'لا تملك صلاحية تعديل الهوية المركزية للأطراف.',
+    fr: 'Vous n’êtes pas autorisé à modifier l’identité centrale des tiers.',
+  },
+  PARTY_DIRECTORY_ACCESS_DENIED: {
+    ar: 'لا تملك صلاحية الاطلاع على دليل الأطراف المركزي.',
+    fr: 'Vous n’êtes pas autorisé à consulter le répertoire central des tiers.',
+  },
+  PARTY_IDENTITY_CONFLICT: {
+    ar: 'توجد هوية مركزية مسجلة مسبقاً تطابق هذه البيانات.',
+    fr: 'Une identité centrale correspondant à ces données existe déjà.',
+  },
+  PARTY_IDENTITY_MISMATCH: {
+    ar: 'بيانات الهوية المحددة لا تطابق السجل المركزي للطرف.',
+    fr: 'Les données d’identité saisies ne correspondent pas au dossier central du tiers.',
+  },
+  PARTY_CONCURRENCY_CONFLICT: {
+    ar: 'تم تعديل هوية الطرف من طرف مستخدم آخر. أعد تحميل البيانات وحاول مجدداً.',
+    fr: 'L’identité du tiers a été modifiée par un autre utilisateur. Rechargez les données puis réessayez.',
+  },
+  CUSTOMER_PARTY_REFERENCE_INVALID: {
+    ar: 'مرجع الطرف المركزي المرتبط بسجل الزبون غير صالح.',
+    fr: 'La référence du tiers central liée au dossier client est invalide.',
+  },
+  CUSTOMER_PARTY_ALREADY_LINKED: {
+    ar: 'هذا الطرف المركزي مرتبط مسبقاً بسجل زبون داخل هذا المشروع.',
+    fr: 'Ce tiers central est déjà rattaché à un dossier client dans ce projet.',
+  },
+  RESERVATION_CANCEL_REASON_REQUIRED: {
+    ar: 'سبب إلغاء الحجز مطلوب.',
+    fr: 'Le motif d’annulation de la réservation est obligatoire.',
+  },
 };
 
 export function translateApiError(code: string | undefined, fallbackMessage: string, lang: AppLanguage): string {

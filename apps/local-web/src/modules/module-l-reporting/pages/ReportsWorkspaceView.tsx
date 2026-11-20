@@ -1,7 +1,7 @@
 import { BarChart3, ShieldAlert } from 'lucide-react';
 import type { AppLanguage, AuthenticatedUser, ProjectDto } from '@/types/erp';
 import { formatDzd } from '@/shared/utils/algerianFormat';
-import { canViewAuditLogs } from '@/modules/technical-admin';
+import { canViewAuditLogs } from '@/core/permissions/permissionPolicy';
 import { PageHeader } from '@/shared/components/PageHeader';
 import { PlannedModuleWorkspace } from '@/shared/components/PlannedModuleWorkspace';
 import { formatProjectStatus } from '@/shared/components/ProjectIdentityStrip';

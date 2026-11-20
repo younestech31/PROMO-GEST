@@ -5,8 +5,9 @@ import { renderToStaticMarkup } from 'react-dom/server';
 import axe from 'axe-core';
 import { JSDOM } from 'jsdom';
 
-import { ChangePasswordRequiredScreen, LoginScreen } from '../modules/auth';
+import { ChangePasswordModal, ChangePasswordRequiredScreen, LoginScreen } from '../modules/auth';
 import { LanguageSwitcher } from '../shared/components/LanguageSwitcher';
+import { Modal } from '../shared/components/Modal';
 import { PageHeader } from '../shared/components/PageHeader';
 import { ConfirmDialog, EmptyState, ErrorBanner, LoadingSkeleton } from '../shared/components/StateViews';
 import type { AppLanguage } from '../types/erp';
@@ -152,6 +153,30 @@ test('shared state views and dialogs carry accessible names', async () => {
         cancelLabel: language === 'ar' ? 'إلغاء' : 'Annuler',
         onConfirm: noop,
         onCancel: noop,
+      }),
+      language,
+    );
+    await audit(
+      'Modal',
+      createElement(
+        Modal,
+        {
+          open: true,
+          titleId: `modal-audit-title-${language}`,
+          onClose: noop,
+          dir: language === 'ar' ? 'rtl' : 'ltr',
+        },
+        createElement('h2', { id: `modal-audit-title-${language}` }, language === 'ar' ? 'نافذة' : 'Fenêtre'),
+        createElement('button', { type: 'button' }, language === 'ar' ? 'إغلاق' : 'Fermer'),
+      ),
+      language,
+    );
+    await audit(
+      'ChangePasswordModal',
+      createElement(ChangePasswordModal, {
+        language,
+        onClose: noop,
+        onCompleted: noop,
       }),
       language,
     );

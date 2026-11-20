@@ -23,7 +23,6 @@ import { useUnsavedGuard } from '../shared/hooks/useUnsavedGuard';
 import { getDocumentPresentation, isViteDevelopmentBuild, isVitePreviewRuntime } from '../shared/utils/appRuntime';
 import { ErpShellLayout } from './ErpShellLayout';
 import { ChangePasswordModal, ChangePasswordRequiredScreen, LoginScreen, authApi } from '../modules/auth';
-import { FirstRunSetupWizard, setupApi } from '../modules/setup';
 import { canManageOrganizationProfile } from '../core/permissions/permissionPolicy';
 import { ConfirmDialog, ErrorBanner } from '../shared/components/StateViews';
 import { ErrorBoundary } from '../shared/components/ErrorBoundary';
@@ -66,6 +65,9 @@ const SystemDiagnosticsView = lazy(() =>
 );
 const ReportsWorkspaceView = lazy(() =>
   import('../modules/module-l-reporting').then((module) => ({ default: module.ReportsWorkspaceView }))
+);
+const FirstRunSetupWizard = lazy(() =>
+  import('../modules/setup').then((module) => ({ default: module.FirstRunSetupWizard }))
 );
 
 function WorkspaceFallback({ language }: { language: AppLanguage }) {
@@ -516,7 +518,7 @@ export function App() {
         }
 
         // Only unauthenticated clients need first-run status and the public default language.
-        const setup = await setupApi.getSetupStatus();
+        const setup = await apiClient.getSetupStatus();
         if (!active) return;
         setSetupState(setup);
         if (setup.defaultLanguage) setUnauthenticatedLanguage(setup.defaultLanguage);
@@ -639,14 +641,16 @@ export function App() {
   if (!setupState?.isInitialized) {
     return (
       <ErrorBoundary language={language} scope="first-run-setup">
-        <FirstRunSetupWizard
-          language={language}
-          onLanguageChange={handleLanguageChange}
-          requiresBootstrapToken={setupState?.requiresBootstrapToken}
-          isPreviewMode={isPreviewMode}
-          onPreviewLogin={handlePreviewLogin}
-          onInitialized={handleInitialized}
-        />
+        <Suspense fallback={<WorkspaceFallback language={language} />}>
+          <FirstRunSetupWizard
+            language={language}
+            onLanguageChange={handleLanguageChange}
+            requiresBootstrapToken={setupState?.requiresBootstrapToken}
+            isPreviewMode={isPreviewMode}
+            onPreviewLogin={handlePreviewLogin}
+            onInitialized={handleInitialized}
+          />
+        </Suspense>
       </ErrorBoundary>
     );
   }

@@ -231,6 +231,7 @@ test('API, CSRF, permission, route parsing, localization and shared utilities ea
     /export function EmptyState\(/,
     /export function ErrorBanner\(/,
     /export function ConfirmDialog\(/,
+    /export function Modal\(/,
     /export function PlannedModuleShell\(/,
     /export function PlannedModuleWorkspace\(/,
     /export function ErpShellLayout\(/,
@@ -371,4 +372,24 @@ test('planned endpoints reject explicitly instead of reporting fake successful d
   for (const invoke of cases) {
     assert.throws(invoke, (error) => error instanceof ApiError && error.code === 'MODULE_PLANNED');
   }
+});
+
+test('all modal dialogs delegate aria dialog semantics to shared/components/Modal.tsx', () => {
+  const modalPath = path.join(srcRoot, 'shared', 'components', 'Modal.tsx');
+  const files = walk(srcRoot).filter((file) => /\.(ts|tsx)$/.test(file) && !file.endsWith('.test.ts') && !file.endsWith('.test.tsx'));
+  const offenders: string[] = [];
+
+  for (const file of files) {
+    if (file === modalPath) continue;
+    const content = fs.readFileSync(file, 'utf8');
+    if (/role=["']dialog["']/.test(content)) {
+      offenders.push(path.relative(srcRoot, file));
+    }
+  }
+
+  assert.deepEqual(
+    offenders,
+    [],
+    `dialogs must use shared/components/Modal.tsx instead of raw role="dialog": ${offenders.join(', ')}`,
+  );
 });

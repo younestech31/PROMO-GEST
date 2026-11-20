@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent, type MutableRefObject } from 'react';
+import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState, type FormEvent, type MutableRefObject } from 'react';
 import {
   Building2,
   CalendarClock,
@@ -30,20 +30,22 @@ import { getModuleStateLabel } from '@/core/modules/moduleCodes';
 import { apiClient, ApiError } from '@/core/api/apiClient';
 import { getTranslations, translateApiError } from '@/core/localization/translations';
 import { formatDzd, formatLocalDateTime } from '@/shared/utils/algerianFormat';
-import { useAdministrativeReference } from '@/modules/module-a-organization';
-import { canManageProjectAccess, canManageProjects, canUpdateProjectFinancialBudget } from '../permissions';
+import { useAdministrativeReference } from '@/shared/hooks/useAdministrativeReference';
 import {
-  canReadPartyDirectory,
   canManagePartyIdentity,
-  canReadProjectCustomers,
+  canManageProjectAccess,
   canManageProjectCustomers,
-} from '@/modules/module-d-customers-parties';
+  canManageProjects,
+  canManageUsers,
+  canReadPartyDirectory,
+  canReadProjectCustomers,
+  canUpdateProjectFinancialBudget,
+} from '@/core/permissions/permissionPolicy';
 import { canReadProjectDocuments, canUploadProjectDocuments } from '@/modules/module-k-documents';
 import {
   canReadProjectSalesReservations,
   canManageProjectSalesReservations,
 } from '@/modules/module-e-reservations';
-import { canManageUsers } from '@/modules/technical-admin';
 import { validateCreateProject, type ValidationErrors } from '@/shared/utils/validation';
 import { getModuleDefinition } from '@/core/modules/registry';
 import type { ModuleCode } from '@/core/modules/moduleCodes';
@@ -52,9 +54,14 @@ import { EmptyState, ErrorBanner, LoadingSkeleton } from '@/shared/components/St
 import { ProjectIdentityStrip, formatProjectStatus } from '@/shared/components/ProjectIdentityStrip';
 import { FormField, inputBaseClass } from '@/shared/components/FormField';
 import { ProjectStructureModal } from '@/modules/module-c-structure';
-import { ProjectCustomerRegistryModal } from '@/modules/module-d-customers-parties';
 import { ProjectSalesReservationsModal } from '@/modules/module-e-reservations';
 import { ProjectDocumentsModal } from '@/modules/module-k-documents';
+
+const ProjectCustomerRegistryModal = lazy(() =>
+  import('@/modules/module-d-customers-parties').then((module) => ({
+    default: module.ProjectCustomerRegistryModal,
+  }))
+);
 import { ContractsModulePage } from '@/modules/module-f-contracts';
 import { FinanceModulePage } from '@/modules/module-g-finance';
 import { ConstructionModulePage } from '@/modules/module-h-construction';
@@ -625,15 +632,17 @@ export function ProjectWorkspaceView({
 
       {section === 'customers' && (
         canReadCustomers ? (
-          <ProjectCustomerRegistryModal
-            project={project}
-            language={language}
-            canManage={canManageProjectCustomers(currentUser, project)}
-            canReadPartyDirectory={canReadPartyDirectory(currentUser)}
-            canManagePartyIdentity={canManagePartyIdentity(currentUser)}
-            mode="embedded"
-            onDirtyChange={setEmbeddedDirty}
-          />
+          <Suspense fallback={<LoadingSkeleton rows={3} />}>
+            <ProjectCustomerRegistryModal
+              project={project}
+              language={language}
+              canManage={canManageProjectCustomers(currentUser, project)}
+              canReadPartyDirectory={canReadPartyDirectory(currentUser)}
+              canManagePartyIdentity={canManagePartyIdentity(currentUser)}
+              mode="embedded"
+              onDirtyChange={setEmbeddedDirty}
+            />
+          </Suspense>
         ) : (
           <ErrorBanner
             message={

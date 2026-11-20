@@ -3,7 +3,7 @@ import { Building2, Check, ShieldCheck } from 'lucide-react';
 import type { AppLanguage, InitializeInstallationRequest } from '@/types/erp';
 import { getTranslations, translateApiError } from '@/core/localization/translations';
 import { ALGERIAN_LEGAL_FORMS, formatAlgerianLegalForm } from '@/shared/utils/algerianFormat';
-import { useAdministrativeReference } from '@/modules/module-a-organization';
+import { useAdministrativeReference } from '@/shared/hooks/useAdministrativeReference';
 import { checkPasswordStrength, validateSetupRequest, type ValidationErrors } from '@/shared/utils/validation';
 import { apiClient, ApiConnectionError, ApiError } from '@/core/api/apiClient';
 import { LanguageSwitcher } from '@/shared/components/LanguageSwitcher';

@@ -1,4 +1,4 @@
-import { useEffect, useState, type FormEvent } from 'react';
+import { lazy, Suspense, useEffect, useState, type FormEvent } from 'react';
 import { ArrowUpRight, CalendarClock, FileText, FolderPlus, KeyRound, Layers3, Pencil, Search, ShieldAlert, Trash2, Users, UsersRound, X } from 'lucide-react';
 import type {
   AppLanguage,
@@ -11,7 +11,7 @@ import type {
 } from '@/types/erp';
 import { getTranslations, translateApiError } from '@/core/localization/translations';
 import { formatDzd } from '@/shared/utils/algerianFormat';
-import { useAdministrativeReference } from '@/modules/module-a-organization';
+import { useAdministrativeReference } from '@/shared/hooks/useAdministrativeReference';
 import {
   canCreateProject,
   canManageProjectAccess,
@@ -20,23 +20,31 @@ import {
 } from '../permissions';
 import { canManageProjectStructure } from '@/modules/module-c-structure';
 import {
-  canReadProjectCustomers,
+  canManagePartyIdentity,
   canManageProjectCustomers,
-} from '@/modules/module-d-customers-parties';
+  canManageUsers,
+  canReadPartyDirectory,
+  canReadProjectCustomers,
+} from '@/core/permissions/permissionPolicy';
 import {
   canReadProjectSalesReservations,
   canManageProjectSalesReservations,
 } from '@/modules/module-e-reservations';
 import { canReadProjectDocuments, canUploadProjectDocuments } from '@/modules/module-k-documents';
-import { canManageUsers } from '@/modules/technical-admin';
 import { validateCreateProject, type ValidationErrors } from '@/shared/utils/validation';
 import { apiClient, ApiError } from '@/core/api/apiClient';
 import { ConfirmDialog } from '@/shared/components/StateViews';
 import { FormField, inputBaseClass } from '@/shared/components/FormField';
+import { Modal } from '@/shared/components/Modal';
 import { ProjectStructureModal } from '@/modules/module-c-structure';
 import { ProjectDocumentsModal } from '@/modules/module-k-documents';
-import { ProjectCustomerRegistryModal } from '@/modules/module-d-customers-parties';
 import { ProjectSalesReservationsModal } from '@/modules/module-e-reservations';
+
+const ProjectCustomerRegistryModal = lazy(() =>
+  import('@/modules/module-d-customers-parties').then((module) => ({
+    default: module.ProjectCustomerRegistryModal,
+  }))
+);
 
 interface ProjectsAccessViewProps {
   currentUser: AuthenticatedUser;
@@ -730,23 +738,24 @@ export function ProjectsAccessView({
       </div>
 
       {/* Create Project Modal */}
-      {createOpen && (
-        <div
-          className="fixed inset-0 z-50 bg-slate-950/50 flex items-center justify-center p-4"
-          role="dialog"
-          aria-modal="true"
-          aria-labelledby="create-project-title"
-        >
-          <div className="bg-white border border-slate-200 rounded-lg w-full max-w-2xl p-6 max-h-[90vh] overflow-y-auto">
-            <div className="flex items-center justify-between pb-4 border-b border-slate-100">
+      <Modal
+        open={createOpen}
+        titleId="create-project-title"
+        onClose={requestCloseCreateModal}
+        closeDisabled={submitting}
+        overlayClassName="fixed inset-0 z-50 bg-slate-950/50 flex items-center justify-center p-4"
+        panelClassName="bg-white border border-slate-200 rounded-lg w-full max-w-2xl p-6 max-h-[90vh] overflow-y-auto outline-none"
+      >
+        <div className="flex items-center justify-between pb-4 border-b border-slate-100">
               <h2 id="create-project-title" className="text-base font-bold text-slate-900">
                 {editingProject ? t.projects.modalEditTitle : t.projects.modalCreateTitle}
               </h2>
               <button
                 type="button"
+                disabled={submitting}
                 aria-label={t.users.cancel}
                 onClick={requestCloseCreateModal}
-                className="p-1.5 rounded text-slate-500 hover:bg-slate-100"
+                className="p-1.5 rounded text-slate-500 hover:bg-slate-100 disabled:opacity-50"
               >
                 <X className="w-4 h-4" />
               </button>
@@ -962,9 +971,7 @@ export function ProjectsAccessView({
                 </button>
               </div>
             </form>
-          </div>
-        </div>
-      )}
+      </Modal>
 
       {/* Manage Project Access Modal */}
       {structureProject && (
@@ -980,14 +987,18 @@ export function ProjectsAccessView({
         />
       )}
 
-      {accessProject && (
-        <div
-          className="fixed inset-0 z-50 bg-slate-950/50 flex items-center justify-center p-4"
-          role="dialog"
-          aria-modal="true"
-          aria-labelledby="project-access-title"
-        >
-          <div className="bg-white border border-slate-200 rounded-lg w-full max-w-2xl p-6 max-h-[90vh] overflow-y-auto">
+      <Modal
+        open={accessProject !== null}
+        titleId="project-access-title"
+        onClose={() => {
+          if (!submitting) setAccessProject(null);
+        }}
+        closeDisabled={submitting}
+        overlayClassName="fixed inset-0 z-50 bg-slate-950/50 flex items-center justify-center p-4"
+        panelClassName="bg-white border border-slate-200 rounded-lg w-full max-w-2xl p-6 max-h-[90vh] overflow-y-auto outline-none"
+      >
+        {accessProject && (
+          <>
             <div className="flex items-center justify-between pb-4 border-b border-slate-100">
               <div>
                 <h2 id="project-access-title" className="text-base font-bold text-slate-900">
@@ -1000,9 +1011,10 @@ export function ProjectsAccessView({
               </div>
               <button
                 type="button"
+                disabled={submitting}
                 aria-label={t.users.cancel}
                 onClick={() => setAccessProject(null)}
-                className="p-1.5 rounded text-slate-500 hover:bg-slate-100"
+                className="p-1.5 rounded text-slate-500 hover:bg-slate-100 disabled:opacity-50"
               >
                 <X className="w-4 h-4" />
               </button>
@@ -1161,9 +1173,9 @@ export function ProjectsAccessView({
                 </button>
               </div>
             </form>
-          </div>
-        </div>
-      )}
+          </>
+        )}
+      </Modal>
       {documentsProject && (
         <ProjectDocumentsModal
           project={documentsProject}
@@ -1174,15 +1186,17 @@ export function ProjectsAccessView({
         />
       )}
       {customersProject && (
-        <ProjectCustomerRegistryModal
-          project={customersProject}
-          language={language}
-          canManage={canManageProjectCustomers(currentUser, customersProject)}
-          canReadPartyDirectory={currentUser.isSystemAdministrator || currentUser.permissions.includes('parties.directory.read')}
-          canManagePartyIdentity={currentUser.isSystemAdministrator || currentUser.permissions.includes('parties.identity.manage')}
-          onDirtyChange={setChildModalDirty}
-          onClose={() => { setCustomersProject(null); setChildModalDirty(false); }}
-        />
+        <Suspense fallback={null}>
+          <ProjectCustomerRegistryModal
+            project={customersProject}
+            language={language}
+            canManage={canManageProjectCustomers(currentUser, customersProject)}
+            canReadPartyDirectory={canReadPartyDirectory(currentUser)}
+            canManagePartyIdentity={canManagePartyIdentity(currentUser)}
+            onDirtyChange={setChildModalDirty}
+            onClose={() => { setCustomersProject(null); setChildModalDirty(false); }}
+          />
+        </Suspense>
       )}
       {reservationsProject && (
         <ProjectSalesReservationsModal

@@ -1,10 +1,11 @@
-import { useEffect, useState, type FormEvent } from 'react';
+import { useRef, useState, type FormEvent } from 'react';
 import { KeyRound, X } from 'lucide-react';
 import type { AppLanguage } from '@/types/erp';
 import { ApiConnectionError, ApiError, apiClient } from '@/core/api/apiClient';
 import { getTranslations, translateApiError } from '@/core/localization/translations';
 import { checkPasswordStrength } from '@/shared/utils/validation';
 import { FormField, inputBaseClass } from '@/shared/components/FormField';
+import { Modal } from '@/shared/components/Modal';
 
 interface ChangePasswordModalProps {
   language: AppLanguage;
@@ -25,14 +26,7 @@ export function ChangePasswordModal({ language, onClose, onCompleted }: ChangePa
   const [confirmPassword, setConfirmPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
-
-  useEffect(() => {
-    const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === 'Escape' && !submitting) onClose();
-    };
-    document.addEventListener('keydown', handleKeyDown);
-    return () => document.removeEventListener('keydown', handleKeyDown);
-  }, [onClose, submitting]);
+  const currentPasswordRef = useRef<HTMLInputElement | null>(null);
 
   const handleSubmit = async (event: FormEvent) => {
     event.preventDefault();
@@ -75,13 +69,15 @@ export function ChangePasswordModal({ language, onClose, onCompleted }: ChangePa
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/60 px-4 py-6">
-      <div
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby="change-password-title"
-        className="w-full max-w-md rounded-lg border border-slate-200 bg-white p-6 shadow-xl"
-      >
+    <Modal
+      open
+      titleId="change-password-title"
+      onClose={onClose}
+      closeDisabled={submitting}
+      initialFocusRef={currentPasswordRef}
+      overlayClassName="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/60 px-4 py-6"
+      panelClassName="w-full max-w-md rounded-lg border border-slate-200 bg-white p-6 shadow-xl outline-none"
+    >
         <div className="mb-4 flex items-start justify-between gap-3">
           <div className="flex items-start gap-3">
             <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-teal-50 text-teal-800">
@@ -114,11 +110,11 @@ export function ChangePasswordModal({ language, onClose, onCompleted }: ChangePa
         <form onSubmit={handleSubmit} noValidate className="space-y-4">
           <FormField id="change-password-current" label={t.auth.currentPassword}>
             <input
+              ref={currentPasswordRef}
               id="change-password-current"
               type="password"
               dir="ltr"
               autoComplete="current-password"
-              autoFocus
               value={currentPassword}
               onChange={(event) => setCurrentPassword(event.target.value)}
               className={inputBaseClass}
@@ -174,7 +170,6 @@ export function ChangePasswordModal({ language, onClose, onCompleted }: ChangePa
             </button>
           </div>
         </form>
-      </div>
-    </div>
+    </Modal>
   );
 }

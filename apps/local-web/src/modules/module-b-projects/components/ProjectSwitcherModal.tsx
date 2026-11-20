@@ -5,6 +5,7 @@ import { apiClient, ApiError } from '@/core/api/apiClient';
 import { translateApiError } from '@/core/localization/translations';
 import { filterAuthorizedPreferenceIds, type ProjectNavigationPreferences } from '@/shared/utils/navigationPreferences';
 import { formatProjectStatus } from '@/shared/components/ProjectIdentityStrip';
+import { Modal } from '@/shared/components/Modal';
 
 interface ProjectSwitcherModalProps {
   open: boolean;
@@ -39,22 +40,7 @@ export function ProjectSwitcherModal({
     setQuery('');
     setServerProjects(authorizedProjects);
     setError(null);
-    const id = window.setTimeout(() => {
-      inputRef.current?.focus();
-    }, 20);
-    return () => window.clearTimeout(id);
   }, [open, authorizedProjects]);
-
-  useEffect(() => {
-    if (!open) return;
-    const handleKey = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') {
-        onClose();
-      }
-    };
-    window.addEventListener('keydown', handleKey);
-    return () => window.removeEventListener('keydown', handleKey);
-  }, [open, onClose]);
 
   useEffect(() => {
     if (!open) return;
@@ -143,13 +129,14 @@ export function ProjectSwitcherModal({
   };
 
   return (
-    <div
-      className="fixed inset-0 z-[85] flex items-start justify-center bg-slate-950/50 p-4 pt-12 sm:pt-16"
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby="project-switcher-title"
+    <Modal
+      open={open}
+      titleId="project-switcher-title"
+      onClose={onClose}
+      initialFocusRef={inputRef}
+      overlayClassName="fixed inset-0 z-[85] flex items-start justify-center bg-slate-950/50 p-4 pt-12 sm:pt-16"
+      panelClassName="w-full max-w-2xl rounded-lg border border-slate-200 bg-white shadow-2xl overflow-hidden flex flex-col max-h-[82vh] outline-none"
     >
-      <div className="w-full max-w-2xl rounded-lg border border-slate-200 bg-white shadow-2xl overflow-hidden flex flex-col max-h-[82vh]">
         <div className="flex items-center justify-between gap-3 border-b border-slate-200 px-4 py-3">
           <div>
             <h2 id="project-switcher-title" className="text-sm font-bold text-slate-900">
@@ -259,7 +246,6 @@ export function ProjectSwitcherModal({
             <span>{isArabic ? 'تصفح دليل المشاريع' : 'Parcourir l’annuaire'}</span>
           </button>
         </div>
-      </div>
-    </div>
+    </Modal>
   );
 }

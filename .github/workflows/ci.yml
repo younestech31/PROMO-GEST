@@ -279,9 +279,23 @@ jobs:
           SQL
 
           echo "[Linux backup script] Creating a real protected backup bundle as root..."
+
           sudo install -d -o root -g root -m 0750 /etc/promogest
           sudo install -o root -g root -m 0600 "$PGPASSFILE" /etc/promogest/pgpass
           backup_root="$RUNNER_TEMP/promogest-backups"
+          backup_cert="$RUNNER_TEMP/promogest-backup-recipient.pem"
+          backup_key="$RUNNER_TEMP/promogest-backup-recipient-key.pem"
+          offsite_dir="$RUNNER_TEMP/promogest-offsite"
+          rm -rf "$offsite_dir"
+          mkdir -p "$offsite_dir"
+          openssl req -x509 -newkey rsa:3072 -keyout "$backup_key" -out "$backup_cert" \
+            -days 2 -nodes -subj "/CN=promogest-ci-backup" >/dev/null 2>&1
+          chmod 0600 "$backup_key"
+          sudo install -d -o root -g root -m 0700 "$backup_root"
+          for stale in 1 2 3 4; do
+            sudo touch -d '45 days ago' "$backup_root/promogest_backup_2025010${stale}_000000.tar.gz.cms"
+            printf 'stale\n' | sudo tee "$backup_root/promogest_backup_2025010${stale}_000000.tar.gz.cms.sha256" >/dev/null
+          done
           lock_mode_before="$(stat -c '%a' /run/lock)"
           sudo env \
             PGHOST="$PGHOST" PGPORT="$PGPORT" PGUSER="$PGUSER" \
@@ -292,6 +306,12 @@ jobs:
             PROMOGEST_CONFIG_PATH="$config_path" \
             PROMOGEST_CADDYFILE_PATH="$GITHUB_WORKSPACE/deploy/linux/Caddyfile" \
             PROMOGEST_BACKUP_ROOT="$backup_root" \
+            PROMOGEST_BACKUP_RECIPIENT_CERT="$backup_cert" \
+            PROMOGEST_BACKUP_OFFSITE_DIR="$offsite_dir" \
+            PROMOGEST_BACKUP_ALLOW_SAME_DEVICE_OFFSITE=1 \
+            PROMOGEST_BACKUP_KEEP_PLAINTEXT=1 \
+            PROMOGEST_BACKUP_RETENTION_DAYS=30 \
+            PROMOGEST_BACKUP_RETENTION_MIN_KEEP=3 \
             PROMOGEST_DATA_PROTECTION_CERT_PASSWORD="$PROMOGEST_DATA_PROTECTION_CERT_PASSWORD" \
             bash scripts/backup-promogest.sh
           bundle_dir="$(sudo find "$backup_root" -mindepth 1 -maxdepth 1 -type d -name 'promogest_backup_*' -print -quit)"
@@ -306,6 +326,21 @@ jobs:
             sudo test -s "$bundle_dir/$component"
           done
           sudo bash -c 'cd "$1" && sha256sum -c manifest.sha256' _ "$bundle_dir"
+          artifact_cms="$(sudo find "$backup_root" -maxdepth 1 -type f -name 'promogest_backup_*.tar.gz.cms' -printf '%T@ %p\n' | sort -rn | head -1 | cut -d' ' -f2-)"
+          test -n "$artifact_cms"
+          sudo test -s "$artifact_cms"
+          sudo test -s "$artifact_cms.sha256"
+          ( cd "$backup_root" && sudo sha256sum -c "$(basename "$artifact_cms").sha256" )
+          sudo openssl cms -cmsout -inform DER -in "$artifact_cms" -out /dev/null
+          if sudo find "$backup_root" -maxdepth 1 -type f -name 'promogest_backup_*.tar.gz' | grep -q .; then
+            echo "The backup root still contains a plaintext tarball after encryption." >&2
+            exit 1
+          fi
+          test -f "$offsite_dir/$(basename "$artifact_cms")"
+          test -f "$offsite_dir/$(basename "$artifact_cms").sha256"
+          ( cd "$offsite_dir" && sha256sum -c "$(basename "$artifact_cms").sha256" )
+          remaining_artifacts="$(sudo find "$backup_root" -maxdepth 1 -type f -name 'promogest_backup_*.tar.gz.cms' | wc -l)"
+          test "$remaining_artifacts" -eq 3
           sudo tar -xOzf "$bundle_dir/config-sanitized.tar.gz" ./appsettings.Production.sanitized.json > "$RUNNER_TEMP/promogest-config-sanitized.json"
           python3 - "$RUNNER_TEMP/promogest-config-sanitized.json" <<'PY'
           import json
@@ -343,7 +378,8 @@ jobs:
             PGPROVISION_USER=postgres PROMOGEST_APP_USER=promogest_app \
             PGPASSFILE=/etc/promogest/pgpass \
             PROMOGEST_DATA_PROTECTION_CERT_PASSWORD="$PROMOGEST_DATA_PROTECTION_CERT_PASSWORD" \
-            bash scripts/verify-backup-restore.sh promogest_ci "" "" "" "$bundle_dir"
+            PROMOGEST_BACKUP_DECRYPT_KEY="$backup_key" \
+            bash scripts/verify-backup-restore.sh promogest_ci "" "" "" "$artifact_cms"
 
           echo "[Linux restore verifier] Rejecting path-traversal entries from a checksummed production bundle..."
           malicious_bundle="$RUNNER_TEMP/promogest-malicious-tar-bundle"
@@ -435,6 +471,9 @@ jobs:
             PROMOGEST_CONFIG_PATH="$config_path" \
             PROMOGEST_CADDYFILE_PATH="$GITHUB_WORKSPACE/deploy/linux/Caddyfile" \
             PROMOGEST_BACKUP_ROOT="$failed_backup_root" \
+            PROMOGEST_BACKUP_ENCRYPTION=disabled \
+            PROMOGEST_BACKUP_ALLOW_PLAINTEXT=1 \
+            PROMOGEST_BACKUP_ALLOW_LOCAL_ONLY=1 \
             PROMOGEST_DATA_PROTECTION_CERT_PASSWORD="$PROMOGEST_DATA_PROTECTION_CERT_PASSWORD" \
             bash scripts/backup-promogest.sh; then
             echo "Backup unexpectedly succeeded while PostgreSQL was unreachable." >&2
@@ -459,6 +498,9 @@ jobs:
             PROMOGEST_CONFIG_PATH="$config_path" \
             PROMOGEST_CADDYFILE_PATH="$GITHUB_WORKSPACE/deploy/linux/Caddyfile" \
             PROMOGEST_BACKUP_ROOT="$transient_backup_root" \
+            PROMOGEST_BACKUP_ENCRYPTION=disabled \
+            PROMOGEST_BACKUP_ALLOW_PLAINTEXT=1 \
+            PROMOGEST_BACKUP_ALLOW_LOCAL_ONLY=1 \
             PROMOGEST_DATA_PROTECTION_CERT_PASSWORD="$PROMOGEST_DATA_PROTECTION_CERT_PASSWORD" \
             bash scripts/backup-promogest.sh; then
             echo "Backup unexpectedly proceeded while the service was activating." >&2
@@ -482,6 +524,9 @@ jobs:
             PROMOGEST_CONFIG_PATH="$config_path" \
             PROMOGEST_CADDYFILE_PATH="$GITHUB_WORKSPACE/deploy/linux/Caddyfile" \
             PROMOGEST_BACKUP_ROOT="$storage_root/backup-under-storage" \
+            PROMOGEST_BACKUP_ENCRYPTION=disabled \
+            PROMOGEST_BACKUP_ALLOW_PLAINTEXT=1 \
+            PROMOGEST_BACKUP_ALLOW_LOCAL_ONLY=1 \
             bash scripts/backup-promogest.sh; then
             echo "Backup script accepted a destination nested inside document storage." >&2
             exit 1
@@ -498,6 +543,9 @@ jobs:
             PROMOGEST_CONFIG_PATH="$config_path" \
             PROMOGEST_CADDYFILE_PATH="$GITHUB_WORKSPACE/deploy/linux/Caddyfile" \
             PROMOGEST_BACKUP_ROOT=/var/backups \
+            PROMOGEST_BACKUP_ENCRYPTION=disabled \
+            PROMOGEST_BACKUP_ALLOW_PLAINTEXT=1 \
+            PROMOGEST_BACKUP_ALLOW_LOCAL_ONLY=1 \
             bash scripts/backup-promogest.sh; then
             echo "Backup script accepted the shared /var/backups directory." >&2
             exit 1
@@ -515,6 +563,9 @@ jobs:
             PROMOGEST_CONFIG_PATH="$config_path" \
             PROMOGEST_CADDYFILE_PATH="$GITHUB_WORKSPACE/deploy/linux/Caddyfile" \
             PROMOGEST_BACKUP_ROOT="$RUNNER_TEMP/protected-home-backup-probe" \
+            PROMOGEST_BACKUP_ENCRYPTION=disabled \
+            PROMOGEST_BACKUP_ALLOW_PLAINTEXT=1 \
+            PROMOGEST_BACKUP_ALLOW_LOCAL_ONLY=1 \
             bash scripts/backup-promogest.sh; then
             echo "Backup script accepted a protected-home destination in systemd mode." >&2
             exit 1
@@ -533,8 +584,66 @@ jobs:
             PROMOGEST_CONFIG_PATH="$config_path" \
             PROMOGEST_CADDYFILE_PATH="$GITHUB_WORKSPACE/deploy/linux/Caddyfile" \
             PROMOGEST_BACKUP_ROOT="$RUNNER_TEMP/promogest-symlink-backup-probe" \
+            PROMOGEST_BACKUP_ENCRYPTION=disabled \
+            PROMOGEST_BACKUP_ALLOW_PLAINTEXT=1 \
+            PROMOGEST_BACKUP_ALLOW_LOCAL_ONLY=1 \
             bash scripts/backup-promogest.sh; then
             echo "Backup script accepted a symbolic-link Data Protection root." >&2
+            exit 1
+          fi
+
+
+          echo "[Linux backup script] Verifying unattested plaintext backups are refused..."
+          if sudo env \
+            PGHOST="$PGHOST" PGPORT="$PGPORT" PGUSER="$PGUSER" \
+            PGPASSFILE=/etc/promogest/pgpass \
+            PROMOGEST_DATA_PROTECTION_CERT_PASSWORD="$PROMOGEST_DATA_PROTECTION_CERT_PASSWORD" \
+            PROMOGEST_DB_NAME=promogest_ci \
+            PROMOGEST_STORAGE_DIR="$storage_root" \
+            PROMOGEST_DATA_PROTECTION_KEY_DIR="$key_root" \
+            PROMOGEST_CONFIG_PATH="$config_path" \
+            PROMOGEST_CADDYFILE_PATH="$GITHUB_WORKSPACE/deploy/linux/Caddyfile" \
+            PROMOGEST_BACKUP_ROOT="$RUNNER_TEMP/promogest-plaintext-probe" \
+            PROMOGEST_BACKUP_ENCRYPTION=disabled \
+            PROMOGEST_BACKUP_ALLOW_LOCAL_ONLY=1 \
+            bash scripts/backup-promogest.sh; then
+            echo "Backup script disabled encryption without the explicit plaintext acknowledgement." >&2
+            exit 1
+          fi
+
+          echo "[Linux backup script] Verifying a missing recipient certificate fails closed..."
+          if sudo env \
+            PGHOST="$PGHOST" PGPORT="$PGPORT" PGUSER="$PGUSER" \
+            PGPASSFILE=/etc/promogest/pgpass \
+            PROMOGEST_DATA_PROTECTION_CERT_PASSWORD="$PROMOGEST_DATA_PROTECTION_CERT_PASSWORD" \
+            PROMOGEST_DB_NAME=promogest_ci \
+            PROMOGEST_STORAGE_DIR="$storage_root" \
+            PROMOGEST_DATA_PROTECTION_KEY_DIR="$key_root" \
+            PROMOGEST_CONFIG_PATH="$config_path" \
+            PROMOGEST_CADDYFILE_PATH="$GITHUB_WORKSPACE/deploy/linux/Caddyfile" \
+            PROMOGEST_BACKUP_ROOT="$RUNNER_TEMP/promogest-missing-cert-probe" \
+            PROMOGEST_BACKUP_ENCRYPTION=required \
+            PROMOGEST_BACKUP_ALLOW_LOCAL_ONLY=1 \
+            bash scripts/backup-promogest.sh; then
+            echo "Backup script accepted an encrypted run without a recipient certificate." >&2
+            exit 1
+          fi
+
+          echo "[Linux backup script] Verifying a missing offsite target fails closed..."
+          if sudo env \
+            PGHOST="$PGHOST" PGPORT="$PGPORT" PGUSER="$PGUSER" \
+            PGPASSFILE=/etc/promogest/pgpass \
+            PROMOGEST_DATA_PROTECTION_CERT_PASSWORD="$PROMOGEST_DATA_PROTECTION_CERT_PASSWORD" \
+            PROMOGEST_DB_NAME=promogest_ci \
+            PROMOGEST_STORAGE_DIR="$storage_root" \
+            PROMOGEST_DATA_PROTECTION_KEY_DIR="$key_root" \
+            PROMOGEST_CONFIG_PATH="$config_path" \
+            PROMOGEST_CADDYFILE_PATH="$GITHUB_WORKSPACE/deploy/linux/Caddyfile" \
+            PROMOGEST_BACKUP_ROOT="$RUNNER_TEMP/promogest-missing-offsite-probe" \
+            PROMOGEST_BACKUP_ENCRYPTION=required \
+            PROMOGEST_BACKUP_RECIPIENT_CERT="$backup_cert" \
+            bash scripts/backup-promogest.sh; then
+            echo "Backup script accepted a single-copy run without an explicit local-only acknowledgement." >&2
             exit 1
           fi
 

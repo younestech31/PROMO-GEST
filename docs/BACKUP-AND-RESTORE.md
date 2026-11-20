@@ -12,7 +12,9 @@ A complete backup must preserve a consistent set of:
 
 Backing up only PostgreSQL leaves documents orphaned. Backing up database and documents without the Data Protection key ring can make previously protected payloads unreadable after restoration. Store backup bundles on encrypted media or an encrypted NAS and restrict access to the service and maintenance administrators.
 
-**Operational limitation:** the scripts do not automatically delete old bundles or replicate them off the server. The configured destination is the first local copy, not a disaster-recovery copy. Monitor free space, define the organization's retention period, and copy each successful bundle to a separate encrypted disk or NAS before relying on it for disaster recovery. Automatic pruning is intentionally not enabled until that retention policy is explicitly selected.
+**Linux production path (implemented 2026-11-20):** the backup job now seals, packs, and encrypts the bundle with an X.509 recipient certificate, writes it together with a SHA-256 sidecar, copies and verifies it on an independent offsite mount, applies a retention policy that never prunes below the newest configured artefacts, and removes the unencrypted bundle by default. Encryption and offsite replication are fail-closed: the job refuses to run without a recipient certificate and an offsite target unless an operator explicitly acknowledges the risk in configuration.
+
+**Windows path (not yet at parity):** `backup-promogest.ps1` still writes an unencrypted bundle directory on the local server, with ACL-restricted access, and performs no offsite replication or pruning. Treat the Windows backup as a same-host recovery source only, copy it manually to independent media, and note that this part of AUD-01 remains open for Windows installations.
 
 ## 2. Database identities
 
@@ -34,6 +36,52 @@ On Windows Server, run the backup script from an elevated maintenance session. B
 
 Confirm that the resulting bundle contains the database dump, storage archive, Data Protection key archive, sanitized configuration archive, and manifest. If backup creation fails, the script removes only the incomplete bundle it created and still attempts to restart a service it stopped; a completed bundle is retained even if service restart then fails, and the service state must be checked immediately.
 
+### Linux
+
+The systemd job (`promogest-backup.service` + `promogest-backup.timer`, daily at 22:00 with a randomised delay) runs as root and enforces the following contract:
+
+| Setting | Default | Meaning |
+|---|---|---|
+| `PROMOGEST_BACKUP_ENCRYPTION` | `required` | `disabled` is honoured only together with `PROMOGEST_BACKUP_ALLOW_PLAINTEXT=1` |
+| `PROMOGEST_BACKUP_RECIPIENT_CERT` | `/etc/promogest/backup-recipient.pem` | Public X.509 certificate used for CMS enveloping; the private key must not exist on this host |
+| `PROMOGEST_BACKUP_OFFSITE_DIR` | `/mnt/promogest-offsite` | Independent mount copied to and verified on every run |
+| `PROMOGEST_BACKUP_ALLOW_LOCAL_ONLY` | `0` | Explicit acknowledgement when no offsite target exists |
+| `PROMOGEST_BACKUP_ALLOW_SAME_DEVICE_OFFSITE` | `0` | Test/DR exception when the offsite path shares a filesystem with the primary root |
+| `PROMOGEST_BACKUP_RETENTION_DAYS` | `30` | Minimum 7 |
+| `PROMOGEST_BACKUP_RETENTION_MIN_KEEP` | `3` | Newest artefacts are never pruned |
+| `PROMOGEST_BACKUP_KEEP_PLAINTEXT` | `0` | Test/diagnostic only; production keeps no plaintext bundle |
+
+Execution order is deliberate:
+
+1. PostgreSQL dump, storage and key-ring archives, sanitized configuration, then the four-component SHA-256 manifest — with the application service stopped for consistency.
+2. **Service restart as soon as the snapshot is sealed.** Encryption, offsite copy and pruning therefore no longer extend the maintenance window. A sealed snapshot is never deleted because a later stage failed.
+3. Packaging into `promogest_backup_<UTC timestamp>.tar.gz`, CMS enveloping (`openssl cms -encrypt -aes-256-cbc`) into `…tar.gz.cms`, structural validation of the envelope, and a `…tar.gz.cms.sha256` sidecar.
+4. Copy of the `.cms` and its sidecar to the offsite mount, followed by `sha256sum -c` of the remote copy.
+5. Retention pruning in both locations, then removal of the unencrypted bundle directory.
+
+The `.cms` file is the artefact of record. The private key is deliberately absent from the server, so decryptability is proven only by the restore drill on the operator workstation; a structural check runs at backup time.
+
+Provisioning on a new host:
+
+```bash
+# Operator workstation, not the server: create the recipient key pair.
+openssl req -x509 -newkey rsa:3072 -days 3650 -nodes \
+  -keyout promogest-backup-key.pem -out promogest-backup-recipient.pem \
+  -subj "/CN=PromoGest Backup Recipient/O=<organisation>"
+# Server: install only the public certificate.
+sudo install -o root -g root -m 0644 promogest-backup-recipient.pem \
+  /etc/promogest/backup-recipient.pem
+# Server: the offsite target must be an independent, mounted filesystem.
+sudo install -d -o root -g root -m 0700 /mnt/promogest-offsite
+```
+
+Never copy `promogest-backup-key.pem` to the server, into the repository, into the offsite backup directory, or into the same safe as the backups. Keep at least two offline copies in separate physical locations and record who can retrieve them.
+
+### Key rotation
+
+A recipient certificate is valid for years but must be rotated on staff change, suspected compromise, or before expiry. Rotation is additive: install the new certificate on the server and keep the previous private key available until every artefact encrypted with it has passed its retention window. Previously issued keys are never overwritten.
+
+
 ## 4. Mandatory full restoration drill
 
 A backup is not considered verified until it has been restored into a separate scratch database and all referenced files have been checked.
@@ -54,7 +102,7 @@ Restore output defaults to isolated directories under `C:\PromoGest-Restore\`, o
 
 Use `promogest_owner` for the dump/restore operations, `postgres` (or another maintenance identity) to create and remove the uniquely named scratch database, and `promogest_app` only for the runtime-access checks.
 
-To verify the **actual production backup bundle** created by the systemd job, pass its directory as the fifth argument. Use the exact path printed by `backup-promogest.sh`:
+To verify the **actual production artefact** created by the systemd job, pass the `.cms` file and the matching private key. Use the exact filename printed by `backup-promogest.sh`:
 
 ```bash
 sudo env \
@@ -62,11 +110,12 @@ sudo env \
   PROMOGEST_APP_USER=promogest_app \
   PGPASSFILE=/etc/promogest/pgpass \
   PROMOGEST_DATA_PROTECTION_CERT_PASSWORD='<secret-from-vault>' \
+  PROMOGEST_BACKUP_DECRYPT_KEY=/secure/offline/promogest-backup-key.pem \
   ./scripts/verify-backup-restore.sh promogest "" "" "" \
-  /var/backups/promogest/promogest_backup_YYYYMMDD_HHMMSS
+  /mnt/promogest-offsite/promogest_backup_YYYYMMDD_HHMMSS.tar.gz.cms
 ```
 
-The fifth argument makes the drill validate and restore the exact `database.dump`, `storage.tar.gz`, `dataprotection-keys.tar.gz`, and `config-sanitized.tar.gz` files from that bundle. The backup job removes a partial bundle if any backup stage fails, and its exit handler attempts to restart the service if it had stopped it; an error restarting the service is a critical operational alert. It checks the SHA-256 manifest, rejects unsafe archive paths and links, verifies the restored Data Protection certificate, restores into temporary directories and a new scratch database, reapplies least-privilege grants, and checks each database-referenced document by path, byte length, and SHA-256. The drill removes only the uniquely named scratch database it created; it never drops the source database or changes the selected backup bundle.
+The drill first verifies the sidecar SHA-256 of the ciphertext, decrypts it with the offline key, rejects unsafe or linked archive members, extracts the bundle into a temporary directory, and then validates and restores the exact `database.dump`, `storage.tar.gz`, `dataprotection-keys.tar.gz`, and `config-sanitized.tar.gz` components exactly as before. A plaintext `.tar.gz` artefact can also be passed when encryption was explicitly disabled; `.cms` additionally requires `PROMOGEST_BACKUP_DECRYPT_KEY`. The backup job removes a partial bundle if any backup stage fails, and its exit handler attempts to restart the service if it had stopped it; an error restarting the service is a critical operational alert. It checks the SHA-256 manifest, rejects unsafe archive paths and links, verifies the restored Data Protection certificate, restores into temporary directories and a new scratch database, reapplies least-privilege grants, and checks each database-referenced document by path, byte length, and SHA-256. The drill removes only the uniquely named scratch database it created; it never drops the source database or changes the selected backup bundle.
 
 For a source-based drill that builds a temporary verification payload instead of using a saved production bundle, omit the fifth argument and provide the storage, configuration, and Data Protection key directories:
 
@@ -76,7 +125,7 @@ PGHOST=127.0.0.1 PGUSER=promogest_owner PGPROVISION_USER=postgres \
   ./src/PromoGest.Api/appsettings.Production.json ./dataprotection-keys
 ```
 
-For the Linux systemd backup service, store PostgreSQL client credentials in `/etc/promogest/pgpass`, owned by `root:root` with mode `0600`; the unit runs with `ProtectHome=true`, so `/root/.pgpass` is deliberately not used by that service. For a manual drill, set `PGPASSFILE` to a protected file readable only by the operator. The service's default destination is `/var/backups/promogest`. If you change `PROMOGEST_BACKUP_ROOT`, pre-create a dedicated root-owned directory and update the backup unit's `ReadWritePaths` to include that exact destination; do not use shared system directories, `/home`, `/root`, `/run/user` (hidden by `ProtectHome=true`), or a path overlapping storage, Data Protection keys, application configuration, or Caddy configuration.
+For the Linux systemd backup service, store PostgreSQL client credentials in `/etc/promogest/pgpass`, owned by `root:root` with mode `0600`; the unit runs with `ProtectHome=true`, so `/root/.pgpass` is deliberately not used by that service. For a manual drill, set `PGPASSFILE` to a protected file readable only by the operator. The service's default destination is `/var/backups/promogest`. If you change `PROMOGEST_BACKUP_ROOT` or `PROMOGEST_BACKUP_OFFSITE_DIR`, pre-create dedicated root-owned directories, update the backup unit's `ReadWritePaths` to include both exact destinations, and add the offsite path to `RequiresMountsFor` so a missing mount fails the unit instead of silently producing a single local copy; do not use shared system directories, `/home`, `/root`, `/run/user` (hidden by `ProtectHome=true`), or a path overlapping storage, Data Protection keys, application configuration, or Caddy configuration.
 
 ## 5. Data Protection recovery
 

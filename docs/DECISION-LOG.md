@@ -8,7 +8,7 @@
 
 ---
 
-## 1. Summary of Architecture Decision Records (ADRs `0001–0012`)
+## 1. Summary of Architecture Decision Records (ADRs `0001–0014`)
 
 | ADR | Title | Decision Summary | Status |
 |---|---|---|---|
@@ -24,7 +24,7 @@
 | **ADR-0010** | Versioned Algerian Administrative Reference Data | Verified server-owned 69-Wilaya subset; 1,541 communes is the statutory baseline, but 0 commune rows are loaded. Official commune codes are effective-dated external attributes; legal register lineage and transitional-authority separation require reconciliation. | Accepted (complete commune dataset integration remains `PLANNED`) |
 | **ADR-0011** | Project Estimated Budget Requires Financial Capability | EstimatedBudgetDzd read requires explicit ProjectMember.CanViewFinancials; write additionally requires projects.manage and Project Manager membership; no administrator/manager bypass. | Accepted; implementation merged; manual verification pending |
 | **ADR-0012** | Temporary Employee Password Rotation | Newly created and administratively reset employee accounts must replace a local temporary password within 24 hours before any ERP business API is available; active sessions are revoked after change. | Accepted; merged in PR #161 |
-| **ADR-0013** | Session Idle Lock, Configurable Credential Lifetimes, Voluntary Rotation | Sessions carry both an absolute lifetime and a server-enforced idle timeout; temporary-password deadlines are configurable; console recovery leaves the issued password usable; any authenticated user may rotate their own password. | Implemented on `arena/6d8821e5-promo-gest`; PR-head CI pending |
+| **ADR-0013** | Session Idle Lock, Configurable Credential Lifetimes, Voluntary Rotation | Sessions carry both an absolute lifetime and a server-enforced idle timeout; temporary-password deadlines are configurable; console recovery leaves the issued password usable; any authenticated user may rotate their own password. | Accepted; merged in PR #163 |
 
 ---
 
@@ -168,3 +168,13 @@
 - **Frontend:** The authenticated shell exposes a change-password dialog for every user. On success it returns to the login screen with the existing "password changed" notice. The forced-rotation screen now takes its validation messages from the translation bundle instead of inline bilingual strings.
 - **Non-goals:** No password history, no external identity provider, no change to password complexity, RBAC, project scoping, CSRF, cookie flags or audit immutability. No migration: no schema change is involved; `LastSeenAtUtc` already exists.
 - **Verification state:** Frontend lint, typecheck, 88 unit tests and production build pass locally. .NET compilation, domain/application tests and PostgreSQL integration are verified only by CI on the pull request; do not mark complete until all three required jobs and the post-merge main run are green.
+
+### ADR-0014 — Encrypted, Offsite, Retained Backups on Linux (20 November 2026)
+
+- **Context:** The 2026-11-20 audit (AUD-01) found that the production backup bundle was plaintext, stored on the same host and filesystem it protects, never pruned, and had no second copy. That combination makes theft, ransomware, or disk loss a total-loss event for organization data, and exposes personal and contractual data on any copied medium.
+- **Decision:** The Linux backup job now seals the four-component bundle with its SHA-256 manifest, packs it, encrypts it as CMS enveloped data (`openssl cms -encrypt -aes-256-cbc`) against an X.509 recipient certificate, and publishes `promogest_backup_<timestamp>.tar.gz.cms` plus a SHA-256 sidecar. The ciphertext and sidecar are copied to an independent offsite mount and verified there with `sha256sum -c`. Retention prunes artefacts older than `PROMOGEST_BACKUP_RETENTION_DAYS` (minimum 7) but never below the newest `PROMOGEST_BACKUP_RETENTION_MIN_KEEP` (default 3). The unencrypted bundle directory is removed after a successful publication.
+- **Fail-closed policy:** Encryption cannot be disabled without `PROMOGEST_BACKUP_ALLOW_PLAINTEXT=1`, and the job refuses to run without an offsite target unless `PROMOGEST_BACKUP_ALLOW_LOCAL_ONLY=1`. An offsite path on the same filesystem as the primary root is rejected unless explicitly excepted for a documented test/DR scenario. The systemd unit declares `RequiresMountsFor` on the offsite mount so a missing mount stops the job.
+- **Key custody:** Only the public recipient certificate exists on the server. The private key is generated and retained on the operator side, kept offline in at least two locations, and never stored with the backups or in the repository. Because the key is absent from the host, the backup job performs only a structural envelope check; decryptability is proven by the restore drill, which now accepts the `.cms` artefact and requires `PROMOGEST_BACKUP_DECRYPT_KEY`.
+- **Availability:** The application service is restarted immediately after the snapshot manifest is sealed, before packaging, encryption, offsite copy, and pruning, so those stages no longer extend the maintenance window. A sealed snapshot is never deleted because a later stage failed.
+- **Verification-boundary:** CI generates a throwaway recipient key pair, runs the real job with encryption, offsite copy, retention pruning fixtures, and then executes the full PostgreSQL restore drill against the encrypted artefact. A single-byte tamper and a renamed artefact must both fail the sidecar check. No claim of verification is made until all three PR-head jobs and the post-merge `main` run are green.
+- **Scope gap:** `scripts/backup-promogest.ps1` (Windows) still produces an unencrypted, non-replicated bundle; that delta is documented in `docs/BACKUP-AND-RESTORE.md` and remains open. Point-in-time recovery (WAL archiving) is not included in this decision.

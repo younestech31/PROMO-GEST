@@ -3120,4 +3120,115 @@ public sealed class PostgresEndToEndTests : IClassFixture<PostgreSql18Integratio
         }
     }
 
+
+    [Fact]
+    public async Task TemporaryEmployeePassword_RequiresChangeBeforeBusinessAccess_ExpiresAndAdminResetRevokesSessions()
+    {
+        var connectionString = await _fixture.CreateIsolatedDatabaseConnectionStringAsync();
+        var tempRoot = Path.Combine(Path.GetTempPath(), $"promogest_password_lifecycle_{Guid.NewGuid():N}");
+
+        await using var factory = CreateFactory(connectionString, tempRoot);
+        using var adminClient = factory.CreateClient(new WebApplicationFactoryClientOptions { HandleCookies = true });
+
+        await AttachCsrfTokenAsync(adminClient);
+        var setup = await adminClient.PostAsJsonAsync("/api/setup/initialize", ValidInitRequest());
+        Assert.Equal(HttpStatusCode.Created, setup.StatusCode);
+
+        var adminLogin = await adminClient.PostAsJsonAsync(
+            "/api/auth/login",
+            new LoginRequest("sysadmin", "AtlasAdmin#2026"));
+        Assert.Equal(HttpStatusCode.OK, adminLogin.StatusCode);
+        await AttachCsrfTokenAsync(adminClient);
+
+        const string firstTemporaryPassword = "EmployeeTemp#2026";
+        var create = await adminClient.PostAsJsonAsync(
+            "/api/users",
+            new CreateEmployeeRequest(
+                "temp.employee",
+                "Temporary Employee",
+                "temporary.employee@atlasimmo.dz",
+                null,
+                firstTemporaryPassword,
+                "fr",
+                new[] { Role.CommercialManagerCode }));
+        Assert.Equal(HttpStatusCode.Created, create.StatusCode);
+
+        var created = await create.Content.ReadFromJsonAsync<UserDto>();
+        Assert.NotNull(created);
+        Assert.True(created!.MustChangePasswordAtNextLogin);
+        Assert.NotNull(created.PasswordChangeRequiredUntilUtc);
+        Assert.InRange(
+            created.PasswordChangeRequiredUntilUtc!.Value,
+            DateTimeOffset.UtcNow.AddHours(23),
+            DateTimeOffset.UtcNow.AddHours(25));
+
+        using var employeeClient = factory.CreateClient(new WebApplicationFactoryClientOptions { HandleCookies = true });
+        await AttachCsrfTokenAsync(employeeClient);
+        await CompleteMandatoryPasswordChangeAsync(
+            employeeClient,
+            "temp.employee",
+            firstTemporaryPassword,
+            "EmployeePersonal#2026");
+
+        var normalSession = await employeeClient.GetFromJsonAsync<SessionResponse>("/api/auth/me");
+        Assert.NotNull(normalSession);
+        Assert.False(normalSession!.User.MustChangePasswordAtNextLogin);
+        Assert.Contains("projects.read", normalSession.User.Permissions);
+
+        // Administrative reset starts a new temporary-password cycle and revokes every
+        // currently authenticated session for that user.
+        const string secondTemporaryPassword = "ResetTemp#2026";
+        var reset = await adminClient.PostAsJsonAsync(
+            $"/api/users/{created.Id}/reset-password",
+            new ResetUserPasswordRequest(secondTemporaryPassword));
+        Assert.Equal(HttpStatusCode.NoContent, reset.StatusCode);
+        Assert.Equal(HttpStatusCode.Unauthorized, (await employeeClient.GetAsync("/api/auth/me")).StatusCode);
+
+        using var resetEmployeeClient = factory.CreateClient(new WebApplicationFactoryClientOptions { HandleCookies = true });
+        await AttachCsrfTokenAsync(resetEmployeeClient);
+        await CompleteMandatoryPasswordChangeAsync(
+            resetEmployeeClient,
+            "temp.employee",
+            secondTemporaryPassword,
+            "EmployeeAfterReset#2026");
+
+        // Expiry is enforced at login, not merely hidden by the UI or middleware.
+        const string expiredTemporaryPassword = "ExpiredTemp#2026";
+        var expiredReset = await adminClient.PostAsJsonAsync(
+            $"/api/users/{created.Id}/reset-password",
+            new ResetUserPasswordRequest(expiredTemporaryPassword));
+        Assert.Equal(HttpStatusCode.NoContent, expiredReset.StatusCode);
+
+        await using (var scope = factory.Services.CreateAsyncScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+            await db.Database.ExecuteSqlInterpolatedAsync(
+                $"UPDATE users SET password_change_required_until_utc = {DateTimeOffset.UtcNow.AddMinutes(-1)} WHERE id = {created.Id}");
+        }
+
+        using var expiredClient = factory.CreateClient(new WebApplicationFactoryClientOptions { HandleCookies = true });
+        await AttachCsrfTokenAsync(expiredClient);
+        var expiredLogin = await expiredClient.PostAsJsonAsync(
+            "/api/auth/login",
+            new LoginRequest("temp.employee", expiredTemporaryPassword));
+        Assert.Equal(HttpStatusCode.Unauthorized, expiredLogin.StatusCode);
+        var expiredError = await expiredLogin.Content.ReadFromJsonAsync<ApiErrorResponse>();
+        Assert.Equal("AUTH_INVALID_CREDENTIALS", expiredError!.Code);
+        Assert.Equal(HttpStatusCode.Unauthorized, (await expiredClient.GetAsync("/api/auth/me")).StatusCode);
+
+        await using (var scope = factory.Services.CreateAsyncScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+            var employee = await db.Users.SingleAsync(item => item.Id == created.Id);
+            Assert.True(employee.MustChangePasswordAtNextLogin);
+            Assert.True(employee.PasswordChangeRequiredUntilUtc <= DateTimeOffset.UtcNow);
+
+            var auditSummaries = await db.AuditLogs.Select(item => item.Summary).ToListAsync();
+            Assert.DoesNotContain(auditSummaries, item =>
+                item.Contains(firstTemporaryPassword, StringComparison.Ordinal) ||
+                item.Contains(secondTemporaryPassword, StringComparison.Ordinal) ||
+                item.Contains(expiredTemporaryPassword, StringComparison.Ordinal));
+        }
+    }
+
 }

@@ -324,6 +324,8 @@ test('organization profile edit visibility uses the canonical org.manage permiss
     roles: ['COMMERCIAL_MANAGER'],
     permissions,
     lastLoginAtUtc: null,
+    mustChangePasswordAtNextLogin: false,
+    passwordChangeRequiredUntilUtc: null,
   });
 
   assert.equal(canManageOrganizationProfile(createUser(['org.read', 'org.manage'])), true);

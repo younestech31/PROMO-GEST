@@ -237,8 +237,11 @@ try {
         param([Parameter(Mandatory = $true)][string[]]$Arguments)
 
         $output = & pwsh -NoProfile -File $backupScript @Arguments 2>&1
+        $exitCode = $LASTEXITCODE
+        # A probe is expected to fail; do not let its exit code become this script's.
+        $global:LASTEXITCODE = 0
         return [PSCustomObject]@{
-            ExitCode = $LASTEXITCODE
+            ExitCode = $exitCode
             Output   = ($output | Out-String)
         }
     }
@@ -274,3 +277,5 @@ finally {
         Remove-Item -LiteralPath $workRoot -Recurse -Force -ErrorAction Continue
     }
 }
+
+exit 0

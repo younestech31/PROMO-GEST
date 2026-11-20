@@ -236,9 +236,19 @@ function Expand-PromoGestBackupArtifact {
             }
 
             Add-Type -AssemblyName System.Security.Cryptography.Pkcs
-            $certificate = New-Object System.Security.Cryptography.X509Certificates.X509Certificate2
             $keyFlags = [System.Security.Cryptography.X509Certificates.X509KeyStorageFlags]::EphemeralKeySet
-            $certificate.Import([IO.File]::ReadAllBytes($resolvedPfx), $PfxPassword, $keyFlags)
+            $certificateBytes = [IO.File]::ReadAllBytes($resolvedPfx)
+            $loaderType = [type]::GetType(
+                "System.Security.Cryptography.X509Certificates.X509CertificateLoader, System.Security.Cryptography",
+                $false)
+            if ($null -ne $loaderType) {
+                $certificate = [System.Security.Cryptography.X509Certificates.X509CertificateLoader]::LoadPkcs12(
+                    $certificateBytes, $PfxPassword, $keyFlags)
+            }
+            else {
+                $certificate = New-Object System.Security.Cryptography.X509Certificates.X509Certificate2
+                $certificate.Import($certificateBytes, $PfxPassword, $keyFlags)
+            }
             if (-not $certificate.HasPrivateKey) {
                 throw "The recipient key file does not contain a private key: $PfxPath"
             }

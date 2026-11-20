@@ -154,6 +154,35 @@ function Set-PromoGestBackupFileAcl {
     }
 }
 
+function New-PromoGestCertificateFromBytes {
+    param(
+        [Parameter(Mandatory = $true)][byte[]]$Bytes,
+        [string]$Password,
+        [System.Security.Cryptography.X509Certificates.X509KeyStorageFlags]$KeyFlags = [System.Security.Cryptography.X509Certificates.X509KeyStorageFlags]::DefaultKeySet
+    )
+
+    # .NET 9+ replaced the obsolete X509Certificate2 import constructors with
+    # X509CertificateLoader; fall back to the legacy API on older runtimes.
+    $loaderType = [type]::GetType(
+        "System.Security.Cryptography.X509Certificates.X509CertificateLoader, System.Security.Cryptography",
+        $false)
+    if ($null -ne $loaderType) {
+        if ($null -ne $Password) {
+            return [System.Security.Cryptography.X509Certificates.X509CertificateLoader]::LoadPkcs12($Bytes, $Password, $KeyFlags)
+        }
+        return [System.Security.Cryptography.X509Certificates.X509CertificateLoader]::LoadCertificate($Bytes)
+    }
+
+    $certificate = New-Object System.Security.Cryptography.X509Certificates.X509Certificate2
+    if ($null -ne $Password) {
+        $certificate.Import($Bytes, $Password, $KeyFlags)
+    }
+    else {
+        $certificate.Import($Bytes)
+    }
+    return $certificate
+}
+
 function Assert-PromoGestRecipientCertificate {
     param([Parameter(Mandatory = $true)][string]$Path)
 
@@ -174,11 +203,10 @@ function Assert-PromoGestRecipientCertificate {
     }
 
     try {
-        $certificate = New-Object System.Security.Cryptography.X509Certificates.X509Certificate2
-        $certificate.Import([IO.File]::ReadAllBytes($item.FullName))
+        $certificate = New-PromoGestCertificateFromBytes -Bytes ([IO.File]::ReadAllBytes($item.FullName))
     }
     catch {
-        throw "Backup recipient certificate is not a readable X.509 certificate: $Path"
+        throw "Backup recipient certificate is not a readable X.509 certificate: $Path ($($_.Exception.GetType().Name): $($_.Exception.Message))"
     }
 
     if ($certificate.HasPrivateKey) {

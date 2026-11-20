@@ -60,6 +60,7 @@ function Get-PromoGestFunctionSource {
 
 # Dot-sourced at script scope so the lifted functions stay visible for the whole run.
 . ([ScriptBlock]::Create((Get-PromoGestFunctionSource -Path (Join-Path $scriptRoot "backup-promogest.ps1") -Name @(
+            "New-PromoGestCertificateFromBytes",
             "Assert-PromoGestRecipientCertificate",
             "Protect-PromoGestFileToCms",
             "New-PromoGestTarGzFromDirectory",
@@ -129,11 +130,10 @@ try {
     Assert-True -Condition (Test-Path -LiteralPath $cmsPath) -Message "encryption produced a CMS artifact"
 
     Add-Type -AssemblyName System.Security.Cryptography.Pkcs
-    $decryptCertificate = New-Object System.Security.Cryptography.X509Certificates.X509Certificate2
-    $decryptCertificate.Import(
-        [IO.File]::ReadAllBytes($privateKeyPath),
-        "test-password",
-        [System.Security.Cryptography.X509Certificates.X509KeyStorageFlags]::EphemeralKeySet)
+    $decryptCertificate = New-PromoGestCertificateFromBytes `
+        -Bytes ([IO.File]::ReadAllBytes($privateKeyPath)) `
+        -Password "test-password" `
+        -KeyFlags ([System.Security.Cryptography.X509Certificates.X509KeyStorageFlags]::EphemeralKeySet)
     $enveloped = New-Object System.Security.Cryptography.Pkcs.EnvelopedCms
     $enveloped.Decode([IO.File]::ReadAllBytes($cmsPath))
     $collection = New-Object System.Security.Cryptography.X509Certificates.X509Certificate2Collection

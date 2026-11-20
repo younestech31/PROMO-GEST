@@ -77,8 +77,8 @@ test('preview UI and session entry are constrained to Vite development mode', ()
   assert.match(appSource, /if \(!isViteDevelopmentBuild \|\| !isPreviewMode\)/);
   assert.match(appSource, /apiClient\.openPreviewSession\(\)/);
   assert.doesNotMatch(appSource, /authApi\.openPreviewSession/);
-  assert.match(loginSource, /import\.meta\.env\.DEV && isPreviewMode/);
-  assert.match(setupSource, /import\.meta\.env\.DEV && isPreviewMode/);
+  assert.match(loginSource, /import\.meta\.env\?\.DEV === true && isPreviewMode/);
+  assert.match(setupSource, /import\.meta\.env\?\.DEV === true && isPreviewMode/);
   assert.match(apiClientSource, /const isViteDevelopmentBuild = import\.meta\.env\?\.DEV === true/);
   assert.match(apiClientSource, /isViteDevelopmentBuild && url === '\/api\/auth\/preview-session'/);
   assert.match(apiClientSource, /isViteDevelopmentBuild && previewSessionToken/);

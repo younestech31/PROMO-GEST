@@ -165,7 +165,7 @@ export function LoginScreen({
             </button>
           </form>
 
-          {import.meta.env.DEV && isPreviewMode && (
+          {import.meta.env?.DEV === true && isPreviewMode && (
             <div className="mt-5">
               <PreviewAccessButton language={language} onOpen={onPreviewLogin} />
             </div>

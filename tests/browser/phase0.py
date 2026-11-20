@@ -170,7 +170,7 @@ with sync_playwright() as pw:
 
     a05_evidence = 'temporary session sanitized; deep-link reload served SPA; business API 403 PASSWORD_CHANGE_REQUIRED; rotation 204; old cookie replay 401; personal password login 200'
     employee_ctx.close()
-    replay_ctx.dispose()
+    replay_ctx.close()
     if device == 'mobile':
         page.get_by_role('button', name='Open menu', exact=True).click()
     logout = page.get_by_role('button', name='تسجيل الخروج' if lang == 'ar' else 'Déconnexion', exact=True)

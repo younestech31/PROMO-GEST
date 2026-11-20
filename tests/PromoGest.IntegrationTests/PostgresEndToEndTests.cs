@@ -513,6 +513,13 @@ public sealed class PostgresEndToEndTests : IClassFixture<PostgreSql18Integratio
         Assert.Null(temporarySession.Organization.Nif);
         Assert.Equal(string.Empty, temporarySession.Organization.LegalName);
 
+        // Temporary sessions must not gain access to setup metadata; the SPA restores
+        // this session through /api/auth/me before it decides whether setup status is needed.
+        var blockedSetupStatus = await client.GetAsync("/api/setup/status");
+        Assert.Equal(HttpStatusCode.Forbidden, blockedSetupStatus.StatusCode);
+        var blockedSetupError = await blockedSetupStatus.Content.ReadFromJsonAsync<ApiErrorResponse>();
+        Assert.Equal("PASSWORD_CHANGE_REQUIRED", blockedSetupError!.Code);
+
         await AttachCsrfTokenAsync(client);
         var blockedProjects = await client.GetAsync("/api/projects");
         Assert.Equal(HttpStatusCode.Forbidden, blockedProjects.StatusCode);

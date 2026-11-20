@@ -487,30 +487,39 @@ export function App() {
 
     const checkState = async () => {
       try {
+        // Restore an existing session before requesting public setup metadata. A temporary
+        // password session is deliberately restricted to /auth/me, password change and logout;
+        // calling /api/setup/status first would be rejected by PasswordChangeRequiredMiddleware.
+        try {
+          const currentSession = await authApi.getSession();
+          if (!active) return;
+
+          setSession(currentSession);
+          setSetupState({
+            isInitialized: true,
+            organizationLegalName: currentSession.organization.legalName,
+          });
+
+          if (currentSession.user.mustChangePasswordAtNextLogin) {
+            setProjects([]);
+          } else {
+            try {
+              const authorizedProjects = await apiClient.listProjects();
+              if (active) setProjects(authorizedProjects);
+            } catch {
+              // Session can still be used when the project directory is temporarily unavailable.
+            }
+          }
+          return;
+        } catch {
+          if (active) setSession(null);
+        }
+
+        // Only unauthenticated clients need first-run status and the public default language.
         const setup = await setupApi.getSetupStatus();
         if (!active) return;
         setSetupState(setup);
         if (setup.defaultLanguage) setUnauthenticatedLanguage(setup.defaultLanguage);
-
-        if (setup.isInitialized) {
-          try {
-            const currentSession = await authApi.getSession();
-            if (!active) return;
-            setSession(currentSession);
-            if (currentSession.user.mustChangePasswordAtNextLogin) {
-              setProjects([]);
-            } else {
-              try {
-                const authorizedProjects = await apiClient.listProjects();
-                if (active) setProjects(authorizedProjects);
-              } catch {
-                // Session can still be used when the project directory is temporarily unavailable.
-              }
-            }
-          } catch {
-            if (active) setSession(null);
-          }
-        }
       } catch {
         // The first-run and login surfaces provide their own local connection errors.
       } finally {

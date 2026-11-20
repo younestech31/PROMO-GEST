@@ -117,7 +117,7 @@ public sealed class PostgreSql18IntegrationFixture : IAsyncLifetime
         }.ConnectionString;
     }
 
-    public async Task<string> CreateIsolatedDatabaseConnectionStringAsync()
+    public async Task<string> CreateIsolatedDatabaseConnectionStringAsync(string? targetMigration = null)
     {
         var dbName = $"promogest_it_{Guid.NewGuid():N}"[..28];
 
@@ -146,7 +146,7 @@ public sealed class PostgreSql18IntegrationFixture : IAsyncLifetime
 
         await using (var migrationDb = new AppDbContext(migrationOptions))
         {
-            await migrationDb.Database.MigrateAsync();
+            await migrationDb.Database.MigrateAsync(targetMigration);
             await DbInitializer.SeedRolesAndPermissionsAsync(migrationDb);
 
             var applied = await migrationDb.Database.GetAppliedMigrationsAsync();
@@ -189,6 +189,17 @@ public sealed class PostgreSql18IntegrationFixture : IAsyncLifetime
             {
                 throw new InvalidOperationException(
                     "The UniqueProjectPartyCustomerLink migration was not discovered and applied.");
+            }
+            if (targetMigration is null &&
+                !applied.Contains("20261121120000_CanonicalizeAlgerianProjectCustomerPhones"))
+            {
+                throw new InvalidOperationException(
+                    "The CanonicalizeAlgerianProjectCustomerPhones migration was not discovered and applied.");
+            }
+            if (targetMigration is not null && !applied.Contains(targetMigration))
+            {
+                throw new InvalidOperationException(
+                    $"The requested PostgreSQL test migration checkpoint '{targetMigration}' was not applied.");
             }
         }
 
@@ -403,7 +414,7 @@ internal sealed class BufferingLoggerProvider : ILoggerProvider
     }
 }
 
-public sealed class PostgresEndToEndTests : IClassFixture<PostgreSql18IntegrationFixture>
+public sealed partial class PostgresEndToEndTests : IClassFixture<PostgreSql18IntegrationFixture>
 {
     private readonly PostgreSql18IntegrationFixture _fixture;
     private readonly BufferingLoggerProvider _serverLogs = new();

@@ -1,5 +1,16 @@
 # PROMO GEST — Product Milestones & Delivery Roadmap
 
+## Latest verified work checkpoint — 21 November 2026
+
+- **Main:** `f8d4bdbd6cf47d4f1566833a528b1ac602554576`. Documentation-only PR #182 and PR #183 are merged. Their PR-head CI/CodeQL succeeded. Post-merge main CI #44838257158 and CodeQL #44838257401 are still running on the exact main SHA; Frontend passed, .NET/PostgreSQL 18 and Windows restore jobs and CodeQL are not yet complete.
+- **Last fully verified code-bearing main SHA:** `24b9324fd16995f0192a9de5800675da21b6b8d5`; CI #44835309828 and CodeQL #44835309849 passed there.
+- **P1-01:** PR #182 adds Arabic official text-layer corroboration for El Borma (JO22/2021 and JO79/2021) without assigning an effective date. PR #183 reconciles nine name-lineage claims and the W10 cluster, preserving official spelling/identity discrepancies. These are bounded evidence supplements, not approvals: all 1,541 sign-offs remain PENDING; W30-R007 remains NEEDS_EVIDENCE; P1-01 stays In Progress/Pending; P1-02 stays Blocked; no commune import.
+- **P1-11:** implementation is progressing on `feat/p1-11-canonical-algerian-customer-phone`, not yet merged. It adds Algeria-only national phone canonicalization, read-only collision preflight, a fail-closed reversible derived-key migration, and Domain/PG18 tests. The migration has not run on any customer/on-premises database; PR/CI evidence is pending. Human reconciliation is required for every preflight collision; never auto-merge records.
+- **Governance and phase:** Phase 1 remains IN_PROGRESS; no Phase 2–5 work is authorized by these technical/doc updates. `main` remains unprotected with required status checks disabled; no branch protection setting was changed.
+
+---
+
+
 **Document Role:** Dependency-ordered delivery roadmap and execution control for PROMO GEST.  
 **Last API/Application Runtime Source:** `711a05282869b8ebfe6965921045c9225dcecb17` (PR #163). **Latest password-lifecycle EF/schema source:** `03d1288a391ba72e49faf2cf8aa82d604e1ddc6e` (PR #161).  
 **Last verified code-bearing baseline:** `5010a31c8bd4c470c14411867feca164cce0ff78` (PR #179 squash merge). Post-merge [main CI #1129](https://github.com/younestech31/PROMO-GEST/actions/runs/44812777592) passed all three required jobs and [CodeQL #31](https://github.com/younestech31/PROMO-GEST/actions/runs/44812777559) passed on this exact SHA. PR-head CI #1128 and CodeQL #30 passed on PR #179 head. The previous baseline `875f4a1` (PR #177) is historical. P1-18 and P1-26 are Done/Verified; P1-25 remains In Review/Pending; P1-01 is In Progress/Pending; P1-02 remains Blocked.

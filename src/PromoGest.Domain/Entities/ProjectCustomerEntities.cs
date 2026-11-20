@@ -169,7 +169,16 @@ public sealed class ProjectCustomer : BaseEntity
         => Regex.Replace((value ?? string.Empty).Normalize(NormalizationForm.FormKC).Trim(), @"\s+", " ");
 
     private static string NormalizePhone(string? value)
-        => new((value ?? string.Empty).Where(char.IsAsciiDigit).ToArray());
+    {
+        var digits = new string((value ?? string.Empty).Where(char.IsAsciiDigit).ToArray());
+
+        // The organization operates in Algeria: a 10-digit national number beginning
+        // with 0 is canonicalized to the equivalent 213 country-code form. Numbers
+        // already beginning with 213 and all other international digits remain intact.
+        return digits.Length == 10 && digits[0] == '0'
+            ? $"213{digits[1..]}"
+            : digits;
+    }
 }
 
 public sealed class CustomerInteraction : BaseEntity

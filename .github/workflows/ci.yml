@@ -340,7 +340,7 @@ jobs:
           fi
           test -f "$offsite_dir/$(basename "$artifact_cms")"
           test -f "$offsite_dir/$(basename "$artifact_cms").sha256"
-          ( cd "$offsite_dir" && sha256sum -c "$(basename "$artifact_cms").sha256" )
+          sudo bash -c 'cd "$1" && sha256sum -c "$2"' _ "$offsite_dir" "$(basename "$artifact_cms").sha256"
           remaining_artifacts="$(sudo find "$backup_root" -maxdepth 1 -type f -name 'promogest_backup_*.tar.gz.cms' | wc -l)"
           echo "::notice::artifact=$artifact_cms retained_artifacts=$remaining_artifacts"
           test "$remaining_artifacts" -eq 3

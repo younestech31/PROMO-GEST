@@ -223,6 +223,8 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
+          set -E
+          trap 'code=$?; echo "::error::restore drill step failed near line $LINENO: $BASH_COMMAND (exit $code)"; if [[ -n "${backup_root:-}" ]]; then sudo find "$backup_root" -maxdepth 1 -printf "%M %u %p\n" 2>/dev/null | head -30; fi' ERR
           printf '%s\n' \
             'localhost:5432:*:postgres:postgres_password' \
             'localhost:5432:*:promogest_owner:owner_pass' \
@@ -340,6 +342,7 @@ jobs:
           test -f "$offsite_dir/$(basename "$artifact_cms").sha256"
           ( cd "$offsite_dir" && sha256sum -c "$(basename "$artifact_cms").sha256" )
           remaining_artifacts="$(sudo find "$backup_root" -maxdepth 1 -type f -name 'promogest_backup_*.tar.gz.cms' | wc -l)"
+          echo "::notice::artifact=$artifact_cms retained_artifacts=$remaining_artifacts"
           test "$remaining_artifacts" -eq 3
           sudo tar -xOzf "$bundle_dir/config-sanitized.tar.gz" ./appsettings.Production.sanitized.json > "$RUNNER_TEMP/promogest-config-sanitized.json"
           python3 - "$RUNNER_TEMP/promogest-config-sanitized.json" <<'PY'

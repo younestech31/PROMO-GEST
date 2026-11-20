@@ -1168,3 +1168,7 @@ jobs:
           Write-Host "Verified the production restore script rejects overlapping destinations before database access."
 
 
+
+      - name: Verify Windows encrypted-backup and restore contract
+        shell: pwsh
+        run: ./scripts/test-backup-crypto.ps1

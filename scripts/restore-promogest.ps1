@@ -1,6 +1,8 @@
 param(
-    [Parameter(Mandatory = $true)]
-    [string]$BackupBundleDir,
+    [string]$BackupBundleDir = "",
+    [string]$BackupArtifactPath = "",
+    [string]$RecipientPfxPath = $(if ($env:PROMOGEST_BACKUP_RECIPIENT_PFX) { $env:PROMOGEST_BACKUP_RECIPIENT_PFX } else { "" }),
+    [string]$RecipientPfxPassword = $(if ($env:PROMOGEST_BACKUP_RECIPIENT_PFX_PASSWORD) { $env:PROMOGEST_BACKUP_RECIPIENT_PFX_PASSWORD } else { "" }),
     [string]$TargetDatabase = "promogest_restore_verify",
     [string]$DatabaseHost = "127.0.0.1",
     [int]$DatabasePort = 5432,
@@ -15,12 +17,6 @@ param(
 )
 
 $ErrorActionPreference = "Stop"
-$BackupBundleDir = (Resolve-Path -LiteralPath $BackupBundleDir).Path
-$ManifestPath = Join-Path $BackupBundleDir "manifest.sha256"
-$DbDumpPath = Join-Path $BackupBundleDir "database.dump"
-$StorageArchivePath = Join-Path $BackupBundleDir "storage.zip"
-$DpKeysArchivePath = Join-Path $BackupBundleDir "dataprotection-keys.zip"
-$ConfigArchivePath = Join-Path $BackupBundleDir "config-sanitized.zip"
 
 Add-Type -AssemblyName System.IO.Compression.FileSystem
 
@@ -184,6 +180,136 @@ function Assert-SafeZipArchive {
         $archive.Dispose()
     }
 }
+
+function Test-PromoGestArtifactSidecar {
+    param([Parameter(Mandatory = $true)][string]$ArtifactPath)
+
+    $sidecar = $ArtifactPath + ".sha256"
+    if (-not (Test-Path -LiteralPath $sidecar -PathType Leaf)) {
+        throw "Missing SHA-256 sidecar for the backup artifact: $sidecar"
+    }
+
+    $entries = @(Get-Content -LiteralPath $sidecar | Where-Object { -not [string]::IsNullOrWhiteSpace($_) })
+    if ($entries.Count -ne 1) {
+        throw "SHA-256 sidecar must contain exactly one entry: $sidecar"
+    }
+    if ($entries[0] -notmatch '^([0-9a-fA-F]{64})\s+\*?(.+)$') {
+        throw "Invalid SHA-256 sidecar entry in $sidecar"
+    }
+
+    $expected = $Matches[1].ToLowerInvariant()
+    $listedName = $Matches[2].Trim()
+    $actualName = [IO.Path]::GetFileName($ArtifactPath)
+    if (-not [string]::Equals($listedName, $actualName, [StringComparison]::Ordinal)) {
+        throw "SHA-256 sidecar describes '$listedName' but the artifact is '$actualName'."
+    }
+
+    $actual = (Get-FileHash -LiteralPath $ArtifactPath -Algorithm SHA256).Hash.ToLowerInvariant()
+    if ($actual -ne $expected) {
+        throw "Artifact SHA-256 mismatch: expected $expected, got $actual."
+    }
+}
+
+function Expand-PromoGestBackupArtifact {
+    param(
+        [Parameter(Mandatory = $true)][string]$ArtifactPath,
+        [string]$PfxPath,
+        [string]$PfxPassword
+    )
+
+    # Everything materialized here is plaintext database and key-ring material,
+    # so it lives in a per-invocation temp directory that is removed afterwards.
+    $workRoot = Join-Path ([IO.Path]::GetTempPath()) ("promogest-restore-" + [Guid]::NewGuid().ToString("N"))
+    New-Item -ItemType Directory -Path $workRoot -ErrorAction Stop | Out-Null
+
+    try {
+        Test-PromoGestArtifactSidecar -ArtifactPath $ArtifactPath
+
+        $plaintextArchive = $ArtifactPath
+        if ($ArtifactPath.EndsWith(".cms", [StringComparison]::OrdinalIgnoreCase)) {
+            if ([string]::IsNullOrWhiteSpace($PfxPath)) {
+                throw "An encrypted backup requires the recipient private key (-RecipientPfxPath or PROMOGEST_BACKUP_RECIPIENT_PFX)."
+            }
+            $resolvedPfx = (Resolve-Path -LiteralPath $PfxPath -ErrorAction Stop).Path
+            if (-not (Test-Path -LiteralPath $resolvedPfx -PathType Leaf)) {
+                throw "Recipient private key file not found: $PfxPath"
+            }
+
+            Add-Type -AssemblyName System.Security.Cryptography.Pkcs
+            $certificate = New-Object System.Security.Cryptography.X509Certificates.X509Certificate2
+            $keyFlags = [System.Security.Cryptography.X509Certificates.X509KeyStorageFlags]::EphemeralKeySet
+            $certificate.Import([IO.File]::ReadAllBytes($resolvedPfx), $PfxPassword, $keyFlags)
+            if (-not $certificate.HasPrivateKey) {
+                throw "The recipient key file does not contain a private key: $PfxPath"
+            }
+
+            $enveloped = New-Object System.Security.Cryptography.Pkcs.EnvelopedCms
+            $enveloped.Decode([IO.File]::ReadAllBytes($ArtifactPath))
+            $certificates = New-Object System.Security.Cryptography.X509Certificates.X509Certificate2Collection
+            $certificates.Add($certificate) | Out-Null
+            $enveloped.Decrypt($certificates)
+
+            $plaintextArchive = Join-Path $workRoot "bundle.tar.gz"
+            [IO.File]::WriteAllBytes($plaintextArchive, $enveloped.Content)
+        }
+        elseif (-not $ArtifactPath.EndsWith(".tar.gz", [StringComparison]::OrdinalIgnoreCase)) {
+            throw "Unsupported backup artifact type (expected .cms or .tar.gz): $ArtifactPath"
+        }
+
+        $listing = @(& tar.exe -tzf $plaintextArchive)
+        if ($LASTEXITCODE -ne 0) {
+            throw "The backup archive could not be listed (tar exit $LASTEXITCODE)."
+        }
+        foreach ($entry in $listing) {
+            if ([string]::IsNullOrWhiteSpace($entry)) { continue }
+            $normalized = $entry.Replace("\", "/")
+            $segments = $normalized.Split("/")
+            if ($normalized.StartsWith("/", [StringComparison]::Ordinal) -or
+                $normalized -match '^[A-Za-z]:' -or
+                $segments -contains "..") {
+                throw "Unsafe path in backup archive: $entry"
+            }
+        }
+
+        & tar.exe -xzf $plaintextArchive -C $workRoot
+        if ($LASTEXITCODE -ne 0) {
+            throw "The backup archive could not be extracted (tar exit $LASTEXITCODE)."
+        }
+
+        if (-not (Test-Path -LiteralPath (Join-Path $workRoot "manifest.sha256") -PathType Leaf)) {
+            throw "The extracted backup does not contain manifest.sha256."
+        }
+        return $workRoot
+    }
+    catch {
+        Remove-Item -LiteralPath $workRoot -Recurse -Force -ErrorAction Continue
+        throw
+    }
+}
+
+if ([string]::IsNullOrWhiteSpace($BackupBundleDir) -eq [string]::IsNullOrWhiteSpace($BackupArtifactPath)) {
+    throw "Provide exactly one input: -BackupBundleDir (materialized bundle directory) or -BackupArtifactPath (.cms or .tar.gz artifact)."
+}
+
+$materializedBundleDir = $null
+if (-not [string]::IsNullOrWhiteSpace($BackupArtifactPath)) {
+    if (-not (Test-Path -LiteralPath $BackupArtifactPath -PathType Leaf)) {
+        throw "Backup artifact not found: $BackupArtifactPath"
+    }
+    $resolvedArtifact = (Resolve-Path -LiteralPath $BackupArtifactPath).Path
+    Write-Host "[0/6] Verifying and materializing the backup artifact: $resolvedArtifact"
+    $materializedBundleDir = Expand-PromoGestBackupArtifact -ArtifactPath $resolvedArtifact -PfxPath $RecipientPfxPath -PfxPassword $RecipientPfxPassword
+    $BackupBundleDir = $materializedBundleDir
+}
+else {
+    $BackupBundleDir = (Resolve-Path -LiteralPath $BackupBundleDir).Path
+}
+
+$ManifestPath = Join-Path $BackupBundleDir "manifest.sha256"
+$DbDumpPath = Join-Path $BackupBundleDir "database.dump"
+$StorageArchivePath = Join-Path $BackupBundleDir "storage.zip"
+$DpKeysArchivePath = Join-Path $BackupBundleDir "dataprotection-keys.zip"
+$ConfigArchivePath = Join-Path $BackupBundleDir "config-sanitized.zip"
 
 if (-not (Test-Path -LiteralPath $ManifestPath -PathType Leaf)) {
     throw "Missing manifest.sha256 in $BackupBundleDir"
@@ -453,6 +579,11 @@ if ($verifiedCount -ne $fileCount) {
     throw "Stored file count mismatch: database has $fileCount records; verified $verifiedCount files."
 }
 
+if ($null -ne $materializedBundleDir -and (Test-Path -LiteralPath $materializedBundleDir)) {
+    Remove-Item -LiteralPath $materializedBundleDir -Recurse -Force
+    Write-Host "Removed the materialized plaintext restore input: $materializedBundleDir"
+}
+
 Write-Host "Restore verified: $verifiedCount of $fileCount stored files match size and SHA-256."
 Write-Host "Restore operation completed. Review Data Protection recovery notes before switching production traffic."
 }
@@ -470,6 +601,10 @@ catch {
         catch {
             Write-Warning "Scratch database cleanup raised an error: $($_.Exception.Message). Remove '$TargetDatabase' manually after checking active sessions."
         }
+    }
+
+    if ($null -ne $materializedBundleDir -and (Test-Path -LiteralPath $materializedBundleDir)) {
+        Remove-Item -LiteralPath $materializedBundleDir -Recurse -Force -ErrorAction Continue
     }
 
     foreach ($cleanupTarget in @(

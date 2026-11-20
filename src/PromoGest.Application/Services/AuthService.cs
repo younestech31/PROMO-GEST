@@ -257,7 +257,21 @@ public sealed class AuthService
             (!user.PasswordChangeRequiredUntilUtc.HasValue ||
              user.PasswordChangeRequiredUntilUtc.Value <= nowUtc))
         {
-            session.Revoke(nowUtc);
+            await _userRepository.RevokeAllUserSessionsAsync(user.Id, nowUtc, ct);
+            await _auditWriter.WriteAsync(
+                AuditLog.Record(
+                    nowUtc,
+                    user.Id,
+                    user.Username,
+                    "AUTH_TEMPORARY_PASSWORD_EXPIRED",
+                    AuditSeverity.Security,
+                    "User",
+                    user.Id.ToString(),
+                    "All sessions were revoked after the mandatory temporary-password deadline.",
+                    null,
+                    null,
+                    null),
+                ct);
             await _userRepository.SaveChangesAsync(ct);
             return null;
         }

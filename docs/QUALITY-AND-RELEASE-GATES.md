@@ -29,7 +29,7 @@
 
 **P1-01 work-status distinction:** the decision book has 1,540 `PENDING` work statuses and one `NEEDS_EVIDENCE` row (`W30-R007` El Borma); the master ledger still has all 1,541 practitioner sign-offs `PENDING`. The proposed El Borma code remains `3021`, with no `valid_from` or review outcome. No commune data are imported; `communesCount = 0`; P1-01 remains In Progress / Pending and P1-02 remains Blocked.
 
-**P1-18 authentication verification:** Done / Verified. PR #176 restores the temporary-password session on SPA reload without widening the temporary-session API allowlist. PR #177 adds test-only deadline-boundary/session-token and existing-user migration-upgrade coverage. PR-head CI #1108 and post-merge main CI #1129 passed 3/3; CodeQL #25 passed on the exact current main SHA. This automated result does not replace human Arabic RTL/French LTR user-management acceptance, which remains outstanding.
+**P1-18 authentication verification:** Done / Verified for its automated acceptance slice. PR #176 restores the temporary-password session on SPA reload without widening the temporary-session API allowlist. PR #177 adds test-only deadline-boundary/session-token and existing-user migration-upgrade coverage. Historical P1-18 evidence: PR-head CI #1108 and post-merge main CI #1109 passed on PR #177 baseline `875f4a1`; CodeQL #25 passed on that historical main SHA. The current main baseline was independently re-run and passed post-merge CI #1129 and CodeQL #31 on `5010a31`. Human Arabic RTL/French LTR user-management acceptance remains outstanding.
 
 
 
@@ -44,7 +44,7 @@
 
 **Outstanding manual and practitioner gates:** Arabic RTL / French LTR desktop/mobile workflows, budget value redaction/editor visibility, dirty-form Back/Forward/reload/tab-close and project switch/revocation remain unverified in a real browser. P0-A01 and P0-A04 remain `NOT_RUN` for manual first-run/second-initialization and logout/session-revocation. The full official 1,541-commune bilingual crosswalk and qualified review remain pending; Phase 1 stays `IN_PROGRESS` and Phase 2 remains blocked by dependencies.
 
-PR-head CI #1108 recorded Domain 42/42, Application 24/24 and PostgreSQL 18 Integration 35/35; post-merge main CI #1129 passed all three required jobs on exact main SHA `5010a31`. CodeQL #25 passed on that same SHA. Historical runs below remain evidence for their earlier baselines only; none certifies legal data, page-image review or practitioner acceptance.
+PR-head CI #1128 recorded Domain 42/42, Application 24/24 and PostgreSQL 18 Integration 35/35; post-merge main CI #1129 passed all three required jobs on exact main SHA `5010a31`. CodeQL #30 passed on PR-head `eb2022e`; CodeQL #31 passed on main `5010a31`. Historical runs below remain evidence for their earlier source baselines only; none certifies legal data, page-image review or practitioner acceptance.
 
 Historical runs below are retained as evidence for earlier source baselines;
 

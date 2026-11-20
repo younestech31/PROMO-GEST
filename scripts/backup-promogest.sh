@@ -308,16 +308,16 @@ case "$service_state" in
     ;;
 esac
 
-echo "[1/5] Dumping PostgreSQL database '$DB_NAME' as '$PGUSER'..."
+echo "[1/7] Dumping PostgreSQL database '$DB_NAME' as '$PGUSER'..."
 pg_dump --host="$PGHOST" --port="$PGPORT" --username="$PGUSER" \
   --format=custom --file="$bundle_dir/database.dump" "$DB_NAME"
 pg_restore --list "$bundle_dir/database.dump" >/dev/null
 
-echo "[2/5] Archiving local document storage and the complete Data Protection key directory..."
+echo "[2/7] Archiving local document storage and the complete Data Protection key directory..."
 tar -czf "$bundle_dir/storage.tar.gz" -C "$STORAGE_DIR" .
 tar -czf "$bundle_dir/dataprotection-keys.tar.gz" -C "$DP_KEYS_DIR" .
 
-echo "[3/5] Writing sanitized configuration and local HTTPS configuration..."
+echo "[3/7] Writing sanitized configuration and local HTTPS configuration..."
 stage_dir="$(mktemp -d "$bundle_dir/.config-stage.XXXXXX")"
 python3 - "$CONFIG_PATH" "$stage_dir/appsettings.Production.sanitized.json" <<'PY'
 import json

@@ -330,7 +330,7 @@ jobs:
           test -n "$artifact_cms"
           sudo test -s "$artifact_cms"
           sudo test -s "$artifact_cms.sha256"
-          ( cd "$backup_root" && sudo sha256sum -c "$(basename "$artifact_cms").sha256" )
+          sudo bash -c 'cd "$1" && sha256sum -c "$2"' _ "$backup_root" "$(basename "$artifact_cms").sha256"
           sudo openssl cms -cmsout -inform DER -in "$artifact_cms" -out /dev/null
           if sudo find "$backup_root" -maxdepth 1 -type f -name 'promogest_backup_*.tar.gz' | grep -q .; then
             echo "The backup root still contains a plaintext tarball after encryption." >&2

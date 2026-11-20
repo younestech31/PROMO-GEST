@@ -16,9 +16,9 @@ $backupRoot = Join-Path $workRoot "primary backups"
 $offsiteDir = Join-Path $workRoot "offsite backups"
 New-Item -ItemType Directory -Force -Path $backupRoot, $offsiteDir | Out-Null
 
-$script:checks = 0
-$script:failures = 0
-$script:captured = @{
+$global:PromoGestBackupMonitorTestChecks = 0
+$global:PromoGestBackupMonitorTestFailures = 0
+$global:PromoGestBackupMonitorTestCaptured = @{
     RegisterCalls = 0
     Action = $null
     Trigger = $null
@@ -29,43 +29,43 @@ $script:captured = @{
 
 function Write-Result {
     param([bool]$Passed, [string]$Name)
-    $script:checks++
+    $global:PromoGestBackupMonitorTestChecks++
     if ($Passed) {
-        Write-Host "ok $($script:checks) - $Name"
+        Write-Host "ok $($global:PromoGestBackupMonitorTestChecks) - $Name"
     }
     else {
-        Write-Host "not ok $($script:checks) - $Name"
-        $script:failures++
+        Write-Host "not ok $($global:PromoGestBackupMonitorTestChecks) - $Name"
+        $global:PromoGestBackupMonitorTestFailures++
     }
 }
 
 function New-ScheduledTaskAction {
     param([string]$Execute, [string]$Argument)
-    $script:captured.Action = [PSCustomObject]@{ Execute = $Execute; Argument = $Argument }
-    return $script:captured.Action
+    $global:PromoGestBackupMonitorTestCaptured.Action = [PSCustomObject]@{ Execute = $Execute; Argument = $Argument }
+    return $global:PromoGestBackupMonitorTestCaptured.Action
 }
 
 function New-ScheduledTaskTrigger {
     param([switch]$Daily, [datetime]$At)
-    $script:captured.Trigger = [PSCustomObject]@{ Daily = $Daily.IsPresent; At = $At }
-    return $script:captured.Trigger
+    $global:PromoGestBackupMonitorTestCaptured.Trigger = [PSCustomObject]@{ Daily = $Daily.IsPresent; At = $At }
+    return $global:PromoGestBackupMonitorTestCaptured.Trigger
 }
 
 function New-ScheduledTaskPrincipal {
     param([string]$UserId, [string]$LogonType, [string]$RunLevel)
-    $script:captured.Principal = [PSCustomObject]@{
+    $global:PromoGestBackupMonitorTestCaptured.Principal = [PSCustomObject]@{
         UserId = $UserId; LogonType = $LogonType; RunLevel = $RunLevel
     }
-    return $script:captured.Principal
+    return $global:PromoGestBackupMonitorTestCaptured.Principal
 }
 
 function New-ScheduledTaskSettingsSet {
     param([switch]$StartWhenAvailable, [string]$MultipleInstances)
-    $script:captured.Settings = [PSCustomObject]@{
+    $global:PromoGestBackupMonitorTestCaptured.Settings = [PSCustomObject]@{
         StartWhenAvailable = $StartWhenAvailable.IsPresent
         MultipleInstances = $MultipleInstances
     }
-    return $script:captured.Settings
+    return $global:PromoGestBackupMonitorTestCaptured.Settings
 }
 
 function Register-ScheduledTask {
@@ -78,8 +78,8 @@ function Register-ScheduledTask {
         [string]$Description,
         [switch]$Force
     )
-    $script:captured.RegisterCalls++
-    $script:captured.Registration = [PSCustomObject]@{
+    $global:PromoGestBackupMonitorTestCaptured.RegisterCalls++
+    $global:PromoGestBackupMonitorTestCaptured.Registration = [PSCustomObject]@{
         TaskName = $TaskName
         Action = $Action
         Trigger = $Trigger
@@ -104,28 +104,28 @@ function Test-ThrowsContaining {
 try {
     & $registerScript -BackupRoot $backupRoot -OffsiteDir $offsiteDir -CheckScriptPath $checkScript
 
-    $arguments = $script:captured.Action.Argument
-    Write-Result ($script:captured.RegisterCalls -eq 1 -and
-        $script:captured.Registration.TaskName -eq "PromoGestBackupFreshnessMonitor" -and
-        $script:captured.Registration.Force) "registration is idempotent and uses the stable monitor task name"
+    $arguments = $global:PromoGestBackupMonitorTestCaptured.Action.Argument
+    Write-Result ($global:PromoGestBackupMonitorTestCaptured.RegisterCalls -eq 1 -and
+        $global:PromoGestBackupMonitorTestCaptured.Registration.TaskName -eq "PromoGestBackupFreshnessMonitor" -and
+        $global:PromoGestBackupMonitorTestCaptured.Registration.Force) "registration is idempotent and uses the stable monitor task name"
 
-    Write-Result ($script:captured.Action.Execute -eq "PowerShell.exe" -and
+    Write-Result ($global:PromoGestBackupMonitorTestCaptured.Action.Execute -eq "PowerShell.exe" -and
         $arguments.Contains('-File "' + $checkScript + '"') -and
         $arguments.Contains('-BackupRoot "' + $backupRoot + '"') -and
         $arguments.Contains('-OffsiteDir "' + $offsiteDir + '"') -and
         $arguments.Contains("-MaxAgeHours 26") -and
         $arguments.Contains("-MinOffsiteCopies 1")) "task action passes the exact local/offsite roots and fail-closed freshness policy"
 
-    Write-Result ($script:captured.Trigger.Daily -and
-        $script:captured.Trigger.At.Hour -eq 6 -and
-        $script:captured.Trigger.At.Minute -eq 0) "monitor is scheduled every day at 06:00 local time"
+    Write-Result ($global:PromoGestBackupMonitorTestCaptured.Trigger.Daily -and
+        $global:PromoGestBackupMonitorTestCaptured.Trigger.At.Hour -eq 6 -and
+        $global:PromoGestBackupMonitorTestCaptured.Trigger.At.Minute -eq 0) "monitor is scheduled every day at 06:00 local time"
 
-    Write-Result ($script:captured.Principal.UserId -eq "SYSTEM" -and
-        $script:captured.Principal.LogonType -eq "ServiceAccount" -and
-        $script:captured.Principal.RunLevel -eq "Highest") "monitor runs under the SYSTEM service identity at highest task level"
+    Write-Result ($global:PromoGestBackupMonitorTestCaptured.Principal.UserId -eq "SYSTEM" -and
+        $global:PromoGestBackupMonitorTestCaptured.Principal.LogonType -eq "ServiceAccount" -and
+        $global:PromoGestBackupMonitorTestCaptured.Principal.RunLevel -eq "Highest") "monitor runs under the SYSTEM service identity at highest task level"
 
-    Write-Result ($script:captured.Settings.StartWhenAvailable -and
-        $script:captured.Settings.MultipleInstances -eq "IgnoreNew") "missed runs are recovered and overlapping monitor instances are prevented"
+    Write-Result ($global:PromoGestBackupMonitorTestCaptured.Settings.StartWhenAvailable -and
+        $global:PromoGestBackupMonitorTestCaptured.Settings.MultipleInstances -eq "IgnoreNew") "missed runs are recovered and overlapping monitor instances are prevented"
 
     $installerPath = Join-Path $scriptRoot "..\deploy\windows\install-service.ps1"
     $installerText = Get-Content -LiteralPath $installerPath -Raw
@@ -136,27 +136,27 @@ try {
 
     $nestedOffsite = Join-Path $backupRoot "nested-offsite"
     New-Item -ItemType Directory -Path $nestedOffsite | Out-Null
-    $callsBeforeInvalid = $script:captured.RegisterCalls
+    $callsBeforeInvalid = $global:PromoGestBackupMonitorTestCaptured.RegisterCalls
     $overlapRejected = Test-ThrowsContaining {
         & $registerScript -BackupRoot $backupRoot -OffsiteDir $nestedOffsite -CheckScriptPath $checkScript
     } "separate, non-overlapping"
-    Write-Result ($overlapRejected -and $script:captured.RegisterCalls -eq $callsBeforeInvalid) "overlapping primary and offsite directories are rejected before registration"
+    Write-Result ($overlapRejected -and $global:PromoGestBackupMonitorTestCaptured.RegisterCalls -eq $callsBeforeInvalid) "overlapping primary and offsite directories are rejected before registration"
 
     $missingOffsiteRejected = Test-ThrowsContaining {
         & $registerScript -BackupRoot $backupRoot -OffsiteDir (Join-Path $workRoot "missing-offsite") -CheckScriptPath $checkScript
     } "does not exist or is not mounted"
-    Write-Result ($missingOffsiteRejected -and $script:captured.RegisterCalls -eq $callsBeforeInvalid) "an unmounted or missing offsite target is rejected before registration"
+    Write-Result ($missingOffsiteRejected -and $global:PromoGestBackupMonitorTestCaptured.RegisterCalls -eq $callsBeforeInvalid) "an unmounted or missing offsite target is rejected before registration"
 
     $missingScriptRejected = Test-ThrowsContaining {
         & $registerScript -BackupRoot $backupRoot -OffsiteDir $offsiteDir -CheckScriptPath (Join-Path $workRoot "missing-check.ps1")
     } "check script is missing"
-    Write-Result ($missingScriptRejected -and $script:captured.RegisterCalls -eq $callsBeforeInvalid) "a missing monitor script is rejected before registration"
+    Write-Result ($missingScriptRejected -and $global:PromoGestBackupMonitorTestCaptured.RegisterCalls -eq $callsBeforeInvalid) "a missing monitor script is rejected before registration"
 
-    if ($script:failures -gt 0) {
-        throw "FAILED: $($script:failures) of $($script:checks) Task Scheduler registration checks failed."
+    if ($global:PromoGestBackupMonitorTestFailures -gt 0) {
+        throw "FAILED: $($global:PromoGestBackupMonitorTestFailures) of $($global:PromoGestBackupMonitorTestChecks) Task Scheduler registration checks failed."
     }
 
-    Write-Host "All $($script:checks) Task Scheduler registration checks passed."
+    Write-Host "All $($global:PromoGestBackupMonitorTestChecks) Task Scheduler registration checks passed."
 }
 catch {
     Write-Host "::error title=Windows backup monitor registration contract::$($_.Exception.GetType().Name): $($_.Exception.Message)"
@@ -166,6 +166,7 @@ finally {
     if (Test-Path -LiteralPath $workRoot) {
         Remove-Item -LiteralPath $workRoot -Recurse -Force -ErrorAction Continue
     }
+    Remove-Variable -Scope Global -Name PromoGestBackupMonitorTestChecks, PromoGestBackupMonitorTestFailures, PromoGestBackupMonitorTestCaptured -ErrorAction SilentlyContinue
 }
 
 exit 0

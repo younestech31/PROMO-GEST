@@ -311,6 +311,7 @@ if (app.Environment.IsDevelopment())
 
 app.UseAuthentication();
 app.UseMiddleware<CsrfValidationMiddleware>();
+app.UseMiddleware<PasswordChangeRequiredMiddleware>();
 app.UseAuthorization();
 
 app.MapControllers();

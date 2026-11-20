@@ -2188,6 +2188,7 @@ public sealed class ApplicationSecurityAndFoundationTests
                 new LoginRequest("deadline.user", temporaryPassword),
                 metadata));
         Assert.Equal("AUTH_INVALID_CREDENTIALS", atDeadline.Code);
+        Assert.Null(await auth.ValidateSessionAsync(beforeDeadline.OpaqueSessionToken));
 
         var changeAtDeadline = await Assert.ThrowsAsync<UnauthorizedDomainException>(
             () => auth.ChangePasswordAsync(

@@ -95,6 +95,7 @@ public sealed class UserManagementService
             passwordHash,
             request.PreferredLanguage,
             nowUtc);
+        employee.RequirePasswordChange(nowUtc);
 
         await _userRepository.AddUserAsync(employee, ct);
         await _userRepository.ReplaceUserRolesAsync(
@@ -350,5 +351,7 @@ public sealed class UserManagementService
             user.LockoutEndUtc,
             user.LastLoginAtUtc,
             user.CreatedAtUtc,
-            user.UserRoles.Select(ur => ur.Role.Code).OrderBy(c => c).ToList());
+            user.UserRoles.Select(ur => ur.Role.Code).OrderBy(c => c).ToList(),
+            user.MustChangePasswordAtNextLogin,
+            user.PasswordChangeRequiredUntilUtc);
 }

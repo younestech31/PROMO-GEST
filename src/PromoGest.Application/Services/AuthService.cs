@@ -1,6 +1,7 @@
 using PromoGest.Application.Interfaces;
 using PromoGest.Application.Validators;
 using PromoGest.Contracts.Auth;
+using PromoGest.Contracts.Users;
 using PromoGest.Domain.Entities;
 using PromoGest.Domain.Enums;
 using PromoGest.Domain.Exceptions;
@@ -169,11 +170,39 @@ public sealed class AuthService
             throw new UnauthorizedDomainException("AUTH_INVALID_CREDENTIALS", "Invalid username or password.");
         }
 
+        if (user.MustChangePasswordAtNextLogin &&
+            (!user.PasswordChangeRequiredUntilUtc.HasValue ||
+             user.PasswordChangeRequiredUntilUtc.Value <= nowUtc))
+        {
+            await _auditWriter.WriteAsync(
+                AuditLog.Record(
+                    nowUtc,
+                    user.Id,
+                    user.Username,
+                    "AUTH_TEMPORARY_PASSWORD_EXPIRED",
+                    AuditSeverity.Security,
+                    "User",
+                    user.Id.ToString(),
+                    "Temporary password authentication was rejected after its mandatory-change deadline.",
+                    null,
+                    metadata.IpAddress,
+                    metadata.UserAgent),
+                ct);
+            await _userRepository.SaveChangesAsync(ct);
+            throw new UnauthorizedDomainException("AUTH_INVALID_CREDENTIALS", "Invalid username or password.");
+        }
+
         user.RecordSuccessfulLogin(nowUtc);
 
         var opaqueToken = _tokenGenerator.GenerateOpaqueToken();
         var tokenHash = _tokenGenerator.HashToken(opaqueToken);
         var expiresAtUtc = nowUtc.Add(SessionLifetime);
+        if (user.MustChangePasswordAtNextLogin &&
+            user.PasswordChangeRequiredUntilUtc is { } passwordChangeDeadline &&
+            passwordChangeDeadline < expiresAtUtc)
+        {
+            expiresAtUtc = passwordChangeDeadline;
+        }
 
         var session = UserSession.Create(
             user.Id,
@@ -225,6 +254,29 @@ public sealed class AuthService
             return null;
         }
 
+        if (user.MustChangePasswordAtNextLogin &&
+            (!user.PasswordChangeRequiredUntilUtc.HasValue ||
+             user.PasswordChangeRequiredUntilUtc.Value <= nowUtc))
+        {
+            await _userRepository.RevokeAllUserSessionsAsync(user.Id, nowUtc, ct);
+            await _auditWriter.WriteAsync(
+                AuditLog.Record(
+                    nowUtc,
+                    user.Id,
+                    user.Username,
+                    "AUTH_TEMPORARY_PASSWORD_EXPIRED",
+                    AuditSeverity.Security,
+                    "User",
+                    user.Id.ToString(),
+                    "All sessions were revoked after the mandatory temporary-password deadline.",
+                    null,
+                    null,
+                    null),
+                ct);
+            await _userRepository.SaveChangesAsync(ct);
+            return null;
+        }
+
         var org = await _installationRepository.GetOrganizationSettingsAsync(ct);
         if (org is null || !org.IsInitialized)
             return null;
@@ -237,6 +289,97 @@ public sealed class AuthService
 
         var permissions = await _userRepository.GetEffectivePermissionsAsync(user.Id, ct);
         return BuildSessionResponse(user, org, permissions);
+    }
+
+    public async Task ChangePasswordAsync(
+        Guid actorUserId,
+        ChangePasswordRequest request,
+        RequestMetadata metadata,
+        CancellationToken ct = default)
+    {
+        var user = await _userRepository.GetByIdWithRolesAsync(actorUserId, ct)
+            ?? throw new UnauthorizedDomainException("AUTH_REQUIRED", "Authentication is required.");
+
+        if (!user.IsActive)
+            throw new UnauthorizedDomainException("AUTH_INVALID_CREDENTIALS", "Invalid username or password.");
+
+        var nowUtc = _clock.UtcNow;
+        if (!user.MustChangePasswordAtNextLogin)
+            throw new ConflictDomainException("PASSWORD_CHANGE_NOT_REQUIRED", "This account does not require a temporary-password change.");
+
+        if (!user.PasswordChangeRequiredUntilUtc.HasValue ||
+            user.PasswordChangeRequiredUntilUtc.Value <= nowUtc)
+        {
+            await _userRepository.RevokeAllUserSessionsAsync(user.Id, nowUtc, ct);
+            await _auditWriter.WriteAsync(
+                AuditLog.Record(
+                    nowUtc,
+                    user.Id,
+                    user.Username,
+                    "AUTH_TEMPORARY_PASSWORD_EXPIRED",
+                    AuditSeverity.Security,
+                    "User",
+                    user.Id.ToString(),
+                    "Password change was rejected after the temporary credential deadline.",
+                    null,
+                    metadata.IpAddress,
+                    metadata.UserAgent),
+                ct);
+            await _userRepository.SaveChangesAsync(ct);
+            throw new UnauthorizedDomainException("TEMPORARY_PASSWORD_EXPIRED", "The temporary password has expired. Contact your System Administrator for a new reset.");
+        }
+
+        if (string.IsNullOrWhiteSpace(request.CurrentPassword) ||
+            !_passwordHasher.VerifyPassword(request.CurrentPassword, user.PasswordHash))
+        {
+            var lockedNow = user.RecordFailedLogin(nowUtc);
+            await _auditWriter.WriteAsync(
+                AuditLog.Record(
+                    nowUtc,
+                    user.Id,
+                    user.Username,
+                    lockedNow ? "AUTH_LOCKOUT" : "AUTH_PASSWORD_CHANGE_FAILED",
+                    AuditSeverity.Security,
+                    "User",
+                    user.Id.ToString(),
+                    lockedNow
+                        ? $"Account '{user.Username}' locked for {User.LockoutDuration.TotalMinutes} minutes after {User.MaxFailedLoginAttempts} failed temporary-password change attempts."
+                        : "A failed current-password verification was recorded during mandatory password change.",
+                    null,
+                    metadata.IpAddress,
+                    metadata.UserAgent),
+                ct);
+            if (lockedNow)
+            {
+                await _userRepository.RevokeAllUserSessionsAsync(user.Id, nowUtc, ct);
+            }
+            await _userRepository.SaveChangesAsync(ct);
+            throw new UnauthorizedDomainException("PASSWORD_CURRENT_INVALID", "The current password is incorrect.");
+        }
+
+        PasswordPolicyValidator.EnsureValid(request.NewPassword);
+        if (_passwordHasher.VerifyPassword(request.NewPassword, user.PasswordHash))
+            throw new DomainException("PASSWORD_REUSE_NOT_ALLOWED", "Choose a password different from the temporary password.");
+
+        user.ChangePassword(_passwordHasher.HashPassword(request.NewPassword), nowUtc);
+        await _userRepository.RevokeAllUserSessionsAsync(user.Id, nowUtc, ct);
+
+        await _auditWriter.WriteAsync(
+            AuditLog.Record(
+                nowUtc,
+                user.Id,
+                user.Username,
+                "USER_PASSWORD_CHANGED",
+                AuditSeverity.Security,
+                "User",
+                user.Id.ToString(),
+                "User completed the mandatory temporary-password change; all sessions were revoked.",
+                null,
+                metadata.IpAddress,
+                metadata.UserAgent),
+            ct);
+
+        await _userRepository.SaveChangesAsync(ct);
     }
 
     public async Task LogoutAsync(string? opaqueToken, RequestMetadata metadata, CancellationToken ct = default)
@@ -274,6 +417,44 @@ public sealed class AuthService
         OrganizationSettings org,
         IReadOnlyList<string> permissions)
     {
+        if (user.MustChangePasswordAtNextLogin)
+        {
+            var restrictedUser = new AuthenticatedUserResponse(
+                user.Id,
+                user.Username,
+                user.FullName,
+                string.Empty,
+                null,
+                user.IsSystemAdministrator,
+                user.IsActive,
+                user.PreferredLanguage,
+                Array.Empty<string>(),
+                Array.Empty<string>(),
+                user.LastLoginAtUtc,
+                true,
+                user.PasswordChangeRequiredUntilUtc);
+
+            var restrictedOrganization = new OrganizationSummaryResponse(
+                Guid.Empty,
+                string.Empty,
+                null,
+                string.Empty,
+                null,
+                null,
+                null,
+                null,
+                null,
+                string.Empty,
+                string.Empty,
+                string.Empty,
+                null,
+                null,
+                user.PreferredLanguage,
+                "DZD");
+
+            return new SessionResponse(restrictedUser, restrictedOrganization);
+        }
+
         var roleCodes = user.UserRoles.Select(ur => ur.Role.Code).Distinct().ToList();
         var canReadOrg = user.IsSystemAdministrator ||
             permissions.Contains("org.read", StringComparer.OrdinalIgnoreCase) ||
@@ -293,7 +474,9 @@ public sealed class AuthService
                 user.PreferredLanguage,
                 roleCodes,
                 permissions,
-                user.LastLoginAtUtc),
+                user.LastLoginAtUtc,
+                user.MustChangePasswordAtNextLogin,
+                user.PasswordChangeRequiredUntilUtc),
             new OrganizationSummaryResponse(
                 org.Id,
                 org.LegalName,

@@ -1347,6 +1347,16 @@ namespace PromoGest.Infrastructure.Persistence.Migrations
                     b.Property<DateTimeOffset?>("LockoutEndUtc")
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("lockout_end_utc");
+ 
+                    b.Property<bool>("MustChangePasswordAtNextLogin")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(false)
+                        .HasColumnName("must_change_password_at_next_login");
+
+                    b.Property<DateTimeOffset?>("PasswordChangeRequiredUntilUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("password_change_required_until_utc");
 
                     b.Property<string>("NormalizedEmail")
                         .IsRequired()
@@ -1413,6 +1423,10 @@ namespace PromoGest.Infrastructure.Persistence.Migrations
                             t.HasCheckConstraint("ck_users_preferred_language", "preferred_language IN ('ar', 'fr')");
 
                             t.HasCheckConstraint("ck_users_username_length", "char_length(username) >= 3");
+
+                            t.HasCheckConstraint(
+                                "ck_users_password_change_deadline_consistent",
+                                "(must_change_password_at_next_login = TRUE AND password_change_required_until_utc IS NOT NULL) OR (must_change_password_at_next_login = FALSE AND password_change_required_until_utc IS NULL)");
                         });
                 });
 

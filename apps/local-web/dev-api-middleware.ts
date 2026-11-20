@@ -505,6 +505,8 @@ export function createPromoGestDevMiddleware(): (
       lastLoginAtUtc: null,
       createdAtUtc: nowIso,
       roleCodes: ['SYSTEM_ADMIN'],
+      mustChangePasswordAtNextLogin: false,
+      passwordChangeRequiredUntilUtc: null,
       // The preview session is issued by a dedicated development-only GET route;
       // no reusable demo password is created or exposed.
       passwordHash: hashPassword(crypto.randomBytes(32).toString('hex')),
@@ -859,6 +861,8 @@ export function createPromoGestDevMiddleware(): (
             lastLoginAtUtc: null,
             createdAtUtc: nowIso,
             roleCodes: ['SYSTEM_ADMIN'],
+            mustChangePasswordAtNextLogin: false,
+            passwordChangeRequiredUntilUtc: null,
             passwordHash: hashPassword(body.adminPassword),
             securityStamp: crypto.randomUUID(),
           };
@@ -1087,6 +1091,8 @@ export function createPromoGestDevMiddleware(): (
             lastLoginAtUtc: null,
             createdAtUtc: new Date().toISOString(),
             roleCodes: body.roleCodes,
+            mustChangePasswordAtNextLogin: false,
+            passwordChangeRequiredUntilUtc: null,
             passwordHash: hashPassword(body.password),
             securityStamp: crypto.randomUUID(),
           };

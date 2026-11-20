@@ -8,6 +8,7 @@ public sealed partial class User : BaseEntity
 {
     public const int MaxFailedLoginAttempts = 5;
     public static readonly TimeSpan LockoutDuration = TimeSpan.FromMinutes(15);
+    public static readonly TimeSpan TemporaryPasswordLifetime = TimeSpan.FromHours(24);
 
     private readonly List<UserRole> _userRoles = new();
     private readonly List<ProjectMember> _projectMemberships = new();
@@ -27,6 +28,8 @@ public sealed partial class User : BaseEntity
     public int FailedLoginAttempts { get; private set; }
     public DateTimeOffset? LockoutEndUtc { get; private set; }
     public DateTimeOffset? LastLoginAtUtc { get; private set; }
+    public bool MustChangePasswordAtNextLogin { get; private set; }
+    public DateTimeOffset? PasswordChangeRequiredUntilUtc { get; private set; }
     public Guid SecurityStamp { get; private set; } = Guid.NewGuid();
 
     public IReadOnlyCollection<UserRole> UserRoles => _userRoles.AsReadOnly();
@@ -190,6 +193,14 @@ public sealed partial class User : BaseEntity
         Touch(nowUtc);
     }
 
+    public void RequirePasswordChange(DateTimeOffset nowUtc)
+    {
+        MustChangePasswordAtNextLogin = true;
+        PasswordChangeRequiredUntilUtc = nowUtc.Add(TemporaryPasswordLifetime);
+        SecurityStamp = Guid.NewGuid();
+        Touch(nowUtc);
+    }
+
     public void ResetPassword(string newPasswordHash, DateTimeOffset nowUtc)
     {
         if (string.IsNullOrWhiteSpace(newPasswordHash))
@@ -198,6 +209,22 @@ public sealed partial class User : BaseEntity
         PasswordHash = newPasswordHash;
         FailedLoginAttempts = 0;
         LockoutEndUtc = null;
+        MustChangePasswordAtNextLogin = true;
+        PasswordChangeRequiredUntilUtc = nowUtc.Add(TemporaryPasswordLifetime);
+        SecurityStamp = Guid.NewGuid();
+        Touch(nowUtc);
+    }
+
+    public void ChangePassword(string newPasswordHash, DateTimeOffset nowUtc)
+    {
+        if (string.IsNullOrWhiteSpace(newPasswordHash))
+            throw new DomainException("USER_PASSWORD_HASH_REQUIRED", "Password hash is required.");
+
+        PasswordHash = newPasswordHash;
+        FailedLoginAttempts = 0;
+        LockoutEndUtc = null;
+        MustChangePasswordAtNextLogin = false;
+        PasswordChangeRequiredUntilUtc = null;
         SecurityStamp = Guid.NewGuid();
         Touch(nowUtc);
     }

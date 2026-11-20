@@ -325,6 +325,14 @@ export function UsersManagementView({ language, onDirtyChange }: UsersManagement
                       <td className="py-3 px-4 font-data text-slate-900">
                         <div className="flex items-center gap-2">
                           <span>{u.username}</span>
+                          {u.mustChangePasswordAtNextLogin && (
+                            <span
+                              className="rounded bg-amber-50 px-1.5 py-0.5 text-[10px] font-semibold text-amber-800"
+                              title={t.users.mustChangePasswordBadge}
+                            >
+                              {t.users.mustChangePasswordBadge}
+                            </span>
+                          )}
                           {u.isSystemAdministrator && (
                             <span title={t.users.sysAdminLabel} className="text-teal-800">
                               <ShieldCheck className="w-4 h-4" aria-hidden="true" />
@@ -439,6 +447,9 @@ export function UsersManagementView({ language, onDirtyChange }: UsersManagement
             )}
 
             <form onSubmit={handleCreateSubmit} noValidate className="mt-4 space-y-4">
+              <p className="rounded-md border border-amber-200 bg-amber-50 px-3 py-2.5 text-xs leading-5 text-amber-950">
+                {t.users.temporaryPasswordNotice}
+              </p>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <FormField id="emp-username" label={t.users.fieldUsername} error={formErrors.username}>
                   <input
@@ -698,6 +709,9 @@ export function UsersManagementView({ language, onDirtyChange }: UsersManagement
             )}
 
             <form onSubmit={handleResetPasswordSubmit} className="mt-4 space-y-4">
+              <p className="rounded-md border border-amber-200 bg-amber-50 px-3 py-2.5 text-xs leading-5 text-amber-950">
+                {t.users.temporaryPasswordNotice}
+              </p>
               <FormField
                 id="reset-new-pw"
                 label={t.users.fieldNewPassword}

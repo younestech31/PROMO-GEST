@@ -6,6 +6,7 @@ using System.Net.Http.Json;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.TestHost;
 using Microsoft.AspNetCore.Mvc.Testing;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Migrations;
@@ -32,6 +33,14 @@ using Testcontainers.PostgreSql;
 using Xunit;
 
 namespace PromoGest.IntegrationTests;
+
+[ApiController]
+[Route("api/test/default-deny")]
+public sealed class DefaultDenyProbeController : ControllerBase
+{
+    [HttpGet]
+    public IActionResult Get() => Ok(new { reachable = true });
+}
 
 public sealed class PostgreSql18IntegrationFixture : IAsyncLifetime
 {
@@ -409,7 +418,8 @@ public sealed class PostgresEndToEndTests : IClassFixture<PostgreSql18Integratio
         string tempRoot,
         string environmentName = "Development",
         IDictionary<string, string?>? extraConfiguration = null,
-        IPAddress? simulatedRemoteIp = null)
+        IPAddress? simulatedRemoteIp = null,
+        bool includeAuthorizationProbe = false)
     {
         Directory.CreateDirectory(tempRoot);
         return new WebApplicationFactory<Program>().WithWebHostBuilder(builder =>
@@ -427,7 +437,8 @@ public sealed class PostgresEndToEndTests : IClassFixture<PostgreSql18Integratio
                     ["ConnectionStrings:DefaultConnection"] = connectionString,
                     ["Security:RequireHttpsCookies"] = "false",
                     ["Storage:RootDirectory"] = Path.Combine(tempRoot, "storage"),
-                    ["Sales:ReservationExpiryWorkerEnabled"] = "false"
+                    ["Sales:ReservationExpiryWorkerEnabled"] = "false",
+                    ["Security:LoginRateLimitPermitLimit"] = "100"
                 };
                 if (extraConfiguration is not null)
                 {
@@ -448,6 +459,11 @@ public sealed class PostgresEndToEndTests : IClassFixture<PostgreSql18Integratio
                 if (simulatedRemoteIp is not null)
                 {
                     services.AddSingleton<IStartupFilter>(new SimulatedRemoteIpStartupFilter(simulatedRemoteIp));
+                }
+
+                if (includeAuthorizationProbe)
+                {
+                    services.AddControllers().AddApplicationPart(typeof(DefaultDenyProbeController).Assembly);
                 }
             });
         });
@@ -478,6 +494,55 @@ public sealed class PostgresEndToEndTests : IClassFixture<PostgreSql18Integratio
         client.DefaultRequestHeaders.Add(payload.HeaderName, payload.Token);
     }
 
+    private static async Task<SessionResponse> CompleteMandatoryPasswordChangeAsync(
+        HttpClient client,
+        string username,
+        string temporaryPassword,
+        string permanentPassword)
+    {
+        var login = await client.PostAsJsonAsync(
+            "/api/auth/login",
+            new LoginRequest(username, temporaryPassword));
+        Assert.Equal(HttpStatusCode.OK, login.StatusCode);
+
+        var temporarySession = await login.Content.ReadFromJsonAsync<SessionResponse>();
+        Assert.NotNull(temporarySession);
+        Assert.True(temporarySession!.User.MustChangePasswordAtNextLogin);
+        Assert.Empty(temporarySession.User.Roles);
+        Assert.Empty(temporarySession.User.Permissions);
+        Assert.Null(temporarySession.Organization.Nif);
+        Assert.Equal(string.Empty, temporarySession.Organization.LegalName);
+
+        await AttachCsrfTokenAsync(client);
+        var blockedProjects = await client.GetAsync("/api/projects");
+        Assert.Equal(HttpStatusCode.Forbidden, blockedProjects.StatusCode);
+        var blockedError = await blockedProjects.Content.ReadFromJsonAsync<ApiErrorResponse>();
+        Assert.Equal("PASSWORD_CHANGE_REQUIRED", blockedError!.Code);
+        var blockedReference = await client.GetAsync("/api/reference/administrative-units");
+        Assert.Equal(HttpStatusCode.Forbidden, blockedReference.StatusCode);
+        var spaShell = await client.GetAsync("/projects");
+        Assert.Equal(HttpStatusCode.OK, spaShell.StatusCode);
+        Assert.Equal("text/html", spaShell.Content.Headers.ContentType?.MediaType);
+
+        var change = await client.PostAsJsonAsync(
+            "/api/auth/change-password",
+            new ChangePasswordRequest(temporaryPassword, permanentPassword));
+        Assert.Equal(HttpStatusCode.NoContent, change.StatusCode);
+        Assert.Equal(HttpStatusCode.Unauthorized, (await client.GetAsync("/api/auth/me")).StatusCode);
+
+        await AttachCsrfTokenAsync(client);
+        var freshLogin = await client.PostAsJsonAsync(
+            "/api/auth/login",
+            new LoginRequest(username, permanentPassword));
+        Assert.Equal(HttpStatusCode.OK, freshLogin.StatusCode);
+
+        var permanentSession = await freshLogin.Content.ReadFromJsonAsync<SessionResponse>();
+        Assert.NotNull(permanentSession);
+        Assert.False(permanentSession!.User.MustChangePasswordAtNextLogin);
+        await AttachCsrfTokenAsync(client);
+        return permanentSession;
+    }
+
     private static InitializeInstallationRequest ValidInitRequest() => new(
         "SPA Promotion Atlas",
         "Atlas Immo",
@@ -498,6 +563,79 @@ public sealed class PostgresEndToEndTests : IClassFixture<PostgreSql18Integratio
         "admin@atlasimmo.dz",
         "+213550102030",
         "AtlasAdmin#2026");
+
+    [Fact]
+    public async Task AuthorizationFallback_DeniesUnannotatedControllerAndPreservesIntentionalAnonymousRoutes()
+    {
+        var connectionString = await _fixture.CreateIsolatedDatabaseConnectionStringAsync();
+        var tempRoot = Path.Combine(Path.GetTempPath(), $"promogest_default_deny_it_{Guid.NewGuid():N}");
+        var configuration = new Dictionary<string, string?>
+        {
+            ["Security:SetupBootstrapToken"] = "test-only-bootstrap-token"
+        };
+
+        using var factory = CreateFactory(
+            connectionString,
+            tempRoot,
+            extraConfiguration: configuration,
+            simulatedRemoteIp: IPAddress.Parse("192.0.2.25"),
+            includeAuthorizationProbe: true);
+        using var client = factory.CreateClient(new WebApplicationFactoryClientOptions { HandleCookies = true });
+
+        // The test-only controller has no [Authorize] or [AllowAnonymous].
+        // FallbackPolicy must reject it before its action can execute.
+        var unannotatedProbe = await client.GetAsync("/api/test/default-deny");
+        Assert.Equal(HttpStatusCode.Unauthorized, unannotatedProbe.StatusCode);
+
+        // Authentication bootstrap endpoints remain intentionally anonymous.
+        await AttachCsrfTokenAsync(client);
+
+        var login = await client.PostAsJsonAsync(
+            "/api/auth/login",
+            new LoginRequest("not-initialized", "not-a-real-password"));
+        Assert.Equal(HttpStatusCode.Conflict, login.StatusCode);
+        var loginError = await login.Content.ReadFromJsonAsync<ApiErrorResponse>();
+        Assert.Equal("SETUP_REQUIRED", loginError!.Code);
+
+        // Setup status remains public; initialization reaches its own bootstrap-token
+        // guard (403) rather than being rejected by the authorization fallback (401).
+        var setupStatus = await client.GetAsync("/api/setup/status");
+        Assert.Equal(HttpStatusCode.OK, setupStatus.StatusCode);
+
+        await AttachCsrfTokenAsync(client);
+        var initialize = await client.PostAsJsonAsync("/api/setup/initialize", ValidInitRequest());
+        Assert.Equal(HttpStatusCode.Forbidden, initialize.StatusCode);
+        var initializeError = await initialize.Content.ReadFromJsonAsync<ApiErrorResponse>();
+        Assert.Equal("SETUP_BOOTSTRAP_FORBIDDEN", initializeError!.Code);
+
+        var reference = await client.GetAsync("/api/reference/administrative-units");
+        Assert.Equal(HttpStatusCode.OK, reference.StatusCode);
+
+        var live = await client.GetAsync("/health/live");
+        Assert.Equal(HttpStatusCode.OK, live.StatusCode);
+
+        var ready = await client.GetAsync("/health/ready");
+        Assert.Equal(HttpStatusCode.OK, ready.StatusCode);
+
+        // Logout is intentionally anonymous but still requires the existing CSRF token.
+        var logout = await client.PostAsync("/api/auth/logout", content: null);
+        Assert.Equal(HttpStatusCode.NoContent, logout.StatusCode);
+
+        // Unknown API/health paths keep their explicit anonymous 404 endpoints.
+        var apiNotFound = await client.GetAsync("/api/nonexistent-endpoint");
+        Assert.Equal(HttpStatusCode.NotFound, apiNotFound.StatusCode);
+        var apiNotFoundError = await apiNotFound.Content.ReadFromJsonAsync<ApiErrorResponse>();
+        Assert.Equal("ENDPOINT_NOT_FOUND", apiNotFoundError!.Code);
+
+        var healthNotFound = await client.GetAsync("/health/nonexistent");
+        Assert.Equal(HttpStatusCode.NotFound, healthNotFound.StatusCode);
+
+        // The SPA shell must stay reachable without a session so the login page and
+        // client-side deep links can render before authentication.
+        var spaShell = await client.GetAsync("/login");
+        Assert.Equal(HttpStatusCode.OK, spaShell.StatusCode);
+        Assert.Equal("text/html", spaShell.Content.Headers.ContentType?.MediaType);
+    }
 
     [Fact]
     public async Task AdministrativeReference_ExposesCanonical69WilayaCatalogueWithoutAuthentication()
@@ -1060,11 +1198,11 @@ public sealed class PostgresEndToEndTests : IClassFixture<PostgreSql18Integratio
             Assert.NotNull(financeDocumentUser);
             using var financeDocumentClient = factory.CreateClient(new WebApplicationFactoryClientOptions { HandleCookies = true });
             await AttachCsrfTokenAsync(financeDocumentClient);
-            var financeDocumentLogin = await financeDocumentClient.PostAsJsonAsync(
-                "/api/auth/login",
-                new LoginRequest("finance.documents", "FinanceDocuments#2026"));
-            Assert.Equal(HttpStatusCode.OK, financeDocumentLogin.StatusCode);
-            await AttachCsrfTokenAsync(financeDocumentClient);
+            await CompleteMandatoryPasswordChangeAsync(
+                financeDocumentClient,
+                "finance.documents",
+                "FinanceDocuments#2026",
+                "FinanceDocumentsPersonal#2026");
             var financeMembershipResponse = await adminClient.PutAsJsonAsync(
                 $"/api/projects/{createdProject.Id}/members",
                 new AssignProjectMemberRequest(financeDocumentUser!.Id, "FinanceController", true, false, false, false));
@@ -1626,11 +1764,11 @@ public sealed class PostgresEndToEndTests : IClassFixture<PostgreSql18Integratio
 
             using var directorClient = factory.CreateClient(new WebApplicationFactoryClientOptions { HandleCookies = true });
             await AttachCsrfTokenAsync(directorClient);
-            var directorLoginResp = await directorClient.PostAsJsonAsync(
-                "/api/auth/login",
-                new LoginRequest("youssef.director", "YoussefDirector#2026"));
-            Assert.Equal(HttpStatusCode.OK, directorLoginResp.StatusCode);
-            await AttachCsrfTokenAsync(directorClient);
+            await CompleteMandatoryPasswordChangeAsync(
+                directorClient,
+                "youssef.director",
+                "YoussefDirector#2026",
+                "YoussefPersonal#2026");
 
             var directorUpdate = projectUpdate with
             {
@@ -1888,9 +2026,11 @@ public sealed class PostgresEndToEndTests : IClassFixture<PostgreSql18Integratio
             using var employeeClient = factory.CreateClient(new WebApplicationFactoryClientOptions { HandleCookies = true });
             await AttachCsrfTokenAsync(employeeClient);
 
-            var empLogin = await employeeClient.PostAsJsonAsync("/api/auth/login", new LoginRequest("yasmine.sales", "YasminePass#2026"));
-            Assert.Equal(HttpStatusCode.OK, empLogin.StatusCode);
-            await AttachCsrfTokenAsync(employeeClient);
+            await CompleteMandatoryPasswordChangeAsync(
+                employeeClient,
+                "yasmine.sales",
+                "YasminePass#2026",
+                "YasminePersonal#2026");
 
             // A regular employee cannot update project master data, even with a valid session and CSRF token.
             var deniedProjectUpdate = await employeeClient.PutAsJsonAsync(
@@ -2384,11 +2524,11 @@ public sealed class PostgresEndToEndTests : IClassFixture<PostgreSql18Integratio
 
         using var employeeClient = factory.CreateClient(new WebApplicationFactoryClientOptions { HandleCookies = true });
         await AttachCsrfTokenAsync(employeeClient);
-        var employeeLogin = await employeeClient.PostAsJsonAsync(
-            "/api/auth/login",
-            new LoginRequest("org.editor", "OrgEditorPass#2026"));
-        Assert.Equal(HttpStatusCode.OK, employeeLogin.StatusCode);
-        await AttachCsrfTokenAsync(employeeClient);
+        await CompleteMandatoryPasswordChangeAsync(
+            employeeClient,
+            "org.editor",
+            "OrgEditorPass#2026",
+            "OrgEditorPersonal#2026");
 
         UpdateOrganizationProfileRequest CreateRequest(
             string legalName,
@@ -2653,7 +2793,11 @@ public sealed class PostgresEndToEndTests : IClassFixture<PostgreSql18Integratio
         // VIEWER does not hold files.read and is denied both document listing and download
         using var viewerClient = factory.CreateClient(new WebApplicationFactoryClientOptions { HandleCookies = true });
         await AttachCsrfTokenAsync(viewerClient);
-        Assert.Equal(HttpStatusCode.OK, (await viewerClient.PostAsJsonAsync("/api/auth/login", new LoginRequest("viewer.pii", "ViewerPass#2026"))).StatusCode);
+        await CompleteMandatoryPasswordChangeAsync(
+            viewerClient,
+            "viewer.pii",
+            "ViewerPass#2026",
+            "ViewerPersonal#2026");
         var viewerSession = await viewerClient.GetFromJsonAsync<SessionResponse>("/api/auth/me");
         Assert.DoesNotContain("files.read", viewerSession!.User.Permissions);
         Assert.Equal(HttpStatusCode.Forbidden, (await viewerClient.GetAsync($"/api/projects/{project.Id}/documents")).StatusCode);
@@ -2662,7 +2806,11 @@ public sealed class PostgresEndToEndTests : IClassFixture<PostgreSql18Integratio
         // SITE_ENGINEER has files.read and projects.structure.manage, but lacks customers.read
         using var siteClient = factory.CreateClient(new WebApplicationFactoryClientOptions { HandleCookies = true });
         await AttachCsrfTokenAsync(siteClient);
-        Assert.Equal(HttpStatusCode.OK, (await siteClient.PostAsJsonAsync("/api/auth/login", new LoginRequest("site.pii", "SitePass#2026"))).StatusCode);
+        await CompleteMandatoryPasswordChangeAsync(
+            siteClient,
+            "site.pii",
+            "SitePass#2026",
+            "SitePersonal#2026");
         var siteSession = await siteClient.GetFromJsonAsync<SessionResponse>("/api/auth/me");
         Assert.Contains("projects.structure.manage", siteSession!.User.Permissions);
         Assert.DoesNotContain("customers.read", siteSession.User.Permissions);
@@ -2975,6 +3123,117 @@ public sealed class PostgresEndToEndTests : IClassFixture<PostgreSql18Integratio
                 "('trg_project_customers_identity_unique', 'trg_parties_identity_unique');",
                 ownerConnection);
             Assert.Equal(2L, (long)(await triggerCount.ExecuteScalarAsync())!);
+        }
+    }
+
+
+    [Fact]
+    public async Task TemporaryEmployeePassword_RequiresChangeBeforeBusinessAccess_ExpiresAndAdminResetRevokesSessions()
+    {
+        var connectionString = await _fixture.CreateIsolatedDatabaseConnectionStringAsync();
+        var tempRoot = Path.Combine(Path.GetTempPath(), $"promogest_password_lifecycle_{Guid.NewGuid():N}");
+
+        await using var factory = CreateFactory(connectionString, tempRoot);
+        using var adminClient = factory.CreateClient(new WebApplicationFactoryClientOptions { HandleCookies = true });
+
+        await AttachCsrfTokenAsync(adminClient);
+        var setup = await adminClient.PostAsJsonAsync("/api/setup/initialize", ValidInitRequest());
+        Assert.Equal(HttpStatusCode.Created, setup.StatusCode);
+
+        var adminLogin = await adminClient.PostAsJsonAsync(
+            "/api/auth/login",
+            new LoginRequest("sysadmin", "AtlasAdmin#2026"));
+        Assert.Equal(HttpStatusCode.OK, adminLogin.StatusCode);
+        await AttachCsrfTokenAsync(adminClient);
+
+        const string firstTemporaryPassword = "EmployeeTemp#2026";
+        var create = await adminClient.PostAsJsonAsync(
+            "/api/users",
+            new CreateEmployeeRequest(
+                "temp.employee",
+                "Temporary Employee",
+                "temporary.employee@atlasimmo.dz",
+                null,
+                firstTemporaryPassword,
+                "fr",
+                new[] { Role.CommercialManagerCode }));
+        Assert.Equal(HttpStatusCode.Created, create.StatusCode);
+
+        var created = await create.Content.ReadFromJsonAsync<UserDto>();
+        Assert.NotNull(created);
+        Assert.True(created!.MustChangePasswordAtNextLogin);
+        Assert.NotNull(created.PasswordChangeRequiredUntilUtc);
+        Assert.InRange(
+            created.PasswordChangeRequiredUntilUtc!.Value,
+            DateTimeOffset.UtcNow.AddHours(23),
+            DateTimeOffset.UtcNow.AddHours(25));
+
+        using var employeeClient = factory.CreateClient(new WebApplicationFactoryClientOptions { HandleCookies = true });
+        await AttachCsrfTokenAsync(employeeClient);
+        await CompleteMandatoryPasswordChangeAsync(
+            employeeClient,
+            "temp.employee",
+            firstTemporaryPassword,
+            "EmployeePersonal#2026");
+
+        var normalSession = await employeeClient.GetFromJsonAsync<SessionResponse>("/api/auth/me");
+        Assert.NotNull(normalSession);
+        Assert.False(normalSession!.User.MustChangePasswordAtNextLogin);
+        Assert.Contains("projects.read", normalSession.User.Permissions);
+
+        // Administrative reset starts a new temporary-password cycle and revokes every
+        // currently authenticated session for that user.
+        const string secondTemporaryPassword = "ResetTemp#2026";
+        var reset = await adminClient.PostAsJsonAsync(
+            $"/api/users/{created.Id}/reset-password",
+            new ResetUserPasswordRequest(secondTemporaryPassword));
+        Assert.Equal(HttpStatusCode.NoContent, reset.StatusCode);
+        Assert.Equal(HttpStatusCode.Unauthorized, (await employeeClient.GetAsync("/api/auth/me")).StatusCode);
+
+        using var resetEmployeeClient = factory.CreateClient(new WebApplicationFactoryClientOptions { HandleCookies = true });
+        await AttachCsrfTokenAsync(resetEmployeeClient);
+        await CompleteMandatoryPasswordChangeAsync(
+            resetEmployeeClient,
+            "temp.employee",
+            secondTemporaryPassword,
+            "EmployeeAfterReset#2026");
+
+        // Expiry is enforced at login, not merely hidden by the UI or middleware.
+        const string expiredTemporaryPassword = "ExpiredTemp#2026";
+        var expiredReset = await adminClient.PostAsJsonAsync(
+            $"/api/users/{created.Id}/reset-password",
+            new ResetUserPasswordRequest(expiredTemporaryPassword));
+        Assert.Equal(HttpStatusCode.NoContent, expiredReset.StatusCode);
+
+        await using (var scope = factory.Services.CreateAsyncScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+            await db.Database.ExecuteSqlInterpolatedAsync(
+                $"UPDATE users SET password_change_required_until_utc = {DateTimeOffset.UtcNow.AddMinutes(-1)} WHERE id = {created.Id}");
+        }
+
+        using var expiredClient = factory.CreateClient(new WebApplicationFactoryClientOptions { HandleCookies = true });
+        await AttachCsrfTokenAsync(expiredClient);
+        var expiredLogin = await expiredClient.PostAsJsonAsync(
+            "/api/auth/login",
+            new LoginRequest("temp.employee", expiredTemporaryPassword));
+        Assert.Equal(HttpStatusCode.Unauthorized, expiredLogin.StatusCode);
+        var expiredError = await expiredLogin.Content.ReadFromJsonAsync<ApiErrorResponse>();
+        Assert.Equal("AUTH_INVALID_CREDENTIALS", expiredError!.Code);
+        Assert.Equal(HttpStatusCode.Unauthorized, (await expiredClient.GetAsync("/api/auth/me")).StatusCode);
+
+        await using (var scope = factory.Services.CreateAsyncScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+            var employee = await db.Users.SingleAsync(item => item.Id == created.Id);
+            Assert.True(employee.MustChangePasswordAtNextLogin);
+            Assert.True(employee.PasswordChangeRequiredUntilUtc <= DateTimeOffset.UtcNow);
+
+            var auditSummaries = await db.AuditLogs.Select(item => item.Summary).ToListAsync();
+            Assert.DoesNotContain(auditSummaries, item =>
+                item.Contains(firstTemporaryPassword, StringComparison.Ordinal) ||
+                item.Contains(secondTemporaryPassword, StringComparison.Ordinal) ||
+                item.Contains(expiredTemporaryPassword, StringComparison.Ordinal));
         }
     }
 

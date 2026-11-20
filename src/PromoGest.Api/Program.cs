@@ -1,6 +1,7 @@
 using System.Security.Cryptography.X509Certificates;
 using System.Threading.RateLimiting;
 using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.EntityFrameworkCore;
@@ -184,7 +185,12 @@ builder.Services.AddAuthentication(SessionCookieDefaults.AuthenticationScheme)
         SessionCookieDefaults.AuthenticationScheme,
         _ => { });
 
-builder.Services.AddAuthorization();
+builder.Services.AddAuthorization(options =>
+{
+    options.FallbackPolicy = new AuthorizationPolicyBuilder()
+        .RequireAuthenticatedUser()
+        .Build();
+});
 builder.Services.AddControllers();
 
 builder.Services.AddRateLimiter(options =>
@@ -195,7 +201,10 @@ builder.Services.AddRateLimiter(options =>
             partitionKey: httpContext.Connection.RemoteIpAddress?.ToString() ?? "local",
             factory: _ => new FixedWindowRateLimiterOptions
             {
-                PermitLimit = 10,
+                PermitLimit = Math.Clamp(
+                    builder.Configuration.GetValue("Security:LoginRateLimitPermitLimit", 10),
+                    1,
+                    100),
                 Window = TimeSpan.FromMinutes(1),
                 QueueLimit = 0,
                 AutoReplenishment = true
@@ -305,6 +314,7 @@ if (app.Environment.IsDevelopment())
 
 app.UseAuthentication();
 app.UseMiddleware<CsrfValidationMiddleware>();
+app.UseMiddleware<PasswordChangeRequiredMiddleware>();
 app.UseAuthorization();
 
 app.MapControllers();
@@ -321,7 +331,7 @@ app.MapFallback("/health/{**slug}", (HttpContext context) =>
     return context.Response.WriteAsJsonAsync(new ApiErrorResponse("ENDPOINT_NOT_FOUND", "The requested health endpoint does not exist."));
 }).AllowAnonymous();
 
-app.MapFallbackToFile("index.html");
+app.MapFallbackToFile("index.html").AllowAnonymous();
 
 app.Run();
 

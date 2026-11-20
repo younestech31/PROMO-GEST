@@ -8,7 +8,7 @@
 
 ---
 
-## 1. Summary of Architecture Decision Records (ADRs `0001–0011`)
+## 1. Summary of Architecture Decision Records (ADRs `0001–0012`)
 
 | ADR | Title | Decision Summary | Status |
 |---|---|---|---|
@@ -23,6 +23,7 @@
 | **ADR-0009** | Organization-Wide Party & Decoupled Employee Identity | Centralized `parties` table for counterparties, separating CRM relationships from canonical identity and decoupling future `Employee` records from optional `User` logins. | Accepted (Party identity and ProjectCustomer mirror retirement implemented; Employee/contact-point/identifier/role extensions remain planned) |
 | **ADR-0010** | Versioned Algerian Administrative Reference Data | Verified server-owned 69-Wilaya subset; 1,541 communes is the statutory baseline, but 0 commune rows are loaded. Official commune codes are effective-dated external attributes; legal register lineage and transitional-authority separation require reconciliation. | Accepted (complete commune dataset integration remains `PLANNED`) |
 | **ADR-0011** | Project Estimated Budget Requires Financial Capability | EstimatedBudgetDzd read requires explicit ProjectMember.CanViewFinancials; write additionally requires projects.manage and Project Manager membership; no administrator/manager bypass. | Accepted; implementation merged; manual verification pending |
+| **ADR-0012** | Temporary Employee Password Rotation | Newly created and administratively reset employee accounts must replace a local temporary password within 24 hours before any ERP business API is available; active sessions are revoked after change. | Implementation branch open; CI verification pending |
 
 ---
 
@@ -143,3 +144,15 @@
 - **Execution rule:** keep every one of the 1,541 candidates in scope; reconcile row-level values against the authoritative JORADP instruments and effective-dated lineage; retain conflicting historical assertions; correct only with reproducible source evidence; never import the third-party candidate snapshot verbatim.
 - **Guardrails unchanged:** all 1,541 practitioner_signoff_status values remain PENDING; the 110 explicit-decision records and three pending code tokens remain unresolved until their row-level dispositions are evidenced. No commune data import, seed, migration, API status change, or production/Cloud SQL data change is authorized by this decision alone. communesCount = 0; PendingOfficialVerification; P1-01 remains In Progress / Pending; P1-02 remains Blocked.
 - **Consequence:** this decision authorizes completing the full 1,541-row reconciliation and preparing the eventual integration; it does not waive source accuracy, data-integrity, review, or Phase 1 acceptance gates.
+
+
+### ADR-0012 — Temporary Employee Password Rotation After Creation or Administrative Reset (20 November 2026)
+
+- **Context:** Employee creation and administrator password reset currently accept a password known to the account manager. Reset already rotates `SecurityStamp` and revokes active sessions, but it does not force the employee to replace the credential before business access.
+- **Decision:** The local administrator who has `users.manage` supplies a temporary password through the existing create/reset workflow. It is valid for 24 hours. The ERP does not send it by e-mail/SMS or any cloud service; it is handed over through the organization's approved local channel. Only the existing password hash is persisted; neither the plaintext temporary value nor a derivative is included in audit summaries.
+- **Restricted session:** Until password change, the authenticated session contains no roles/permissions or organization fiscal/contact details. Server middleware allows only own-session status, CSRF token acquisition, health probes, SPA shell GET, password change, and logout. All organization/project/party/customer/user/financial/audit/document API paths are rejected.
+- **Completion:** The employee proves the temporary password, supplies a distinct new password under the existing password policy, and the service clears the forced-change marker/deadline, rotates `SecurityStamp`, revokes every active session, writes a secret-free audit event, and requires fresh login.
+- **Expiry:** At or after the 24-hour deadline, login and session validation fail closed; all remaining sessions are revoked. An authorized administrator must issue a new reset.
+- **Migration/backfill:** The additive migration introduces `must_change_password_at_next_login BOOLEAN NOT NULL DEFAULT FALSE` and nullable `password_change_required_until_utc`; existing users remain unchanged. A PostgreSQL CHECK constraint requires marker/deadline consistency. No password history is introduced.
+- **Non-goals:** No setup-time password change requirement for the initial SYSTEM_ADMIN account, no external identity provider or messaging service, no changes to password complexity, RBAC, ProjectMember scope, CSRF, audit immutability, or production data.
+- **Verification state:** Implementation under `security/p1-18-password-lifecycle`; do not mark complete until PostgreSQL 18 integration, migration/backfill, frontend RTL/LTR build/acceptance, all 3 PR-head CI jobs, and exact post-merge main CI pass.

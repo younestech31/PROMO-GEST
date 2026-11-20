@@ -1514,7 +1514,7 @@ public sealed class ApplicationSecurityAndFoundationTests
         var recovery = new AdminRecoveryService(store, store, hasher, store, clock);
         var meta = new RequestMetadata("127.0.0.1", "xUnit");
 
-        await setup.InitializeAsync(ValidInitRequest(), meta);
+        var init = await setup.InitializeAsync(ValidInitRequest(), meta);
         var login = await authSvc.LoginAsync(new LoginRequest("sysadmin", "StrongPass123"), meta);
         Assert.NotNull(await authSvc.ValidateSessionAsync(login.OpaqueSessionToken));
 
@@ -1535,6 +1535,13 @@ public sealed class ApplicationSecurityAndFoundationTests
         // Login works with recovered password
         var newLogin = await authSvc.LoginAsync(new LoginRequest("sysadmin", "RecoveredPass#2026"), meta);
         Assert.Equal("sysadmin", newLogin.Session.User.Username);
+        Assert.True(newLogin.Session.User.MustChangePasswordAtNextLogin);
+        await authSvc.ChangePasswordAsync(
+            init.SystemAdminUserId,
+            new ChangePasswordRequest("RecoveredPass#2026", "AdminPersonal#2026"),
+            meta);
+        var fullyAuthenticated = await authSvc.LoginAsync(new LoginRequest("sysadmin", "AdminPersonal#2026"), meta);
+        Assert.False(fullyAuthenticated.Session.User.MustChangePasswordAtNextLogin);
         Assert.Contains(store.AuditLogs, a => a.EventType == "ADMIN_LOCAL_UNLOCK");
         Assert.Contains(store.AuditLogs, a => a.EventType == "ADMIN_LOCAL_PASSWORD_RECOVERY");
     }
@@ -1664,9 +1671,19 @@ public sealed class ApplicationSecurityAndFoundationTests
         Assert.Equal(1, userAfterFirstRetry!.FailedLoginAttempts);
         Assert.False(userAfterFirstRetry.IsLockedOut(clock.UtcNow));
 
-        // Valid login succeeds instead of being blocked by instant re-lockout
-        var ok = await authSvc.LoginAsync(new LoginRequest("nadia.lock", "StrongPass123"), meta);
+        // The temporary credential authenticates only into the forced-change flow.
+        var temporaryLogin = await authSvc.LoginAsync(new LoginRequest("nadia.lock", "StrongPass123"), meta);
+        Assert.Equal(emp.Id, temporaryLogin.Session.User.Id);
+        Assert.True(temporaryLogin.Session.User.MustChangePasswordAtNextLogin);
+        Assert.Empty(temporaryLogin.Session.User.Permissions);
+
+        await authSvc.ChangePasswordAsync(
+            emp.Id,
+            new ChangePasswordRequest("StrongPass123", "NadiaPersonal#2026"),
+            meta);
+        var ok = await authSvc.LoginAsync(new LoginRequest("nadia.lock", "NadiaPersonal#2026"), meta);
         Assert.Equal(emp.Id, ok.Session.User.Id);
+        Assert.False(ok.Session.User.MustChangePasswordAtNextLogin);
         Assert.Equal(0, userAfterFirstRetry.FailedLoginAttempts);
     }
 
@@ -1715,11 +1732,21 @@ public sealed class ApplicationSecurityAndFoundationTests
         Assert.Equal("Hydra", adminLogin.Session.Organization.Address);
 
         // Non-admin with org.read gets fiscal/contact fields but Guid.Empty concurrency stamp
-        await userSvc.CreateEmployeeAsync(
+        var viewer = await userSvc.CreateEmployeeAsync(
             init.SystemAdminUserId,
             new CreateEmployeeRequest("viewer.org", "Viewer Org", "viewer.org@elbahdja.dz", null, "StrongPass123", "fr", new[] { Role.ViewerCode }),
             meta);
-        var viewerLogin = await authSvc.LoginAsync(new LoginRequest("viewer.org", "StrongPass123"), meta);
+        var temporaryViewerLogin = await authSvc.LoginAsync(new LoginRequest("viewer.org", "StrongPass123"), meta);
+        Assert.True(temporaryViewerLogin.Session.User.MustChangePasswordAtNextLogin);
+        Assert.Empty(temporaryViewerLogin.Session.User.Permissions);
+        Assert.Null(temporaryViewerLogin.Session.Organization.Nif);
+
+        await authSvc.ChangePasswordAsync(
+            viewer.Id,
+            new ChangePasswordRequest("StrongPass123", "ViewerPersonal#2026"),
+            meta);
+        var viewerLogin = await authSvc.LoginAsync(new LoginRequest("viewer.org", "ViewerPersonal#2026"), meta);
+        Assert.False(viewerLogin.Session.User.MustChangePasswordAtNextLogin);
         Assert.Equal(Guid.Empty, viewerLogin.Session.Organization.ConcurrencyStamp);
         Assert.Equal("001616012345678", viewerLogin.Session.Organization.Nif);
 

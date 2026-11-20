@@ -133,6 +133,51 @@ public sealed class CsrfValidationMiddleware
            HttpMethods.IsDelete(method);
 }
 
+public sealed class PasswordChangeRequiredMiddleware
+{
+    private readonly RequestDelegate _next;
+
+    public PasswordChangeRequiredMiddleware(RequestDelegate next)
+    {
+        _next = next;
+    }
+
+    public async Task InvokeAsync(HttpContext context)
+    {
+        if (!string.Equals(
+                context.User.FindFirst("must_change_password")?.Value,
+                "true",
+                StringComparison.Ordinal))
+        {
+            await _next(context);
+            return;
+        }
+
+        var path = context.Request.Path;
+        var isAllowed =
+            (HttpMethods.IsGet(context.Request.Method) &&
+             (path.Equals("/api/auth/me", StringComparison.OrdinalIgnoreCase) ||
+              path.Equals("/api/auth/csrf", StringComparison.OrdinalIgnoreCase) ||
+              path.Equals("/health/live", StringComparison.OrdinalIgnoreCase) ||
+              path.Equals("/health/ready", StringComparison.OrdinalIgnoreCase))) ||
+            (HttpMethods.IsPost(context.Request.Method) &&
+             (path.Equals("/api/auth/change-password", StringComparison.OrdinalIgnoreCase) ||
+              path.Equals("/api/auth/logout", StringComparison.OrdinalIgnoreCase)));
+
+        if (isAllowed)
+        {
+            await _next(context);
+            return;
+        }
+
+        context.Response.StatusCode = StatusCodes.Status403Forbidden;
+        await context.Response.WriteAsJsonAsync(
+            new ApiErrorResponse(
+                "PASSWORD_CHANGE_REQUIRED",
+                "Change the temporary password before accessing organization or project data."));
+    }
+}
+
 public sealed class SecurityHeadersMiddleware
 {
     private readonly RequestDelegate _next;

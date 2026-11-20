@@ -1,0 +1,13 @@
+[Unit]
+Description=Daily PROMO GEST backup freshness verification
+
+[Timer]
+# Runs twelve hours after the 22:00 backup window, so a failed or missing backup is
+# visible in `systemctl --failed` before the next working day starts.
+OnCalendar=*-*-* 06:00:00
+Persistent=true
+RandomizedDelaySec=10m
+Unit=promogest-backup-verify.service
+
+[Install]
+WantedBy=timers.target

@@ -187,6 +187,8 @@ jobs:
           path: ${{ runner.temp }}/phase0-manual-linux-x64.tar.gz
           if-no-files-found: error
           retention-days: 14
+      - name: Verify backup freshness monitoring contract
+        run: bash scripts/test_check-backup-freshness.sh
       - name: Validate Linux shell scripts
         shell: bash
         run: |
@@ -1177,6 +1179,9 @@ jobs:
 
 
 
+      - name: Verify Windows backup freshness monitoring contract
+        shell: pwsh
+        run: ./scripts/test-backup-freshness.ps1
       - name: Verify Windows encrypted-backup and restore contract
         shell: pwsh
         run: |

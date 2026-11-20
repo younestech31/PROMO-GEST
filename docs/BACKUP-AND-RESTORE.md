@@ -91,6 +91,16 @@ Execution order is deliberate:
 
 The `.cms` file is the artefact of record. The private key is deliberately absent from the server, so decryptability is proven only by the restore drill on the operator workstation; a structural check runs at backup time.
 
+### Freshness monitoring
+
+`promogest-backup.timer` writes; `promogest-backup-verify.timer` (06:00, `deploy/linux/promogest-backup-verify.*`) checks. `scripts/check-backup-freshness.sh` verifies that the newest local artefact is younger than `PROMOGEST_BACKUP_MAX_AGE_HOURS` (default 26), that its `.sha256` sidecar still matches, and that the newest offsite artefact does too when `PROMOGEST_BACKUP_MIN_OFFSITE_COPIES > 0`. Windows has the same contract in `scripts/check-backup-freshness.ps1`. Schedule it as a second daily task and alert on a non-zero exit; both scripts are covered by behavioural tests (`scripts/test_check-backup-freshness.sh`, `scripts/test-backup-freshness.ps1`) so the monitoring cannot rot silently.
+
+```bash
+sudo env PROMOGEST_BACKUP_ROOT=/var/backups/promogest \
+  PROMOGEST_BACKUP_OFFSITE_DIR=/mnt/promogest-offsite \
+  ./scripts/check-backup-freshness.sh
+```
+
 Provisioning on a new host:
 
 ```bash

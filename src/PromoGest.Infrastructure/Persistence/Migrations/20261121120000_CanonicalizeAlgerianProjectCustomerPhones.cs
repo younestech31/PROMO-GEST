@@ -78,7 +78,7 @@ namespace PromoGest.Infrastructure.Persistence.Migrations
                             v_collision_group_count;
                     END IF;
                 END;
-                $;
+                $$;
 
                 WITH digitized AS (
                     SELECT
@@ -154,7 +154,7 @@ namespace PromoGest.Infrastructure.Persistence.Migrations
                             v_collision_group_count;
                     END IF;
                 END;
-                $;
+                $$;
 
                 WITH digitized AS (
                     SELECT

@@ -232,7 +232,7 @@ try {
 }
 catch {
     # Surface the failure as a CI annotation; the job log is not always retrievable.
-    Write-Host "::error title=Windows backup contract::$($_.Exception.Message)"
+    Write-Host "::error title=Windows backup contract::$($_.Exception.GetType().Name): $($_.Exception.Message)"
     throw
 }
 finally {

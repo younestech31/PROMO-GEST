@@ -231,13 +231,24 @@ function Protect-PromoGestFileToCms {
     )
 
     $content = [IO.File]::ReadAllBytes($SourcePath)
-    $enveloped = New-Object System.Security.Cryptography.Pkcs.EnvelopedCms
     $recipient = New-Object System.Security.Cryptography.Pkcs.CmsRecipient -ArgumentList $Certificate
     # 2.16.840.1.101.3.4.1.42 = AES-256-CBC, matching `openssl cms -aes-256-cbc`
     # on the Linux host so one artifact format works for either platform.
     $algorithm = New-Object System.Security.Cryptography.Pkcs.AlgorithmIdentifier `
         -ArgumentList (New-Object System.Security.Cryptography.Oid -ArgumentList "2.16.840.1.101.3.4.1.42")
-    $enveloped.Encrypt($recipient, $algorithm)
+
+    # The content-encryption algorithm is fixed at construction time; the overloads
+    # that take a per-call algorithm differ between .NET versions, so select the
+    # algorithm through the constructor and verify the result below.
+    $contentInfo = New-Object System.Security.Cryptography.Pkcs.ContentInfo -ArgumentList (,$content)
+    $enveloped = New-Object System.Security.Cryptography.Pkcs.EnvelopedCms -ArgumentList @($contentInfo, $algorithm)
+    $enveloped.Encrypt($recipient)
+
+    $appliedAlgorithm = $enveloped.ContentEncryptionAlgorithm.Value
+    if ($appliedAlgorithm -ne "2.16.840.1.101.3.4.1.42") {
+        throw "Encrypted backup used content algorithm '$appliedAlgorithm' instead of AES-256-CBC (2.16.840.1.101.3.4.1.42)."
+    }
+
     $encoded = $enveloped.Encode()
     [IO.File]::WriteAllBytes($DestinationPath, $encoded)
 

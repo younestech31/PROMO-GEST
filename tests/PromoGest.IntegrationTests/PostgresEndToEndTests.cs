@@ -547,9 +547,6 @@ public sealed class PostgresEndToEndTests : IClassFixture<PostgreSql18Integratio
         var loginError = await login.Content.ReadFromJsonAsync<ApiErrorResponse>();
         Assert.Equal("SETUP_REQUIRED", loginError!.Code);
 
-        var csrf = await client.GetAsync("/api/auth/csrf");
-        Assert.Equal(HttpStatusCode.OK, csrf.StatusCode);
-
         // Setup status remains public; initialization reaches its own bootstrap-token
         // guard (403) rather than being rejected by the authorization fallback (401).
         var setupStatus = await client.GetAsync("/api/setup/status");

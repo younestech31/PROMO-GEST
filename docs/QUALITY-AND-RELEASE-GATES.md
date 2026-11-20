@@ -23,7 +23,7 @@
 
 ## 2. Current Gate Status Against the Audited Main Baseline
 
-**Current main:** `34826b7d22857e5f7709ffc56f4d954425b68e42`. [Main CI #1034](https://github.com/younestech31/PROMO-GEST/actions/runs/44731226111) passed all three required jobs on this exact SHA: frontend validators/build/static hosting, .NET 10 + PostgreSQL 18 least-privilege/integration/restore, and Windows publish/PowerShell.
+**Last verified code-bearing main baseline:** `0a3bbadb7269989531adb4b5ace8e990e00cf055`. [Main CI #1038](https://github.com/younestech31/PROMO-GEST/actions/runs/44733222758) passed all three required jobs on this exact SHA: frontend validators/build/static hosting, .NET 10 + PostgreSQL 18 least-privilege/integration/restore, and Windows publish/PowerShell. PR #158 is documentation-only and does not alter these executable baselines.
 
 **P1-01 work-status distinction:** the decision book has 1,540 `PENDING` work statuses and one `NEEDS_EVIDENCE` row (`W30-R007` El Borma); the master ledger still has all 1,541 practitioner sign-offs `PENDING`. The proposed El Borma code remains `3021`, with no `valid_from` or review outcome. No commune data are imported; `communesCount = 0`; P1-01 remains In Progress / Pending and P1-02 remains Blocked.
 

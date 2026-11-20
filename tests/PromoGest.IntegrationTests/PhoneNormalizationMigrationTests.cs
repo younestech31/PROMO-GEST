@@ -7,7 +7,7 @@ namespace PromoGest.IntegrationTests;
 
 public sealed partial class PostgresEndToEndTests
 {
-    private const string PreviousPhoneMigration = "20261116120000_EnforceProjectCustomerIdentityUniqueness";
+    private const string PreviousPhoneMigration = "20261120130000_RequirePasswordChangeAfterAdminReset";
     private const string PhoneNormalizationMigration = "20261121120000_CanonicalizeAlgerianProjectCustomerPhones";
 
     [Fact]

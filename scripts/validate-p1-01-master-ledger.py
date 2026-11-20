@@ -206,6 +206,29 @@ for blocked_key in ("W35-R023", "W36-R016", "W08-R012"):
     if match["decision_class"] != "EXPLICIT_PRACTITIONER_DECISION_REQUIRED":
         fail(f"{blocked_key}: blocking conflict must require explicit practitioner decision")
 
+# Technical image-reading supplement; these checks verify linkage, not transcription.
+with (DATA / "P1-01-JO44-BILINGUAL-IMAGE-READINGS-51.csv").open(encoding="utf-8", newline="") as fh:
+    readings = list(csv.DictReader(fh))
+selected = {k for k, r in by_key.items() if r["jo44_wilaya_code"] in {"30", "31"}}
+selected.update({"W08-R012", "W35-R023", "W36-R016", "W36-R021"})
+if len(readings) != 51 or {r["working_row_key"] for r in readings} != selected:
+    fail("unexpected historical bilingual comparison population")
+for obs in readings:
+    key = obs["working_row_key"]
+    m = by_key[key]
+    ar, fr = {"08": (17, 12), "30": (32, 23), "31": (32, 23), "35": (34, 25),
+              "36": (35, 25)}[m["jo44_wilaya_code"]]
+    if (obs["jo44_assertion_id"] != m["jo44_assertion_id"] or
+            obs["code_fr"] != m["jo44_register_code_verbatim"] or
+            obs["code_ar"] != ("3614" if key == "W36-R016" else obs["code_fr"]) or
+            obs["fr_printed_page"] != m["jo44_printed_page_fr"] or
+            not all(obs[f].strip() for f in ("commune_ar_reading", "seat_ar_reading", "commune_fr", "seat_fr"))):
+        fail(f"{key}: bilingual reading missing or historical linkage mismatch")
+    for lang, index, printed in (("ar", ar, ar + 1600), ("fr", fr, fr + 1044)):
+        image = f".tmp-joradp/jo44_{lang}_pdf{index}.png"
+        if obs[f"{lang}_printed_page"] != str(printed) or obs[f"{lang}_image"] != image or not (ROOT / image).is_file():
+            fail(f"{key}: wrong printed page or image in {lang} reading")
+
 print(
     "P1-01 master ledger validation passed: "
     f"1,541/1,541 bijection (967+149+63+362); JO11={jo11_count}, JO23={jo23_count} (+1600 sep), "

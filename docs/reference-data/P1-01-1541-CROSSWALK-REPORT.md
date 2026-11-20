@@ -232,7 +232,7 @@ The Tabelbala row remains a material candidate-parent conflict: both JO79 French
 
 ## 10. JO44/1985 — first bounded inherited-register tranche
 
-The new [W31 Oran 26-row JO44/1985 source extract](P1-01-JO44-1985-W31-ORAN-TEXT-EXTRACT-26.csv) captures the French text-layer table on printed p. 1068. The source declares 26 entries; deterministic read-back confirms 26 rows, 26 unique four-digit codes, and a 31 prefix on each. Commune labels, four-digit code strings, and administrative seats remain separate fields.
+The new [W31 Oran 26-row JO44/1985 source extract](P1-01-JO44-1985-W31-ORAN-TEXT-EXTRACT-26.csv) captures the French text-layer table on printed p. 1067. The source declares 26 entries; deterministic read-back confirms 26 rows, 26 unique four-digit codes, and a 31 prefix on each. Commune labels, four-digit code strings, and administrative seats remain separate fields.
 
 This is a raw historical-source tranche, not a join to the 1,541-row candidate workpaper and not a current/effective legal concordance. The source page was not visually verified in this pass (Cache miss), the Arabic row pairing is pending, and the existing repository PDF checksum was referenced rather than recalculated. The 975-row JO44 planning tranche is therefore only partially advanced: 26 rows transcribed, 949 still outstanding, plus later-amendment, temporal, parent-lineage and practitioner review.
 

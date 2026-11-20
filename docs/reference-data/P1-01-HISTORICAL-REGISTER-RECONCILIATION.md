@@ -90,7 +90,7 @@ Sections 5E onward retain dated extraction-tranche notes and their original resi
 
 A first bounded tranche of the remaining 1985 baseline work has been transcribed into [the 26-row W31 Oran source extract](P1-01-JO44-1985-W31-ORAN-TEXT-EXTRACT-26.csv).
 
-- The official French JO44/1985 PDF identifies the order of 22 June 1985, Wilaya 31 (Oran), and a declared total of 26 communes. Its printed table is on p. 1068 and exposes the three separate columns: commune, register code and administrative seat.
+- The official French JO44/1985 PDF identifies the order of 22 June 1985, Wilaya 31 (Oran), and a declared total of 26 communes. Its printed table is on p. 1067 and exposes the three separate columns: commune, register code and administrative seat.
 - The extract preserves all 26 source rows from the French searchable text layer: codes 3101–3126. Programmatic read-back verified 26 data rows, 26 unique four-digit codes, and the 31 Wilaya prefix on every code.
 - The fields are intentionally independent. In particular, the source gives Ben Fréha / 3120 / Hassiane El Toual and Aïn Biya / 3126 / Charla Zeghloul; the seat is not interchangeable with the commune name.
 - Evidence level is **official French PDF text-layer extraction only**. The page-image renderer returned Cache miss; this tranche is not marked visually verified. The Arabic JO44 counterpart was not available for row pairing in this pass. The SHA-256 below is the checksum already recorded in the repository's source inventory; it was not recomputed in this extraction session.

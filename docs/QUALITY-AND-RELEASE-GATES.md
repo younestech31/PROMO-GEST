@@ -88,3 +88,23 @@ Engineering tests alone cannot certify Algerian legal or tax correctness. Before
 
 
 **JO44 Arabic image-map boundary:** The current P1-01 image-map validator checks 29 page PNGs and blob hashes, 1,541 page-level assertion locators, 48/48 printed Wilaya count controls and preserved source exceptions. This is evidence availability/mapping only; it does not replace row-level Arabic transcription, legal identity adjudication, qualified sign-off or manual product/browser acceptance.
+
+---
+
+## 4. Frontend Resilience, Bundle Budget and Supply-Chain Gates (added 2026-11-20)
+
+These gates were added after the 20 November review (`AUD-05`, `AUD-06`, `AUD-07`). They are enforced by CI on every pull request:
+
+| Gate | Requirement | Evidence |
+|---|---|---|
+| **S1. Route-level code splitting** | Authenticated workspace modules are loaded through dynamic imports; the entry bundle must stay below **500 KiB** uncompressed. | `apps/local-web/src/app/App.tsx`, `npm run build`, and the CI step *Enforce entry bundle budget*. |
+| **S2. Render containment** | The routed workspace and the first-run wizard render inside an `ErrorBoundary` that resets on navigation, logs locally, and shows no stack trace or record data. | `apps/local-web/src/shared/components/ErrorBoundary.tsx`, `apps/local-web/src/utils/uiResilience.test.ts`. |
+| **S3. Production dependency audit** | `npm audit --omit=dev --audit-level=high` must report zero high/critical advisories. | CI step *Audit production dependencies for known vulnerabilities*. |
+| **S4. Dependency review cadence** | npm, NuGet and GitHub Actions updates are proposed weekly, grouped for minor/patch, and never merged automatically. | `.github/dependabot.yml`. |
+| **S5. NuGet vulnerability report** | `dotnet list src/PromoGest.sln package --vulnerable --include-transitive` runs on every CI build and its output is part of the build log. | CI step *Report vulnerable NuGet packages*. |
+
+**Measured effect:** the entry bundle fell from 667 kB to ~440 kB (gzip ~121 kB), with `module-b-projects` (156 kB) and `module-l-reporting` (6 kB) loaded on demand.
+
+**Known limitation (tracked, not claimed as fixed):** `module-a-organization`, `module-d-customers-parties` and `technical-admin` are statically imported by pages of other modules, so the bundler emits `INEFFECTIVE_DYNAMIC_IMPORT` warnings and keeps those pages in a shared chunk. Removing that limitation requires decoupling shared page components between modules; the current split already removes the warning-generating single-chunk build and the >500 kB entry.
+
+**Not covered here:** JavaScript/CSS style linting (ESLint/Prettier) and automated accessibility auditing remain open; `npm run lint` is the strict TypeScript gate only.

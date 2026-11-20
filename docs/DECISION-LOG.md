@@ -8,7 +8,7 @@
 
 ---
 
-## 1. Summary of Architecture Decision Records (ADRs `0001–0014`)
+## 1. Summary of Architecture Decision Records (ADRs `0001–0015`)
 
 | ADR | Title | Decision Summary | Status |
 |---|---|---|---|
@@ -178,3 +178,11 @@
 - **Availability:** The application service is restarted immediately after the snapshot manifest is sealed, before packaging, encryption, offsite copy, and pruning, so those stages no longer extend the maintenance window. A sealed snapshot is never deleted because a later stage failed.
 - **Verification-boundary:** CI generates a throwaway recipient key pair, runs the real job with encryption, offsite copy, retention pruning fixtures, and then executes the full PostgreSQL restore drill against the encrypted artefact. A single-byte tamper and a renamed artefact must both fail the sidecar check. No claim of verification is made until all three PR-head jobs and the post-merge `main` run are green.
 - **Scope gap:** `scripts/backup-promogest.ps1` (Windows) still produces an unencrypted, non-replicated bundle; that delta is documented in `docs/BACKUP-AND-RESTORE.md` and remains open. Point-in-time recovery (WAL archiving) is not included in this decision.
+
+### ADR-0015 — Frontend Resilience, Route-Level Splitting and Supply-Chain Gates (20 November 2026)
+
+- **Context:** The 20 November review found a single 667 kB JavaScript entry bundle (AUD-07), no render-level containment for a crash inside a workspace (AUD-06), and no dependency vulnerability or update process (AUD-05).
+- **Decision:** Authenticated workspace modules are loaded through `React.lazy` + `Suspense`; the routed surface and the first-run wizard are wrapped in an `ErrorBoundary` that resets on navigation, logs only to the local console, and never renders an error message or stack. CI enforces a 500 KiB entry-budget, runs `npm audit --omit=dev --audit-level=high`, reports vulnerable NuGet packages, and Dependabot proposes weekly grouped updates for npm, NuGet and GitHub Actions.
+- **Evidence:** entry bundle 667 kB → ~440 kB (gzip ~121 kB); `module-b-projects` and `module-l-reporting` become on-demand chunks; three new static regression tests in `uiResilience.test.ts`; local lint/typecheck, 91/91 tests and build pass.
+- **Known limitation:** shared page components still cross module boundaries (`module-a`, `module-d`, `technical-admin`), so the bundler reports `INEFFECTIVE_DYNAMIC_IMPORT` and keeps them in a shared chunk. That is documented in `docs/QUALITY-AND-RELEASE-GATES.md` §4 and is not claimed as resolved.
+- **Non-goals:** No change to routing semantics, permissions, API contracts or translations. ESLint/Prettier/a11y linting remains open.

@@ -138,8 +138,8 @@ Source: the two 20 November audits (`AUDIT-2026-11-20.ar.md`, `AUDIT-2026-11-20-
 | **AUD-06** Render containment | **Closed** | PR #165: `ErrorBoundary` around the routed workspace and first-run wizard, reset on navigation, no stack/message shown, `uiResilience.test.ts`. | Error reporting to a local log file is still console-only. |
 | **AUD-07** Bundle size | **Closed with a documented limitation** | PR #165: route-level `React.lazy`/`Suspense`, entry 667 kB → ~440 kB, 500 KiB CI budget; ADR-0015. | `module-a`, `module-d` and `technical-admin` remain in a shared chunk because pages import across module boundaries (`INEFFECTIVE_DYNAMIC_IMPORT`). |
 | **AUD-08** Lint & accessibility | **Open** | `npm run lint` is strict TypeScript only. | No ESLint/Prettier, no automated accessibility auditing, no style rules. |
-| **R2-05** Inline bilingual strings | **Open** | `LoginScreen.tsx` and the password-change screens still contain `language === 'ar' ? … : …` literals. | Move remaining strings into `TranslationBundle` and extend the parity test. |
-| **R2-07** Undocumented rate-limit key | **Open** | `Security:LoginRateLimitPermitLimit` is used by `Program.cs` and tests. | Document the key and its 1–100 bound in `.env.example` and the production template. |
+| **R2-05** Inline bilingual strings | **Closed for the authentication surface** | `loginFailedGeneric` moved into the AR/FR catalogue; `localizationCoverage.test.ts` fails if an auth page reintroduces `language === 'ar' ? … : …`, and it pins translations for the six password/session API error codes. | 130+ inline bilingual expressions remain across the other modules and need the same treatment module by module. |
+| **R2-07** Undocumented rate-limit key | **Closed** | `Security:LoginRateLimitPermitLimit` (1–100, default 10) documented in `.env.example`, `deploy/linux/promogest.env.template`, and both production templates; `validate-security-config-docs.py` fails on drift. | — |
 
 ## 1C. Phase 0 residual regression coverage — PR #63
 

@@ -15,5 +15,7 @@
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\src\PromoGest.Api\PromoGest.Api.csproj" />
+    <EmbeddedResource Include="..\..\scripts\p1-11-phone-normalization-preflight.sql"
+                      LogicalName="PromoGest.IntegrationTests.P1_11PhoneNormalizationPreflight.sql" />
   </ItemGroup>
 </Project>

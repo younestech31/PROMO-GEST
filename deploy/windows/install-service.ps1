@@ -7,6 +7,7 @@ param(
     [string]$ServiceName = "PromoGestLocalErp",
     [string]$BindUrl = "http://127.0.0.1:5080",
     [string]$BackupRoot = "",
+    [string]$BackupOffsiteDir = $(if ($env:PROMOGEST_BACKUP_OFFSITE_DIR) { $env:PROMOGEST_BACKUP_OFFSITE_DIR } else { "" }),
     [string]$ServiceAccount = "",
     [switch]$ConfigureFirewall
 )
@@ -77,6 +78,28 @@ if ([string]::Equals($backupDirNormalized, $backupVolumeRoot, [StringComparison]
     throw "BackupRoot must be a dedicated directory, not a volume root."
 }
 
+if ([string]::IsNullOrWhiteSpace($BackupOffsiteDir)) {
+    throw "BackupOffsiteDir is required to register the daily fail-closed backup monitor. It must match the nightly task -OffsiteDir parameter."
+}
+$BackupOffsiteDir = [IO.Path]::GetFullPath($BackupOffsiteDir)
+if (-not (Test-Path -LiteralPath $BackupOffsiteDir -PathType Container)) {
+    throw "BackupOffsiteDir must be an existing mounted directory: $BackupOffsiteDir"
+}
+$offsiteItem = Get-Item -LiteralPath $BackupOffsiteDir -Force -ErrorAction Stop
+if (($offsiteItem.Attributes -band [IO.FileAttributes]::ReparsePoint) -ne 0) {
+    throw "BackupOffsiteDir must not be a junction or symbolic link: $BackupOffsiteDir"
+}
+$offsiteNormalized = $BackupOffsiteDir.TrimEnd([IO.Path]::DirectorySeparatorChar, [IO.Path]::AltDirectorySeparatorChar)
+$separator = [IO.Path]::DirectorySeparatorChar
+if ([string]::Equals($offsiteNormalized, $installRootNormalized, [StringComparison]::OrdinalIgnoreCase) -or
+    $offsiteNormalized.StartsWith($installRootNormalized + $separator, [StringComparison]::OrdinalIgnoreCase) -or
+    $installRootNormalized.StartsWith($offsiteNormalized + $separator, [StringComparison]::OrdinalIgnoreCase) -or
+    [string]::Equals($offsiteNormalized, $backupDirNormalized, [StringComparison]::OrdinalIgnoreCase) -or
+    $offsiteNormalized.StartsWith($backupDirNormalized + $separator, [StringComparison]::OrdinalIgnoreCase) -or
+    $backupDirNormalized.StartsWith($offsiteNormalized + $separator, [StringComparison]::OrdinalIgnoreCase)) {
+    throw "BackupOffsiteDir must be outside InstallRoot and must not overlap BackupRoot."
+}
+
 $pathComponent = $BackupDir
 while (-not [string]::IsNullOrWhiteSpace($pathComponent)) {
     if (Test-Path -LiteralPath $pathComponent) {
@@ -109,6 +132,13 @@ $ExePath = Join-Path $AppDir "PromoGest.Api.exe"
 New-Item -ItemType Directory -Force -Path $InstallRoot, $AppDir, $StorageDir, $DataProtectionDir, $BackupDir, $ScriptsDir, $LogsDir | Out-Null
 if (-not (Test-Path -LiteralPath $ExePath -PathType Leaf)) {
     throw "PromoGest.Api.exe not found at $ExePath. Publish and copy the application before installing the service."
+}
+$BackupFreshnessScriptPath = Join-Path $ScriptsDir "check-backup-freshness.ps1"
+$BackupMonitorRegistrationScriptPath = Join-Path $ScriptsDir "register-backup-freshness-task.ps1"
+foreach ($requiredMonitorScript in @($BackupFreshnessScriptPath, $BackupMonitorRegistrationScriptPath)) {
+    if (-not (Test-Path -LiteralPath $requiredMonitorScript -PathType Leaf)) {
+        throw "Required Windows backup monitoring script is missing: $requiredMonitorScript. Copy the scripts directory contents from the repository before installation."
+    }
 }
 
 function Invoke-IcaclsChecked {
@@ -228,4 +258,10 @@ if ($ConfigureFirewall) {
     }
 }
 
-Write-Host "Service $ServiceName is running as $ServiceAccount. Application files are read-only to the service; storage, key ring, backups, and logs are writable."
+Write-Host "Registering daily backup freshness monitoring task..."
+& $BackupMonitorRegistrationScriptPath -BackupRoot $BackupDir -OffsiteDir $BackupOffsiteDir
+if (-not $?) {
+    throw "Failed to register PromoGestBackupFreshnessMonitor."
+}
+
+Write-Host "Service $ServiceName is running as $ServiceAccount. Daily backup freshness monitoring is registered at 06:00 as SYSTEM. Application files are read-only to the service; storage, key ring, backups, and logs are writable."

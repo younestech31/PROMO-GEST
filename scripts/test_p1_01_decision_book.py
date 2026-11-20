@@ -65,9 +65,16 @@ class DecisionBookTests(unittest.TestCase):
             self.assertEqual(r['jo79_fr_page'], {'30': '15', '55': '19'}[r['jo79_wilaya']])
             if r['jo79_wilaya'] != group[1]:
                 differences.add(key)
-                self.assertEqual(r['comparison'], 'DIFFERENT_GROUP_REQUIRES_EVIDENCE')
+                self.assertEqual(r['comparison'], 'DIFFERENT_GROUP_EXPLAINED_BY_21_03')
             else:
                 self.assertEqual(r['comparison'], 'SAME_GROUP_ONLY')
+            self.assertEqual((r['jo22_list_name'], r['jo79_wilaya']),
+                             {'34': ('Ouargla', '30'), '52 bis 6': ('Touggourt', '55')}[r['jo22_amended_article']])
+            self.assertEqual(int(r['jo22_item']), 8 if key == 'W30-R007' else int(r['jo78_item']))
+        for art, count in [('34', 8), ('52 bis 6', 13)]:
+            self.assertEqual(sorted(int(r['jo22_item']) for r in comparison.values() if r['jo22_amended_article'] == art),
+                             list(range(1, count + 1)))
+        self.assertEqual(comparison['W30-R007']['jo22_commune_fr'], 'El Borma')
         self.assertEqual(differences, {'W30-R007'})
         self.assertEqual(comparison['W30-R007']['jo78_item'], '14')
 

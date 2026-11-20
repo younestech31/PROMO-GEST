@@ -1,22 +1,22 @@
-working_row_key,jo44_assertion_id,jo44_code_fr,jo78_article,jo78_list_name,jo78_item,jo78_commune_fr,jo79_wilaya,jo79_code,jo79_commune_fr,jo79_fr_page,comparison
-W30-R001,JO44-1985-W30-01,3001,34,Ouargla,1,Ouargla,30,3001,Ouargla,15,SAME_GROUP_ONLY
-W30-R005,JO44-1985-W30-12,3012,34,Ouargla,2,Hassi Ben Abdelah,30,3012,Hassi Ben Abdelah,15,SAME_GROUP_ONLY
-W30-R004,JO44-1985-W30-02,3002,34,Ouargla,3,Aïn Beïda,30,3002,Aïn Beïda,15,SAME_GROUP_ONLY
-W30-R008,JO44-1985-W30-03,3003,34,Ouargla,4,N'Goussa,30,3003,N’Goussa,15,SAME_GROUP_ONLY
-W30-R003,JO44-1985-W30-04,3004,34,Ouargla,5,Hassi Messaoud,30,3004,Hassi Messaoud,15,SAME_GROUP_ONLY
-W30-R002,JO44-1985-W30-05,3005,34,Ouargla,6,Rouissat,30,3005,Rouissat,15,SAME_GROUP_ONLY
-W30-R006,JO44-1985-W30-11,3011,34,Ouargla,7,Sidi Khouiled,30,3011,Sidi Khouiled,15,SAME_GROUP_ONLY
-W55-R007,JO44-1985-W30-13,3013,52 bis 6,Touggourt,1,Touggourt,55,5501,Touggourt,19,SAME_GROUP_ONLY
-W55-R005,JO44-1985-W30-08,3008,52 bis 6,Touggourt,2,Nezla,55,5504,Nezla,19,SAME_GROUP_ONLY
-W55-R006,JO44-1985-W30-07,3007,52 bis 6,Touggourt,3,Tebesbest,55,5503,Tebesbest,19,SAME_GROUP_ONLY
-W55-R008,JO44-1985-W30-09,3009,52 bis 6,Touggourt,4,Zaouia El Abidia,55,5505,Zaouia El Abidia,19,SAME_GROUP_ONLY
-W55-R001,JO44-1985-W30-16,3016,52 bis 6,Touggourt,5,Tamacine,55,5509,Tamacine,19,SAME_GROUP_ONLY
-W55-R002,JO44-1985-W30-06,3006,52 bis 6,Touggourt,6,Blidat Ameur,55,5502,Blidat Ameur,19,SAME_GROUP_ONLY
-W55-R004,JO44-1985-W30-19,3019,52 bis 6,Touggourt,7,Megarine,55,5512,Megarine,19,SAME_GROUP_ONLY
-W55-R011,JO44-1985-W30-18,3018,52 bis 6,Touggourt,8,M'Naguar,55,5511,M’Naguar,19,SAME_GROUP_ONLY
-W55-R009,JO44-1985-W30-15,3015,52 bis 6,Touggourt,9,Taibet,55,5508,Taibet,19,SAME_GROUP_ONLY
-W55-R010,JO44-1985-W30-17,3017,52 bis 6,Touggourt,10,Benaceur,55,5510,Benaceur,19,SAME_GROUP_ONLY
-W55-R003,JO44-1985-W30-10,3010,52 bis 6,Touggourt,11,Sidi Slimane,55,5506,Sidi Slimane,19,SAME_GROUP_ONLY
-W55-R013,JO44-1985-W30-14,3014,52 bis 6,Touggourt,12,El Hadjira,55,5507,El Hadjira,19,SAME_GROUP_ONLY
-W55-R012,JO44-1985-W30-20,3020,52 bis 6,Touggourt,13,El Allia,55,5513,El Allia,19,SAME_GROUP_ONLY
-W30-R007,JO44-1985-W30-21,3021,52 bis 6,Touggourt,14,El Borma,30,3021,El Borma,15,DIFFERENT_GROUP_REQUIRES_EVIDENCE
+working_row_key,jo44_assertion_id,jo44_code_fr,jo78_article,jo78_list_name,jo78_item,jo78_commune_fr,jo79_wilaya,jo79_code,jo79_commune_fr,jo79_fr_page,comparison,jo22_amended_article,jo22_list_name,jo22_item,jo22_commune_fr
+W30-R001,JO44-1985-W30-01,3001,34,Ouargla,1,Ouargla,30,3001,Ouargla,15,SAME_GROUP_ONLY,34,Ouargla,1,Ouargla
+W30-R005,JO44-1985-W30-12,3012,34,Ouargla,2,Hassi Ben Abdelah,30,3012,Hassi Ben Abdelah,15,SAME_GROUP_ONLY,34,Ouargla,2,Hassi Ben Abdelah
+W30-R004,JO44-1985-W30-02,3002,34,Ouargla,3,Aïn Beïda,30,3002,Aïn Beïda,15,SAME_GROUP_ONLY,34,Ouargla,3,Ain Beida
+W30-R008,JO44-1985-W30-03,3003,34,Ouargla,4,N'Goussa,30,3003,N’Goussa,15,SAME_GROUP_ONLY,34,Ouargla,4,N'Goussa
+W30-R003,JO44-1985-W30-04,3004,34,Ouargla,5,Hassi Messaoud,30,3004,Hassi Messaoud,15,SAME_GROUP_ONLY,34,Ouargla,5,Hassi Messaoud
+W30-R002,JO44-1985-W30-05,3005,34,Ouargla,6,Rouissat,30,3005,Rouissat,15,SAME_GROUP_ONLY,34,Ouargla,6,Rouissat
+W30-R006,JO44-1985-W30-11,3011,34,Ouargla,7,Sidi Khouiled,30,3011,Sidi Khouiled,15,SAME_GROUP_ONLY,34,Ouargla,7,Sidi Khouiled
+W55-R007,JO44-1985-W30-13,3013,52 bis 6,Touggourt,1,Touggourt,55,5501,Touggourt,19,SAME_GROUP_ONLY,52 bis 6,Touggourt,1,Touggourt
+W55-R005,JO44-1985-W30-08,3008,52 bis 6,Touggourt,2,Nezla,55,5504,Nezla,19,SAME_GROUP_ONLY,52 bis 6,Touggourt,2,Nezla
+W55-R006,JO44-1985-W30-07,3007,52 bis 6,Touggourt,3,Tebesbest,55,5503,Tebesbest,19,SAME_GROUP_ONLY,52 bis 6,Touggourt,3,Tebesbest
+W55-R008,JO44-1985-W30-09,3009,52 bis 6,Touggourt,4,Zaouia El Abidia,55,5505,Zaouia El Abidia,19,SAME_GROUP_ONLY,52 bis 6,Touggourt,4,Zaouia El Abidia
+W55-R001,JO44-1985-W30-16,3016,52 bis 6,Touggourt,5,Tamacine,55,5509,Tamacine,19,SAME_GROUP_ONLY,52 bis 6,Touggourt,5,Tamacine
+W55-R002,JO44-1985-W30-06,3006,52 bis 6,Touggourt,6,Blidat Ameur,55,5502,Blidat Ameur,19,SAME_GROUP_ONLY,52 bis 6,Touggourt,6,Blidate Ameur
+W55-R004,JO44-1985-W30-19,3019,52 bis 6,Touggourt,7,Megarine,55,5512,Megarine,19,SAME_GROUP_ONLY,52 bis 6,Touggourt,7,Megarine
+W55-R011,JO44-1985-W30-18,3018,52 bis 6,Touggourt,8,M'Naguar,55,5511,M’Naguar,19,SAME_GROUP_ONLY,52 bis 6,Touggourt,8,M’Naguar
+W55-R009,JO44-1985-W30-15,3015,52 bis 6,Touggourt,9,Taibet,55,5508,Taibet,19,SAME_GROUP_ONLY,52 bis 6,Touggourt,9,Taibet
+W55-R010,JO44-1985-W30-17,3017,52 bis 6,Touggourt,10,Benaceur,55,5510,Benaceur,19,SAME_GROUP_ONLY,52 bis 6,Touggourt,10,Benaceur
+W55-R003,JO44-1985-W30-10,3010,52 bis 6,Touggourt,11,Sidi Slimane,55,5506,Sidi Slimane,19,SAME_GROUP_ONLY,52 bis 6,Touggourt,11,Sidi Slimane
+W55-R013,JO44-1985-W30-14,3014,52 bis 6,Touggourt,12,El Hadjira,55,5507,El Hadjira,19,SAME_GROUP_ONLY,52 bis 6,Touggourt,12,El Hadjira
+W55-R012,JO44-1985-W30-20,3020,52 bis 6,Touggourt,13,El Allia,55,5513,El Allia,19,SAME_GROUP_ONLY,52 bis 6,Touggourt,13,El Allia
+W30-R007,JO44-1985-W30-21,3021,52 bis 6,Touggourt,14,El Borma,30,3021,El Borma,15,DIFFERENT_GROUP_EXPLAINED_BY_21_03,34,Ouargla,8,El Borma

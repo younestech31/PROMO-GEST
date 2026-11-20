@@ -11,7 +11,7 @@
 - **Administrator / Elevated PowerShell** is required to:
   - Install and start the `PromoGestLocalErp` Windows Service (`#Requires -RunAsAdministrator` in `deploy/windows/install-service.ps1`).
   - Open inbound TCP `443` on Private/Domain firewall profiles (`-ConfigureFirewall`) and trust Caddy's internal root CA on LAN workstations.
-  - Register a scheduled Windows Task Scheduler backup job (`Register-ScheduledTask`).
+  - Register the scheduled Windows backup and backup-freshness monitor tasks (`Register-ScheduledTask`).
 - **Firewall rules**:
   - Allow inbound LAN TCP `443` (Caddy local HTTPS).
   - Keep ASP.NET Core Kestrel (`127.0.0.1:5080`) and PostgreSQL (`127.0.0.1:5432`) bound exclusively to loopback; do **not** open ports `5080` or `5432` to the LAN or WAN.
@@ -42,7 +42,7 @@ This runs the unified workspace lint/test/build in `apps/local-web`, copies stat
    ```powershell
    New-Item -ItemType Directory -Force C:\PromoGest\caddy, C:\PromoGest\scripts | Out-Null
    Copy-Item .\deploy\windows\caddy-local-https.Caddyfile C:\PromoGest\caddy\Caddyfile -Force
-   Copy-Item .\scripts\backup-promogest.ps1, .\scripts\restore-promogest.ps1 C:\PromoGest\scripts\ -Force
+   Copy-Item .\scripts\backup-promogest.ps1, .\scripts\restore-promogest.ps1, .\scripts\check-backup-freshness.ps1, .\scripts\register-backup-freshness-task.ps1 C:\PromoGest\scripts\ -Force
    ```
 4. Apply database migrations once, explicitly as **promogest_owner**. Obtain the password from the organization's protected secret store; never commit it or put it in a script:
    ```powershell
@@ -58,9 +58,9 @@ This runs the unified workspace lint/test/build in `apps/local-web`, copies stat
    Do not run the service as the owner identity. Normal service operation must use `promogest_app`.
 5. Run in an elevated PowerShell prompt:
    ```powershell
-   .\deploy\windows\install-service.ps1 -ConfigureFirewall -BackupRoot "D:\PromoGestBackups"
+   .\deploy\windows\install-service.ps1 -ConfigureFirewall -BackupRoot "D:\PromoGestBackups" -BackupOffsiteDir "E:\PromoGestOffsite"
    ```
-   A custom `BackupRoot` must be a dedicated directory outside `InstallRoot`; the installer rejects the live install root, its parents, and paths that would overlap the application tree. When omitting `-BackupRoot`, the default `C:\PromoGest\backups` directory is used and receives maintenance-only ACLs. The installer creates a read-only `C:\PromoGest\scripts` directory ACL for the service identity; the Task Scheduler maintenance task runs with its own administrative/SYSTEM rights.
+   `BackupOffsiteDir` must already exist on the independently mounted offsite target and must match the nightly backup task -OffsiteDir parameter. The installer rejects an offsite path that overlaps `InstallRoot` or `BackupRoot`; the backup job separately enforces independent-volume and protected-source boundaries. A custom `BackupRoot` must be a dedicated directory outside `InstallRoot`. When omitting `-BackupRoot`, the default `C:\PromoGest\backups` directory is used and receives maintenance-only ACLs. The installer requires both monitoring scripts in `C:\PromoGest\scripts`, creates a read-only scripts ACL for the service identity, and registers the freshness monitor under SYSTEM.
 6. Verify local loopback health endpoints:
    - `http://127.0.0.1:5080/health/live` -> `200 OK`
    - `http://127.0.0.1:5080/health/ready` -> `200 OK` (`databaseConnected: true`, `isInitialized: false`)
@@ -78,6 +78,15 @@ $trigger = New-ScheduledTaskTrigger -Daily -At 22:00
 Register-ScheduledTask -TaskName "PromoGestNightlyBackup" -Action $action -Trigger $trigger -User "SYSTEM" -RunLevel Highest
 ```
 The nightly task is fail-closed: it stops before dumping anything when no recipient certificate or no offsite target is configured, when the certificate carries a private key, when the offsite path shares a volume with the backup root, or when the offsite path overlaps storage or the key ring. Install only the public `.cer` on the server; keep the `.pfx` on offline media used by the restore drill. Setting `PROMOGEST_BACKUP_ALLOW_PLAINTEXT=1` or `PROMOGEST_BACKUP_ALLOW_LOCAL_ONLY=1` in the task environment is the only way to acknowledge those risks explicitly, and doing so defeats the purpose of this control. The service is restarted as soon as the snapshot is sealed, so long offsite copies no longer extend the maintenance window.
+
+The Windows service installer also registers `PromoGestBackupFreshnessMonitor` automatically: it runs daily at 06:00 as SYSTEM and checks the newest local and offsite artifacts against the 26-hour freshness window and SHA-256 sidecars. A missed run is started when the machine becomes available. A non-zero task result means the backup is missing, stale, unreadable, or has a mismatched sidecar; inspect it with:
+
+```powershell
+Get-ScheduledTaskInfo -TaskName "PromoGestBackupFreshnessMonitor" |
+    Select-Object LastRunTime, LastTaskResult, NextRunTime
+```
+
+`LastTaskResult = 0` is success; a non-zero result is an alert requiring operator investigation. The SYSTEM identity must be able to read the offsite target (for a domain share, grant the server computer account access).
 
 ## 7. Step 5 — Local LAN HTTPS & First-Run Wizard
 1. Start Caddy using the staged `C:\PromoGest\caddy\Caddyfile` and distribute Caddy's local root CA certificate to office workstations.

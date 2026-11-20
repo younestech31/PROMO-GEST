@@ -1179,9 +1179,11 @@ jobs:
 
 
 
-      - name: Verify Windows backup freshness monitoring contract
+      - name: Verify Windows backup freshness and Task Scheduler contracts
         shell: pwsh
-        run: ./scripts/test-backup-freshness.ps1
+        run: |
+          ./scripts/test-backup-freshness.ps1
+          ./scripts/test-register-backup-freshness-task.ps1
       - name: Verify Windows encrypted-backup and restore contract
         shell: pwsh
         run: |

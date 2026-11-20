@@ -157,6 +157,19 @@ jobs:
           CREATE DATABASE promogest_ci OWNER promogest_owner;
           GRANT CONNECT ON DATABASE promogest_ci TO promogest_app;
           SQL
+      - name: Run Phase 0 real-browser setup and logout checks (four disposable profiles)
+        run: |
+          python3 -m venv "$RUNNER_TEMP/p0-python"
+          source "$RUNNER_TEMP/p0-python/bin/activate"
+          pip install playwright==1.56.0
+          bash tests/browser/run-phase0.sh
+      - name: Publish sanitized browser evidence (not manual acceptance)
+        uses: actions/upload-artifact@v7
+        with:
+          name: phase0-browser-evidence
+          path: ${{ runner.temp }}/phase0-evidence/
+          if-no-files-found: error
+          retention-days: 30
       - name: Apply migrations and seed roles as migration owner
         env:
           PROMOGEST_MIGRATE_DB_CONNECTION: Host=localhost;Port=5432;Database=promogest_ci;Username=promogest_owner;Password=owner_pass

@@ -437,7 +437,8 @@ public sealed class PostgresEndToEndTests : IClassFixture<PostgreSql18Integratio
                     ["ConnectionStrings:DefaultConnection"] = connectionString,
                     ["Security:RequireHttpsCookies"] = "false",
                     ["Storage:RootDirectory"] = Path.Combine(tempRoot, "storage"),
-                    ["Sales:ReservationExpiryWorkerEnabled"] = "false"
+                    ["Sales:ReservationExpiryWorkerEnabled"] = "false",
+                    ["Security:LoginRateLimitPermitLimit"] = "100"
                 };
                 if (extraConfiguration is not null)
                 {
@@ -517,6 +518,11 @@ public sealed class PostgresEndToEndTests : IClassFixture<PostgreSql18Integratio
         Assert.Equal(HttpStatusCode.Forbidden, blockedProjects.StatusCode);
         var blockedError = await blockedProjects.Content.ReadFromJsonAsync<ApiErrorResponse>();
         Assert.Equal("PASSWORD_CHANGE_REQUIRED", blockedError!.Code);
+        var blockedReference = await client.GetAsync("/api/reference/administrative-units");
+        Assert.Equal(HttpStatusCode.Forbidden, blockedReference.StatusCode);
+        var spaShell = await client.GetAsync("/projects");
+        Assert.Equal(HttpStatusCode.OK, spaShell.StatusCode);
+        Assert.Equal("text/html", spaShell.Content.Headers.ContentType?.MediaType);
 
         var change = await client.PostAsJsonAsync(
             "/api/auth/change-password",

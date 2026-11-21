@@ -26,18 +26,17 @@ Before touching the database:
 2. Confirm the deployed application/repository baseline contains Migration #15 and the matching release artifacts.
 3. Stop or quiesce all business writes to the customer registry for the full preflight-to-migration window. A preflight report alone is not a lock against new customer writes.
 4. Create a complete, fresh, independently restorable backup using the organization's approved PROMO-GEST backup process. Verify the backup freshness, integrity and restoreability on a separate disposable database. Record backup ID, timestamp and restore evidence outside this report.
-5. Ensure the migration-owner PostgreSQL identity is available through the approved local service/secret mechanism. Never use the restricted `promogest_app` runtime identity for schema migrations; never place passwords in command history or commit them.
+5. Ensure the migration-owner PostgreSQL identity is available through an approved local libpq service definition and protected passfile / OS credential vault. Keep host, database, user and TLS settings in the service definition; keep the password only in a protected passfile (POSIX mode `0600` or an equivalent restrictive Windows ACL). Never use the restricted `promogest_app` runtime identity for schema migrations. Never place passwords in connection URIs, command-line arguments, process-visible command lines, shell history, logs or committed files.
 
 **Stop immediately** if the backup cannot be restored, writes cannot be quiesced, migration-owner access is uncertain, the server is not PostgreSQL 18, or the installed migration history is not understood.
 
 ## 3. Read-only preflight
 
-Run the committed report against the organization's local database using the approved migration-owner connection mechanism:
+Provision `PGSERVICEFILE` and `PGPASSFILE` through the approved local secret mechanism. Define the service name `promogest-migration` with the local host, database, migration-owner user and required TLS settings. The passfile must contain the credential under restrictive OS permissions; do not embed the password in the service definition or a command argument. Run the report against the organization's local database:
 
 ```bash
-psql -X --set ON_ERROR_STOP=1 \
-  --file scripts/p1-11-phone-normalization-preflight.sql \
-  "$PROMOGEST_MIGRATE_DB_CONNECTION"
+psql "service=promogest-migration" -X --set ON_ERROR_STOP=1 \
+  --file scripts/p1-11-phone-normalization-preflight.sql
 ```
 
 The report opens a `REPEATABLE READ READ ONLY` transaction. It emits:

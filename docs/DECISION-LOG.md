@@ -1,10 +1,22 @@
+## Latest verified repository checkpoint — 21 November 2026 (PR #187 post-merge)
+
+- **Current GitHub main:** `ecc3e52ec990bcd8ef3dc7f8c68f82e1632e1901` (PR #187, documentation-only, squash-merged).
+- **Latest code-bearing merge:** PR #186 at `07cba896eec07bb28878d948a6cfb905313a2b22`; its Project aggregate-root concurrency implementation remains the current executable code baseline.
+- **Post-merge CI on exact current main SHA:** [CI #44911252345](https://github.com/younestech31/PROMO-GEST/actions/runs/44911252345) passed all three required jobs: Frontend install/checks/static hosting; .NET 10 + PostgreSQL 18 least-privilege/integration/restore; Windows publish and PowerShell validation.
+- **Post-merge CodeQL on exact current main SHA:** [CodeQL #44911252403](https://github.com/younestech31/PROMO-GEST/actions/runs/44911252403) passed both C# and JavaScript/TypeScript analysis.
+- **P1-15:** implementation and deterministic PostgreSQL 18 race coverage are merged; automated CI/CodeQL now pass on current main. Keep capability `IMPLEMENTED_NOT_VERIFIED` and task In Review / Pending until the required manual Arabic RTL / French LTR acceptance is recorded.
+- **P1-01 remains the Phase 1 gate:** 1,541 practitioner sign-offs remain PENDING; decision book remains 1,540 PENDING + W30-R007 NEEDS_EVIDENCE; no commune records imported (`communesCount = 0`); P1-01 In Progress / Pending and P1-02 Blocked. No phase advancement or legal approval is inferred from CI.
+- **Security boundary:** GitHub main branch protection and required status checks were observed disabled; this was not changed. No production data, live database, authorization policy, roles, permissions, or Cloud SQL business data were changed.
+
+---
+
 ## Decision record — Project membership mutations participate in Project aggregate concurrency (PR #186)
 
-**Status:** Implemented and merged; verification pending post-merge/manual acceptance.  
+**Status:** Implemented and merged; post-merge CI/CodeQL passed; manual Arabic RTL / French LTR acceptance remains pending.  
 **Merge SHA:** `07cba896eec07bb28878d948a6cfb905313a2b22` (PR #186).  
 **Decision:** ProjectMember role/capability updates, additions, and removals are aggregate mutations. Existing-member updates must touch the owning Project root so EF's Project ConcurrencyStamp serializes requests that modify different ProjectMember rows. Keep the service-level last-manager count as an early guard, not the concurrency mechanism.  
 **Conflict behavior:** The losing SaveChanges transaction returns HTTP 409 `CONCURRENCY_CONFLICT`; its child mutation and pending audit event roll back together.  
-**Evidence:** Real PostgreSQL 18 deterministic-barrier tests passed on PR head `405cd8c3f8169043ce18315391cc4dfbcb1b2f11`; PR-head CI #44909430011/#44909433367 and CodeQL #44909433309 passed. Post-merge checks on `07cba896eec07bb28878d948a6cfb905313a2b22` are not yet evidenced. No schema migration, role/permission changes, or production data changes.
+**Evidence:** Real PostgreSQL 18 deterministic-barrier tests passed on PR head `405cd8c3f8169043ce18315391cc4dfbcb1b2f11`; PR-head CI #44909430011/#44909433367 and CodeQL #44909433309 passed. Post-merge CI #44911252345 and CodeQL #44911252403 passed on current main SHA `ecc3e52ec990bcd8ef3dc7f8c68f82e1632e1901`. No schema migration, role/permission changes, or production data changes.
 
 ---
 

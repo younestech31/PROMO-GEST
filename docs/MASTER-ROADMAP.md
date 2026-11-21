@@ -1,4 +1,16 @@
-## Latest repository checkpoint — 21 November 2026 (PR #186)
+## Latest verified repository checkpoint — 21 November 2026 (PR #187 post-merge)
+
+- **Current GitHub main:** `ecc3e52ec990bcd8ef3dc7f8c68f82e1632e1901` (PR #187, documentation-only, squash-merged).
+- **Latest code-bearing merge:** PR #186 at `07cba896eec07bb28878d948a6cfb905313a2b22`; its Project aggregate-root concurrency implementation remains the current executable code baseline.
+- **Post-merge CI on exact current main SHA:** [CI #44911252345](https://github.com/younestech31/PROMO-GEST/actions/runs/44911252345) passed all three required jobs: Frontend install/checks/static hosting; .NET 10 + PostgreSQL 18 least-privilege/integration/restore; Windows publish and PowerShell validation.
+- **Post-merge CodeQL on exact current main SHA:** [CodeQL #44911252403](https://github.com/younestech31/PROMO-GEST/actions/runs/44911252403) passed both C# and JavaScript/TypeScript analysis.
+- **P1-15:** implementation and deterministic PostgreSQL 18 race coverage are merged; automated CI/CodeQL now pass on current main. Keep capability `IMPLEMENTED_NOT_VERIFIED` and task In Review / Pending until the required manual Arabic RTL / French LTR acceptance is recorded.
+- **P1-01 remains the Phase 1 gate:** 1,541 practitioner sign-offs remain PENDING; decision book remains 1,540 PENDING + W30-R007 NEEDS_EVIDENCE; no commune records imported (`communesCount = 0`); P1-01 In Progress / Pending and P1-02 Blocked. No phase advancement or legal approval is inferred from CI.
+- **Security boundary:** GitHub main branch protection and required status checks were observed disabled; this was not changed. No production data, live database, authorization policy, roles, permissions, or Cloud SQL business data were changed.
+
+---
+
+## Historical checkpoint — PR #186 (superseded by PR #187 main verification)
 
 - **Current main / merge commit:** `07cba896eec07bb28878d948a6cfb905313a2b22`; PR [#186](https://github.com/younestech31/PROMO-GEST/pull/186) was squash-merged.
 - **P1-15 implementation:** existing ProjectMember role/capability changes now touch the owning Project aggregate root. The root ConcurrencyStamp serializes concurrent membership mutations across different child rows; the losing EF transaction returns HTTP 409 `CONCURRENCY_CONFLICT` and rolls back the membership mutation and pending audit event.
@@ -12,7 +24,7 @@
 
 # PROMO GEST — Product Milestones & Delivery Roadmap
 
-## Latest verified work checkpoint — 21 November 2026
+## Historical checkpoint — before PR #187 main verification
 
 - **Main:** `1914703bce77aaeda49830a396d39acce04ea58f`, after PR #184 merged.
 - **PR #184:** PR-head CI #44839944794 and CodeQL #44839944849 passed on `5553b1f16e3a54ebc0e0238c4b806f7f1f158acc`; post-merge main CI #44840514137 and CodeQL #44840514142 passed on the exact merge SHA.

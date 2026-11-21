@@ -32,7 +32,7 @@
 
 ---
 
-## 2. Current Gate Status Against the Audited Main Baseline
+## 2. Gate Status Recorded Against the Historical Audited Main Baseline
 
 **Historical implementation and documentation checkpoints:** latest code-bearing merge at that point was PR #186 (`07cba896eec07bb28878d948a6cfb905313a2b22`); PR #187 was a documentation-only merge (`ecc3e52ec990bcd8ef3dc7f8c68f82e1632e1901`). Neither SHA is asserted to be the live branch tip now; post-merge CI #44911252345 and CodeQL #44911252403 passed on that exact SHA. [Main CI #44840514137](https://github.com/younestech31/PROMO-GEST/actions/runs/44840514137) and [CodeQL #44840514142](https://github.com/younestech31/PROMO-GEST/actions/runs/44840514142) passed on this exact SHA: frontend (28/28 CI steps), .NET 10 + PostgreSQL 18 (26/26 job steps; Domain 48/48, Application 24/24, Integration 37/37), and Windows (14/14). P1-11 Migration #15 was tested on disposable PG18 databases only; no existing organization database migration is verified by CI. Keep the capability `IMPLEMENTED_NOT_VERIFIED` until local operator acceptance evidence is attached.
 

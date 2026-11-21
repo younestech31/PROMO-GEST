@@ -1,3 +1,15 @@
+## Latest verified repository checkpoint — 21 November 2026 (PR #187 post-merge)
+
+- **Current GitHub main:** `ecc3e52ec990bcd8ef3dc7f8c68f82e1632e1901` (PR #187, documentation-only, squash-merged).
+- **Latest code-bearing merge:** PR #186 at `07cba896eec07bb28878d948a6cfb905313a2b22`; Project aggregate-root concurrency is the latest code change.
+- **Post-merge CI on exact current main SHA:** [CI #44911252345](https://github.com/younestech31/PROMO-GEST/actions/runs/44911252345) passed all three jobs: Frontend/static hosting; .NET 10 + PostgreSQL 18 least-privilege/integration/restore; Windows publish/PowerShell.
+- **Post-merge CodeQL on exact current main SHA:** [CodeQL #44911252403](https://github.com/younestech31/PROMO-GEST/actions/runs/44911252403) passed C# and JavaScript/TypeScript.
+- **P1-15:** implementation and PostgreSQL 18 deterministic race coverage are merged and post-merge automation is green. Capability remains `IMPLEMENTED_NOT_VERIFIED` pending manual Arabic RTL / French LTR acceptance.
+- **Phase 1 gate:** P1-01 remains In Progress / Pending; 1,541 practitioner sign-offs remain PENDING; W30-R007 remains NEEDS_EVIDENCE; no commune records imported (`communesCount = 0`); P1-02 remains Blocked. No phase advancement or legal approval is inferred from CI.
+- **Governance observation:** GitHub main branch protection and required status checks were observed disabled; unchanged. No production data, live DB, roles, permissions, authorization policy, or Cloud SQL business data changed.
+
+---
+
 # PROMO GEST — Quality & Release Acceptance Gates
 
 **Rule:** No module, refactor, or Phase transition is accepted unless **all 10 gates below** pass with objective command output, verified artifacts, and strict adherence to [DEVELOPMENT-WORKFLOW.md](DEVELOPMENT-WORKFLOW.md).
@@ -23,7 +35,7 @@
 
 ## 2. Current Gate Status Against the Audited Main Baseline
 
-**Last verified code-bearing main baseline:** PR #184 merge `1914703bce77aaeda49830a396d39acce04ea58f`. [Main CI #44840514137](https://github.com/younestech31/PROMO-GEST/actions/runs/44840514137) and [CodeQL #44840514142](https://github.com/younestech31/PROMO-GEST/actions/runs/44840514142) passed on this exact SHA: frontend (28/28 CI steps), .NET 10 + PostgreSQL 18 (26/26 job steps; Domain 48/48, Application 24/24, Integration 37/37), and Windows (14/14). P1-11 Migration #15 was tested on disposable PG18 databases only; no existing organization database migration is verified by CI. Keep the capability `IMPLEMENTED_NOT_VERIFIED` until local operator acceptance evidence is attached.
+**Latest code-bearing main baseline:** PR #186 merge `07cba896eec07bb28878d948a6cfb905313a2b22`. The current documentation-only main tip is PR #187 merge `ecc3e52ec990bcd8ef3dc7f8c68f82e1632e1901`; post-merge CI #44911252345 and CodeQL #44911252403 passed on that exact SHA. [Main CI #44840514137](https://github.com/younestech31/PROMO-GEST/actions/runs/44840514137) and [CodeQL #44840514142](https://github.com/younestech31/PROMO-GEST/actions/runs/44840514142) passed on this exact SHA: frontend (28/28 CI steps), .NET 10 + PostgreSQL 18 (26/26 job steps; Domain 48/48, Application 24/24, Integration 37/37), and Windows (14/14). P1-11 Migration #15 was tested on disposable PG18 databases only; no existing organization database migration is verified by CI. Keep the capability `IMPLEMENTED_NOT_VERIFIED` until local operator acceptance evidence is attached.
 
 **P1-25 backup freshness gate:** PR #173 provides Linux systemd and PowerShell freshness checks; PR #179 registers the Windows monitor daily at 06:00 as SYSTEM with `StartWhenAvailable`, overlap suppression and explicit local/offsite roots. Windows CI checks: freshness 9/9, Task Scheduler registration 9/9, encrypted backup/restore 22/22. PR-head CI #1128 and post-merge main CI #1129 passed; CodeQL #30/#31 passed on their exact heads. Capability remains `IMPLEMENTED_NOT_VERIFIED` until an authorized local administrator installs the monitor on a disposable on-premises Windows host, confirms SYSTEM can read the actual offsite target, inspects `LastTaskResult`, and demonstrates a deliberately stale/missing/mismatched artifact. No email/SMS or alert-forwarding channel is implemented.
 

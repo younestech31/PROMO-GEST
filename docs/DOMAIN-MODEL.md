@@ -12,7 +12,7 @@
 
 ## P1-15 aggregate concurrency — verified implementation on main
 
-PR #186 is merged at `07cba896eec07bb28878d948a6cfb905313a2b22`. ProjectMember membership mutations are aggregate operations: existing-member role/capability changes touch the owning Project root, ensuring the root ConcurrencyStamp participates in the same EF transaction as the child membership and audit event. The deterministic PostgreSQL 18 race test passed on the exact PR head and asserts one success/one 409 for simultaneous demotions and removals, at least one retained ProjectManager, and one committed audit event per race. Post-merge CI is not yet evidenced; retain capability state `IMPLEMENTED_NOT_VERIFIED` until that and manual bilingual acceptance are complete.
+PR #186 is merged at `07cba896eec07bb28878d948a6cfb905313a2b22`. ProjectMember membership mutations are aggregate operations: existing-member role/capability changes touch the owning Project root, ensuring the root ConcurrencyStamp participates in the same EF transaction as the child membership and audit event. The deterministic PostgreSQL 18 race test passed on the exact PR head and asserts one success/one 409 for simultaneous demotions and removals, at least one retained ProjectManager, and one committed audit event per race. Post-merge CI #44911252345 and CodeQL #44911252403 passed on current main SHA `ecc3e52ec990bcd8ef3dc7f8c68f82e1632e1901`; retain capability state `IMPLEMENTED_NOT_VERIFIED` pending manual bilingual acceptance.
 
 ---
 

@@ -77,7 +77,7 @@ public sealed partial class PostgresEndToEndTests
             null,
             null,
             "Planning",
-            100_000_000m,
+            0m,
             1,
             2));
         Assert.Equal(HttpStatusCode.Created, projectResponse.StatusCode);

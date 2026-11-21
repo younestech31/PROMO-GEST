@@ -2,7 +2,7 @@
 
 - **Latest code-bearing merge:** PR #186 at `07cba896eec07bb28878d948a6cfb905313a2b22`; this is the implementation baseline for the Project aggregate-root concurrency fix. Subsequent PRs #187 and #188 were documentation-only and did not change executable code, tests, migrations, or schema.
 - **PR #186 exact-head verification:** CI #44909430011 and #44909433367 passed all three jobs; CodeQL #44909433309 passed C# and JavaScript/TypeScript on PR head `405cd8c3f8169043ce18315391cc4dfbcb1b2f11`.
-- **Latest recorded main-tree verification snapshot:** CI #44912565314 passed all three jobs and CodeQL #44912565267 passed C# and JavaScript/TypeScript on exact snapshot SHA `e6290cab7e784d7e83ef3c0108a2d74468ec3487`. This is dated verification evidence, not a claim that this SHA remains the live `main` branch tip.
+- **Historical PR #188 main-tree verification snapshot:** CI #44912565314 passed all three jobs and CodeQL #44912565267 passed C# and JavaScript/TypeScript on exact snapshot SHA `e6290cab7e784d7e83ef3c0108a2d74468ec3487`. This is dated verification evidence, not a claim that this SHA remains the live `main` branch tip.
 - **Branch-tip rule:** this document intentionally does not pin a “current main” SHA. Before branching, merging, or reporting repository state, resolve the live `main` ref directly in GitHub. Documentation-only merges can advance that ref without changing the code-bearing baseline.
 - **P1-15:** implementation and deterministic PostgreSQL 18 race coverage are merged. Keep capability `IMPLEMENTED_NOT_VERIFIED` and task In Review / Pending until the required manual Arabic RTL / French LTR acceptance is recorded; CI does not replace practitioner/operator acceptance.
 - **P1-01 remains the Phase 1 gate:** all 1,541 practitioner sign-offs remain PENDING; decision book remains 1,540 PENDING + W30-R007 NEEDS_EVIDENCE; no commune records imported (`communesCount = 0`); P1-01 In Progress / Pending and P1-02 Blocked. No phase advancement or legal approval is inferred from CI.
@@ -11,7 +11,7 @@
 
 ## Historical checkpoint — PR #186 (superseded by PR #187 main verification)
 
-- **Current main / merge commit:** `07cba896eec07bb28878d948a6cfb905313a2b22`; PR [#186](https://github.com/younestech31/PROMO-GEST/pull/186) was squash-merged.
+- **PR #186 merge commit (implementation baseline):** `07cba896eec07bb28878d948a6cfb905313a2b22`; PR [#186](https://github.com/younestech31/PROMO-GEST/pull/186) was squash-merged.
 - **P1-15 implementation:** existing ProjectMember role/capability changes now touch the owning Project aggregate root. The root ConcurrencyStamp serializes concurrent membership mutations across different child rows; the losing EF transaction returns HTTP 409 `CONCURRENCY_CONFLICT` and rolls back the membership mutation and pending audit event.
 - **PR-head evidence only:** PR-head CI #44909430011 and #44909433367 passed all three jobs (Frontend, .NET 10/PostgreSQL 18 least-privilege/integration, Windows publish/PowerShell); CodeQL #44909433309 passed JavaScript/TypeScript and C# on PR head 405cd8c3f8169043ce18315391cc4dfbcb1b2f11. These are PR-head results, not post-merge main results.
 - **Post-merge evidence boundary:** the available commit-workflow-run query (which returns PR-triggered runs only) and combined-status query returned no post-merge main checks for this SHA. Do not claim post-merge CI/CodeQL success from the PR-head results.
@@ -113,14 +113,14 @@ The Product Owner established Notion as the operational reference for roadmap se
 - [DEVELOPMENT-WORKFLOW.md](DEVELOPMENT-WORKFLOW.md) — required engineering process.
 
 
-## 6. Current source-audit checkpoint — P1-01 (17 November 2026)
+## 6. Historical source-audit checkpoint — P1-01 (17 November 2026)
 
 PRs #99, #100 and #103 are merged documentation-only evidence slices; the six-row territorial ledger and eleven-row code-lineage evidence table are linked from the source governance docs. Current audited main CI #814 passed all three required jobs. The source ledger and code-lineage cross-checks are linked from [REFERENCE-DATA-GOVERNANCE.md](REFERENCE-DATA-GOVERNANCE.md). The 69-Wilaya subset remains implemented, while the 1,541-commune hierarchy remains unimported. Keep P1-01 In Progress / Pending and P1-02 Blocked until the complete row-level legal concordance, original-source verification, effective-date reconciliation and qualified review are accepted. No application/schema or production-data change is implied.
 
 
 ## 7. Historical source-audit checkpoint — P1-01 (18 November 2026; superseded by §8 / CI #825)
 
-- Current main: `8b40120aaf2f649bb123cd654f88f62250ce02d9` (PR #107 merge). Post-merge main CI [#822](https://github.com/younestech31/PROMO-GEST/actions/runs/44289721946) passed all three required jobs on this exact SHA; PR #107 CI #821 passed all three jobs on exact PR head.
+- **Historical PR #107 checkpoint:** merge SHA `8b40120aaf2f649bb123cd654f88f62250ce02d9`. Post-merge main CI [#822](https://github.com/younestech31/PROMO-GEST/actions/runs/44289721946) passed all three required jobs on this exact SHA; PR #107 CI #821 passed all three jobs on exact PR head.
 - PRs #105–#107 add the 1,541-row candidate crosswalk, 404-row JO58/2026 French text-layer delta, JO11/1986 four-row register change, JO79/2021 historical extracts and exception/transition controls. They are documentation-only; the code-bearing API/schema baseline remains PR #87 / PR #59.
 - JO79/2021 French printed pages 17–19 have been visually checked for all 59 entries in Wilayas 49–58. This uncovered and corrected the printed-page attribution for the 15 W55/W56 rows (p.19, not p.18). The 103-row JO79 existing-Wilaya extract on pages 13–16 remains text-layer-only. Arabic JO79 page matching and PDF SHA-256 are still pending.
 - Important unresolved source issues remain: Tabelbala candidate parent W08 vs JO79 W52/code 5206; the 18-row exception set in the 103-row historical extract; the five JO58 name variants; Chabet El Ameur 3514/3614; Chihani 3624 extraction anomaly; and the 975 rows still needing the JO44/1985 chain.
@@ -128,7 +128,7 @@ PRs #99, #100 and #103 are merged documentation-only evidence slices; the six-ro
 - **Local follow-up checkpoint (18 November 2026):** Frontend runtime fixes (`isVitePreviewRuntime`, root `lang`/`dir` sync, immutable organization update) and bilingual FR/AR PNG + SHA-256 verification for JO58 (pp. 9–25), JO79 (pp. 13–19 FR / 15–22 AR), JO11 (FR/AR), JO23 (Boumerdès FR/AR), and disputed JO44 sections are recorded under `docs/reference-data/`. All 5 JO58 name-capture variants and 78 page-number offsets were resolved (`404/404` join cleanly); JO44/1985 & JO23/1998 bilingual divergences are preserved verbatim pending qualified practitioner sign-off. External Notion/GitHub trackers were not altered from this local workspace snapshot.
 
 
-## 8. Current main verification and governance checkpoint — 18 November 2026
+## 8. Historical main-verification and governance checkpoint — 18 November 2026
 
 - **Main and CI:** `main` is `cd57a5912ccb3631a6e9581d48d1aab2600180d2`; [CI #825](https://github.com/younestech31/PROMO-GEST/actions/runs/44310687822) passed all 3 jobs on that exact SHA. The logs record 82/82 frontend, 34/34 Domain, 21/21 Application and 32/32 PostgreSQL 18 Integration tests; the full restore drill and Windows publish/PowerShell checks passed. The latest API/Application runtime source remains PR #87; the latest EF/schema source remains PR #59.
 - **Frontend state:** the health-driven `isVitePreviewRuntime` helper, document `lang`/`dir`/title synchronization, and immutable organization-session update are present on main. These are automated/source-verifiable changes, not browser RTL/LTR acceptance.
@@ -137,7 +137,7 @@ PRs #99, #100 and #103 are merged documentation-only evidence slices; the six-ro
 - **P1-01:** the repository contains a 1,541-row candidate workpaper, 404-row JO58 extract and the 59-row plus 103-row JO79 extracts. The sign-off pack records 29 distinct official PDF source filenames and 29 distinct SHA-256 values; bilingual PNG review is documented for JO58 pp. 9–25, JO79 pp. 13–19 FR / 15–22 AR, JO11/1986, JO23/1998 disputed pages and selected JO44/1985 sections. The 975-row JO44 concordance, complete amendment/effective-date adjudication, material source discrepancies and qualified Algerian practitioner sign-off remain open. Keep P1-01 In Progress / Pending and P1-02 Blocked; no commune records are imported.
 - **Process deviation:** GitHub returns no associated PR for `cd57a591`, despite repository workflow requiring a focused branch/PR. Do not invent retroactive PR evidence. This current documentation correction is delivered on a separate branch/PR; subsequent changes must follow that process.
 - No API/Application runtime, EF migration, production database, Cloud SQL business-data, credential or deployment changes are part of this checkpoint.
-## Current evidence checkpoint — 18 November 2026
+## Historical evidence checkpoint — 18 November 2026
 
 - Technical baseline: `main` = `293476cbdbf3c4c3fbcae87d7c9b682a493ca436`; main CI [#873](https://github.com/younestech31/PROMO-GEST/actions/runs/44330071074) passed all three required jobs on that exact SHA (Frontend 88/88, Domain 34/34, Application 21/21, PostgreSQL 18 Integration 32/32; full restore drill 1/1; Windows machine-scoped Data Protection and publish/PowerShell pass).
 - Phase 1 priority remains P1-01. The 1,541-row file is still a candidate workpaper, not an approved legal register. A first JO44/1985 tranche was added for all 26 W31 Oran table rows from the French searchable text layer (printed p. 1068); no visual review, Arabic pairing, candidate identity join, effective-date decision or practitioner approval is claimed.
@@ -146,9 +146,9 @@ PRs #99, #100 and #103 are merged documentation-only evidence slices; the six-ro
 - The latest code-bearing API/Application source remains PR #87 and the latest EF/schema source remains PR #59; PR #112 is a P1-14 preview guard follow-up. This evidence update changes documentation only.
 
 
-## Current P1-01 source checkpoint — 18 November 2026
+## Historical P1-01 source checkpoint — 18 November 2026
 
-- Main tip is `e19456f54602e184ce80087e1a8e97916b8fe471` (PR #113 merged; documentation/evidence only). PR #113 CI #874 passed all three required jobs on the exact PR head; the current post-merge push CI is not independently verified. The latest verified main CI remains #873 on parent SHA `293476cbdbf3c4c3fbcae87d7c9b682a493ca436`.
+- **Historical PR #113 checkpoint:** documentation/evidence-only merge SHA `e19456f54602e184ce80087e1a8e97916b8fe471`. PR #113 CI #874 passed all three required jobs on its exact PR head; a separate post-merge push CI on that checkpoint's then-live main SHA was not independently verified. The latest verified main CI known at that checkpoint remained #873 on parent SHA `293476cbdbf3c4c3fbcae87d7c9b682a493ca436`.
 - Two bounded JO44/1985 French searchable-text extracts are now in the repository: W31 Oran 26 rows (printed p. 1068), and W06 Bejaia 52 rows (49 on printed p. 1055 and 3 on p. 1056). Total 78/975 planning rows transcribed, 897 remain subject to national completeness audit.
 - Neither current tranche has page-image verification or row-level Arabic pairing. The original PDF hash is copied from the repository source inventory, not recomputed in these extraction sessions. No candidate identity, current effective date, parent lineage, final code, or practitioner decision is inferred.
 - P1-01 remains `In Progress / Pending`; P1-02 remains `Blocked`; commune imports remain prohibited. Do not advance to Phase 2 until full reconciliation, amendments, temporal controls, exceptions and qualified Algerian practitioner signoff are accepted.
@@ -156,19 +156,19 @@ PRs #99, #100 and #103 are merged documentation-only evidence slices; the six-ro
 
 ## P1-01 source extraction checkpoint — 18 November 2026
 
-- Current main tip: `0c90e5f21c50f846711f3c2d042c2b4557850838` (PR #114 documentation-only merge). PR #114 CI #877 passed 3/3 jobs on exact PR head `79f898041c796425d5de06a97470ee61221fc6e7`; post-merge push CI on the merge SHA is not independently confirmed.
+- **Historical PR #114 checkpoint:** documentation-only merge SHA `0c90e5f21c50f846711f3c2d042c2b4557850838`. PR #114 CI #877 passed 3/3 jobs on exact PR head `79f898041c796425d5de06a97470ee61221fc6e7`; post-merge push CI on the merge SHA is not independently confirmed.
 - Five JO44/1985 bounded extracts now contain 187/975 planned original-register rows: W31 Oran 26, W06 Bejaia 52, W02 Chlef 35, W04 Oum El Bouaghi 29 and W10 Bouira 45. The remaining plan is 788 rows, subject to final national row-count reconciliation.
 - Evidence is French searchable-text extraction only for these five tranches. The screenshot requests failed with `Cache miss`; Arabic row pairing and practitioner review remain outstanding. Text anomalies are preserved verbatim, not canonicalized.
 - P1-01 remains `In Progress / Pending`; P1-02 remains `Blocked`; no commune rows are imported. The 1,541-row crosswalk remains candidate-only and Phase 2 must not start.
 ## P1-01 JO44 source extraction checkpoint — 18 November 2026
 
-- Main tip is `89881cff5754e2a494054fc90fa76bcdb1d8126f` after PR #115. CI #879 passed all three jobs on its exact head `a8799a1dada92af811142f1ec49e9dacd071a377`; post-merge CI on the merge SHA is not independently confirmed.
+- **Historical PR #115 checkpoint:** merge SHA `89881cff5754e2a494054fc90fa76bcdb1d8126f`. CI #879 passed all three jobs on its exact head `a8799a1dada92af811142f1ec49e9dacd071a377`; post-merge CI on the merge SHA is not independently confirmed.
 - Eight bounded JO44/1985 French searchable-text extracts are in merged main or this review branch: W31 Oran 26, W06 Bejaia 52, W02 Chlef 35, W04 Oum El Bouaghi 29, W10 Bouira 45, W03 Laghouat 24, W05 Batna 61 and W08 Bechar 21. Combined proposed extraction: **293/975** planned rows, **682 remaining**, subject to national completeness audit.
 - This branch's latest three sections are not visually verified or Arabic-paired; the relevant screenshot requests returned `Cache miss`. Preserve text-layer anomalies without correction. No current identity, code validity, parent or effective date is inferred.
 - P1-01 remains In Progress / Pending; P1-02 remains Blocked. No commune data is imported; do not proceed to Phase 2.
 ## P1-01 JO44 reconciliation evidence — PR #117 proposed (18 November 2026)
 
-- Main tip is `4c97783c1654c2ca6a1336fcf0c7e21e520c0cdd` after PR #116; PR CI #881 passed 3/3 on PR head `7bfc75b393cbc8018e5ec9d38708607231b84c8d`. Post-merge main CI on current tip remains unverified.
+- **Historical PR #116 checkpoint:** merge SHA `4c97783c1654c2ca6a1336fcf0c7e21e520c0cdd`; PR CI #881 passed 3/3 on PR head `7bfc75b393cbc8018e5ec9d38708607231b84c8d`. Post-merge main CI on the PR #116 merge SHA was not independently verified at that historical checkpoint.
 - Eight JO44/1985 bounded French searchable-text extracts merged to main contain 293 rows: W31 Oran26; W06 Bejaia52; W02 Chlef35; W04 Oum El Bouaghi29; W10 Bouira45; W03 Laghouat24; W05 Batna61; W08 Bechar21.
 - The proposed PR #117 adds W09 Blida29 (13 on p.1057, 16 on p.1058), W11 Tamanghasset10 (p.1058), and W12 Tebessa28 (p.1058). Proposed total 360/975 planned rows; 615 remain, subject to national completeness reconciliation.
 - These extractions remain French text-layer only, without image verification or Arabic row pairing in this pass; preserve distinct seat strings and all text anomalies, do not normalize or join automatically. The recorded source hash is the inventory hash, not freshly recalculated.

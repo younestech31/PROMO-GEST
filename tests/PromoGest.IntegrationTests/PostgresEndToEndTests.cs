@@ -8,6 +8,7 @@ using Microsoft.AspNetCore.TestHost;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Diagnostics;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.Extensions.Configuration;
@@ -430,7 +431,8 @@ public sealed partial class PostgresEndToEndTests : IClassFixture<PostgreSql18In
         string environmentName = "Development",
         IDictionary<string, string?>? extraConfiguration = null,
         IPAddress? simulatedRemoteIp = null,
-        bool includeAuthorizationProbe = false)
+        bool includeAuthorizationProbe = false,
+        ISaveChangesInterceptor? saveChangesInterceptor = null)
     {
         Directory.CreateDirectory(tempRoot);
         return new WebApplicationFactory<Program>().WithWebHostBuilder(builder =>
@@ -465,8 +467,14 @@ public sealed partial class PostgresEndToEndTests : IClassFixture<PostgreSql18In
                 services.RemoveAll<AppDbContext>();
                 services.RemoveAll<DbContextOptions<AppDbContext>>();
                 services.AddDbContext<AppDbContext>(options =>
+                {
                     options.UseNpgsql(connectionString, npgsql =>
-                        npgsql.MigrationsAssembly(typeof(AppDbContext).Assembly.FullName)));
+                        npgsql.MigrationsAssembly(typeof(AppDbContext).Assembly.FullName));
+                    if (saveChangesInterceptor is not null)
+                    {
+                        options.AddInterceptors(saveChangesInterceptor);
+                    }
+                });
                 if (simulatedRemoteIp is not null)
                 {
                     services.AddSingleton<IStartupFilter>(new SimulatedRemoteIpStartupFilter(simulatedRemoteIp));

@@ -1,3 +1,15 @@
+## Latest repository checkpoint — 21 November 2026 (PR #186)
+
+- **Current main / merge commit:** `07cba896eec07bb28878d948a6cfb905313a2b22`; PR [#186](https://github.com/younestech31/PROMO-GEST/pull/186) was squash-merged.
+- **P1-15 implementation:** existing ProjectMember role/capability changes now touch the owning Project aggregate root. The root ConcurrencyStamp serializes concurrent membership mutations across different child rows; the losing EF transaction returns HTTP 409 `CONCURRENCY_CONFLICT` and rolls back the membership mutation and pending audit event.
+- **PR-head evidence only:** PR-head CI #44909430011 and #44909433367 passed all three jobs (Frontend, .NET 10/PostgreSQL 18 least-privilege/integration, Windows publish/PowerShell); CodeQL #44909433309 passed JavaScript/TypeScript and C# on PR head 405cd8c3f8169043ce18315391cc4dfbcb1b2f11. These are PR-head results, not post-merge main results.
+- **Post-merge evidence boundary:** the available commit-workflow-run query (which returns PR-triggered runs only) and combined-status query returned no post-merge main checks for this SHA. Do not claim post-merge CI/CodeQL success from the PR-head results.
+- **P1-15 status:** `IMPLEMENTED_NOT_VERIFIED`; task remains In Review / Pending pending independently evidenced post-merge checks and required manual Arabic RTL / French LTR acceptance.
+- **Phase gate unchanged:** P1-01 remains In Progress / Pending; all 1,541 practitioner sign-offs remain PENDING; W30-R007 remains NEEDS_EVIDENCE; P1-02 remains Blocked; no commune records imported and `communesCount = 0`. No Phase 2–5 advancement.
+- **Security/data boundary:** no schema migration, production data, role/permission policy, authorization bypass, or cloud business-data change was made.
+
+---
+
 # PROMO GEST — Development Workflow & Engineering Governance
 
 **Document Role:** Mandatory operational procedure before, during, and after every change in PROMO GEST. Designed to enforce local-first data sovereignty, Clean Architecture boundaries, database integrity, and evidence-backed status tracking.  

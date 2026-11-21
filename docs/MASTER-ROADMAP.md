@@ -2,13 +2,16 @@
 
 ## Latest verified work checkpoint — 21 November 2026
 
-- **Main:** `f8d4bdbd6cf47d4f1566833a528b1ac602554576`. Documentation-only PR #182 and PR #183 are merged. Their PR-head CI/CodeQL succeeded. Post-merge main CI #44838257158 and CodeQL #44838257401 are still running on the exact main SHA; Frontend passed, .NET/PostgreSQL 18 and Windows restore jobs and CodeQL are not yet complete.
-- **Last fully verified code-bearing main SHA:** `24b9324fd16995f0192a9de5800675da21b6b8d5`; CI #44835309828 and CodeQL #44835309849 passed there.
-- **P1-01:** PR #182 adds Arabic official text-layer corroboration for El Borma (JO22/2021 and JO79/2021) without assigning an effective date. PR #183 reconciles nine name-lineage claims and the W10 cluster, preserving official spelling/identity discrepancies. These are bounded evidence supplements, not approvals: all 1,541 sign-offs remain PENDING; W30-R007 remains NEEDS_EVIDENCE; P1-01 stays In Progress/Pending; P1-02 stays Blocked; no commune import.
-- **P1-11:** implementation is progressing on `feat/p1-11-canonical-algerian-customer-phone`, not yet merged. It adds Algeria-only national phone canonicalization, read-only collision preflight, a fail-closed reversible derived-key migration, and Domain/PG18 tests. The migration has not run on any customer/on-premises database; PR/CI evidence is pending. Human reconciliation is required for every preflight collision; never auto-merge records.
-- **Governance and phase:** Phase 1 remains IN_PROGRESS; no Phase 2–5 work is authorized by these technical/doc updates. `main` remains unprotected with required status checks disabled; no branch protection setting was changed.
+- **Main:** `1914703bce77aaeda49830a396d39acce04ea58f`, after PR #184 merged.
+- **PR #184:** PR-head CI #44839944794 and CodeQL #44839944849 passed on `5553b1f16e3a54ebc0e0238c4b806f7f1f158acc`; post-merge main CI #44840514137 and CodeQL #44840514142 passed on the exact merge SHA.
+- **Verification:** Frontend 28/28 CI steps, Windows 14/14, .NET 10/PostgreSQL 18 26/26; Domain 48/48, Application 24/24, PG18 Integration 37/37; full disposable DB/storage/Data Protection restore drill passed.
+- **P1-11:** Migration #15 is merged and automated verification is green. The migration rewrites only the derived `normalized_phone`, canonicalizes the Algerian 10-digit national form to `213` + nine digits, and fails closed on invalid values or duplicate groups. No Party/ProjectCustomer auto-merge or delete. The read-only PG18 preflight is included and tested against disposable PostgreSQL.
+- **Next P1-11 acceptance:** perform the [local operator runbook](P1-11-PHONE-NORMALIZATION-OPERATOR-RUNBOOK.md) on an authorized organization installation: fresh restorable backup, quiesced writes, preflight, disposable rehearsal (Up/verification/Down/restore), then separately approved local migration. This has **not** been performed. Keep the Notion task In Review / Pending and capability `IMPLEMENTED_NOT_VERIFIED` until evidence is attached.
+- **P1-01:** PR #182/#183 evidence supplements are merged; they do not approve rows or effective dates. All 1,541 practitioner sign-offs remain PENDING; W30-R007 remains NEEDS_EVIDENCE; P1-01 In Progress/Pending; P1-02 Blocked; no commune import.
+- **Governance:** Phase 1 remains IN_PROGRESS; no Phase 2–5 work is authorized by these updates. GitHub `main` remains unprotected and required status checks disabled; no branch-protection setting was changed.
 
 ---
+
 
 
 **Document Role:** Dependency-ordered delivery roadmap and execution control for PROMO GEST.  

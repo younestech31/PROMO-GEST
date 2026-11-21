@@ -12,7 +12,7 @@
 
 ## REQ-B03 verification checkpoint — PR #186 merged
 
-PR #186 merged at `07cba896eec07bb28878d948a6cfb905313a2b22`. REQ-B03's implementation now touches the Project aggregate root for existing-member role/capability changes, serializing concurrent changes to different ProjectMember rows. The real PostgreSQL 18 deterministic-barrier test passed on PR head `405cd8c3f8169043ce18315391cc4dfbcb1b2f11`, proving one success plus one HTTP 409 in each demotion/removal race, at least one ProjectManager remains, and audit writes are atomic. PR-head CI and CodeQL passed; post-merge main CI/CodeQL has not been independently observed. Keep REQ-B03 `IMPLEMENTED_NOT_VERIFIED` pending post-merge and manual bilingual acceptance.
+PR #186 merged at `07cba896eec07bb28878d948a6cfb905313a2b22`. REQ-B03's implementation now touches the Project aggregate root for existing-member role/capability changes, serializing concurrent changes to different ProjectMember rows. The real PostgreSQL 18 deterministic-barrier test passed on PR head `405cd8c3f8169043ce18315391cc4dfbcb1b2f11`, proving one success plus one HTTP 409 in each demotion/removal race, at least one ProjectManager remains, and audit writes are atomic. PR-head CI and CodeQL passed; post-merge main CI #44911252345 and CodeQL #44911252403 passed on exact main SHA `ecc3e52ec990bcd8ef3dc7f8c68f82e1632e1901`. Keep REQ-B03 `IMPLEMENTED_NOT_VERIFIED` pending post-merge and manual bilingual acceptance.
 
 ---
 

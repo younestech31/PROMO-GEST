@@ -76,11 +76,11 @@ Every claim across this blueprint uses **strictly one** of the six evidence-back
 3. **Counterparties (Party), CRM & Holds:** Organization-wide `parties` identity (`id`, `party_kind`, `display_name`), project-scoped `project_customers` & `customer_interactions`, and internal lot/unit holds (`project_sales_reservations`), cleanly separated from future Statutory Reservation Contracts, VSP / *Acte Notarié* sales contracts, regulated payment milestones, and DZD collections.
 4. **Execution, Accounting & Statutory Compliance:** Works/construction tracking (lots, contractor situations, FGCMPI/legal compliance), suppliers/inventory, **Algerian SCF (Système Comptable Financier)** journal generation, VAT/IBS/TAP/IRG tax tracking (Finance Laws 2025/2026 gated on qualified accountant review), and local reporting.
 
-**P1-18 acceptance:** Done / Verified. PR #176 merged the SPA temporary-session reload fix without widening middleware/API allowlists; PR #177 added tests only. PR-head CI #1108 recorded Domain 42/42, Application 24/24 and PG18 Integration 35/35 as historical PR #177 evidence. Post-merge CI #1129 and CodeQL #31 passed on current main SHA `5010a31c`. REQ-A05 remains `IMPLEMENTED_NOT_VERIFIED` until full human Arabic RTL / French LTR user-management acceptance is recorded.
+**P1-18 acceptance:** Done / Verified for the bounded temporary-session reload/test slice. PR #176 merged the SPA reload fix without widening middleware/API allowlists; PR #177 added regression tests only. PR-head CI #1108 is the historical feature-introduction evidence; post-merge main CI #44840514137 and CodeQL #44840514142 passed on current main SHA `1914703b`. REQ-A05 remains `IMPLEMENTED_NOT_VERIFIED` until full human Arabic RTL / French LTR user-management acceptance is recorded.
 
 **Backup operations acceptance:** `IMPLEMENTED_NOT_VERIFIED`. PR #173 supplies the cross-platform freshness check and Linux systemd timer; PR #179 wires Windows `PromoGestBackupFreshnessMonitor` daily at 06:00 as SYSTEM and validates explicit local/offsite roots. PR-head CI #1128 and post-merge CI #1129 passed, as did CodeQL #30/#31. Windows check 9/9, Task Scheduler registration contract 9/9 and encrypted backup/restore 22/22; actual local-admin installation, SYSTEM access to the target and a deliberate failure-case drill remain manual gates. No email/SMS forwarding is provided.
 
-### High-Level Program Status Snapshot (Last verified code-bearing baseline: `5010a31c8bd4c470c14411867feca164cce0ff78`; main CI #1129 / CodeQL #31)
+### Historical High-Level Program Status Snapshot — PR #179 baseline (20 November 2026; superseded by PR #184/main `1914703bce77aaeda49830a396d39acce04ea58f`)
 
 | Layer / Domain | Current State | Verification Evidence |
 |---|---|---|

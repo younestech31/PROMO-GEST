@@ -120,7 +120,7 @@ PRs #99, #100 and #103 are merged documentation-only evidence slices; the six-ro
 
 ## 7. Historical source-audit checkpoint — P1-01 (18 November 2026; superseded by §8 / CI #825)
 
-- Current main: `8b40120aaf2f649bb123cd654f88f62250ce02d9` (PR #107 merge). Post-merge main CI [#822](https://github.com/younestech31/PROMO-GEST/actions/runs/44289721946) passed all three required jobs on this exact SHA; PR #107 CI #821 passed all three jobs on exact PR head.
+- **Historical PR #107 checkpoint:** merge SHA `8b40120aaf2f649bb123cd654f88f62250ce02d9`. Post-merge main CI [#822](https://github.com/younestech31/PROMO-GEST/actions/runs/44289721946) passed all three required jobs on this exact SHA; PR #107 CI #821 passed all three jobs on exact PR head.
 - PRs #105–#107 add the 1,541-row candidate crosswalk, 404-row JO58/2026 French text-layer delta, JO11/1986 four-row register change, JO79/2021 historical extracts and exception/transition controls. They are documentation-only; the code-bearing API/schema baseline remains PR #87 / PR #59.
 - JO79/2021 French printed pages 17–19 have been visually checked for all 59 entries in Wilayas 49–58. This uncovered and corrected the printed-page attribution for the 15 W55/W56 rows (p.19, not p.18). The 103-row JO79 existing-Wilaya extract on pages 13–16 remains text-layer-only. Arabic JO79 page matching and PDF SHA-256 are still pending.
 - Important unresolved source issues remain: Tabelbala candidate parent W08 vs JO79 W52/code 5206; the 18-row exception set in the 103-row historical extract; the five JO58 name variants; Chabet El Ameur 3514/3614; Chihani 3624 extraction anomaly; and the 975 rows still needing the JO44/1985 chain.

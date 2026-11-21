@@ -195,6 +195,11 @@ public sealed class Project : BaseEntity
                 canManageDocuments,
                 assignedByUserId,
                 nowUtc);
+
+            // Membership changes are part of the Project aggregate. Touching the root
+            // makes concurrent mutations to different ProjectMember rows contend on the
+            // Project.ConcurrencyStamp rather than allowing a last-manager invariant race.
+            Touch(nowUtc);
             return existing;
         }
 

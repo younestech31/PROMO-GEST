@@ -1,13 +1,12 @@
-## Latest verified repository checkpoint — 21 November 2026 (PR #187 post-merge)
+## Latest verified implementation baseline — 21 November 2026
 
-- **Current GitHub main:** `ecc3e52ec990bcd8ef3dc7f8c68f82e1632e1901` (PR #187, documentation-only, squash-merged).
-- **Latest code-bearing merge:** PR #186 at `07cba896eec07bb28878d948a6cfb905313a2b22`; its Project aggregate-root concurrency implementation remains the current executable code baseline.
-- **Post-merge CI on exact current main SHA:** [CI #44911252345](https://github.com/younestech31/PROMO-GEST/actions/runs/44911252345) passed all three required jobs: Frontend install/checks/static hosting; .NET 10 + PostgreSQL 18 least-privilege/integration/restore; Windows publish and PowerShell validation.
-- **Post-merge CodeQL on exact current main SHA:** [CodeQL #44911252403](https://github.com/younestech31/PROMO-GEST/actions/runs/44911252403) passed both C# and JavaScript/TypeScript analysis.
-- **P1-15:** implementation and deterministic PostgreSQL 18 race coverage are merged; automated CI/CodeQL now pass on current main. Keep capability `IMPLEMENTED_NOT_VERIFIED` and task In Review / Pending until the required manual Arabic RTL / French LTR acceptance is recorded.
-- **P1-01 remains the Phase 1 gate:** 1,541 practitioner sign-offs remain PENDING; decision book remains 1,540 PENDING + W30-R007 NEEDS_EVIDENCE; no commune records imported (`communesCount = 0`); P1-01 In Progress / Pending and P1-02 Blocked. No phase advancement or legal approval is inferred from CI.
-- **Security boundary:** GitHub main branch protection and required status checks were observed disabled; this was not changed. No production data, live database, authorization policy, roles, permissions, or Cloud SQL business data were changed.
-
+- **Latest code-bearing merge:** PR #186 at `07cba896eec07bb28878d948a6cfb905313a2b22`; this is the implementation baseline for the Project aggregate-root concurrency fix. Subsequent PRs #187 and #188 were documentation-only and did not change executable code, tests, migrations, or schema.
+- **PR #186 exact-head verification:** CI #44909430011 and #44909433367 passed all three jobs; CodeQL #44909433309 passed C# and JavaScript/TypeScript on PR head `405cd8c3f8169043ce18315391cc4dfbcb1b2f11`.
+- **Latest recorded main-tree verification snapshot:** CI #44912565314 passed all three jobs and CodeQL #44912565267 passed C# and JavaScript/TypeScript on exact snapshot SHA `e6290cab7e784d7e83ef3c0108a2d74468ec3487`. This is dated verification evidence, not a claim that this SHA remains the live `main` branch tip.
+- **Branch-tip rule:** this document intentionally does not pin a “current main” SHA. Before branching, merging, or reporting repository state, resolve the live `main` ref directly in GitHub. Documentation-only merges can advance that ref without changing the code-bearing baseline.
+- **P1-15:** implementation and deterministic PostgreSQL 18 race coverage are merged. Keep capability `IMPLEMENTED_NOT_VERIFIED` and task In Review / Pending until the required manual Arabic RTL / French LTR acceptance is recorded; CI does not replace practitioner/operator acceptance.
+- **P1-01 remains the Phase 1 gate:** all 1,541 practitioner sign-offs remain PENDING; decision book remains 1,540 PENDING + W30-R007 NEEDS_EVIDENCE; no commune records imported (`communesCount = 0`); P1-01 In Progress / Pending and P1-02 Blocked. No phase advancement or legal approval is inferred from CI.
+- **Security boundary:** GitHub `main` branch protection and required status checks were observed disabled; this was not changed. No production data, live database, authorization policy, roles, permissions, or Cloud SQL business data were changed.
 ---
 
 ## Historical checkpoint — PR #186 (superseded by PR #187 main verification)

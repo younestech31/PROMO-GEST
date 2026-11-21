@@ -2,7 +2,7 @@
 
 - **Latest code-bearing merge:** PR #186 at `07cba896eec07bb28878d948a6cfb905313a2b22`; this is the implementation baseline for the Project aggregate-root concurrency fix. Subsequent PRs #187 and #188 were documentation-only and did not change executable code, tests, migrations, or schema.
 - **PR #186 exact-head verification:** CI #44909430011 and #44909433367 passed all three jobs; CodeQL #44909433309 passed C# and JavaScript/TypeScript on PR head `405cd8c3f8169043ce18315391cc4dfbcb1b2f11`.
-- **Latest recorded main-tree verification snapshot:** CI #44912565314 passed all three jobs and CodeQL #44912565267 passed C# and JavaScript/TypeScript on exact snapshot SHA `e6290cab7e784d7e83ef3c0108a2d74468ec3487`. This is dated verification evidence, not a claim that this SHA remains the live `main` branch tip.
+- **Historical PR #188 main-tree verification snapshot:** CI #44912565314 passed all three jobs and CodeQL #44912565267 passed C# and JavaScript/TypeScript on exact snapshot SHA `e6290cab7e784d7e83ef3c0108a2d74468ec3487`. This is dated verification evidence, not a claim that this SHA remains the live `main` branch tip.
 - **Branch-tip rule:** this document intentionally does not pin a “current main” SHA. Before branching, merging, or reporting repository state, resolve the live `main` ref directly in GitHub. Documentation-only merges can advance that ref without changing the code-bearing baseline.
 - **P1-15:** implementation and deterministic PostgreSQL 18 race coverage are merged. Keep capability `IMPLEMENTED_NOT_VERIFIED` and task In Review / Pending until the required manual Arabic RTL / French LTR acceptance is recorded; CI does not replace practitioner/operator acceptance.
 - **P1-01 remains the Phase 1 gate:** all 1,541 practitioner sign-offs remain PENDING; decision book remains 1,540 PENDING + W30-R007 NEEDS_EVIDENCE; no commune records imported (`communesCount = 0`); P1-01 In Progress / Pending and P1-02 Blocked. No phase advancement or legal approval is inferred from CI.
@@ -113,7 +113,7 @@ The Product Owner established Notion as the operational reference for roadmap se
 - [DEVELOPMENT-WORKFLOW.md](DEVELOPMENT-WORKFLOW.md) — required engineering process.
 
 
-## 6. Current source-audit checkpoint — P1-01 (17 November 2026)
+## 6. Historical source-audit checkpoint — P1-01 (17 November 2026)
 
 PRs #99, #100 and #103 are merged documentation-only evidence slices; the six-row territorial ledger and eleven-row code-lineage evidence table are linked from the source governance docs. Current audited main CI #814 passed all three required jobs. The source ledger and code-lineage cross-checks are linked from [REFERENCE-DATA-GOVERNANCE.md](REFERENCE-DATA-GOVERNANCE.md). The 69-Wilaya subset remains implemented, while the 1,541-commune hierarchy remains unimported. Keep P1-01 In Progress / Pending and P1-02 Blocked until the complete row-level legal concordance, original-source verification, effective-date reconciliation and qualified review are accepted. No application/schema or production-data change is implied.
 
@@ -168,7 +168,7 @@ PRs #99, #100 and #103 are merged documentation-only evidence slices; the six-ro
 - P1-01 remains In Progress / Pending; P1-02 remains Blocked. No commune data is imported; do not proceed to Phase 2.
 ## P1-01 JO44 reconciliation evidence — PR #117 proposed (18 November 2026)
 
-- **Historical PR #116 checkpoint:** merge SHA `4c97783c1654c2ca6a1336fcf0c7e21e520c0cdd`; PR CI #881 passed 3/3 on PR head `7bfc75b393cbc8018e5ec9d38708607231b84c8d`. Post-merge main CI on current tip remains unverified.
+- **Historical PR #116 checkpoint:** merge SHA `4c97783c1654c2ca6a1336fcf0c7e21e520c0cdd`; PR CI #881 passed 3/3 on PR head `7bfc75b393cbc8018e5ec9d38708607231b84c8d`. Post-merge main CI on the PR #116 merge SHA was not independently verified at that historical checkpoint.
 - Eight JO44/1985 bounded French searchable-text extracts merged to main contain 293 rows: W31 Oran26; W06 Bejaia52; W02 Chlef35; W04 Oum El Bouaghi29; W10 Bouira45; W03 Laghouat24; W05 Batna61; W08 Bechar21.
 - The proposed PR #117 adds W09 Blida29 (13 on p.1057, 16 on p.1058), W11 Tamanghasset10 (p.1058), and W12 Tebessa28 (p.1058). Proposed total 360/975 planned rows; 615 remain, subject to national completeness reconciliation.
 - These extractions remain French text-layer only, without image verification or Arabic row pairing in this pass; preserve distinct seat strings and all text anomalies, do not normalize or join automatically. The recorded source hash is the inventory hash, not freshly recalculated.

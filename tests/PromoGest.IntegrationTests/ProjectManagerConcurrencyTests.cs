@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Diagnostics;
 using Microsoft.Extensions.DependencyInjection;
+using PromoGest.Contracts.Auth;
 using PromoGest.Contracts.Common;
 using PromoGest.Contracts.Projects;
 using PromoGest.Contracts.Users;
@@ -31,6 +32,14 @@ public sealed partial class PostgresEndToEndTests
         await AttachCsrfTokenAsync(adminClient);
         var initialize = await adminClient.PostAsJsonAsync("/api/setup/initialize", ValidInitRequest());
         Assert.Equal(HttpStatusCode.Created, initialize.StatusCode);
+
+        // First-run setup creates the System Administrator account but deliberately does
+        // not authenticate it. Log in before exercising the protected user/project APIs.
+        var adminLogin = await adminClient.PostAsJsonAsync(
+            "/api/auth/login",
+            new LoginRequest("sysadmin", "AtlasAdmin#2026"));
+        Assert.Equal(HttpStatusCode.OK, adminLogin.StatusCode);
+        await AttachCsrfTokenAsync(adminClient);
 
         var managerAResponse = await adminClient.PostAsJsonAsync("/api/users", new CreateEmployeeRequest(
             "p1.race.manager.a",

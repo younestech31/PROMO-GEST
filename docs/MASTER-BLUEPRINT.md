@@ -11,7 +11,7 @@
 
 ## Historical checkpoint — PR #186 (superseded by PR #187 main verification)
 
-- **Current main / merge commit:** `07cba896eec07bb28878d948a6cfb905313a2b22`; PR [#186](https://github.com/younestech31/PROMO-GEST/pull/186) was squash-merged.
+- **PR #186 merge commit (implementation baseline):** `07cba896eec07bb28878d948a6cfb905313a2b22`; PR [#186](https://github.com/younestech31/PROMO-GEST/pull/186) was squash-merged.
 - **P1-15 implementation:** existing ProjectMember role/capability changes now touch the owning Project aggregate root. The root ConcurrencyStamp serializes concurrent membership mutations across different child rows; the losing EF transaction returns HTTP 409 `CONCURRENCY_CONFLICT` and rolls back the membership mutation and pending audit event.
 - **PR-head evidence only:** PR-head CI #44909430011 and #44909433367 passed all three jobs (Frontend, .NET 10/PostgreSQL 18 least-privilege/integration, Windows publish/PowerShell); CodeQL #44909433309 passed JavaScript/TypeScript and C# on PR head 405cd8c3f8169043ce18315391cc4dfbcb1b2f11. These are PR-head results, not post-merge main results.
 - **Post-merge evidence boundary:** the available commit-workflow-run query (which returns PR-triggered runs only) and combined-status query returned no post-merge main checks for this SHA. Do not claim post-merge CI/CodeQL success from the PR-head results.
@@ -156,7 +156,7 @@ PR #99 merged at `ec038a1137335c36c523469bce4e4884d45ab215`; PR #100 merged at `
 PR #105 merged the 1,541-row working crosswalk; PR #106 merged the 404-row JO58/2026 French text-layer delta and five-name exception file; PR #107 merged JO11/1986 and JO79/2021 historical register evidence at main SHA `8b40120aaf2f649bb123cd654f88f62250ce02d9`. PR #107 CI #821 and post-merge main CI #822 passed all three required jobs. The 59 JO79 new-Wilaya rows on French printed pages 17–19 are now visually checked, including correction of W55/W56 rows to printed page 19; the 103 JO79 existing-Wilaya rows on pages 13–16 remain text-layer only. Arabic row pairing, PDF SHA-256, the remaining 975 rows, all historic exception decisions, and qualified Algerian practitioner approval remain outstanding. P1-01 remains In Progress / Pending; P1-02 remains Blocked. The 69-Wilaya application slice remains implemented; the commune catalogue remains unimported (`communesCount = 0`).
 
 
-## Current implementation evidence checkpoint — 19 November 2026
+## Historical implementation evidence checkpoint — 19 November 2026
 
 - Main SHA `7fbd3a455e9f36d1969d8921621aabb29f280e5d`; CI #989 passed all three required jobs, including master-ledger validation. PR #140 fixes the Vite wildcard-host classification and PR #141 adds the master-ledger structural CI guard. Neither changes application module capability states, runtime API, or database schema.
 - Module capability states in the catalog remain unchanged. In particular F–J remain PLANNED; K remains PARTIALLY_IMPLEMENTED; legal/accounting work remains gated by K-Min and qualified practitioner review.

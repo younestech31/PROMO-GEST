@@ -62,7 +62,7 @@ Every claim across this blueprint uses **strictly one** of the six evidence-back
 | # | Document | Purpose & Scope |
 |---|---|---|
 | 1 | [MASTER-BLUEPRINT.md](MASTER-BLUEPRINT.md) | This master index, executive product vision, product scope boundaries, completion scorecard, and navigation map. |
-| 2 | [CURRENT-STATE-BASELINE.md](CURRENT-STATE-BASELINE.md) | Evidence-backed application/test source baselines, current main/CI anchor, merged C2 corrections, owner-attested Phase 0 workflows, transitional Party mirrors, and AI Studio preview boundaries. |
+| 2 | [CURRENT-STATE-BASELINE.md](CURRENT-STATE-BASELINE.md) | Evidence-backed application/test source baselines, dated main/CI evidence anchor, merged C2 corrections, owner-attested Phase 0 workflows, transitional Party mirrors, and AI Studio preview boundaries. |
 | 3 | [SYSTEM-ARCHITECTURE.md](SYSTEM-ARCHITECTURE.md) | Clean/Layered dependency graph, modular monolith boundaries, HTTP middleware pipeline, and SPA hosting model. |
 | 4 | [DOMAIN-MODEL.md](DOMAIN-MODEL.md) | Authoritative schema matching `AppDbContextModelSnapshot.cs` & migrations, Party vs ProjectCustomer separation, concurrency, and planned contract/financial models. |
 | 5 | [MODULE-CATALOG.md](MODULE-CATALOG.md) | All 12 ERP domains (**A–L**) mapped from current implementation through target contracts, K-Min vs K-Full document split, Algerian contract types, and unified financial event flow. |

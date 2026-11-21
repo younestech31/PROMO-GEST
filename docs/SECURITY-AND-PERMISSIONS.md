@@ -122,7 +122,7 @@ For all non-`SYSTEM_ADMIN` users, holding an organization role permission is **n
 | Read Project Structure | `projects.read` | Any `ProjectMember` row |
 | Create Project | `projects.create` | Non-admin creator is explicitly assigned as `ProjectManager` with existing creation-time capabilities; `SYSTEM_ADMIN` creates with zero budget until a financial member is explicitly assigned |
 | Update Project Details (non-financial master data) | `projects.manage` | `RoleInProject == ProjectManager`; send `EstimatedBudgetDzd: null` to preserve the restricted value when lacking `CanViewFinancials` |
-| Manage Project Team | `projects.access.manage` | `RoleInProject == ProjectManager` *(blocks removing last PM)* |
+| Manage Project Team | `projects.access.manage` | `RoleInProject == ProjectManager`; aggregate-root concurrency serializes role changes/removals so concurrent requests cannot remove or demote the last Project Manager |
 | Manage Buildings / Floors / Units | `projects.structure.manage` | `CanManageConstruction == true \|\| RoleInProject == ProjectManager` |
 | Read Project Documents | `files.read` *(plus `customers.read` for customer identity documents)* | Any `ProjectMember` row + category capability check (`Financial` -> `CanViewFinancials`, `Commercial` -> `CanManageSales`, `Engineering`/`Plans` -> `CanManageConstruction \|\| CanManageDocuments`, `Legal`/`LandAndTitle` -> `CanManageDocuments`; `ProjectManager` bypasses category cap except customer identity PII isolation) |
 | Upload Project Documents | `files.write` | `CanManageDocuments == true` + category capability check (`Financial` -> `CanViewFinancials`, `Commercial` -> `CanManageSales`, `Engineering`/`Plans` -> `CanManageConstruction`, `Legal`/`LandAndTitle` -> `CanManageDocuments`; `ProjectManager` bypasses category cap) |
@@ -130,6 +130,10 @@ For all non-`SYSTEM_ADMIN` users, holding an organization role permission is **n
 | Create / Update Customers & Interactions | `customers.manage` + `customers.read` | `CanManageSales == true \|\| RoleInProject == ProjectManager` |
 | Read Sales Reservations | `sales.reservations.read` + `customers.read` | Any `ProjectMember` row |
 | Create / Cancel Reservations | `sales.reservations.manage` + `sales.reservations.read` + `customers.read` | `CanManageSales == true \|\| RoleInProject == ProjectManager` |
+
+### 4.1 Last Project Manager invariant under concurrent membership changes
+
+Every change to an existing `ProjectMember` role or capability flags, as well as membership removal, touches the owning `Project` aggregate root. EF Core persists that root's `ConcurrencyStamp` as a concurrency token in the same SaveChanges transaction as the child membership and its audit event. Concurrent requests that loaded the same project version therefore cannot both commit mutations to different manager rows: one succeeds and the other receives HTTP 409 `CONCURRENCY_CONFLICT`; the losing transaction rolls back its membership mutation and pending audit event. The service-level last-manager count remains an early, readable guard, but is not the concurrency control. PostgreSQL 18 integration tests use a deterministic SaveChanges barrier to exercise simultaneous demotions and simultaneous removals against independent request scopes.
 
 ---
 

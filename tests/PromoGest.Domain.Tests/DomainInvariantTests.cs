@@ -223,6 +223,58 @@ public sealed class DomainInvariantTests
     }
 
     [Fact]
+    public void Project_ExistingMembershipUpdate_TouchesAggregateRootConcurrencyStamp()
+    {
+        var creatorId = Guid.NewGuid();
+        var project = Project.Create(
+            "PRJ-P115-001",
+            "مشروع اختبار التزامن",
+            "Projet de test de concurrence",
+            "16",
+            "Alger",
+            "Hydra",
+            null,
+            null,
+            null,
+            null,
+            ProjectStatus.Planning,
+            100_000_000m,
+            1,
+            2,
+            creatorId,
+            FixedNow);
+
+        var managerId = Guid.NewGuid();
+        var membership = project.AssignMember(
+            managerId,
+            ProjectRole.ProjectManager,
+            true,
+            true,
+            true,
+            true,
+            creatorId,
+            FixedNow);
+        var rootStampBefore = project.ConcurrencyStamp;
+        var memberStampBefore = membership.ConcurrencyStamp;
+        var changedAt = FixedNow.AddMinutes(5);
+
+        project.AssignMember(
+            managerId,
+            ProjectRole.CommercialAgent,
+            false,
+            true,
+            false,
+            true,
+            creatorId,
+            changedAt);
+
+        Assert.Equal(ProjectRole.CommercialAgent, membership.RoleInProject);
+        Assert.NotEqual(memberStampBefore, membership.ConcurrencyStamp);
+        Assert.NotEqual(rootStampBefore, project.ConcurrencyStamp);
+        Assert.Equal(changedAt, project.UpdatedAtUtc);
+    }
+
+    [Fact]
     public void PropertyUnit_EnforcesForwardLifecycleAndWithdrawnTerminalState()
     {
         var unit = PropertyUnit.Create(

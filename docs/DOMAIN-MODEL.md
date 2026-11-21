@@ -92,7 +92,7 @@ To prevent domain conflation or cross-project data leakage, the model strictly s
 
 - Every mutable aggregate carries a `Guid ConcurrencyStamp` mapped via EF Core `.IsConcurrencyToken()`.
 - **Explicit Compare-and-Swap (`ExpectedConcurrencyStamp`):**
-  - `UpdateProjectRequest` enforces ADR-0008 CAS (`PROJECT_CONCURRENCY_CONFLICT`), and membership add/remove rotates `Project.ConcurrencyStamp`.
+  - `UpdateProjectRequest` enforces ADR-0008 CAS (`PROJECT_CONCURRENCY_CONFLICT`). Membership add, existing-member role/capability update, and removal all touch the owning `Project` root and rotate `Project.ConcurrencyStamp`; this root concurrency token serializes concurrent changes to different `ProjectMember` rows, so only one competing mutation can commit and the losing SaveChanges transaction (including its pending audit entry) rolls back with HTTP 409 `CONCURRENCY_CONFLICT`.
   - `UpdatePartyIdentityRequest` compares `ConcurrencyStamp` (`PARTY_CONCURRENCY_CONFLICT`).
   - `UpdateProjectCustomerRequest` carries **both** `ConcurrencyStamp` (customer record) and `PartyConcurrencyStamp` (linked canonical `Party`).
   - Buildings, floors, units, and reservations carry independent `ConcurrencyStamp` tokens returning HTTP `409` on stale writes.

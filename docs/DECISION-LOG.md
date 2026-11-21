@@ -1,3 +1,13 @@
+## Decision record — Project membership mutations participate in Project aggregate concurrency (PR #186)
+
+**Status:** Implemented and merged; verification pending post-merge/manual acceptance.  
+**Merge SHA:** `07cba896eec07bb28878d948a6cfb905313a2b22` (PR #186).  
+**Decision:** ProjectMember role/capability updates, additions, and removals are aggregate mutations. Existing-member updates must touch the owning Project root so EF's Project ConcurrencyStamp serializes requests that modify different ProjectMember rows. Keep the service-level last-manager count as an early guard, not the concurrency mechanism.  
+**Conflict behavior:** The losing SaveChanges transaction returns HTTP 409 `CONCURRENCY_CONFLICT`; its child mutation and pending audit event roll back together.  
+**Evidence:** Real PostgreSQL 18 deterministic-barrier tests passed on PR head `405cd8c3f8169043ce18315391cc4dfbcb1b2f11`; PR-head CI #44909430011/#44909433367 and CodeQL #44909433309 passed. Post-merge checks on `07cba896eec07bb28878d948a6cfb905313a2b22` are not yet evidenced. No schema migration, role/permission changes, or production data changes.
+
+---
+
 # PROMO GEST — Consolidated Decision Log & Architecture Decision Records (ADRs)
 
 **Document Role:** Single repository of architectural, design, and governance decisions for PROMO GEST.  

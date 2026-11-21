@@ -11,7 +11,7 @@
 
 ## Historical checkpoint — PR #186 (superseded by PR #187 main verification)
 
-- **Current main / merge commit:** `07cba896eec07bb28878d948a6cfb905313a2b22`; PR [#186](https://github.com/younestech31/PROMO-GEST/pull/186) was squash-merged.
+- **PR #186 merge commit (implementation baseline):** `07cba896eec07bb28878d948a6cfb905313a2b22`; PR [#186](https://github.com/younestech31/PROMO-GEST/pull/186) was squash-merged.
 - **P1-15 implementation:** existing ProjectMember role/capability changes now touch the owning Project aggregate root. The root ConcurrencyStamp serializes concurrent membership mutations across different child rows; the losing EF transaction returns HTTP 409 `CONCURRENCY_CONFLICT` and rolls back the membership mutation and pending audit event.
 - **PR-head evidence only:** PR-head CI #44909430011 and #44909433367 passed all three jobs (Frontend, .NET 10/PostgreSQL 18 least-privilege/integration, Windows publish/PowerShell); CodeQL #44909433309 passed JavaScript/TypeScript and C# on PR head 405cd8c3f8169043ce18315391cc4dfbcb1b2f11. These are PR-head results, not post-merge main results.
 - **Post-merge evidence boundary:** the available commit-workflow-run query (which returns PR-triggered runs only) and combined-status query returned no post-merge main checks for this SHA. Do not claim post-merge CI/CodeQL success from the PR-head results.
@@ -213,7 +213,7 @@ PR #63 is merged. Its test-only change adds two PostgreSQL 18 end-to-end cases w
 
 [Open CI Run #544](https://github.com/younestech31/PROMO-GEST/actions/runs/43767110822)
 
-### GitHub Actions Run #546 — 15 November 2026 (current main audit anchor)
+### Historical GitHub Actions Run #546 — 15 November 2026 (audit anchor)
 - **Commit:** `432e6f8ea76bb540dd5bc69d3314c0d658805ba7` (documentation-only refresh after PR #50).
 - **Frontend job:** passed.
 - **.NET 10 / PostgreSQL 18 job:** passed.
@@ -403,7 +403,7 @@ Automated acceptance is verified. Manual browser/practitioner and production-ins
 - **Boundaries unchanged:** no commune records imported (`communesCount = 0`, `PendingOfficialVerification`); P1-01 remains `In Progress / Pending` (975-row JO44 concordance and practitioner sign-off still open); P1-02 remains `Blocked`; external GitHub PR/CI (`#107` / Run `#822`) and Notion backlog trackers were not mutated from this offline workspace snapshot.
 
 
-## Current main evidence checkpoint — 18 November 2026 (CI #825)
+## Historical main-verification checkpoint — 18 November 2026 (CI #825)
 
 - Main SHA: `cd57a5912ccb3631a6e9581d48d1aab2600180d2`; current CI [#825](https://github.com/younestech31/PROMO-GEST/actions/runs/44310687822) passed all three required jobs on this exact SHA. CI logs confirm Frontend 82/82, Domain 34/34, Application 21/21, and PostgreSQL 18 Integration 32/32; zero failed or skipped tests. The frontend job ran `npm run lint`, `npm test`, Vite build, static-output checks, and ASP.NET Core `wwwroot` build. The .NET job ran warnings-as-errors build, Linux publish, PG18 migrations/integration, and the full restore drill; the Windows publish/PowerShell job also passed.
 - Frontend checkpoint `cd57a591` updates preview detection from the health response, root `lang`/`dir`/title and immutable organization-session updates. It does not close P1-14: preview middleware opt-in, loopback-by-default binding and production bundle exclusion still need a focused security slice.
@@ -420,13 +420,13 @@ Automated acceptance is verified. Manual browser/practitioner and production-ins
  - **Still unverified manually:** Google AI Studio preview with the actual host/origin and platform network ingress restrictions. CORS/allowlists do not authenticate users. Keep P1-14 In Review / Verification Pending; no merge/CI result is a substitute for this manual check.
  - No production PostgreSQL database, Cloud SQL business data, credentials, deployment, production authentication, or production security policy was changed.
 
-## Current main and P1-01 extraction checkpoint — 18 November 2026
+## Historical main and P1-01 extraction checkpoint — 18 November 2026
 
 - Main is `293476cbdbf3c4c3fbcae87d7c9b682a493ca436` (PR #112 merge). Main CI [#873](https://github.com/younestech31/PROMO-GEST/actions/runs/44330071074) passed 3/3 jobs on that exact SHA: Frontend 88/88, Domain 34/34, Application 21/21, PostgreSQL 18 Integration 32/32; restore drill 1/1; Windows machine-scoped Data Protection, publish and PowerShell validation passed. Four xUnit analyzer warnings remain; zero build errors.
 - P1-01 gained a raw 26-row JO44/1985 French text-layer extraction for W31 Oran, printed p. 1068. The codes are unique 3101–3126; commune labels, code strings and seats are separate. The extract is not image-verified, not Arabic-paired, not joined to candidate rows, not effective-date adjudicated and not practitioner-approved. The JO44 planning tranche now records 26/975 extracted with 949 outstanding.
 - P1-01 remains In Progress / Pending, P1-02 remains Blocked, and no commune rows are imported. No API/runtime, schema/migration, production database, Google AI Studio Cloud SQL data, credentials, deployment or security policy changed.
 
-## P1-01 source work and main-branch checkpoint — 18 November 2026
+## Historical P1-01 source work and main-branch checkpoint — 18 November 2026
 
 - Main tip: `e19456f54602e184ce80087e1a8e97916b8fe471` (PR #113 documentation-only merge). PR CI #874 passed 3/3 jobs on exact PR head `e37102856ca8a9239fadd450955f99d648a4bd0f`; a post-merge run for the merge SHA is not independently confirmed here. The latest verified main CI remains #873 on parent SHA `293476cbdbf3c4c3fbcae87d7c9b682a493ca436`.
 - JO44/1985 now has two independent French searchable-text source tranches: W31 Oran, 26 rows (printed p. 1068), and W06 Bejaia, 52 rows (49 on printed p. 1055 and 3 on p. 1056). Total transcribed: 78/975 planned JO44 rows; 897 remain, subject to the national completeness audit.
@@ -454,7 +454,7 @@ Automated acceptance is verified. Manual browser/practitioner and production-ins
 - All current JO44 tranches are French searchable-text extraction only: no page-image visual verification or Arabic row pairing is claimed. PDF SHA-256 is reused from the repository source inventory, not recomputed in this pass. Preserve `Tirmzrit`, `T rouna`, `Labi od Medjadja`, `Legride t`, `Boulh...iat` and `Boulh...at` literally pending source-page review; do not infer current code, parent, effective date, or canonical name.
 - P1-01 remains In Progress / Pending; P1-02 remains Blocked. The 1,541 candidate rows are not approved, no commune records are imported, and no runtime/API/schema/migration/production/Cloud SQL data changed.
 
-## Current main verification checkpoint — 19 November 2026 (PR #140/#141)
+## Historical main-verification checkpoint — 19 November 2026 (PR #140/#141)
 
 - PR #140 merged at `a2565e9aba909f4ac6f515baf55018aad8bf0ef6`; unspecified/wildcard hosts `0.0.0.0`, `::`, and `[::]` are no longer classified as loopback. Regression tests require explicit external-preview opt-in for them. Exact preview hostname, browser origin, and restrictive platform-ingress acceptance remain outstanding.
 - PR #141 merged at `7fbd3a455e9f36d1969d8921621aabb29f280e5d`; `scripts/validate-p1-01-master-ledger.py` now runs in frontend CI. It enforces structural row/key/source-ID uniqueness, counts, decision partition, flagged anomaly/conflict routing, pending sign-off and adjudication tokens. It does not adjudicate legal identity.

@@ -11,7 +11,7 @@
 
 ## Historical checkpoint — PR #186 (superseded by PR #187 main verification)
 
-- **Current main / merge commit:** `07cba896eec07bb28878d948a6cfb905313a2b22`; PR [#186](https://github.com/younestech31/PROMO-GEST/pull/186) was squash-merged.
+- **PR #186 merge commit (implementation baseline):** `07cba896eec07bb28878d948a6cfb905313a2b22`; PR [#186](https://github.com/younestech31/PROMO-GEST/pull/186) was squash-merged.
 - **P1-15 implementation:** existing ProjectMember role/capability changes now touch the owning Project aggregate root. The root ConcurrencyStamp serializes concurrent membership mutations across different child rows; the losing EF transaction returns HTTP 409 `CONCURRENCY_CONFLICT` and rolls back the membership mutation and pending audit event.
 - **PR-head evidence only:** PR-head CI #44909430011 and #44909433367 passed all three jobs (Frontend, .NET 10/PostgreSQL 18 least-privilege/integration, Windows publish/PowerShell); CodeQL #44909433309 passed JavaScript/TypeScript and C# on PR head 405cd8c3f8169043ce18315391cc4dfbcb1b2f11. These are PR-head results, not post-merge main results.
 - **Post-merge evidence boundary:** the available commit-workflow-run query (which returns PR-triggered runs only) and combined-status query returned no post-merge main checks for this SHA. Do not claim post-merge CI/CodeQL success from the PR-head results.
@@ -128,7 +128,7 @@ PRs #99, #100 and #103 are merged documentation-only evidence slices; the six-ro
 - **Local follow-up checkpoint (18 November 2026):** Frontend runtime fixes (`isVitePreviewRuntime`, root `lang`/`dir` sync, immutable organization update) and bilingual FR/AR PNG + SHA-256 verification for JO58 (pp. 9–25), JO79 (pp. 13–19 FR / 15–22 AR), JO11 (FR/AR), JO23 (Boumerdès FR/AR), and disputed JO44 sections are recorded under `docs/reference-data/`. All 5 JO58 name-capture variants and 78 page-number offsets were resolved (`404/404` join cleanly); JO44/1985 & JO23/1998 bilingual divergences are preserved verbatim pending qualified practitioner sign-off. External Notion/GitHub trackers were not altered from this local workspace snapshot.
 
 
-## 8. Current main verification and governance checkpoint — 18 November 2026
+## 8. Historical main-verification and governance checkpoint — 18 November 2026
 
 - **Main and CI:** `main` is `cd57a5912ccb3631a6e9581d48d1aab2600180d2`; [CI #825](https://github.com/younestech31/PROMO-GEST/actions/runs/44310687822) passed all 3 jobs on that exact SHA. The logs record 82/82 frontend, 34/34 Domain, 21/21 Application and 32/32 PostgreSQL 18 Integration tests; the full restore drill and Windows publish/PowerShell checks passed. The latest API/Application runtime source remains PR #87; the latest EF/schema source remains PR #59.
 - **Frontend state:** the health-driven `isVitePreviewRuntime` helper, document `lang`/`dir`/title synchronization, and immutable organization-session update are present on main. These are automated/source-verifiable changes, not browser RTL/LTR acceptance.

@@ -1,3 +1,15 @@
+## Latest verified repository checkpoint — 21 November 2026 (PR #187 post-merge)
+
+- **Current GitHub main:** `ecc3e52ec990bcd8ef3dc7f8c68f82e1632e1901` (PR #187, documentation-only, squash-merged).
+- **Latest code-bearing merge:** PR #186 at `07cba896eec07bb28878d948a6cfb905313a2b22`; its Project aggregate-root concurrency implementation remains the current executable code baseline.
+- **Post-merge CI on exact current main SHA:** [CI #44911252345](https://github.com/younestech31/PROMO-GEST/actions/runs/44911252345) passed all three required jobs: Frontend install/checks/static hosting; .NET 10 + PostgreSQL 18 least-privilege/integration/restore; Windows publish and PowerShell validation.
+- **Post-merge CodeQL on exact current main SHA:** [CodeQL #44911252403](https://github.com/younestech31/PROMO-GEST/actions/runs/44911252403) passed both C# and JavaScript/TypeScript analysis.
+- **P1-15:** implementation and deterministic PostgreSQL 18 race coverage are merged; automated CI/CodeQL now pass on current main. Keep capability `IMPLEMENTED_NOT_VERIFIED` and task In Review / Pending until the required manual Arabic RTL / French LTR acceptance is recorded.
+- **P1-01 remains the Phase 1 gate:** 1,541 practitioner sign-offs remain PENDING; decision book remains 1,540 PENDING + W30-R007 NEEDS_EVIDENCE; no commune records imported (`communesCount = 0`); P1-01 In Progress / Pending and P1-02 Blocked. No phase advancement or legal approval is inferred from CI.
+- **Security boundary:** GitHub main branch protection and required status checks were observed disabled; this was not changed. No production data, live database, authorization policy, roles, permissions, or Cloud SQL business data were changed.
+
+---
+
 ## P1-15 aggregate concurrency — verified implementation on main
 
 PR #186 is merged at `07cba896eec07bb28878d948a6cfb905313a2b22`. ProjectMember membership mutations are aggregate operations: existing-member role/capability changes touch the owning Project root, ensuring the root ConcurrencyStamp participates in the same EF transaction as the child membership and audit event. The deterministic PostgreSQL 18 race test passed on the exact PR head and asserts one success/one 409 for simultaneous demotions and removals, at least one retained ProjectManager, and one committed audit event per race. Post-merge CI is not yet evidenced; retain capability state `IMPLEMENTED_NOT_VERIFIED` until that and manual bilingual acceptance are complete.

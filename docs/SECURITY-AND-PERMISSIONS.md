@@ -1,3 +1,12 @@
+## P1-15 — Concurrent last-ProjectManager invariant (PR #186)
+
+- PR #186 merged at `07cba896eec07bb28878d948a6cfb905313a2b22`. Existing-member role/capability updates touch the Project aggregate root, rotating the Project concurrency token in the same SaveChanges transaction as the membership and audit event.
+- Competing demotions/removals against different membership rows cannot both commit against the same root version; the losing transaction returns HTTP 409 `CONCURRENCY_CONFLICT` and rolls back its pending membership and audit changes.
+- The real PostgreSQL 18 deterministic-barrier integration test passed on the exact PR head; CI/CodeQL evidence and the post-merge verification limitation are recorded in CURRENT-STATE-BASELINE.md.
+- No permission, role, SYSTEM_ADMIN, CSRF, audit, or authorization policy was loosened. P1-15 remains `IMPLEMENTED_NOT_VERIFIED` until post-merge checks and manual bilingual acceptance are evidenced.
+
+---
+
 # PROMO GEST — Security Architecture & Authorization Matrix
 
 **Verified Against:** `src/PromoGest.Infrastructure/Security/SecurityServices.cs`, `src/PromoGest.Infrastructure/Persistence/DbInitializer.cs`, `src/PromoGest.Domain/Entities/RbacEntities.cs`, `src/PromoGest.Api/Middleware/ApiMiddleware.cs`, `src/PromoGest.Api/Security/SessionAuthenticationHandler.cs`, `src/PromoGest.Api/Controllers/AuthController.cs`, and `src/PromoGest.Application/Services/*.cs`.

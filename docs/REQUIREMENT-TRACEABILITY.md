@@ -1,3 +1,9 @@
+## REQ-B03 verification checkpoint — PR #186 merged
+
+PR #186 merged at `07cba896eec07bb28878d948a6cfb905313a2b22`. REQ-B03's implementation now touches the Project aggregate root for existing-member role/capability changes, serializing concurrent changes to different ProjectMember rows. The real PostgreSQL 18 deterministic-barrier test passed on PR head `405cd8c3f8169043ce18315391cc4dfbcb1b2f11`, proving one success plus one HTTP 409 in each demotion/removal race, at least one ProjectManager remains, and audit writes are atomic. PR-head CI and CodeQL passed; post-merge main CI/CodeQL has not been independently observed. Keep REQ-B03 `IMPLEMENTED_NOT_VERIFIED` pending post-merge and manual bilingual acceptance.
+
+---
+
 # PROMO GEST — Requirement Traceability Matrix
 
 **Latest repository checkpoint (21 November 2026):** GitHub `main` is `1914703bce77aaeda49830a396d39acce04ea58f` after PR #184. PR-head CI #44839944794 / CodeQL #44839944849 and post-merge main CI #44840514137 / CodeQL #44840514142 passed on their exact PR-head and merge SHAs. P1-11 canonical Algerian phone normalization and Migration #15 are merged. The feature remains `IMPLEMENTED_NOT_VERIFIED` pending authorized organization-local backup/restore, read-only preflight, disposable rehearsal and operator acceptance; no organization customer database has been migrated.

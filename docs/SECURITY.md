@@ -40,7 +40,9 @@ PROMO GEST enforces **at most one System Administrator per installation** at thr
 
 ## 5. HTTP Security Headers & Reverse Proxy Trust
 - `UseForwardedHeaders()` trusts only loopback reverse proxies (`127.0.0.1`, `::1`) for `X-Forwarded-For` and `X-Forwarded-Proto` with `ForwardLimit = 1`.
-- `SecurityHeadersMiddleware` sets strict `'self'` CSP, `X-Content-Type-Options: nosniff`, `X-Frame-Options: DENY`, `Referrer-Policy: no-referrer`, and `Permissions-Policy`.
+- `SecurityHeadersMiddleware` sets a same-origin CSP including `object-src 'none'` and `frame-ancestors 'none'`, plus `X-Content-Type-Options: nosniff`, `X-Frame-Options: DENY`, `Referrer-Policy: no-referrer`, and `Permissions-Policy`.
+- Production enables HSTS only after `UseForwardedHeaders()` has restored the external scheme. Its initial policy is deliberately short (`max-age=86400`), with no subdomain expansion or preload; Development/preview does not emit HSTS. Increase the lifetime only after the internal HTTPS certificate and hostname lifecycle are confirmed stable.
+- Kestrel applies an explicit 30,000,000-byte global request-body cap, a 15-second request-header timeout, and a two-minute keep-alive timeout. Project document upload keeps its stricter 26 MiB action-level limit, leaving a small outer allowance for multipart framing.
 
 ## 6. Data-at-Rest Protection — Deployment Requirement
 

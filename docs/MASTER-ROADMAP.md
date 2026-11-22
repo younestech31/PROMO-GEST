@@ -245,3 +245,10 @@ The Arabic secondary-text sidecar captures 108/108 rows under Wilayas 59–69 (1
 
 
 The Arabic secondary-text sidecar preserves 108 Arabic names and separate Arabic/French seat readings. All 108 captured seat counts agree (1,748 seats); every Wilaya/sequence key in the 11 new-Wilaya extract is present. No official page-image review or Arabic printed-page locator is claimed. The CI validator checks the two source columns independently and preserves this secondary-evidence boundary.
+
+
+## P1-35 Arabic JO61 secondary-source discrepancy register — 22 November 2026
+
+A second Arabic searchable-PDF text mirror (JaridaBot-hosted) was compared with the Kanonix Arabic issue transcription already captured in the 108-row sidecar. The two secondary text extracts match on 100/108 strings and differ on eight: W60/03, W64/02, W65/03, W67/08, W67/09, W67/20, W67/21 and W68/09. All alternative strings, source URL, secondary printed-page locators and pending-review state are retained in the Arabic sidecar. Neither secondary extraction is treated as authoritative; all eight remain pending review against the official JORADP Arabic page images, which have not been visually inspected. The validator now checks the exact eight discrepancy keys and strings, the 100 exact matches, and the non-visual-review evidence state.
+
+This is still limited to new-Wilaya headings 59–69 only. It does not complete Annex II across the other 58 headings, prove legal commune identity or parentage, or interpret Article 124. P1-35 and P1-01 remain In Progress/Pending; all 1,541 practitioner sign-offs remain PENDING; P1-02 remains Blocked; no effective date or commune import is authorized (communesCount=0).

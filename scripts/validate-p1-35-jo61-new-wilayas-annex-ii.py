@@ -17,7 +17,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 SOURCE = ROOT / "docs/reference-data/P1-35-JO61-ANNEX-II-NEW-WILAYAS-108-SECONDARY-EXTRACT.csv"
-ARABIC_SOURCE = ROOT / "docs/reference-data/P1-35-JO61-ANNEX-II-NEW-WILAYAS-100-ARABIC-SECONDARY-TRANSCRIPTION.csv"
+ARABIC_SOURCE = ROOT / "docs/reference-data/P1-35-JO61-ANNEX-II-NEW-WILAYAS-108-ARABIC-SECONDARY-TRANSCRIPTION.csv"
 
 EXPECTED_ROWS = {
     "59": 12, "60": 8, "61": 5, "62": 4, "63": 4,

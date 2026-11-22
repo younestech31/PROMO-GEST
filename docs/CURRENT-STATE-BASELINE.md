@@ -4,7 +4,7 @@
 
 
 
-The Arabic sidecar also now keeps the Arabic-source seat count separate from the French-source seat count. All 100 captured Arabic rows match the French reading (1,748 seats); the remaining eight Wilaya 68 rows correspond to 142 seats and remain untranscribed. The Frontend CI validator independently checks both fields, exact missing sequence set, and no invented page locators.
+The Arabic sidecar keeps Arabic-source and French-source seat counts in separate columns. All 108 captured rows match on seats (1,748 total). No Arabic rows are omitted in the current new-Wilaya extract; Arabic page locators remain unpinned and official JO61 images have not been visually reviewed. The Frontend CI validator checks both source fields and these evidence limits.
 
 
 
@@ -12,9 +12,9 @@ The Arabic sidecar also now keeps the Arabic-source seat count separate from the
 
 ## P1-35 JO61 Annex II — partial Arabic secondary text cross-reference — 22 November 2026
 
-Added `P1-35-JO61-ANNEX-II-NEW-WILAYAS-108-ARABIC-SECONDARY-TRANSCRIPTION.csv`, recording 100 Arabic electoral-constituency name strings for new-Wilaya headings 59–69. Coverage by Wilaya is 12, 8, 5, 4, 4, 6, 10, 8, 21, 15 and 7 respectively. The eight missing records are exactly Wilaya 68 sequences 01–08; they are left missing rather than backfilled from Law 26-06 or translated. The sidecar cross-references Arabic text to the French secondary extract by Wilaya+sequence only. It does not prove legal identity and does not represent official page-image reading: all rows are secondary text, no official page images were visually inspected, and printed Arabic page locators remain unpinned. See [extraction notes](reference-data/P1-35-JO61-ANNEX-II-NEW-WILAYAS-108-EXTRACTION-NOTES.md).
+Added `P1-35-JO61-ANNEX-II-NEW-WILAYAS-108-ARABIC-SECONDARY-TRANSCRIPTION.csv`, recording 108 Arabic electoral-constituency name strings for new-Wilaya headings 59–69. Coverage by Wilaya is 12, 8, 5, 4, 4, 6, 10, 8, 21, 23 and 7 respectively. All 108 Wilaya/sequence keys are present, and Arabic/French seat readings are stored separately and agree on all rows (1,748 seats). The sidecar cross-references Arabic text to the French secondary extract by Wilaya+sequence only. It does not prove legal identity and does not represent official page-image reading: all rows are secondary text, no official page images were visually inspected, and printed Arabic page locators remain unpinned. See [extraction notes](reference-data/P1-35-JO61-ANNEX-II-NEW-WILAYAS-108-EXTRACTION-NOTES.md).
 
-The Frontend CI validator now verifies Arabic sidecar coverage of 100/108, the missing 68/01–08 set, row-key uniqueness, seats and source-review boundaries. P1-35 remains In Progress/Pending; Arabic transcription and visual source review are incomplete; no legal approval/import.
+The Frontend CI validator now verifies Arabic sidecar coverage of 108/108, row-key uniqueness, separate Arabic/French seat values and source-review boundaries. P1-35 remains In Progress/Pending; official visual source review and legal interpretation are incomplete; no legal approval/import.
 
 ## P1-35 bounded JO61 Annex II extraction — new Wilayas 59–69 — 22 November 2026
 

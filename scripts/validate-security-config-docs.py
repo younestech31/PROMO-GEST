@@ -33,11 +33,13 @@ REQUIRED_SECURITY_SETTINGS = {
     "SessionTouchIntervalMinutes": 1,
     "TemporaryPasswordLifetimeHours": 24,
     "LoginRateLimitPermitLimit": 10,
+    "SetupRateLimitPermitLimit": 5,
 }
 
 # Bounds enforced by the application code, documented next to the key.
 BOUNDS_NOTES = {
     "Security__LoginRateLimitPermitLimit": "1-100",
+    "Security__SetupRateLimitPermitLimit": "1-60",
     "Security__SessionIdleTimeoutMinutes": "5-480",
 }
 

@@ -3,6 +3,7 @@ using System.Security.Cryptography;
 using System.Text;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 using PromoGest.Application.Services;
 using PromoGest.Contracts.Common;
 using PromoGest.Contracts.Setup;
@@ -44,6 +45,7 @@ public sealed class SetupController : ControllerBase
 
     [HttpPost("initialize")]
     [AllowAnonymous]
+    [EnableRateLimiting("setup")]
     public async Task<ActionResult<InitializeInstallationResponse>> Initialize(
         [FromBody] InitializeInstallationRequest request,
         CancellationToken ct)

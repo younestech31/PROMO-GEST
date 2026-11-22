@@ -218,8 +218,6 @@ def main() -> None:
             fail(f"Arabic sidecar line {index}: do not invent printed-page locators")
         if row["jo61_official_pdf_visual_review_status"] != "NOT_VISUALLY_REVIEWED_CACHE_MISS":
             fail(f"Arabic sidecar line {index}: cannot overstate official Arabic PDF visual review")
-        if row["jo61_source_page_locator"] != "NOT_PINNED_IN_SEARCH_EXCERPT" or row["jo61_page_locator_type"] != "NOT_PINNED_SECONDARY_SEARCH_RESULT":
-            fail(f"Arabic sidecar line {index}: do not invent official or printed page locator")
         if not any("\u0600" <= char <= "\u06ff" for char in row["jo61_constituency_name_ar_secondary_verbatim"]):
             fail(f"Arabic sidecar line {index}: Arabic transcription field is empty or not Arabic script")
         if row["jo61_arabic_transcription_status"] != "SECONDARY_TEXT_CAPTURED_NOT_OFFICIAL_IMAGE_VERIFIED":

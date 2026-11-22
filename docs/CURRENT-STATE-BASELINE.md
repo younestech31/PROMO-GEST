@@ -596,3 +596,31 @@ The 01–58 index is derived from a third-party searchable French text mirror. P
 ## P1-35 — Arabic secondary mirror selected group-seat checks — 22 November 2026
 
 A second searchable Arabic JO61 PDF text mirror yielded six selected group-level controls matching the French secondary index: W01 Adrar 16/266; W29 Mascara 47/753; W36 El Tarf 24/384; W39 El Oued 22/414; W49 Timimoun 10/160; W58 El Meniaa 3/55 (ending-sequence / reported seats). This is only a six-group aggregate comparison, not a row-level Arabic/French crosswalk. The Arabic text extractor interleaves continued-table fragments and headings due to two-column page layout. Screenshots of the third-party PDF mirror return Cache miss; official PDF images remain unreviewed. All records remain secondary, legal identity unadjudicated under Article 124, practitioner PENDING.
+
+
+
+## Exact post-merge push verification — PRs #203–#206 — 22 November 2026
+
+A previous checkpoint incorrectly reported that the available connector could not retrieve post-merge workflow runs. That conclusion arose from using a repository wrapper restricted to pull-request-triggered runs. A direct GitHub Actions REST query by exact merge SHA found the corresponding `push` runs; every job below completed successfully on `main`, with `head_sha` exactly matching the merge SHA:
+
+| PR | Merge SHA | Push CI | Result | Push CodeQL | Result |
+|---|---|---:|---:|---:|---:|
+| #203 | `8186f0bf0aaa3b8d2cb6487f0fef963149714956` | [#45048309272](https://github.com/younestech31/PROMO-GEST/actions/runs/45048309272) | 3/3 passed | [#45048309219](https://github.com/younestech31/PROMO-GEST/actions/runs/45048309219) | 2/2 passed |
+| #204 | `ddece3c9360ee0167f77739c876e6a719e481ba3` | [#45048958340](https://github.com/younestech31/PROMO-GEST/actions/runs/45048958340) | 3/3 passed | [#45048958354](https://github.com/younestech31/PROMO-GEST/actions/runs/45048958354) | 2/2 passed |
+| #205 | `be295b04dfddd0a87dc440f6dec140a3f45ba658` | [#45050253572](https://github.com/younestech31/PROMO-GEST/actions/runs/45050253572) | 3/3 passed | [#45050253562](https://github.com/younestech31/PROMO-GEST/actions/runs/45050253562) | 2/2 passed |
+| #206 | `ee803d68aa46487c5635363844e2fdff0d0bf442` | [#45050991402](https://github.com/younestech31/PROMO-GEST/actions/runs/45050991402) | 3/3 passed | [#45050991415](https://github.com/younestech31/PROMO-GEST/actions/runs/45050991415) | 2/2 passed |
+
+For each run, the Actions API response was rechecked for `event=push`, `head_branch=main`, completed status, success conclusion, and the exact corresponding `head_sha`. This correction supersedes earlier notes stating that post-merge checks for these four PRs were unavailable. PR-head CI/CodeQL results remain separately recorded; this section is exact-merge-SHA evidence.
+
+### PR #206 selected Arabic aggregate check — bounded result
+
+PR #206 adds a six-group comparison of an Arabic secondary searchable-PDF text mirror with the French secondary group index. Reported APC seat totals match for W01 Adrar (266), W29 Mascara (753), W36 El Tarf (384), W39 El Oued (414), W49 Timimoun (160), and W58 El Meniaa (55). This is a selected aggregate control only. It is not a row-level bilingual name/commune crosswalk, no official page-image review is claimed, and no legal commune identity/parentage or practitioner approval is established. The Arabic text layer interleaves continued-table fragments due the two-column layout.
+
+### Remaining P1-35 / P1-01 gates — unchanged
+
+- The legacy 01–58 group index remains heading-level: reported ending-sequence indexes sum to 1,433, not an independently re-extracted 1,433-row table. Its reported seat totals sum to 24,827.
+- The new-Wilaya 59–69 secondary sidecars contain 108 records / 1,748 seats; eight Arabic secondary text variants and two French secondary variants remain pending official-image review.
+- Official JORADP JO61 Annex II page images have not been visually reviewed. The remaining 58 headings still require row-level bilingual extraction and evidence reconciliation.
+- Article 124 of Organic Law 21-01 prevents assuming that one electoral constituency row is one legal commune.
+- All 1,541 P1-01 practitioner sign-offs remain PENDING; W30-R007 remains NEEDS_EVIDENCE; no valid_from has been inferred; no import is authorized; P1-01 and P1-35 remain In Progress/Pending; P1-02 remains Blocked; `communesCount=0`.
+

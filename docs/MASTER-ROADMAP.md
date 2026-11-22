@@ -193,3 +193,10 @@ PR [#197](https://github.com/younestech31/PROMO-GEST/pull/197) is merged at `38f
 A subsequent JO25/2026 statutory cross-check of the 11 new-wilaya lists found 108 candidate rows, with all 11 per-wilaya counts matching statutory totals, but a first-pass name comparison has 81 strict normalized matches, 20 potential variants, and 7 legal-list-only plus 7 uploaded-only names concentrated in Bou Saada and El Abiodh Sidi Cheikh. This is bounded evidence, not row approval or closure of P1-01/P1-35. Full findings are in `docs/reference-data/P1-01-LAW26-06-NEW-WILAYA-RECONCILIATION-2026-11-22.md`.
 
 The new-wilaya electoral tables in JO61/2026 are not a one-to-one legal commune register under Organic Law 21-01 Article 124. Continue P1-35 for complete bilingual Annex II extraction/normalization, all 69-wilaya reconciliation, and legal interpretation; keep P1-01 In Progress/Pending and P1-02 Blocked. No commune data import or runtime/database change. All practitioner sign-offs remain pending and `communesCount=0`.
+
+
+## Next P1-01 source-audit slice — JO52/2026 service assignments vs territorial membership — 22 November 2026
+
+PR #198 is merged at `410f3775dc603ea50aed44cc469015b7e16e8972`; PR-head CI #45033444709 (3/3) and CodeQL #45033444708 (2/2) passed, and exact post-merge CI #45033905055 (3/3) and CodeQL #45033905001 (2/2) passed.
+
+The next bounded evidence slice records Decree 26-253 / JO52/2026 as the Daira-Chief commune service-assignment schedule, distinct from legal territorial parentage in Law 26-06 / JO25. A source check has already identified four wrong-parent candidates and four missing legal members in uploaded code 64/Bou Saada, plus three wrong-parent candidates and three missing members in code 60/El Abiodh Sidi Cheikh. JO52 also assigns 13 Bou Saada legal communes under its Ksar El Boukhari Daira-Chief heading and 10 under its Bou Saada heading. This is documentation and source interpretation only; do not change the candidate CSV, master ledger, runtime/schema or DB. Keep P1-01/P1-35 In Progress/Pending, P1-02 Blocked, all sign-offs pending and `communesCount=0`.

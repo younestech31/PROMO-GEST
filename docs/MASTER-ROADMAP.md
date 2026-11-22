@@ -200,3 +200,10 @@ The new-wilaya electoral tables in JO61/2026 are not a one-to-one legal commune 
 PR #198 is merged at `410f3775dc603ea50aed44cc469015b7e16e8972`; PR-head CI #45033444709 (3/3) and CodeQL #45033444708 (2/2) passed, and exact post-merge CI #45033905055 (3/3) and CodeQL #45033905001 (2/2) passed.
 
 The next bounded evidence slice records Decree 26-253 / JO52/2026 as the Daira-Chief commune service-assignment schedule, distinct from legal territorial parentage in Law 26-06 / JO25. A source check has already identified four wrong-parent candidates and four missing legal members in uploaded code 64/Bou Saada, plus three wrong-parent candidates and three missing members in code 60/El Abiodh Sidi Cheikh. JO52 also assigns 13 Bou Saada legal communes under its Ksar El Boukhari Daira-Chief heading and 10 under its Bou Saada heading. This is documentation and source interpretation only; do not change the candidate CSV, master ledger, runtime/schema or DB. Keep P1-01/P1-35 In Progress/Pending, P1-02 Blocked, all sign-offs pending and `communesCount=0`.
+
+
+## Critical uploaded Wilaya-code mapping finding — P1-01 — 22 November 2026
+
+A follow-up check against Presidential Decree 26-206 / JO40/2026 Article 1 and the official JO58/2026 Wilaya code annex identifies a critical flaw in the supplied candidate archive: only Aflou/59 matches; the other ten 2026 Wilaya names are attached to the wrong official code. This propagates to 46 synthetic daira IDs and 96 synthetic commune IDs. The earlier Bou Saada and El Abiodh name-set mismatches remain valid by Wilaya name, but references to local codes 64 and 60 must not be read as official codes; legal codes are 68 and 69.
+
+The detailed correction is in docs/reference-data/P1-01-UPLOADED-WILAYA-CODE-MAPPING-CORRECTION-2026-11-22.md. Do not edit/import the uploaded dataset. Continue P1-01 source reconciliation and P1-35 bilingual JO61/JO58 evidence; P1-01/P1-35 remain In Progress/Pending; P1-02 Blocked; all 1,541 approvals pending; communesCount=0.

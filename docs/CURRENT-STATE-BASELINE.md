@@ -1,5 +1,9 @@
 
 
+**Arabic secondary Annex II cross-reference now covers 108/108 rows** under new-Wilaya headings 59–69. A second indexed Arabic issue excerpt supplied the previously absent Wilaya 68 sequences 01–08. Arabic and French source seat counts are stored in separate columns and match 108/108 (1,748 seats). Arabic printed-page locators remain unpinned, all text is still secondary transcription, and the official JO61 PDF pages have not been visually reviewed. This does not establish legal commune identity, one-to-one constituency mapping, or effective dates.
+
+
+
 The Arabic sidecar also now keeps the Arabic-source seat count separate from the French-source seat count. All 100 captured Arabic rows match the French reading (1,606 seats); the remaining eight Wilaya 68 rows correspond to 142 seats and remain untranscribed. The Frontend CI validator independently checks both fields, exact missing sequence set, and no invented page locators.
 
 

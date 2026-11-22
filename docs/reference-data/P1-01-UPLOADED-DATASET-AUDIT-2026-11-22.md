@@ -120,3 +120,28 @@ Candidate row IDs are only upload-local locators: code 64 wrong-parent rows are 
 JO52's Annex groups the 23 statutory Bou Saada communes across the Daira-Chief assignment lists under headings 67 and 68: 13 named service assignments under heading 67 and 10 under heading 68. Heading 69's seven Daira-Chief assigned communes match Law 26-06 Article 52 bis 20. This helps explain why Decree 26-253 should be modeled as a service-assignment source and not as a one-to-one legal parent register. The statutory Article 54 transition until 31 December 2026 is context only; do not infer a per-commune valid_from date.
 
 Full source table, JO52 seat/assignment split, page locators and screenshot/cache limitations: [P1-01-JO52-LEGAL-OPERATIONAL-MEMBERSHIP-AUDIT-2026-11-22.md](P1-01-JO52-LEGAL-OPERATIONAL-MEMBERSHIP-AUDIT-2026-11-22.md). No candidate CSV row or production/database record was changed; all approvals remain pending and no import is permitted.
+
+
+## 11. Critical new-Wilaya code/name mismatch — JO40/2026 and JO58/2026
+
+The uploaded archive's wilayas.csv attaches the **wrong official numeric code to ten of the eleven new Wilaya names**. Presidential Decree 26-206 (JO40/2026, Article 1) and the JO58/2026 official annex “Liste des wilayas / Numéros de code” (printed p.9) agree on the authoritative sequence:
+
+| Official code | Official Wilaya | Uploaded local code | Uploaded name |
+|---:|---|---:|---|
+| 59 | Aflou | 59 | Aflou |
+| 60 | Barika | 63 | Barika |
+| 61 | El Kantara | 62 | El Kantara |
+| 62 | Bir El Ater | 65 | Bir El Ater |
+| 63 | El Aricha | 61 | El Aricha |
+| 64 | Ksar Chellala | 67 | Ksar Chellala |
+| 65 | Aïn Oussara | 68 | Ain Oussara |
+| 66 | Messaad | 69 | Messaad |
+| 67 | Ksar El Boukhari | 66 | Ksar El Boukhari |
+| 68 | Bou Saada | 64 | Bou Saada |
+| 69 | El Abiodh Sidi Cheikh | 60 | El Abiodh Sidi Cheikh |
+
+Only Aflou/59 matches. The archive's wilaya_code is therefore a source-local identifier for the affected groups, not the 2026 official code. The earlier name-set discrepancy notes use names to identify groups; where they cite “code 64 / Bou Saada” or “code 60 / El Abiodh Sidi Cheikh”, those numbers must be read as upload-local keys. Their correct official codes are 68 and 69.
+
+Because the generator propagates those local codes to its synthetic daira and commune identifiers, the 46 daira rows and 96 commune rows across the ten mismatched groups inherit the wrong code prefix. The generated IDs are not official Daira or Commune identifiers and must not be imported or used as parent/code assertions. No CSV correction is made by this audit; preserve the archive fingerprint and candidate-only status.
+
+See the dedicated [official code-mapping correction audit](P1-01-UPLOADED-WILAYA-CODE-MAPPING-CORRECTION-2026-11-22.md). Official source locators: [JO40/2026 Decree 26-206](https://www.joradp.dz/FTP/jo-francais/2026/F2026040.pdf), [JO58/2026 official register and code table](https://www.joradp.dz/FTP/JO-FRANCAIS/2026/F2026058.pdf).

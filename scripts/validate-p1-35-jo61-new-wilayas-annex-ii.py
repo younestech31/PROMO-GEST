@@ -1,10 +1,9 @@
 #!/usr/bin/env python3
-"""Validate a bounded secondary-text extraction of JO61 Annex II for W59-W69.
+"""Validate a bilingual secondary-text cross-check of JO61 Annex II.
 
-This validator checks row counts, per-Wilaya seat totals, source-state labels,
-and the preservation of two secondary transcription variants. It does not
-verify the official PDF page images, extract Arabic rows, decide Article 124
-interpretation, or approve any legal commune identity/parentage.
+Checks bounded row counts, seats, French/Arabic cross-reference consistency,
+eight Arabic text discrepancies and evidence-state limits. It does not verify
+official PDF page images, interpret Article 124, or approve legal identity.
 """
 from __future__ import annotations
 
@@ -33,6 +32,18 @@ EXPECTED_VARIANTS = {
 }
 EXPECTED_ARABIC_ROWS = EXPECTED_ROWS
 EXPECTED_ARABIC_SEATS = EXPECTED_SEATS
+EXPECTED_ARABIC_CROSSCHECK_VARIANTS = {
+    ("60", "03"): "عبد القادر عزيّل",
+    ("64", "02"): "زمّالة الأمير عبد القادر",
+    ("65", "03"): "بويره الأحدب",
+    ("67", "08"): "أولاد لاد هلال",
+    ("67", "09"): "تاقافروت",
+    ("67", "20"): "أولاد لاد عنتر",
+    ("67", "21"): "السوايق",
+    ("68", "09"): "الحمامد",
+}
+ARABIC_CROSSCHECK_SOURCE = "JaridaBot-hosted Arabic JO61 PDF mirror text extraction"
+ARABIC_CROSSCHECK_URL = "https://jaridabot.com/FTP/jo-arabe/2026/joradp-61-26-Aout-2026.pdf"
 REQUIRED = {
     "decree", "annex", "current_wilaya_code", "wilaya_fr_jo61_heading",
     "jo61_constituency_sequence", "jo61_constituency_name_fr_verbatim",
@@ -172,6 +183,9 @@ def main() -> None:
         "jo58_current_french_register_name", "jo58_current_register_code",
         "jo58_administrative_seat_fr", "jo58_practitioner_review_status",
         "jo58_effective_date", "crosswalk_basis", "legal_commune_identity_status",
+        "jo61_arabic_crosscheck_name_secondary", "jo61_arabic_crosscheck_source",
+        "jo61_arabic_crosscheck_url", "jo61_arabic_crosscheck_printed_page",
+        "jo61_arabic_crosscheck_comparison_status", "jo61_arabic_crosscheck_visual_status",
     }
     with ARABIC_SOURCE.open("r", encoding="utf-8-sig", newline="") as stream:
         arabic_reader = csv.DictReader(stream)
@@ -192,6 +206,7 @@ def main() -> None:
     }
     arabic_keys: set[tuple[str, str]] = set()
     arabic_seats: dict[str, int] = defaultdict(int)
+    arabic_crosscheck_variants: set[tuple[str, str]] = set()
     for index, row in enumerate(arabic_rows, start=2):
         key = (row["current_wilaya_code"], row["jo61_constituency_sequence"])
         if key in arabic_keys:
@@ -219,6 +234,30 @@ def main() -> None:
             fail(f"Arabic sidecar line {index}: Arabic transcription field is empty or not Arabic script")
         if row["jo61_arabic_transcription_status"] != "SECONDARY_TEXT_CAPTURED_NOT_OFFICIAL_IMAGE_VERIFIED":
             fail(f"Arabic sidecar line {index}: incorrect Arabic evidence classification")
+        crosscheck_name = row["jo61_arabic_crosscheck_name_secondary"]
+        crosscheck_page = "32" if key[0] in {"59", "60"} else "34" if key[0] in {"68", "69"} else "33"
+        if row["jo61_arabic_crosscheck_source"] != ARABIC_CROSSCHECK_SOURCE:
+            fail(f"Arabic sidecar line {index}: unexpected independent secondary source")
+        if row["jo61_arabic_crosscheck_url"] != ARABIC_CROSSCHECK_URL:
+            fail(f"Arabic sidecar line {index}: unexpected secondary source URL")
+        if row["jo61_arabic_crosscheck_printed_page"] != crosscheck_page:
+            fail(f"Arabic sidecar line {index}: unexpected secondary printed page locator")
+        if row["jo61_arabic_crosscheck_visual_status"] != "NOT_VISUALLY_REVIEWED_SECONDARY_PDF_MIRROR":
+            fail(f"Arabic sidecar line {index}: secondary mirror must remain not visually reviewed")
+        if not any(0x0600 <= ord(char) <= 0x06FF for char in crosscheck_name):
+            fail(f"Arabic sidecar line {index}: cross-check value is not Arabic text")
+        expected_variant = EXPECTED_ARABIC_CROSSCHECK_VARIANTS.get(key)
+        if expected_variant is None:
+            if crosscheck_name != row["jo61_constituency_name_ar_secondary_verbatim"]:
+                fail(f"Arabic sidecar line {index}: unregistered secondary variant {key}")
+            if row["jo61_arabic_crosscheck_comparison_status"] != "EXACT_SECONDARY_TEXT_MATCH":
+                fail(f"Arabic sidecar line {index}: exact-match state changed {key}")
+        else:
+            if crosscheck_name != expected_variant:
+                fail(f"Arabic sidecar line {index}: registered secondary variant text changed {key}")
+            if row["jo61_arabic_crosscheck_comparison_status"] != "SECONDARY_TEXT_VARIANT_PENDING_OFFICIAL_IMAGE_REVIEW":
+                fail(f"Arabic sidecar line {index}: secondary variant must remain pending official image review")
+            arabic_crosscheck_variants.add(key)
         if row["jo58_practitioner_review_status"] != "PENDING" or row["jo58_effective_date"]:
             fail(f"Arabic sidecar line {index}: practitioner/effective-date guard changed")
         if row["legal_commune_identity_status"] != "NOT_ADJUDICATED":
@@ -232,14 +271,15 @@ def main() -> None:
         fail(f"unexpected Arabic secondary-record seat totals: {dict(arabic_seats)}")
     if sum(arabic_seats.values()) != 1748:
         fail(f"expected 1,748 Arabic-source seat readings, got {sum(arabic_seats.values())}")
+    if arabic_crosscheck_variants != set(EXPECTED_ARABIC_CROSSCHECK_VARIANTS):
+        fail(f"unexpected Arabic secondary discrepancy keys: {arabic_crosscheck_variants}")
 
     print(
-        "P1-35 bounded JO61 Annex II extraction: 108 French-secondary rows across 11 new Wilayas, "
-        "1,748 electoral seats, 106 direct normalized French-name matches, "
-        "2 preserved French secondary-transcription variants; Arabic secondary "
-        "text is captured for 108/108 rows with separate Arabic/French seat values "
-        "matching 108/108 (1,748 seats); no Arabic printed-page locators are asserted. Official PDF "
-        "visual review remains incomplete; no legal commune identity or parentage is approved."
+        "P1-35 bounded JO61 Annex II extraction: 108 French and 108 Arabic-secondary rows, "
+        "1,748 seats, 106 direct French normalized matches and 2 French variants. "
+        "Arabic primary transcription seat readings match 108/108; independent Arabic "
+        "PDF-text mirror matches 100/108 and preserves 8 pending text variants. "
+        "Official image review and legal commune identity remain unapproved."
     )
 
 

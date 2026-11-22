@@ -19,6 +19,8 @@ var builder = WebApplication.CreateBuilder(new WebApplicationOptions
     ContentRootPath = AppContext.BaseDirectory
 });
 
+builder.WebHost.ConfigureKestrel(HttpSecurityDefaults.ConfigureKestrel);
+
 builder.Host.UseWindowsService();
 if (OperatingSystem.IsWindows())
 {
@@ -180,6 +182,8 @@ builder.Services.Configure<ForwardedHeadersOptions>(options =>
     options.ForwardLimit = 1;
 });
 
+builder.Services.AddHsts(HttpSecurityDefaults.ConfigureHsts);
+
 builder.Services.AddAuthentication(SessionCookieDefaults.AuthenticationScheme)
     .AddScheme<AuthenticationSchemeOptions, SessionAuthenticationHandler>(
         SessionCookieDefaults.AuthenticationScheme,
@@ -305,6 +309,11 @@ if (args.Contains("--reset-admin-password", StringComparer.OrdinalIgnoreCase))
 }
 
 app.UseForwardedHeaders();
+if (app.Environment.IsProduction())
+{
+    // Forwarded X-Forwarded-Proto must be applied first so HSTS sees the external HTTPS scheme.
+    app.UseHsts();
+}
 app.UseMiddleware<SecurityHeadersMiddleware>();
 app.UseMiddleware<ExceptionHandlingMiddleware>();
 

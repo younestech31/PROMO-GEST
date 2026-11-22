@@ -268,3 +268,9 @@ This is still limited to new-Wilaya headings 59–69 only. It does not complete 
 ## P1-35 — legacy JO61 heading coverage inventory (01–58) — 22 November 2026
 
 Added a secondary group index for the 58 earlier Wilaya headings: 58 headings, sum of reported final sequence indexes 1,433 (not row-by-row recounted), and 24,827 stated APC seats. Together with the previously captured 108 new-Wilaya headings 59–69, aggregate number controls are 1,541 final sequence indexes and 26,575 seats. This is not an identity mapping to 1,541 communes: Organic Law 21-01 Article 124 permits partial or multi-commune electoral constituencies. The group index has no pinned page/line locators, no Arabic row transcription, and no visual review of official JO61 images. It remains secondary evidence only. P1-35 and P1-01 remain In Progress/Pending; P1-02 Blocked; no legal master-data edits or imports.
+
+
+
+## P1-35 — selected Arabic secondary aggregate check — 22 November 2026
+
+Six selected legacy group aggregate values from a third-party Arabic JO61 PDF text mirror match the French secondary index: W01 266, W29 753, W36 384, W39 414, W49 160, W58 55 seats. This does not amount to an Arabic row-level crosswalk. Text extraction is interleaved around two-column/continued tables; no page-image review, official visual review, Article 124 legal identity determination or practitioner approval is claimed. See the selected Arabic legacy group seat sample.

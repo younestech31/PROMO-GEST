@@ -1,3 +1,12 @@
+## Official 2026 territorial reference intake — JO25 + JO61 — 22 November 2026
+
+- **Legal total:** official JO25/2026 Law 26-06, Article 3, printed page 4, explicitly sets **69 wilayas / 1,541 communes**. Both French and Arabic page 4 were visually reviewed: [FR PDF](https://www.joradp.dz/FTP/jo-francais/2026/F2026025.pdf) / [AR PDF](https://www.joradp.dz/FTP/jo-arabe/2026/A2026025.pdf).
+- **Electoral cross-check:** official JO61/2026 Decree 26-282, Article 1 and Annexes I–II, defines APW/APC electoral constituencies and number of seats. Annex I lists APW wilaya districts 01–69 (2,855 seats overall); Annex II groups municipal electoral constituencies and seats by 69 wilaya headings. This is a cross-check, not the statutory basis for the count and not a substitute for the legal territorial register/parentage/effective-date evidence.
+- **Repository source binaries:** `A2026061.pdf` (277,968 bytes, SHA-256 `3af55003ac604e5197d78c1592e7db654d5851a02d317518ec14176110a92318`) and `F2026061.pdf` (295,624 bytes, SHA-256 `ff296821cdf6ba6bc4d4d315a27c13adf02d4a24b20f0f02202eb06b3ddd54bd`) are stored in `.tmp-joradp/`. Both commits are signature-verified. They were uploaded directly to `main` in two PDF-only commits (FR first, then AR); live main at intake was `c73ede555f929054eef55e011196a78e4c724117`.
+- **Verification limits:** JO25 page 4 visually inspected in both languages. JO61 binary hashes recorded, but page screenshot attempts returned `Cache miss`; no visual JO61 page review is claimed. Row-level Annex II extraction/count/parity against the P1-01 ledger is pending under P1-35.
+- **Release gate unchanged:** P1-01 remains In Progress/Pending, all 1,541 sign-offs PENDING, W30-R007 NEEDS_EVIDENCE, P1-02 Blocked, `communesCount = 0`. No commune import, legal approval, effective-date assignment, runtime/schema or production data change.
+
+---
 ## P1-01 Bilingual Visual Evidence Supplement — 22 November 2026
 
 - **Documentation & verification-script update only:** zero changes to `.NET` runtime, React SPA, EF Core migrations, database schema, security policy, `P1-01-MASTER-1541-RECONCILIATION-LEDGER.csv`, `P1-01-PRACTITIONER-QUEUE-110.csv`, `P1-01-DECISION-BOOK-1541.csv`, or `.tmp-joradp/*`.

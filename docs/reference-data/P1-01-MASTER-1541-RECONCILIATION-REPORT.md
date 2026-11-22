@@ -6,6 +6,50 @@
 **Companion Ledger:** `docs/reference-data/P1-01-MASTER-1541-RECONCILIATION-LEDGER.csv` (**1,541** rows with unique candidate row keys and JO44 assertion IDs; all proposals remain unapproved)  
 **Automated CI Checks:** `scripts/validate-p1-01-master-ledger.py`, `scripts/validate-p1-01-jo44-arabic-page-images.py`, `scripts/p1_01_decision_book.py`, and `scripts/test_p1_01_decision_book.py` (structural/source linkage and review-workbook integrity only; not legal approval).
 
+
+## Official 2026 territorial count and bilingual electoral cross-check — 22 November 2026
+
+### Primary statutory source — JO25/2026, Law 26-06
+
+The official Journal Officiel No.25 dated **5 April 2026** publishes Law **26-06 of 4 April 2026**, amending Law 84-09 on the territorial organization of the country. Article 3, printed page 4, states explicitly:
+
+> Le nouveau découpage territorial du pays comprend soixante-neuf (69) wilayas et mille cinq cent quarante-et-une (1541) communes.
+
+The same rule is present in the Arabic edition as المادة 3 on printed page 4. Both official page-4 images were visually inspected in this audit.
+
+- French official PDF: https://www.joradp.dz/FTP/jo-francais/2026/F2026025.pdf
+- Arabic official PDF: https://www.joradp.dz/FTP/jo-arabe/2026/A2026025.pdf
+
+**Legal interpretation:** JO25/2026, Law 26-06, Article 3 is the direct statutory authority for the national total of **69 wilayas / 1,541 communes**. Its amended Articles 7, 9, 11, 16, 17, 18, 21, 30, 32 and 36 provide specific territorial groupings of communes that must be read in context with the retained parts of Law 84-09.
+
+### Supplementary electoral source — JO61/2026, Executive Decree 26-282
+
+The official Journal Officiel No.61 is dated **26 August 2026** and publishes Executive Decree **26-282 of 24 August 2026**. Article 1, printed page 3, says the decree determines electoral constituencies and seats for the Assemblées populaires communales (APC) and Assemblées populaires de wilayas (APW) under Annexes I and II.
+
+- Annex I, printed page 4 onward, numbers the APW electoral constituencies **01–69**, with a total of **2,855 APW seats**.
+- Annex II, beginning on printed page 5, lists APC electoral constituencies and seat allocations grouped by wilaya headings **01–69**, ending with Wilaya 69 — El Abiodh Sidi Cheikh (printed page 34).
+- Annex II is an **electoral-constituency/seat schedule**, not itself the statute establishing legal commune existence, official name, legal parent, boundary or effective date. Do not assume every APC electoral constituency label is a legal commune ID or substitute it for the territorial annex of Law 26-06; Algiers also has a distinct urban-arrondissement organization.
+- The annex provides an important independent name/coverage and electoral-seat cross-check for P1-01, but its rows have **not yet been fully enumerated and reconciled** against the 1,541-row master ledger. Do not claim 1,541/1,541 row-level coverage from the 69 wilaya headings alone.
+
+### Repository copies and binary provenance
+
+The two user-supplied JO61 editions are currently stored under the temporary source cache `.tmp-joradp/` on GitHub `main`. The French file was added first; the Arabic commit is its child.
+
+| Edition | Repository path | Adding commit | Git blob SHA | Bytes | PDF SHA-256 |
+|---|---|---|---|---:|---|
+| Arabic | `.tmp-joradp/A2026061.pdf` | `c73ede555f929054eef55e011196a78e4c724117` | `9a15a0f67398b29a44d09b7fe14fe658f8c48a5b` | 277,968 | `3af55003ac604e5197d78c1592e7db654d5851a02d317518ec14176110a92318` |
+| French | `.tmp-joradp/F2026061.pdf` | `8ff19fc54740f4b2d538b3ccd254a964f5d3fd4c` | `501b0a7d846fdac81bc029d29b29e5f7b3ccc8bc` | 295,624 | `ff296821cdf6ba6bc4d4d315a27c13adf02d4a24b20f0f02202eb06b3ddd54bd` |
+
+The SHA-256 values above were computed over the exact base64-decoded GitHub blob bytes; the SHA-256 implementation was checked against the standard `abc` test vector. GitHub reports both adding commits as signature-verified. The two PDF-only commits were added directly to `main`, rather than by PR, while branch protection was disabled; they changed no application/runtime, schema, migration or business-data files. The live `main` ref at source intake was `c73ede555f929054eef55e011196a78e4c724117`.
+
+### Evidence boundaries and P1-01 disposition
+
+- JO25/2026 Article 3: official Arabic and French page 4 visually inspected; legal total 69/1,541 verified.
+- JO61/2026: exact repository PDF bytes and hashes recorded; text-layer extraction confirms issue number/date, Decree 26-282 and Annex I/II structure. Attempts to screenshot the GitHub PDF URLs and the available PDF text mirror returned `Cache miss`; **no JO61 page-image visual review is claimed**.
+- Complete row-level bilingual extraction and parity checks for JO61 Annex II remain open under P1-35. The exact count of electoral constituency rows, uniqueness, omissions, duplicates and correspondence to the P1-01 ledger must be demonstrated before claiming a completed cross-check.
+- All **1,541** master-ledger practitioner sign-offs remain `PENDING`; W30-R007 remains `NEEDS_EVIDENCE`; no `valid_from` or reviewer decision is inferred; `communesCount = 0`; no commune import is authorized; P1-01 remains In Progress / Pending and P1-02 remains Blocked.
+
+
 ---
 
 > **Evidence-scope and CI clarification — 19 November 2026:** The master validator is now explicitly run by the frontend CI job. Its automated checks cover workpaper structure, unique row-key/source-ID populations, counts, decision-class partitions, preservation of flagged anomalies and pending sign-off; they do not independently prove legal identity, semantic correctness of every cross-register row pairing, visual page inspection, OCR interpretation or practitioner acceptance. In the ledger's primary_source_verification_scope, 841 rows are recorded with only JO44 French text-layer extraction and no additional primary visual scope; 27 rows carry the explicit JO44 Arabic spot-verification marker. Separately scoped JO58/JO79/JO23/JO11 visual checks cover their linked records and can overlap. Therefore this workpaper must not be described as 1,541/1,541 fully bilingual page-image verified rows. The 75 candidate Arabic anomaly flags are all routed to explicit practitioner decision; all 1,541 sign-offs remain PENDING.

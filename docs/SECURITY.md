@@ -41,3 +41,11 @@ PROMO GEST enforces **at most one System Administrator per installation** at thr
 ## 5. HTTP Security Headers & Reverse Proxy Trust
 - `UseForwardedHeaders()` trusts only loopback reverse proxies (`127.0.0.1`, `::1`) for `X-Forwarded-For` and `X-Forwarded-Proto` with `ForwardLimit = 1`.
 - `SecurityHeadersMiddleware` sets strict `'self'` CSP, `X-Content-Type-Options: nosniff`, `X-Frame-Options: DENY`, `Referrer-Policy: no-referrer`, and `Permissions-Policy`.
+
+## 6. Data-at-Rest Protection — Deployment Requirement
+
+- Production hosts must use full-volume encryption for the operating-system and every data-bearing volume that can contain PostgreSQL files, customer document storage, Data Protection keys, application configuration, logs, temporary work, exports, or local backups.
+- Windows deployments use BitLocker; Linux deployments use LUKS2. Removable offsite media must be encrypted (for example, BitLocker To Go or LUKS2), and NAS targets must provide storage-side encryption at rest. Transport encryption alone does not satisfy this requirement.
+- Recovery keys/passphrases must be held by the organization's independent recovery process, not only on the PROMO GEST host or beside encrypted backup media. A controlled reboot/unlock and post-unlock readiness check are required before acceptance.
+- CMS-encrypted offsite backup artifacts remain a separate control; disk encryption does not replace backup encryption, retention, offsite replication, or restore drills.
+- This is an installation acceptance requirement, not a claim that any customer host is already encrypted. Operators must record actual volume inventory and encryption evidence in the signed installation checklist. Full-volume encryption protects locked/offline media; it does not defend a running, unlocked host against malware or privileged compromise.

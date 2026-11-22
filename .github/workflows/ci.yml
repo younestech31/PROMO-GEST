@@ -33,6 +33,10 @@ jobs:
           python3 scripts/test_p1_01_w41_readings.py
       - name: Validate JO44 Arabic page-image map (page mapping only; not row transcription or legal approval)
         run: python3 scripts/validate-p1-01-jo44-arabic-page-images.py
+      - name: Validate P1-01 bilingual supplements for Q110 and post-1985 naming acts (not legal approval)
+        run: |
+          python3 scripts/p1_01_bilingual_supplements.py
+          python3 scripts/test_p1_01_bilingual_supplements.py
       - name: Verify reproducible practitioner review queue (not a seed)
         run: python3 scripts/prepare-p1-01-review.py
       - name: Validate independent commune decision book (no sign-off)

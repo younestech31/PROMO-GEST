@@ -17,11 +17,10 @@ The broader inventory of the 2 June 1984 chief-lieu seat order and Decree 21-128
 
 ## Evidence boundary
 
-- Source language in this ledger is French only. Arabic source labels are deliberately blank; they must be transcribed from the corresponding Arabic primary edition, not translated or inferred.
-- The French printed page 4 of JO 03/1993 was visually inspected during this audit for Decrees 93-11 and 93-12. This records a page-image reading by the audit process, not independent review by a legal practitioner.
-- Decree 92-412 and Decree 06-256 are text-layer reviewed only in this pass. No visual verification is claimed for their printed pages.
-- Official French PDF binaries were retrieved and hashed: `F1992082.PDF` (SHA-256 `f6cbbf779516a525030dde63c1f43470ed9ba6a81818dea4ca4f56301d35d4c3`), `F1993003.pdf` (SHA-256 `3d2f5aebd8b59b35aa349d6803f092978bf3de661900f1c3f2569d7a28d278d3`), and `F2006049.pdf` (SHA-256 `30457eca5fdcb79937df35c2479373abf247f12bbaf8add685c0e7b0018b1320`); these exact hashes are recorded in `P1-01-TERRITORIAL-CHANGE-ASSERTIONS.csv`. Arabic-edition PDFs and visual checks for 1992/2006 remain pending.
-- The `printed_page` field is the page number printed in the Journal officiel, not the PDF page index. `pdf_page_index_zero_based` is populated only where that index was actually identified in this review.
+- For Decrees 93-11 and 93-12 (`JO 03/1993`), both French printed page 4 (`F1993003_pg04.png`) and Arabic printed page 5 (`A1993003_pg05.png`) have now been visually inspected (22 November 2026 supplement): Arabic source labels `بني عمروس`, `أهلية`, `أزقار` (transferred from `قنواع` to `الشرايع`), and `عين حساينية` → `هواري بومدين` are transcribed verbatim and fingerprinted by PNG SHA-256 in `P1-01-POST-1985-NAMING-INSTRUMENTS-BILINGUAL-READINGS.csv`. This records page-image readings by the audit process, not independent review by a legal practitioner.
+- Decree 92-412 (`JO 82/1992`) and Decree 06-256 (`JO 49/2006`) remain French text-layer reviewed only, with Arabic source labels deliberately blank (`arabic_review_status = not_reviewed`). No visual verification is claimed for their French or Arabic printed pages.
+- Official French PDF binaries were retrieved and hashed: `F1992082.PDF` (SHA-256 `f6cbbf779516a525030dde63c1f43470ed9ba6a81818dea4ca4f56301d35d4c3`), `F1993003.pdf` (SHA-256 `3d2f5aebd8b59b35aa349d6803f092978bf3de661900f1c3f2569d7a28d278d3`), and `F2006049.pdf` (SHA-256 `30457eca5fdcb79937df35c2479373abf247f12bbaf8add685c0e7b0018b1320`); these exact hashes remain recorded in `P1-01-TERRITORIAL-CHANGE-ASSERTIONS.csv`. Arabic-edition PDF byte hashes for 1992/1993/2006 and visual checks for 1992/2006 remain pending.
+- The `printed_page` field records the French printed page cited in the CSV (`4` for JO 03/1993 French; Arabic printed page is `5`, recorded in `P1-01-POST-1985-NAMING-INSTRUMENTS-BILINGUAL-READINGS.csv`), not the PDF page index. `pdf_page_index_zero_based` is populated only where identified.
 
 ## Data rules
 
@@ -37,7 +36,7 @@ The broader inventory of the 2 June 1984 chief-lieu seat order and Decree 21-128
 | `publication_date` | Date of the relevant Official Journal issue. Do not silently treat it as the legal effective date. |
 | `printed_page` | Printed journal page cited for the source statement. |
 | `french_visual_review_status` | Whether the cited French printed page image was reviewed in this audit. |
-| `arabic_review_status` | Arabic primary-edition page review status. All rows remain unreviewed. |
+| `arabic_review_status` | Arabic primary-edition page review status: `page_image_visual_reviewed_in_this_audit` for the four `JO 03/1993` rows (AR p.5); `not_reviewed` for `DECR-92-412` and `DECR-06-256`. |
 | `code_four_digit_source` | Deliberately blank: these territorial composition/name instruments do not assert a four-digit Decree 85-20 register code in the transcribed statement. |
 | `code_assertion_status` | Records that the four-digit code is not stated by this instrument. A separate register-chain reconciliation is mandatory. |
 | `effective_date_status` | All rows are `not_adjudicated`; the valid-time interval remains blank pending full instrument/legal review. |

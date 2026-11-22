@@ -1,3 +1,13 @@
+## P1-01 Bilingual Visual Evidence Supplement — 22 November 2026
+
+- **Documentation & verification-script update only:** zero changes to `.NET` runtime, React SPA, EF Core migrations, database schema, security policy, `P1-01-MASTER-1541-RECONCILIATION-LEDGER.csv`, `P1-01-PRACTITIONER-QUEUE-110.csv`, `P1-01-DECISION-BOOK-1541.csv`, or `.tmp-joradp/*`.
+- **Q110 complete JO44 bilingual PNG coverage (`110/110`):** added [`docs/reference-data/P1-01-JO44-FLAGGED-QUEUE-BILINGUAL-READINGS.csv`](reference-data/P1-01-JO44-FLAGGED-QUEUE-BILINGUAL-READINGS.csv) covering all **102** uncovered rows of `P1-01-PRACTITIONER-QUEUE-110.csv` (forming an exact `8 + 102 = 110/110` disjoint union with `-51` and `W41-30`), pinning PNG SHA-256 hashes, verbatim JO44 Arabic readings, single-page French JO44 locators, and print anomalies (such as `3907` printed as `4907` on AR p.1636).
+- **Post-1985 naming, seat-transfer & JO03/1993 bilingual PNG supplement (`38` records):** added [`docs/reference-data/P1-01-POST-1985-NAMING-INSTRUMENTS-BILINGUAL-READINGS.csv`](reference-data/P1-01-POST-1985-NAMING-INSTRUMENTS-BILINGUAL-READINGS.csv) (**23** `BILINGUAL_FR_AR_PNG_VERIFIED`, **4** `AR_BODY_PNG_AND_EXISTING_FR_EXTRACTED` for JO11/1986, **3** partial-cache body gaps, and **8** `PRIMARY_RENAME_ACT_NOT_IN_CACHE` unlocated acts) and updated `P1-01-TERRITORIAL-CHANGE-ASSERTIONS.csv` for the four `JO03/1993` Arabic p.5 readings (`DECR-92-412` & `DECR-06-256` remain `not_reviewed`).
+- **Automated CI validator:** added `scripts/p1_01_bilingual_supplements.py` + `scripts/test_p1_01_bilingual_supplements.py` (`6/6` tests) and wired them into `.github/workflows/ci.yml`. PNG SHA-256 hashes verify page renders only, not PDF binary hashes.
+- **Phase gate strictly unchanged:** all `1,541` master-ledger practitioner sign-offs remain `PENDING`; `W30-R007` remains `NEEDS_EVIDENCE`; `communesCount = 0` (`PendingOfficialVerification`); `P1-01` remains **In Progress**; `P1-02` remains **Blocked**; Phases 2–5 remain unopened.
+
+---
+
 ## Latest verified implementation baseline — 21 November 2026
 
 - **Latest code-bearing merge:** PR #186 at `07cba896eec07bb28878d948a6cfb905313a2b22`; this is the implementation baseline for the Project aggregate-root concurrency fix. Subsequent PRs #187 and #188 were documentation-only and did not change executable code, tests, migrations, or schema.

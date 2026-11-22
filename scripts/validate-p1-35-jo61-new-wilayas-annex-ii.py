@@ -35,6 +35,10 @@ EXPECTED_ARABIC_ROWS = {
     "59": 12, "60": 8, "61": 5, "62": 4, "63": 4, "64": 6,
     "65": 10, "66": 8, "67": 21, "68": 15, "69": 7,
 }
+EXPECTED_ARABIC_SEATS = {
+    "59": 186, "60": 140, "61": 71, "62": 74, "63": 58, "64": 106,
+    "65": 184, "66": 138, "67": 325, "68": 227, "69": 97,
+}
 REQUIRED = {
     "decree", "annex", "current_wilaya_code", "wilaya_fr_jo61_heading",
     "jo61_constituency_sequence", "jo61_constituency_name_fr_verbatim",
@@ -192,6 +196,7 @@ def main() -> None:
         for row in rows
     }
     arabic_keys: set[tuple[str, str]] = set()
+    arabic_seats: dict[str, int] = defaultdict(int)
     for index, row in enumerate(arabic_rows, start=2):
         key = (row["current_wilaya_code"], row["jo61_constituency_sequence"])
         if key in arabic_keys:
@@ -202,10 +207,15 @@ def main() -> None:
             fail(f"Arabic sidecar line {index}: no French row for key {key}")
         if row["jo61_seats_to_fill"] != french["jo61_seats_to_fill"]:
             fail(f"Arabic sidecar line {index}: seat count differs from French row")
+        if not row["jo61_seats_to_fill"].isdigit():
+            fail(f"Arabic sidecar line {index}: invalid seat count")
+        arabic_seats[key[0]] += int(row["jo61_seats_to_fill"])
         if row["jo61_french_constituency_name_secondary"] != french["jo61_constituency_name_fr_verbatim"]:
             fail(f"Arabic sidecar line {index}: French secondary text changed")
         if row["jo58_current_register_code"] != french["jo58_current_register_code"]:
             fail(f"Arabic sidecar line {index}: JO58 current code differs from French crosswalk")
+        if row["jo61_source_page_locator"] != "NOT_PINNED_IN_SEARCH_EXCERPT" or row["jo61_page_locator_type"] != "NOT_PINNED_SECONDARY_SEARCH_RESULT":
+            fail(f"Arabic sidecar line {index}: do not invent printed-page locators")
         if row["jo61_official_pdf_visual_review_status"] != "NOT_VISUALLY_REVIEWED_CACHE_MISS":
             fail(f"Arabic sidecar line {index}: cannot overstate official Arabic PDF visual review")
         if row["jo61_source_page_locator"] != "NOT_PINNED_IN_SEARCH_EXCERPT" or row["jo61_page_locator_type"] != "NOT_PINNED_SECONDARY_SEARCH_RESULT":
@@ -224,6 +234,10 @@ def main() -> None:
     expected_missing_arabic = {("68", f"{sequence:02d}") for sequence in range(1, 9)}
     if missing_arabic != expected_missing_arabic:
         fail(f"expected only Wilaya 68 sequences 01-08 to lack Arabic transcription, got {sorted(missing_arabic)}")
+    if dict(arabic_seats) != EXPECTED_ARABIC_SEATS:
+        fail(f"unexpected Arabic secondary-record seat totals: {dict(arabic_seats)}")
+    if sum(arabic_seats.values()) != 1606:
+        fail(f"expected 1,606 seats represented by the 100 captured Arabic rows, got {sum(arabic_seats.values())}")
 
     print(
         "P1-35 bounded JO61 Annex II extraction: 108 French-secondary rows across 11 new Wilayas, "

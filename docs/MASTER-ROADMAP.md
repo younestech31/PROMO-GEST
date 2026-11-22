@@ -242,3 +242,6 @@ P1-35 Arabic secondary-text coverage has been expanded to 100/108 rows for the n
 
 
 The Arabic secondary-text sidecar now captures 100/108 rows under Wilayas 59–69 (1,606 seats). The only absent Arabic rows are Wilaya 68 sequences 01–08 (8 rows / 142 seats), deliberately not filled from another legal source or by translation. All Arabic strings remain secondary extraction and page locators unpinned; no official PDF visual review is claimed. Validator guards these constraints. P1-35 remains pending.
+
+
+The Arabic secondary-text sidecar preserves 100 Arabic names and separate Arabic/French seat readings. All 100 captured seat counts agree (1,606 seats); eight Arabic rows under Wilaya 68 sequences 01–08 remain missing (142 seats). No official page-image review or printed-page locator is claimed. The CI validator checks the two source columns independently and preserves this incomplete coverage.

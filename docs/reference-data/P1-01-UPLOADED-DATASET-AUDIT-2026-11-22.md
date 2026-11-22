@@ -102,3 +102,21 @@ The 20 potential variants are itemized in [P1-01-LAW26-06-NEW-WILAYA-RECONCILIAT
 The field name/value `loi_creation=26-06` is over-broad when applied to all 69 wilaya rows. Law 26-06 does provide the legal territorial-list basis for the 11 new wilayas (codes 59–69) through the amended Law 84-09 lists, but it is not the original creation instrument for all 58 pre-existing wilayas. Preserve the original-source lineage for the 58 legacy wilayas; do not treat the blanket field as proof of a creation act for each row. The upstream provenance documentation distinguishes official wilaya identifiers from the library-synthesized daira and commune identifiers: the 69 wilaya codes are government identifiers in that compilation, whereas the daira/commune sequence IDs are not official codes.
 
 Evidence limitations: JO25/2026 printed p.11 was visually inspected; its printed pp.9–10 content was text-layer-only in this pass because screenshot calls returned Cache miss. JO61 Annex II remains searchable-text-only in this pass. No candidate data, legal master-ledger row, practitioner decision, valid_from, or database value was changed.
+
+
+## 10. JO52 service-assignment scope and confirmed legal membership errors
+
+The official JO52/2026 Decree 26-253 is titled as an amendment to Executive Decree 91-306, which fixes the list of communes animated by each Daira Chief. Article 1 expressly modifies/completes that annexed list. It is not a substitute for the territorial commune-membership rules in Law 26-06 / JO25/2026.
+
+The uploaded archive's matching row counts for new Wilaya groups mask the following confirmed set errors under the controlling Law 26-06 membership lists:
+
+| Uploaded group | Statutory list | Uploaded-only names placed under this group | Statutory names missing from this group |
+|---|---|---|---|
+| Code 64 — Bou Saada (23 rows) | JO25 Article 52 bis 19 (23 communes) | Sidi Hadjeres, Maadid, M'tarfa, Maarif — these are in the M'Sila group under Article 32 | Khoubana, M'Cif, El Houamed, Djebel Messaad |
+| Code 60 — El Abiodh Sidi Cheikh (7 rows) | JO25 Article 52 bis 20 (7 communes) | Brezina, Ghassoul, Cheguig — these are in El Bayadh under Article 36 | Aïn El Orak, El Bnoud, El Mehara |
+
+Candidate row IDs are only upload-local locators: code 64 wrong-parent rows are 64-001, 64-021, 64-022 and 64-023; code 60 wrong-parent rows are 60-001, 60-002 and 60-006. Code 60 row 60-003 (Labiodh Sidi Cheikh) is a tentative label variant of El Abiodh Sidi Cheikh; do not silently canonicalize it.
+
+JO52's Annex groups the 23 statutory Bou Saada communes across the Daira-Chief assignment lists under headings 67 and 68: 13 named service assignments under heading 67 and 10 under heading 68. Heading 69's seven Daira-Chief assigned communes match Law 26-06 Article 52 bis 20. This helps explain why Decree 26-253 should be modeled as a service-assignment source and not as a one-to-one legal parent register. The statutory Article 54 transition until 31 December 2026 is context only; do not infer a per-commune valid_from date.
+
+Full source table, JO52 seat/assignment split, page locators and screenshot/cache limitations: [P1-01-JO52-LEGAL-OPERATIONAL-MEMBERSHIP-AUDIT-2026-11-22.md](P1-01-JO52-LEGAL-OPERATIONAL-MEMBERSHIP-AUDIT-2026-11-22.md). No candidate CSV row or production/database record was changed; all approvals remain pending and no import is permitted.

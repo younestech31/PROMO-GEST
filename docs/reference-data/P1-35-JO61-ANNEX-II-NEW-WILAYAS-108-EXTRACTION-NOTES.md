@@ -17,9 +17,11 @@ The page number for the 59 and 60 excerpts was not pinned by the retrieved resul
 
 ## Arabic Annex II secondary-text coverage
 
-The separate sidecar [P1-35-JO61-ANNEX-II-NEW-WILAYAS-108-ARABIC-SECONDARY-TRANSCRIPTION.csv](P1-35-JO61-ANNEX-II-NEW-WILAYAS-108-ARABIC-SECONDARY-TRANSCRIPTION.csv) preserves 100 Arabic constituency-name strings from the secondary Arabic text transcription of JO61. Coverage by Wilaya: 59 (12), 60 (8), 61 (5), 62 (4), 63 (4), 64 (6), 65 (10), 66 (8), 67 (21), 68 (15), 69 (7). The eight missing Arabic entries are specifically Wilaya 68, Annex II sequence 01–08; they remain absent rather than being filled from Law 26-06 or by translation. The 100 captured rows account for 1,606 of the 1,748 seats in this new-Wilaya subset; the missing 68/01–08 rows account for the remaining 142 seats and are not treated as Arabic transcription evidence. The sidecar links each secondary Arabic string to the French row by Wilaya heading and sequence. It now preserves Arabic-source and French-source seat values in separate columns; all 108 captured rows match on seats (1,748 seats total), while the missing eight rows account for 142 additional seats. This is a source consistency check, not independent proof of legal row identity or a practitioner decision.
+The separate sidecar [P1-35-JO61-ANNEX-II-NEW-WILAYAS-108-ARABIC-SECONDARY-TRANSCRIPTION.csv](P1-35-JO61-ANNEX-II-NEW-WILAYAS-108-ARABIC-SECONDARY-TRANSCRIPTION.csv) preserves 108 Arabic constituency-name strings from secondary Arabic text excerpts of JO61. Coverage by Wilaya: 59 (12), 60 (8), 61 (5), 62 (4), 63 (4), 64 (6), 65 (10), 66 (8), 67 (21), 68 (23), 69 (7). A second captured Arabic issue excerpt supplied Wilaya 68 sequences 01–08, completing all 108 Wilaya/sequence keys.
 
-All Arabic rows are explicitly classified as secondary text captured but not official-image-verified. Printed-page locators are left as NOT_PINNED_IN_SEARCH_EXCERPT for all Arabic rows. No official Arabic JO61 image or binary rendering was reviewed. The two French secondary transcription variants remain pending. This improves bilingual evidence coverage but does not complete the Arabic Annex II transcript or close P1-35.
+Arabic-source and French-source seat counts are stored in separate columns. They agree on 108/108 rows and total 1,748 seats. The Arabic rows are joined to French secondary rows by Wilaya heading and Annex II sequence; this is a positional cross-reference, not independent proof of legal identity or a practitioner decision.
+
+All Arabic entries are explicitly classified as secondary text, not official-image-verified. Arabic printed-page locators remain `NOT_PINNED_IN_SEARCH_EXCERPT`; no official Arabic JO61 image or binary rendering was visually reviewed. The French secondary transcription still has two unresolved variants (W64 `Hammadia/Hamadia`; W67 `El Ouin et/El Ouinet`). This improves bilingual secondary-text coverage but does not complete official-source verification or close P1-35.
 
 ## Reconciled counts
 
@@ -56,7 +58,7 @@ The 1,748 figure is the sum of seats in this bounded eleven-Wilaya Annex II exce
 
 1. Obtain locally renderable official JO61 French and Arabic PDF bytes; confirm the exact GitHub blobs, sizes and SHA-256 values before transcription.
 2. Visually review official printed pp.32–34 for new-Wilaya entries and establish the exact printed page for groups 59 and 60.
-3. Complete the Arabic Annex II transcription, especially Wilaya 68 sequences 01–08; then compare the preserved Arabic rows against the official Arabic JO61 page images and pair each Arabic/French row, retaining source spellings and parser discrepancies.
+3. Visually review the official Arabic JO61 Annex II pages and compare all 108 captured Arabic secondary strings against the official page images, pinning printed-page locators and retaining source spellings and parser discrepancies.
 4. Resolve `Hammadia/Hamadia` and `El Ouin et/El Ouinet` against both official page images; do not decide from a third-party parser.
 5. Continue the other 58 Wilaya groups. Interpret every discrepancy using Article 124; do not assume one row equals one legal commune.
 6. Keep all 1,541 P1-01 practitioner sign-offs pending until the full legal evidence chain and qualified reviewer decision are recorded.

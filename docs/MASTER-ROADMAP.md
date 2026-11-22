@@ -302,3 +302,9 @@ PR #206 adds a six-group comparison of an Arabic secondary searchable-PDF text m
 - Article 124 of Organic Law 21-01 prevents assuming that one electoral constituency row is one legal commune.
 - All 1,541 P1-01 practitioner sign-offs remain PENDING; W30-R007 remains NEEDS_EVIDENCE; no valid_from has been inferred; no import is authorized; P1-01 and P1-35 remain In Progress/Pending; P1-02 remains Blocked; `communesCount=0`.
 
+
+
+
+## P1-35 — selected Arabic aggregate sample expanded — 22 November 2026
+
+Expanded the Arabic secondary text aggregate comparison from 6 to 14 selected Annex II headings (01–09, 29, 36, 39, 49, 58). Newly checked W02–W09 reported APC seats: 679, 220, 495, 855, 816, 382, 173, 531. Selected final-sequence indexes and seat totals match the French secondary group index. Some Arabic tables are interleaved in text extraction, and the CSV explicitly preserves split-line locators. No row-level bilingual identity, official-image review or legal approval is implied.

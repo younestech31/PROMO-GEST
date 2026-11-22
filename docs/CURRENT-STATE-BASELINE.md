@@ -1,3 +1,13 @@
+## Separate candidate archive intake — exact artifact identity and limits — 22 November 2026
+
+A second, distinct candidate ZIP was supplied and audited: SHA-256 `bd8ae8914b1d08cf4ab06c3e01158d9880d7c2c6c811cf4ea756272f0d92fa81`. It is not the earlier `dd35a4f9f44117c4f0fda7bc34277aa98b6cb874bed975f18c3c38665d1b79ae` artifact corrected in PR #200. **The PR #200 finding that ten of eleven new-Wilaya code/name pairs were wrong applies only to the earlier fingerprint; this second archive's 59–69 mapping is correct.**
+
+The second archive reproducibly rebuilds in isolation: 31 validation checks pass; generated CSVs and validation report match the supplied files; SQLite integrity is `ok` and foreign-key check is empty. Counts are 69 Wilayas, 538 Dairas, 1,541 Communes and 119 change rows. These are structural/reproducibility results, not legal approval.
+
+The second archive still cannot be imported. Its 934 rows cite Decree 91-306 and 404 cite Decree 26-253, instruments whose relevant scope is Daira-Chief service assignment rather than a complete statutory Commune→Wilaya membership register. The model has no separate operational assignment relation. It also asserts 2026-04-05 for all 108 commune moves and all 11 Wilaya creations; those candidate dates are not qualified per-row legal effective dates. Original JORADP PDFs are absent, so PDF hashes in `texts.csv` were not independently verified. Full detail: [P1-01 second candidate archive audit](reference-data/P1-01-SECOND-CANDIDATE-ARCHIVE-AUDIT-2026-11-22.md).
+
+P1-01 remains In Progress/Pending; P1-35 remains In Progress/Pending; P1-02 remains Blocked; all 1,541 practitioner sign-offs remain PENDING; W30-R007 remains NEEDS_EVIDENCE; `communesCount = 0`; no commune import.
+
 ## Official 2026 territorial reference intake — JO25 + JO61 — 22 November 2026
 
 - **Legal total:** official JO25/2026 Law 26-06, Article 3, printed page 4, explicitly sets **69 wilayas / 1,541 communes**. Both French and Arabic page 4 were visually reviewed: [FR PDF](https://www.joradp.dz/FTP/jo-francais/2026/F2026025.pdf) / [AR PDF](https://www.joradp.dz/FTP/jo-arabe/2026/A2026025.pdf).

@@ -184,3 +184,12 @@ PRs #99, #100 and #103 are merged documentation-only evidence slices; the six-ro
 ## Latest JO44 Arabic image evidence checkpoint — 19 November 2026
 
 **Historical 19 November page-map checkpoint (superseded by PR #155 / main CI #1029):** main `84408377c8de7a3995b82dfba55eda15ab2806dd`; CI #992 passed on that earlier SHA. The repository now pins 29 consecutive Arabic `A1985044.PDF` page images (PDF indices 12–40; printed pages 1612–1640) by Git blob SHA-1. The new page manifest, 1,541-row page locator and 48-Wilaya count control are validated in CI by `scripts/validate-p1-01-jo44-arabic-page-images.py`. The printed Wilaya counts match the master-ledger row counts 48/48 and sum to 1,541. **This establishes source-page availability and page-level code-range locators, not row-level Arabic transcription.** All row locators remain `PAGE_IMAGE_MAPPED_NOT_ROW_TRANSCRIBED`; no legal identity or effective-date decision is inferred. W36 duplicate 3624, W16 1600, all sign-offs PENDING, no import, `communesCount=0`, P1-02 Blocked.
+
+
+## P1-01 / P1-35 bounded 2026 statutory source checkpoint — 22 November 2026
+
+PR [#197](https://github.com/younestech31/PROMO-GEST/pull/197) is merged at `38f2e5bbd9d85d2a5dbaa4df1e9b3484a930cd34`; exact post-merge CI #45032141029 passed 3/3 jobs and CodeQL #45032141065 passed 2/2. It records the provenance audit for the uploaded 69/591/1,541 candidate archive.
+
+A subsequent JO25/2026 statutory cross-check of the 11 new-wilaya lists found 108 candidate rows, with all 11 per-wilaya counts matching statutory totals, but a first-pass name comparison has 81 strict normalized matches, 20 potential variants, and 7 legal-list-only plus 7 uploaded-only names concentrated in Bou Saada and El Abiodh Sidi Cheikh. This is bounded evidence, not row approval or closure of P1-01/P1-35. Full findings are in `docs/reference-data/P1-01-LAW26-06-NEW-WILAYA-RECONCILIATION-2026-11-22.md`.
+
+The new-wilaya electoral tables in JO61/2026 are not a one-to-one legal commune register under Organic Law 21-01 Article 124. Continue P1-35 for complete bilingual Annex II extraction/normalization, all 69-wilaya reconciliation, and legal interpretation; keep P1-01 In Progress/Pending and P1-02 Blocked. No commune data import or runtime/database change. All practitioner sign-offs remain pending and `communesCount=0`.

@@ -2586,6 +2586,9 @@ public sealed partial class PostgresEndToEndTests : IClassFixture<PostgreSql18In
         Assert.DoesNotContain(previewCookies!, value =>
             value.StartsWith("promogest_session=", StringComparison.Ordinal) &&
             !value.StartsWith("promogest_session=;", StringComparison.Ordinal));
+
+        await AttachCsrfTokenAsync(previewClient);
+        Assert.Equal(HttpStatusCode.OK, (await previewClient.GetAsync("/api/auth/me")).StatusCode);
     }
 
     [Fact]

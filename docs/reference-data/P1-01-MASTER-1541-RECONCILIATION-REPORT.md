@@ -338,3 +338,10 @@ A second ZIP was supplied after the earlier candidate archive audit. Its SHA-256
 The second archive rebuilds reproducibly with 31/31 checks passing and SQLite integrity/FK checks clean. It remains candidate-only because its 91-306/26-253 source attributions conflate Daira-Chief service lists with legal territorial membership, it has no separate operational assignment relation, it asserts 2026-04-05 as the effective boundary for all 108 commune moves without qualified legal determination, and its original JORADP PDF binaries are absent. See [the artifact-specific audit](P1-01-SECOND-CANDIDATE-ARCHIVE-AUDIT-2026-11-22.md).
 
 No candidate data or master-ledger row was changed. All practitioner approvals remain PENDING; no valid_from was accepted; no commune import; P1-01/P1-35 In Progress/Pending; P1-02 Blocked.
+
+
+## Second candidate archive — four-digit Commune-code lineage conflict — 22 November 2026
+
+The second archive correctly maps the 11 new Wilayas to codes 59–69, but its 108 moved Commune rows retain legacy four-digit codes under their former Wilayas (108/108 old prefixes; 0/108 new prefixes), with empty `previous_codes` arrays. Decree 85-20 Articles 3–4 require the first two digits to identify the attached Wilaya and a new code on transfer. The official JO58/2026 108-row extract supplies current 59xx–69xx codes. The archive's 11 `expected_2026` checks validate the legacy code sets, not the JO58 codes. This is an unresolved critical code-lineage issue; no import or automatic remapping. Full evidence: [second archive audit](P1-01-SECOND-CANDIDATE-ARCHIVE-AUDIT-2026-11-22.md).
+
+No canonical code or effective date is accepted. All practitioner sign-offs remain PENDING; P1-01/P1-35 In Progress/Pending; P1-02 Blocked; `communesCount=0`.

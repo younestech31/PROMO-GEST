@@ -83,3 +83,13 @@ The 1,748 figure is the sum of seats in this bounded eleven-Wilaya Annex II exce
 6. Keep all 1,541 P1-01 practitioner sign-offs pending until the full legal evidence chain and qualified reviewer decision are recorded.
 
 **Disposition:** P1-35 remains In Progress / Pending. P1-01 remains In Progress / Pending. P1-02 remains Blocked. No JO44 ledger values, legal parentage, seats, `valid_from`, database records or application behavior were changed; no commune import is authorized.
+
+### Legacy Wilaya-heading inventory — secondary text control (01–58), 22 November 2026
+
+A first-pass inventory was captured from the searchable French JO61 text mirror for the earlier 58 Wilaya headings. It records each Annex II heading title, the final numbered constituency sequence shown for that heading, and the table's stated total APC seats. It is deliberately a **group index**, not a 1,433-row transcription: the ending sequence number is not represented as a row-by-row independently recounted population. All exact source line locators and printed page locators remain unpinned, all Arabic row-level entries remain unextracted in this slice, and no page images from either the mirror or official JORADP PDF were visually reviewed.
+
+Aggregate controls across headings 01–58: sum of the reported final sequence numbers = **1,433**; sum of the reported table seat totals = **24,827**. Adding the existing bounded new-Wilaya sidecar (headings 59–69: 108 rows and 1,748 seats) produces numeric controls of **1,541** for the sum of ending sequence numbers and **26,575** reported APC seats. The 1,541 equality with JO25's legal commune total is only an aggregate coincidence/control: Article 124 of Organic Law 21-01 permits electoral constituencies comprising part of a commune, one commune, or multiple communes. This does not establish one-to-one identity, legal parentage, or commune coverage.
+
+Captured group indices include Mascara (heading 29: final sequence 47, 753 seats), El Oued (39: 22, 414), Timimoun (49: 10, 160), and El Tarf (36: final sequence 24; entry 17 Asfour is present in the indexed text, 384 seats). The machine-readable source is P1-35-JO61-ANNEX-II-LEGACY-WILAYA-GROUP-INDEX-01-58.csv; its validator intentionally rejects any upgrade of the secondary evidence, row-level, Arabic, visual, or legal status.
+
+Source: [Kanonix-hosted searchable French JO61 text mirror](https://kanonix.app/journals/b0e6f98d-a4f7-43aa-9085-f9ed002b33c9/pdf?download=1). This is a third-party searchable-text mirror, not the official JORADP PDF. Attempts to render the mirror's PDF pages returned Cache miss; official JORADP page-image review remains outstanding.

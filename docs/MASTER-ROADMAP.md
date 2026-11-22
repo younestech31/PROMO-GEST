@@ -308,3 +308,13 @@ PR #206 adds a six-group comparison of an Arabic secondary searchable-PDF text m
 ## P1-35 — selected Arabic aggregate sample expanded — 22 November 2026
 
 Expanded the Arabic secondary text aggregate comparison from 6 to 14 selected Annex II headings (01–09, 29, 36, 39, 49, 58). Newly checked W02–W09 reported APC seats: 679, 220, 495, 855, 816, 382, 173, 531. Selected final-sequence indexes and seat totals match the French secondary group index. Some Arabic tables are interleaved in text extraction, and the CSV explicitly preserves split-line locators. No row-level bilingual identity, official-image review or legal approval is implied.
+
+
+
+## PR #208 merged — exact post-merge evidence and 14-group Arabic aggregate sample — 22 November 2026
+
+PR #208 merged at `9525f53645c3c0cff26711d954a2118a499af638`; the live `main` ref matches this SHA. Exact PR-head checks on `e61ac4af20740e381cb52e7875d6100c93129bc6`: CI [#45052605992](https://github.com/younestech31/PROMO-GEST/actions/runs/45052605992) passed 3/3 and CodeQL [#45052606119](https://github.com/younestech31/PROMO-GEST/actions/runs/45052606119) passed 2/2. Exact merge-SHA push checks: CI [#45053078819](https://github.com/younestech31/PROMO-GEST/actions/runs/45053078819) passed 3/3 (Frontend, Windows, .NET 10/PostgreSQL 18); CodeQL [#45053078644](https://github.com/younestech31/PROMO-GEST/actions/runs/45053078644) passed 2/2 (C#, JavaScript/TypeScript). Both are completed `event=push` runs on `main`, with exact `head_sha` equal to the merge SHA.
+
+The selected Arabic secondary group aggregate sample now covers 14 Annex II headings (01–09, 29, 36, 39, 49, 58). The newly added W02–W09 final-sequence / stated-seat values matching the French secondary group index are: W02 35/679; W03 12/220; W04 29/495; W05 53/855; W06 52/816; W07 22/382; W08 11/173; W09 25/531. Exact Arabic source line ranges and split-column/continued-table classifications are enforced by `scripts/validate-p1-35-jo61-arabic-legacy-seat-sample.py`.
+
+This remains a **selected aggregate comparison of two secondary text extracts**. It is not a row-level Arabic/French constituency-name crosswalk, legal commune identity/parentage decision, practitioner approval, or official page-image verification. The remaining 55 headings are not in the Arabic aggregate sample. Official JO61 Annex II images have still not been visually reviewed. Article 124 prevents a one-to-one constituency-to-commune assumption. P1-35 and P1-01 remain In Progress/Pending; P1-02 remains Blocked; no `valid_from`, import, or master-ledger mutation.

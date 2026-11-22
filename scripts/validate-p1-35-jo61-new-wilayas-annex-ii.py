@@ -169,7 +169,8 @@ def main() -> None:
 
     arabic_required = {
         "current_wilaya_code", "jo61_constituency_sequence",
-        "jo61_constituency_name_ar_secondary_verbatim", "jo61_seats_to_fill",
+        "jo61_constituency_name_ar_secondary_verbatim",
+        "jo61_seats_to_fill_fr_secondary", "jo61_seats_to_fill_ar_secondary",
         "jo61_secondary_transcription_source", "jo61_secondary_source_url",
         "jo61_source_page_locator", "jo61_page_locator_type",
         "jo61_official_arabic_pdf_url", "jo61_official_pdf_visual_review_status",
@@ -205,11 +206,13 @@ def main() -> None:
         french = french_by_key.get(key)
         if french is None:
             fail(f"Arabic sidecar line {index}: no French row for key {key}")
-        if row["jo61_seats_to_fill"] != french["jo61_seats_to_fill"]:
-            fail(f"Arabic sidecar line {index}: seat count differs from French row")
-        if not row["jo61_seats_to_fill"].isdigit():
-            fail(f"Arabic sidecar line {index}: invalid seat count")
-        arabic_seats[key[0]] += int(row["jo61_seats_to_fill"])
+        if row["jo61_seats_to_fill_fr_secondary"] != french["jo61_seats_to_fill"]:
+            fail(f"Arabic sidecar line {index}: independent French seat reading differs from French row")
+        if not row["jo61_seats_to_fill_ar_secondary"].isdigit():
+            fail(f"Arabic sidecar line {index}: invalid Arabic-source seat count")
+        if row["jo61_seats_to_fill_ar_secondary"] != row["jo61_seats_to_fill_fr_secondary"]:
+            fail(f"Arabic sidecar line {index}: Arabic and French source seat counts differ")
+        arabic_seats[key[0]] += int(row["jo61_seats_to_fill_ar_secondary"])
         if row["jo61_french_constituency_name_secondary"] != french["jo61_constituency_name_fr_verbatim"]:
             fail(f"Arabic sidecar line {index}: French secondary text changed")
         if row["jo58_current_register_code"] != french["jo58_current_register_code"]:

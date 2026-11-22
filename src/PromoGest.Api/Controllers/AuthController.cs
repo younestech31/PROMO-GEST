@@ -54,6 +54,15 @@ public sealed class AuthController : ControllerBase
 
         var requireHttps = _configuration.GetValue<bool>("Security:RequireHttpsCookies", true);
         var useHostCookie = SessionCookieDefaults.UsesHostPrefix(HttpContext, _environment);
+        if (useHostCookie &&
+            Request.Cookies.TryGetValue(SessionCookieDefaults.CookieName, out var previousLegacyToken) &&
+            !string.IsNullOrWhiteSpace(previousLegacyToken) &&
+            !string.Equals(previousLegacyToken, result.OpaqueSessionToken, StringComparison.Ordinal))
+        {
+            // Retire the pre-prefix server-side session when the user next signs in.
+            await _authService.LogoutAsync(previousLegacyToken, metadata, ct);
+        }
+
         Response.Cookies.Append(
             SessionCookieDefaults.GetCookieName(HttpContext, _environment),
             result.OpaqueSessionToken,

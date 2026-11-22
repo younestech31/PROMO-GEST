@@ -43,6 +43,8 @@ jobs:
         run: python3 scripts/validate-p1-35-jo61-new-wilayas-annex-ii.py
       - name: Validate JO61 legacy Wilaya group index 01-58 (secondary source only)
         run: python3 scripts/validate-p1-35-jo61-legacy-group-index.py
+      - name: Validate selected Arabic legacy JO61 aggregate cross-checks (secondary only)
+        run: python3 scripts/validate-p1-35-jo61-arabic-legacy-seat-sample.py
       - name: Verify reproducible practitioner review queue (not a seed)
         run: python3 scripts/prepare-p1-01-review.py
       - name: Validate independent commune decision book (no sign-off)

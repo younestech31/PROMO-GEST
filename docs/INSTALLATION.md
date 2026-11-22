@@ -16,6 +16,37 @@
   - Allow inbound LAN TCP `443` (Caddy local HTTPS).
   - Keep ASP.NET Core Kestrel (`127.0.0.1:5080`) and PostgreSQL (`127.0.0.1:5432`) bound exclusively to loopback; do **not** open ports `5080` or `5432` to the LAN or WAN.
 
+## 2A. Mandatory disk encryption at rest
+
+PROMO GEST stores personal and commercially sensitive information: identity documents, customer contact details, project and payment records, local database files, Data Protection keys, logs, and backup material. **Before initializing a production organization, enable full-volume encryption on every server volume that can contain this data.** File permissions and encrypted backup archives do not replace full-volume encryption.
+
+### Windows
+
+- Use BitLocker Drive Encryption for the operating-system volume and every fixed data volume containing PostgreSQL data, `C:\PromoGest\storage`, Data Protection keys, application configuration, logs, temporary upload/work files, exports, or local backup files.
+- Enable BitLocker protection and confirm that each relevant volume reports `FullyEncrypted`, `ProtectionStatus = On`, and `EncryptionPercentage = 100`. Record the drive letter, volume label, encryption method, and verification date in the installation acceptance record.
+- Encrypt removable offsite disks with BitLocker To Go. For NAS or network backup targets, require storage-side encryption at rest and restrict access to the server/maintenance identities; SMB/TLS transport encryption alone is not at-rest encryption.
+- Store BitLocker recovery material in the organization's separate, access-controlled recovery process. Do not save recovery keys only on the PROMO GEST server, on the encrypted volume itself, or beside the backup media.
+
+### Linux
+
+- Use LUKS2 full-disk encryption for the operating-system disk and every separately mounted data device that can contain PostgreSQL `PGDATA`, document storage, Data Protection keys, application configuration, logs, temporary files, exports, or local backups.
+- Ensure swap and any persistent temporary/work volumes are encrypted too. For NAS or network backup targets, require server-side storage encryption at rest and restrict access; transport encryption by itself is insufficient.
+- Keep LUKS recovery key material/passphrases in the organization's independent, access-controlled recovery process. Do not keep the only recovery secret on the PROMO GEST host or on the encrypted media it unlocks.
+- Document the boot/unlock procedure. For unattended servers, explicitly test the approved console/TPM/remote-unlock recovery design before relying on unattended reboot; do not weaken recovery protection merely to avoid an operator unlock step.
+
+### Installation acceptance — operator must verify on the actual host
+
+- [ ] Inventory every fixed, removable, and network-mounted volume used by the database, documents, keys, configuration, logs, temporary work, exports, and backups.
+- [ ] Confirm encryption is enabled and complete on each applicable Windows BitLocker or Linux LUKS2 volume; attach the command output or an approved evidence record without exposing recovery secrets.
+- [ ] Confirm offsite removable media or NAS storage has its own at-rest encryption and access controls.
+- [ ] Confirm recovery keys/passphrases are stored separately from the host and backup media, and that authorized recovery staff can retrieve them.
+- [ ] Perform a controlled reboot/unlock and verify `/health/ready`, database access, document access, and Data Protection functionality.
+- [ ] Record the host, volume inventory, encryption state, recovery owner, and verification date in the signed installation checklist.
+
+Do not enable BitLocker/LUKS by improvising on an existing production server. Plan the change, take and verify a recoverable backup first, protect recovery material, and follow the platform's supported encryption procedure. Losing the recovery key can make the database, customer documents, and Data Protection payloads permanently inaccessible.
+
+Full-volume encryption protects data when a device or disk is powered off or otherwise locked. It does not protect a running, already-unlocked server from malware, a compromised administrator, or unauthorized access through the live application. Keep the application ACLs, least-privilege database roles, HTTPS, and encrypted offsite backup controls in place as separate layers.
+
 ## 3. Step 1 — Provision PostgreSQL 18
 1. Install PostgreSQL 18 locally binding `listen_addresses = '127.0.0.1'` (`deploy/postgresql/postgresql.recommended.conf`).
 2. Edit `deploy/postgresql/00-init-db.sql` to set independent strong local passwords for both `promogest_owner` and `promogest_app`. The owner is deliberately `NOCREATEDB`/`NOCREATEROLE`; the `postgres` provisioning identity creates the database, while the owner only owns application objects and runs migrations. The app identity has no database/schema creation or migration privileges.

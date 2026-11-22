@@ -85,3 +85,20 @@ No runtime, API, schema, migration, production data, or commune master ledger ro
 - [Upstream data policy](https://github.com/el-amin-dev/algeria-wilayas-communes/blob/main/docs/DATA_POLICY.md)
 - [JORADP JO52/2026 — Decree 26-253](https://www.joradp.dz/FTP/jo-arabe/2026/A2026052.pdf)
 - [JORADP JO25/2026 — Law 26-06](https://www.joradp.dz/FTP/jo-arabe/2026/A2026025.pdf)
+
+
+## 9. Statutory cross-check of the 11 new wilayas — JO25/2026
+
+The 108 uploaded commune rows assigned to codes 59–69 were compared by wilaya name with Law 26-06's amended Law 84-09 Article 52 bis items 10–20 (official JO25/2026, printed pp.9–11). Each of the 11 row counts matches the statutory count; the aggregate is 108/108. This does not prove name identity.
+
+Strict normalized comparison of French names produced 81 exact matches, 20 potential spelling/transliteration/order variants, and two substantive unresolved sets:
+- Bou Saada (uploaded code 64, statutory list item 19): statutory-only Khoubana, M'Cif, El Houamed, Djebel Messaad; upload-only M'tarfa, Maadid, Maarif, Sidi Hadjeres.
+- El Abiodh Sidi Cheikh (uploaded code 60, statutory list item 20): statutory-only Ain El Orak, El Bnoud, El Meharra; upload-only Brezina, Cheguig, Ghassoul. “El Abiodh Sidi Cheikh” vs “Labiodh Sidi Cheikh” remains a tentative alias candidate.
+
+The 20 potential variants are itemized in [P1-01-LAW26-06-NEW-WILAYA-RECONCILIATION-2026-11-22.md](P1-01-LAW26-06-NEW-WILAYA-RECONCILIATION-2026-11-22.md); do not silently normalize them into accepted canonical values. JO61 Annex II row counts for the same wilaya names are also 108, but its headings use electoral sequence numbers, not the uploaded administrative wilaya_code sequence; Organic Law 21-01 Article 124 prevents assuming a one-to-one legal commune/constituency relationship.
+
+### Clarification to the loi_creation field finding
+
+The field name/value `loi_creation=26-06` is over-broad when applied to all 69 wilaya rows. Law 26-06 does provide the legal territorial-list basis for the 11 new wilayas (codes 59–69) through the amended Law 84-09 lists, but it is not the original creation instrument for all 58 pre-existing wilayas. Preserve the original-source lineage for the 58 legacy wilayas; do not treat the blanket field as proof of a creation act for each row. The upstream provenance documentation distinguishes official wilaya identifiers from the library-synthesized daira and commune identifiers: the 69 wilaya codes are government identifiers in that compilation, whereas the daira/commune sequence IDs are not official codes.
+
+Evidence limitations: JO25/2026 printed p.11 was visually inspected; its printed pp.9–10 content was text-layer-only in this pass because screenshot calls returned Cache miss. JO61 Annex II remains searchable-text-only in this pass. No candidate data, legal master-ledger row, practitioner decision, valid_from, or database value was changed.

@@ -634,6 +634,17 @@ public sealed partial class PostgresEndToEndTests : IClassFixture<PostgreSql18In
         var initializeError = await initialize.Content.ReadFromJsonAsync<ApiErrorResponse>();
         Assert.Equal("SETUP_BOOTSTRAP_FORBIDDEN", initializeError!.Code);
 
+        // Five bootstrap attempts per client IP are allowed in the one-minute window.
+        // The sixth request must be rejected before the endpoint can process setup data.
+        for (var attempt = 1; attempt < 5; attempt++)
+        {
+            var retry = await client.PostAsJsonAsync("/api/setup/initialize", ValidInitRequest());
+            Assert.Equal(HttpStatusCode.Forbidden, retry.StatusCode);
+        }
+
+        var rateLimitedInitialize = await client.PostAsJsonAsync("/api/setup/initialize", ValidInitRequest());
+        Assert.Equal(HttpStatusCode.TooManyRequests, rateLimitedInitialize.StatusCode);
+
         var reference = await client.GetAsync("/api/reference/administrative-units");
         Assert.Equal(HttpStatusCode.OK, reference.StatusCode);
 

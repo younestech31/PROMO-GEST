@@ -151,3 +151,12 @@ No row-level valid_from is approved by this audit.
 - [Upstream data provenance — algeria-wilayas-communes](https://github.com/el-amin-dev/algeria-wilayas-communes/blob/main/docs/DATA_PROVENANCE.md)
 - [PROMO-GEST ADR 0010 — Versioned, effective-dated Algerian administrative references](../ADR/0010-versioned-algerian-administrative-reference-data.md)
 - [PROMO-GEST reference-data governance](../REFERENCE-DATA-GOVERNANCE.md)
+
+
+## 9. Correct official Wilaya codes vs the user archive's local identifiers
+
+The earlier sections use values such as upload code 64 for the group labelled Bou Saada and upload code 60 for the group labelled El Abiodh Sidi Cheikh. These are archive-local keys only. The official 2026 codes established by Decree 26-206 (JO40/2026 Art.1) and repeated in the JO58/2026 code table are Bou Saada **68** and El Abiodh Sidi Cheikh **69**. Ksar El Boukhari is official code 67. The upload assigns these same names to local values 64, 60 and 66, respectively.
+
+In fact, only Aflou/59 matches among the 11 new-Wilaya code/name pairs in the uploaded wilayas.csv. The other ten mappings are permuted (full table in [P1-01-UPLOADED-WILAYA-CODE-MAPPING-CORRECTION-2026-11-22.md](P1-01-UPLOADED-WILAYA-CODE-MAPPING-CORRECTION-2026-11-22.md)). Consequently, uploaded locators such as 64-001 and 60-006 are not official commune IDs and must never be interpreted as valid Wilaya-code prefixes. The name-set membership exceptions documented above remain valid by matching the Wilaya name against Law 26-06; the upload-local numeric field is not a source of legal parentage.
+
+The official new-Wilaya code sequence is: 59 Aflou, 60 Barika, 61 El Kantara, 62 Bir El Ater, 63 El Aricha, 64 Ksar Chellala, 65 Aïn Oussara, 66 Messaad, 67 Ksar El Boukhari, 68 Bou Saada, 69 El Abiodh Sidi Cheikh. Sources: [Decree 26-206 / JO40](https://www.joradp.dz/FTP/jo-francais/2026/F2026040.pdf); [JO58/2026 code annex, printed p.9](https://www.joradp.dz/FTP/JO-FRANCAIS/2026/F2026058.pdf).

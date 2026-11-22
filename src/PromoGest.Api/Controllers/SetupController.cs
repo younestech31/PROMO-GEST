@@ -58,7 +58,10 @@ public sealed class SetupController : ControllerBase
 
             try
             {
-                await _setupService.RecordBootstrapDeniedAsync(deniedMetadata, ct);
+                // Do not let a client abort cancel a security-audit write. Bound the
+                // independent persistence attempt so a database stall cannot pin the request.
+                using var auditCts = new CancellationTokenSource(TimeSpan.FromSeconds(5));
+                await _setupService.RecordBootstrapDeniedAsync(deniedMetadata, auditCts.Token);
             }
             catch (Exception ex)
             {

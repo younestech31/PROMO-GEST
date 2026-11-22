@@ -106,6 +106,7 @@ public sealed class AuthController : ControllerBase
         }
 
         HttpContext.User = new ClaimsPrincipal(new ClaimsIdentity());
+        var requireHttps = _configuration.GetValue<bool>("Security:RequireHttpsCookies", true);
         SessionClaimsFactory.IssueCsrfToken(HttpContext, _antiforgery, requireHttps);
         return NoContent();
     }
@@ -144,6 +145,7 @@ public sealed class AuthController : ControllerBase
         }
 
         HttpContext.User = new ClaimsPrincipal(new ClaimsIdentity());
+        var requireHttps = _configuration.GetValue<bool>("Security:RequireHttpsCookies", true);
         SessionClaimsFactory.IssueCsrfToken(HttpContext, _antiforgery, requireHttps);
 
         return NoContent();

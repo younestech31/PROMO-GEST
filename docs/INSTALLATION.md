@@ -22,7 +22,7 @@ PROMO GEST stores personal and commercially sensitive information: identity docu
 
 ### Windows
 
-- Use BitLocker Drive Encryption for the operating-system volume and every fixed data volume containing PostgreSQL data, `C:\\PromoGest\\storage`, Data Protection keys, application configuration, logs, temporary upload/work files, exports, or local backup files.
+- Use BitLocker Drive Encryption for the operating-system volume and every fixed data volume containing PostgreSQL data, `C:\PromoGest\storage`, Data Protection keys, application configuration, logs, temporary upload/work files, exports, or local backup files.
 - Enable BitLocker protection and confirm that each relevant volume reports `FullyEncrypted`, `ProtectionStatus = On`, and `EncryptionPercentage = 100`. Record the drive letter, volume label, encryption method, and verification date in the installation acceptance record.
 - Encrypt removable offsite disks with BitLocker To Go. For NAS or network backup targets, require storage-side encryption at rest and restrict access to the server/maintenance identities; SMB/TLS transport encryption alone is not at-rest encryption.
 - Store BitLocker recovery material in the organization's separate, access-controlled recovery process. Do not save recovery keys only on the PROMO GEST server, on the encrypted volume itself, or beside the backup media.

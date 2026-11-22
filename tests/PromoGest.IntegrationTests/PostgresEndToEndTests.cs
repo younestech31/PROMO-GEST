@@ -645,6 +645,29 @@ public sealed partial class PostgresEndToEndTests : IClassFixture<PostgreSql18In
         var rateLimitedInitialize = await client.PostAsJsonAsync("/api/setup/initialize", ValidInitRequest());
         Assert.Equal(HttpStatusCode.TooManyRequests, rateLimitedInitialize.StatusCode);
 
+        // Every request that reaches the bootstrap guard is persisted as an append-only
+        // security audit event. The sixth request is rejected by the limiter before the
+        // controller runs, so it must not create a sixth denial event.
+        using (var auditScope = factory.Services.CreateScope())
+        {
+            var db = auditScope.ServiceProvider.GetRequiredService<AppDbContext>();
+            var deniedEvents = await db.AuditLogs
+                .AsNoTracking()
+                .Where(entry => entry.EventType == "SETUP_BOOTSTRAP_DENIED")
+                .OrderBy(entry => entry.OccurredAtUtc)
+                .ToListAsync();
+
+            Assert.Equal(5, deniedEvents.Count);
+            Assert.All(deniedEvents, entry =>
+            {
+                Assert.Null(entry.ActorUserId);
+                Assert.Equal("anonymous", entry.ActorUsername);
+                Assert.Equal(AuditSeverity.Security, entry.Severity);
+                Assert.Equal("192.0.2.25", entry.IpAddress);
+                Assert.DoesNotContain("test-only-bootstrap-token", entry.Summary);
+            });
+        }
+
         var reference = await client.GetAsync("/api/reference/administrative-units");
         Assert.Equal(HttpStatusCode.OK, reference.StatusCode);
 

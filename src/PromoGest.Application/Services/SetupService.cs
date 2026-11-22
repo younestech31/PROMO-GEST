@@ -44,6 +44,31 @@ public sealed class SetupService
             org.DefaultLanguage);
     }
 
+    public async Task RecordBootstrapDeniedAsync(
+        RequestMetadata metadata,
+        CancellationToken ct = default)
+    {
+        await _auditWriter.WriteAsync(
+            AuditLog.Record(
+                _clock.UtcNow,
+                actorUserId: null,
+                actorUsername: "anonymous",
+                eventType: "SETUP_BOOTSTRAP_DENIED",
+                severity: AuditSeverity.Security,
+                targetEntityType: "Installation",
+                targetEntityId: null,
+                summary: "First-run setup initialization was rejected because bootstrap authorization was missing or invalid.",
+                metadataJson: null,
+                ipAddress: metadata.IpAddress,
+                userAgent: metadata.UserAgent),
+            ct);
+
+        // The denial is outside the initialization transaction, so commit the audit
+        // row explicitly. If persistence fails the API controller still returns 403
+        // and emits an operational error without exposing internal database details.
+        await _installationRepository.SaveChangesAsync(ct);
+    }
+
     public async Task<InitializeInstallationResponse> InitializeAsync(
         InitializeInstallationRequest request,
         RequestMetadata metadata,

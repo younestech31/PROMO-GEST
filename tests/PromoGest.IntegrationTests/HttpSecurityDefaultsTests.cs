@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.HttpsPolicy;
+using Microsoft.AspNetCore.Http.Metadata;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Server.Kestrel.Core;
 using PromoGest.Api.Controllers;
@@ -22,7 +23,7 @@ public sealed class HttpSecurityDefaultsTests
         var uploadMethod = typeof(ProjectDocumentsController).GetMethod(nameof(ProjectDocumentsController.Upload));
         Assert.NotNull(uploadMethod);
         var requestLimit = Assert.Single(uploadMethod!.GetCustomAttributes(typeof(RequestSizeLimitAttribute), inherit: true));
-        Assert.Equal(26L * 1024 * 1024, Assert.IsType<RequestSizeLimitAttribute>(requestLimit).Bytes);
+        Assert.Equal(26L * 1024 * 1024, Assert.IsAssignableFrom<IRequestSizeLimitMetadata>(requestLimit).MaxRequestBodySize);
         Assert.True(options.Limits.MaxRequestBodySize > 26L * 1024 * 1024);
     }
 

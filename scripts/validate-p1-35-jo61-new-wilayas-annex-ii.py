@@ -208,6 +208,10 @@ def main() -> None:
             fail(f"Arabic sidecar line {index}: JO58 current code differs from French crosswalk")
         if row["jo61_official_pdf_visual_review_status"] != "NOT_VISUALLY_REVIEWED_CACHE_MISS":
             fail(f"Arabic sidecar line {index}: cannot overstate official Arabic PDF visual review")
+        if row["jo61_source_page_locator"] != "NOT_PINNED_IN_SEARCH_EXCERPT" or row["jo61_page_locator_type"] != "NOT_PINNED_SECONDARY_SEARCH_RESULT":
+            fail(f"Arabic sidecar line {index}: do not invent official or printed page locator")
+        if not any("\u0600" <= char <= "\u06ff" for char in row["jo61_constituency_name_ar_secondary_verbatim"]):
+            fail(f"Arabic sidecar line {index}: Arabic transcription field is empty or not Arabic script")
         if row["jo61_arabic_transcription_status"] != "SECONDARY_TEXT_CAPTURED_NOT_OFFICIAL_IMAGE_VERIFIED":
             fail(f"Arabic sidecar line {index}: incorrect Arabic evidence classification")
         if row["jo58_practitioner_review_status"] != "PENDING" or row["jo58_effective_date"]:
@@ -222,12 +226,12 @@ def main() -> None:
         fail(f"expected only Wilaya 68 sequences 01-08 to lack Arabic transcription, got {sorted(missing_arabic)}")
 
     print(
-        "P1-35 bounded JO61 Annex II extraction: 108 rows across 11 new Wilayas, "
+        "P1-35 bounded JO61 Annex II extraction: 108 French-secondary rows across 11 new Wilayas, "
         "1,748 electoral seats, 106 direct normalized French-name matches, "
         "2 preserved French secondary-transcription variants; Arabic secondary "
         "text is captured for 100/108 rows with only Wilaya 68 sequences 01-08 "
-        "not yet transcribed. Official PDF visual review remains incomplete; "
-        "no legal commune identity or parentage is approved."
+        "not yet transcribed and no printed-page locators asserted. Official PDF "
+        "visual review remains incomplete; no legal commune identity or parentage is approved."
     )
 
 

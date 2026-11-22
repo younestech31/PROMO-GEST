@@ -423,3 +423,13 @@ The JO52 Annex also demonstrates why the service-assignment source must remain a
 This is consistent with the accepted ADR 0010 rule to preserve separate legal/geographic jurisdiction and operational authority. No schema change is made or proposed as part of this source audit; any future data-model implementation requires a separate review of domain entities, APIs, migrations, historical workflows, data integrity and rollback.
 
 Detailed evidence: [P1-01-JO52-LEGAL-OPERATIONAL-MEMBERSHIP-AUDIT-2026-11-22.md](reference-data/P1-01-JO52-LEGAL-OPERATIONAL-MEMBERSHIP-AUDIT-2026-11-22.md). The official JO52 searchable text was inspected in both editions, but relevant PDF screenshots returned Cache miss; no visual page inspection is claimed. No commune import, candidate correction, valid_from assignment or practitioner sign-off occurred.
+
+## 10. User-supplied 2026 Wilaya code mapping is not authoritative — JO40/2026 / JO58/2026
+
+A review of the uploaded candidate archive found a critical code/name mismatch: only Aflou/59 matches the official 2026 Wilaya mapping. Presidential Decree 26-206, JO40/2026 Article 1, and the JO58/2026 official “Liste des wilayas / Numéros de code” table (printed p.9) establish 59 Aflou, 60 Barika, 61 El Kantara, 62 Bir El Ater, 63 El Aricha, 64 Ksar Chellala, 65 Aïn Oussara, 66 Messaad, 67 Ksar El Boukhari, 68 Bou Saada and 69 El Abiodh Sidi Cheikh. Ten uploaded names are attached to different numeric values. The uploaded codes must be treated as source-local keys, not governmental codes.
+
+The generator also uses those keys to create sequence IDs for 46 dairas and 96 communes in the ten mismatched groups. Those generated IDs are not official codes or durable PROMO-GEST identities. Do not import them, use them as legal-parent keys, or silently rewrite them. Keep candidate-group comparison by exact Wilaya name, and reconcile against Decree 26-206 plus the JO58 register's official code/name/seat assertions.
+
+The prior candidate name-set exceptions for Bou Saada and El Abiodh Sidi Cheikh remain valid by Wilaya name; only their upload-local numeric shorthand needs qualification. Correct official codes: Bou Saada 68 (archive-local key 64); El Abiodh Sidi Cheikh 69 (archive-local key 60); Ksar El Boukhari 67 (archive-local key 66). Full correction report: [P1-01-UPLOADED-WILAYA-CODE-MAPPING-CORRECTION-2026-11-22.md](reference-data/P1-01-UPLOADED-WILAYA-CODE-MAPPING-CORRECTION-2026-11-22.md).
+
+No product code, master ledger, DB, schema or application data is changed by this finding. P1-01 remains In Progress/Pending, all practitioner sign-offs PENDING, and no import is allowed.

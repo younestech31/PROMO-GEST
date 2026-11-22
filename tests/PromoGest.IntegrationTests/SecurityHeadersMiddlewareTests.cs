@@ -23,6 +23,19 @@ public sealed class SecurityHeadersMiddlewareTests
         Assert.Equal("no-store", context.Response.Headers["Cache-Control"].ToString());
     }
 
+    [Fact]
+    public async Task SecurityHeaders_DisallowObjectEmbeddingAndKeepExistingBrowserControls()
+    {
+        var context = await InvokeMiddlewareAsync("/api/security-headers");
+
+        var policy = context.Response.Headers["Content-Security-Policy"].ToString();
+        Assert.Contains("object-src 'none'", policy);
+        Assert.Contains("frame-ancestors 'none'", policy);
+        Assert.Equal("nosniff", context.Response.Headers["X-Content-Type-Options"].ToString());
+        Assert.Equal("DENY", context.Response.Headers["X-Frame-Options"].ToString());
+        Assert.Equal("no-referrer", context.Response.Headers["Referrer-Policy"].ToString());
+    }
+
     [Theory]
     [InlineData("/")]
     [InlineData("/index.html")]

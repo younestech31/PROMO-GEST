@@ -8,7 +8,7 @@ The Arabic sidecar also now keeps the Arabic-source seat count separate from the
 
 
 
-**Arabic secondary evidence extension:** a separate Annex II Arabic-text sidecar now contains 108/108 rows for Wilayas 59–69. Coverage by Wilaya is 12/12, 8/8, 5/5, 4/4, 4/4, 6/6, 10/10, 8/8, 21/21, 15/23, and 7/7. Wilaya 68 sequences 01–08 remain untranscribed (8 rows / 142 seats); they are not backfilled from Law 26-06. The 100 Arabic strings account for 1,748 seats. All are secondary text, not official PDF visual readings; Arabic page locators remain unpinned. The CI validator checks this partial coverage and preserves its gaps. [Arabic sidecar](reference-data/P1-35-JO61-ANNEX-II-NEW-WILAYAS-108-ARABIC-SECONDARY-TRANSCRIPTION.csv).
+**Arabic secondary evidence extension:** a separate Annex II Arabic-text sidecar contains 108/108 rows for Wilayas 59–69. Coverage by Wilaya is 12/12, 8/8, 5/5, 4/4, 4/4, 6/6, 10/10, 8/8, 21/21, 23/23, and 7/7. Arabic and French seat values are stored independently and agree on all 108 rows (1,748 seats). All Arabic records remain secondary text, not official PDF visual readings; Arabic page locators remain unpinned. The CI validator verifies coverage and both source seat fields, but does not establish legal identity or approval. [Arabic sidecar](reference-data/P1-35-JO61-ANNEX-II-NEW-WILAYAS-108-ARABIC-SECONDARY-TRANSCRIPTION.csv).
 
 ## P1-35 JO61 Annex II — partial Arabic secondary text cross-reference — 22 November 2026
 

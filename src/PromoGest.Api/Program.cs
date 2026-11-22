@@ -209,6 +209,20 @@ builder.Services.AddRateLimiter(options =>
                 QueueLimit = 0,
                 AutoReplenishment = true
             }));
+
+    options.AddPolicy("setup", httpContext =>
+        RateLimitPartition.GetFixedWindowLimiter(
+            partitionKey: httpContext.Connection.RemoteIpAddress?.ToString() ?? "local",
+            factory: _ => new FixedWindowRateLimiterOptions
+            {
+                PermitLimit = Math.Clamp(
+                    builder.Configuration.GetValue("Security:SetupRateLimitPermitLimit", 5),
+                    1,
+                    60),
+                Window = TimeSpan.FromMinutes(1),
+                QueueLimit = 0,
+                AutoReplenishment = true
+            }));
 });
 
 var allowedOrigins = builder.Configuration.GetSection("Security:AllowedOrigins").Get<string[]>() ?? [];

@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Antiforgery;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
+using Microsoft.Extensions.Hosting;
 using PromoGest.Api.Security;
 using PromoGest.Application.Services;
 using PromoGest.Contracts.Auth;
@@ -17,15 +18,18 @@ public sealed class AuthController : ControllerBase
     private readonly AuthService _authService;
     private readonly IConfiguration _configuration;
     private readonly IAntiforgery _antiforgery;
+    private readonly IHostEnvironment _environment;
 
     public AuthController(
         AuthService authService,
         IConfiguration configuration,
-        IAntiforgery antiforgery)
+        IAntiforgery antiforgery,
+        IHostEnvironment environment)
     {
         _authService = authService;
         _configuration = configuration;
         _antiforgery = antiforgery;
+        _environment = environment;
     }
 
     [HttpGet("csrf")]
@@ -49,18 +53,24 @@ public sealed class AuthController : ControllerBase
         var result = await _authService.LoginAsync(request, metadata, ct);
 
         var requireHttps = _configuration.GetValue<bool>("Security:RequireHttpsCookies", true);
+        var useHostCookie = SessionCookieDefaults.UsesHostPrefix(HttpContext, _environment);
         Response.Cookies.Append(
-            SessionCookieDefaults.CookieName,
+            SessionCookieDefaults.GetCookieName(HttpContext, _environment),
             result.OpaqueSessionToken,
             new CookieOptions
             {
                 HttpOnly = true,
-                Secure = requireHttps,
+                Secure = useHostCookie,
                 SameSite = SameSiteMode.Strict,
                 Expires = result.ExpiresAtUtc,
                 Path = "/",
                 IsEssential = true
             });
+
+        if (useHostCookie)
+        {
+            DeleteLegacySessionCookie();
+        }
 
         HttpContext.User = SessionClaimsFactory.CreatePrincipal(result.Session);
         SessionClaimsFactory.IssueCsrfToken(HttpContext, _antiforgery, requireHttps);
@@ -85,16 +95,15 @@ public sealed class AuthController : ControllerBase
 
         await _authService.ChangePasswordAsync(userId, request, metadata, ct);
 
-        var requireHttps = _configuration.GetValue<bool>("Security:RequireHttpsCookies", true);
+        var useHostCookie = SessionCookieDefaults.UsesHostPrefix(HttpContext, _environment);
         Response.Cookies.Delete(
-            SessionCookieDefaults.CookieName,
-            new CookieOptions
-            {
-                HttpOnly = true,
-                Secure = requireHttps,
-                SameSite = SameSiteMode.Strict,
-                Path = "/"
-            });
+            SessionCookieDefaults.GetCookieName(HttpContext, _environment),
+            CreateSessionCookieDeletionOptions(useHostCookie));
+
+        if (useHostCookie)
+        {
+            DeleteLegacySessionCookie();
+        }
 
         HttpContext.User = new ClaimsPrincipal(new ClaimsIdentity());
         SessionClaimsFactory.IssueCsrfToken(HttpContext, _antiforgery, requireHttps);
@@ -105,29 +114,55 @@ public sealed class AuthController : ControllerBase
     [AllowAnonymous]
     public async Task<IActionResult> Logout(CancellationToken ct)
     {
-        Request.Cookies.TryGetValue(SessionCookieDefaults.CookieName, out var token);
+        var useHostCookie = SessionCookieDefaults.UsesHostPrefix(HttpContext, _environment);
+        var cookieName = SessionCookieDefaults.GetCookieName(HttpContext, _environment);
+        Request.Cookies.TryGetValue(cookieName, out var token);
+
         var metadata = new RequestMetadata(
             HttpContext.Connection.RemoteIpAddress?.ToString(),
             Request.Headers.UserAgent.ToString());
 
         await _authService.LogoutAsync(token, metadata, ct);
 
-        var requireHttps = _configuration.GetValue<bool>("Security:RequireHttpsCookies", true);
+        // Old secure-host sessions are never accepted for authentication after this
+        // migration, but an explicit logout still revokes a presented legacy token.
+        if (useHostCookie &&
+            Request.Cookies.TryGetValue(SessionCookieDefaults.CookieName, out var legacyToken) &&
+            !string.IsNullOrWhiteSpace(legacyToken) &&
+            !string.Equals(legacyToken, token, StringComparison.Ordinal))
+        {
+            await _authService.LogoutAsync(legacyToken, metadata, ct);
+        }
+
         Response.Cookies.Delete(
-            SessionCookieDefaults.CookieName,
-            new CookieOptions
-            {
-                HttpOnly = true,
-                Secure = requireHttps,
-                SameSite = SameSiteMode.Strict,
-                Path = "/"
-            });
+            cookieName,
+            CreateSessionCookieDeletionOptions(useHostCookie));
+
+        if (useHostCookie)
+        {
+            DeleteLegacySessionCookie();
+        }
 
         HttpContext.User = new ClaimsPrincipal(new ClaimsIdentity());
         SessionClaimsFactory.IssueCsrfToken(HttpContext, _antiforgery, requireHttps);
 
         return NoContent();
     }
+
+    private void DeleteLegacySessionCookie()
+        => Response.Cookies.Delete(
+            SessionCookieDefaults.CookieName,
+            CreateSessionCookieDeletionOptions(useSecure: true));
+
+    private static CookieOptions CreateSessionCookieDeletionOptions(bool useSecure)
+        => new()
+        {
+            HttpOnly = true,
+            Secure = useSecure,
+            SameSite = SameSiteMode.Strict,
+            Path = "/"
+            // Deliberately no Domain: required for __Host- cookie semantics.
+        };
 
     [HttpGet("me")]
     [Authorize]

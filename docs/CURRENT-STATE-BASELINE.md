@@ -582,3 +582,11 @@ This is still limited to new-Wilaya headings 59–69 only. It does not complete 
 - Merged bounded extraction: French/Arabic secondary sidecars for new-Wilaya headings 59–69, 108 rows, 1,748 APC seats. The independent Arabic secondary text extractions match exactly on 100/108 rows; eight spelling differences are preserved with separate sources/locators and remain pending official page-image review. The two French secondary variants remain unresolved.
 - Official JO61 PDFs could not be retrieved/rendered in this session (local DNS retrieval failed; prior screenshot attempts returned Cache miss); no official JO61 page image is claimed visually reviewed. The remaining 58 Wilaya headings have not been extracted. Organic Law 21-01 Article 124 still prevents assuming an Annex II electoral row is one legal commune.
 - No legal identity, parentage, code, effective date, practitioner approval, JO44 master-ledger change, database write or import. All 1,541 approvals remain PENDING; W30-R007 NEEDS_EVIDENCE; P1-01 and P1-35 In Progress/Pending; P1-02 Blocked; `communesCount=0`.
+
+
+
+## P1-35 — legacy JO61 group-index inventory (secondary-only) — 22 November 2026
+
+A bounded group-level index for JO61 Annex II headings 01–58 now records the final numbered constituency sequence shown per heading and each table's stated APC seat total. The sum of ending-sequence indexes is 1,433 (not an independently recounted row population); the stated seat totals sum to 24,827. Together with the already recorded new-Wilaya 59–69 bounded extract (108 rows, 1,748 seats), the aggregate numerical controls are 1,541 ending-sequence indexes and 26,575 APC seats. This numerical equality with JO25's legal 1,541 commune count is not proof of one-to-one commune identity; Article 124 permits electoral constituencies to comprise parts of communes or multiple communes.
+
+The 01–58 index is derived from a third-party searchable French text mirror. Page/line locators are unpinned; no Arabic row transcription or official JO61 page-image review is claimed. It is not a full row-level extract, legal commune register, or practitioner-approved source. See P1-35-JO61-ANNEX-II-LEGACY-WILAYA-GROUP-INDEX-01-58.csv and P1-35 extraction notes. P1-35/P1-01 remain In Progress/Pending; P1-02 Blocked; all sign-offs pending; no import and no valid_from.

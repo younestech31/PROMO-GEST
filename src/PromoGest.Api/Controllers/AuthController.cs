@@ -36,7 +36,8 @@ public sealed class AuthController : ControllerBase
     [AllowAnonymous]
     public ActionResult<CsrfTokenResponse> GetCsrfToken()
     {
-        var requireHttps = _configuration.GetValue<bool>("Security:RequireHttpsCookies", true);
+        var requireHttps = _configuration.GetValue<bool>("Security:RequireHttpsCookies", true) ||
+                            SessionCookieDefaults.UsesHostPrefix(HttpContext, _environment);
         var token = SessionClaimsFactory.IssueCsrfToken(HttpContext, _antiforgery, requireHttps);
         return Ok(new CsrfTokenResponse(SessionCookieDefaults.CsrfHeaderName, token));
     }
@@ -52,7 +53,8 @@ public sealed class AuthController : ControllerBase
 
         var result = await _authService.LoginAsync(request, metadata, ct);
 
-        var requireHttps = _configuration.GetValue<bool>("Security:RequireHttpsCookies", true);
+        var requireHttps = _configuration.GetValue<bool>("Security:RequireHttpsCookies", true) ||
+                            SessionCookieDefaults.UsesHostPrefix(HttpContext, _environment);
         var useHostCookie = SessionCookieDefaults.UsesHostPrefix(HttpContext, _environment);
         if (useHostCookie &&
             Request.Cookies.TryGetValue(SessionCookieDefaults.CookieName, out var previousLegacyToken) &&
@@ -115,7 +117,8 @@ public sealed class AuthController : ControllerBase
         }
 
         HttpContext.User = new ClaimsPrincipal(new ClaimsIdentity());
-        var requireHttps = _configuration.GetValue<bool>("Security:RequireHttpsCookies", true);
+        var requireHttps = _configuration.GetValue<bool>("Security:RequireHttpsCookies", true) ||
+                            SessionCookieDefaults.UsesHostPrefix(HttpContext, _environment);
         SessionClaimsFactory.IssueCsrfToken(HttpContext, _antiforgery, requireHttps);
         return NoContent();
     }
@@ -154,7 +157,8 @@ public sealed class AuthController : ControllerBase
         }
 
         HttpContext.User = new ClaimsPrincipal(new ClaimsIdentity());
-        var requireHttps = _configuration.GetValue<bool>("Security:RequireHttpsCookies", true);
+        var requireHttps = _configuration.GetValue<bool>("Security:RequireHttpsCookies", true) ||
+                            SessionCookieDefaults.UsesHostPrefix(HttpContext, _environment);
         SessionClaimsFactory.IssueCsrfToken(HttpContext, _antiforgery, requireHttps);
 
         return NoContent();

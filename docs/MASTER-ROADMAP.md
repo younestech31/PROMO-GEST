@@ -229,3 +229,26 @@ The row-level name crosswalk against the official JO58 108-row extract is 108/10
 ## Second archive — pinned 108-row old/current code crosswalk — 22 November 2026
 
 Added `docs/reference-data/P1-01-SECOND-ARCHIVE-JO58-108-COMMUNE-CODE-CROSSWALK.csv` to map each of the 108 moved candidate rows to the current JO58 register-code field by normalized French name. Recorded invariant counts: 108/108 names matched; 108 unique legacy codes and 108 unique JO58 codes; every old code prefix matches the former Wilaya; every JO58 code prefix matches the current Wilaya; every candidate `previous_codes` array is empty. Practitioner status remains PENDING and effective dates remain blank. A new Python validator runs in Frontend CI and recomputes these limited structural/source crosswalk checks. This does not establish an effective date, legal sign-off or import permission. [Audit detail](reference-data/P1-01-SECOND-CANDIDATE-ARCHIVE-AUDIT-2026-11-22.md).
+
+
+## P1-35 — JO61 Annex II bounded new-Wilaya extraction — 22 November 2026
+
+Added a bounded 108-row secondary-text extract for JO61 Annex II new-Wilaya headings 59–69. It captures the electoral constituency name and seats, plus a separate JO58 current-code/administrative-seat cross-reference. Group row counts: 12, 8, 5, 4, 4, 6, 10, 8, 21, 23 and 7; seats total 1,748. 106 French names directly normalize to JO58; two secondary transcription variants remain unresolved (`Hammadia/Hamadia`, `El Ouin et/El Ouinet`). Arabic secondary-text transcription now covers 108/108 rows, but official page-image review remains outstanding and groups 59/60 French page locators are not pinned. See [P1-35 extraction notes](reference-data/P1-35-JO61-ANNEX-II-NEW-WILAYAS-108-EXTRACTION-NOTES.md).
+
+This is a partial electoral-source extraction, not legal commune master data. Article 124 requires no 1:1 assumption. Remaining 58 Wilaya headings and legal interpretation are not closed; P1-35 remains In Progress/Pending, P1-01 In Progress/Pending, P1-02 Blocked, no import or valid_from.
+
+
+P1-35 Arabic secondary-text coverage now includes 108/108 rows under the new-Wilaya headings 59–69. A second indexed Arabic issue excerpt supplied the initial Wilaya 68 sequences 01–08. Arabic and French seat readings are stored separately and agree 108/108 (1,748 seats). All Arabic entries remain secondary text, Arabic printed-page locators remain unpinned, and no official JO61 page-image review is claimed. The validator enforces these evidence boundaries. See [P1-35 extraction notes](reference-data/P1-35-JO61-ANNEX-II-NEW-WILAYAS-108-EXTRACTION-NOTES.md).
+
+
+The Arabic secondary-text sidecar captures 108/108 rows under Wilayas 59–69 (1,748 seats). Arabic and French seat readings are stored separately and agree for all 108 rows. Arabic strings remain secondary extraction, page locators unpinned, and no official PDF visual review is claimed. The validator guards these constraints. P1-35 remains pending.
+
+
+The Arabic secondary-text sidecar preserves 108 Arabic names and separate Arabic/French seat readings. All 108 captured seat counts agree (1,748 seats); every Wilaya/sequence key in the 11 new-Wilaya extract is present. No official page-image review or Arabic printed-page locator is claimed. The CI validator checks the two source columns independently and preserves this secondary-evidence boundary.
+
+
+## P1-35 Arabic JO61 secondary-source discrepancy register — 22 November 2026
+
+A second Arabic searchable-PDF text mirror (JaridaBot-hosted) was compared with the Kanonix Arabic issue transcription already captured in the 108-row sidecar. The two secondary text extracts match on 100/108 strings and differ on eight: W60/03, W64/02, W65/03, W67/08, W67/09, W67/20, W67/21 and W68/09. All alternative strings, source URL, secondary printed-page locators and pending-review state are retained in the Arabic sidecar. Neither secondary extraction is treated as authoritative; all eight remain pending review against the official JORADP Arabic page images, which have not been visually inspected. The validator now checks the exact eight discrepancy keys and strings, the 100 exact matches, and the non-visual-review evidence state.
+
+This is still limited to new-Wilaya headings 59–69 only. It does not complete Annex II across the other 58 headings, prove legal commune identity or parentage, or interpret Article 124. P1-35 and P1-01 remain In Progress/Pending; all 1,541 practitioner sign-offs remain PENDING; P1-02 remains Blocked; no effective date or commune import is authorized (communesCount=0).

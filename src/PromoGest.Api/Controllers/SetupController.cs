@@ -52,9 +52,27 @@ public sealed class SetupController : ControllerBase
     {
         if (!IsBootstrapAuthorized())
         {
+            var deniedMetadata = new RequestMetadata(
+                HttpContext.Connection.RemoteIpAddress?.ToString(),
+                Request.Headers.UserAgent.ToString());
+
+            try
+            {
+                await _setupService.RecordBootstrapDeniedAsync(deniedMetadata, ct);
+            }
+            catch (Exception ex)
+            {
+                // A database/audit-store outage must not change the security decision:
+                // the request remains forbidden and the failure is visible to operators.
+                _logger.LogError(
+                    ex,
+                    "Could not persist SETUP_BOOTSTRAP_DENIED for request {RequestId}.",
+                    HttpContext.TraceIdentifier);
+            }
+
             _logger.LogWarning(
                 "Blocked unauthorized first-run setup initialization attempt from IP {RemoteIp}.",
-                HttpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown");
+                deniedMetadata.IpAddress ?? "unknown");
             return StatusCode(
                 StatusCodes.Status403Forbidden,
                 new ApiErrorResponse(

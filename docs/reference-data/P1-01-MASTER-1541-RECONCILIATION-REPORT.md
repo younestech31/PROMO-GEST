@@ -366,3 +366,6 @@ P1-35 Arabic Annex II cross-reference is now recorded for 100/108 new-Wilaya row
 
 
 Arabic Annex II secondary transcription now covers 100 of the 108 new-Wilaya rows, representing 1,606 APC seats. The eight missing rows are Wilaya 68 sequences 01–08 (142 seats); they remain explicitly untranscribed. Arabic sidecar links by heading/sequence to the French secondary text, not as independent legal identity evidence. No official JO61 page-image review is claimed, and Arabic printed page locators are not pinned. See [Arabic sidecar](P1-35-JO61-ANNEX-II-NEW-WILAYAS-100-ARABIC-SECONDARY-TRANSCRIPTION.csv).
+
+
+The Arabic secondary-text sidecar preserves 100 Arabic names and separate Arabic/French seat readings. All 100 captured seat counts agree (1,606 seats); eight Arabic rows under Wilaya 68 sequences 01–08 remain missing (142 seats). No official page-image review or printed-page locator is claimed. The CI validator checks the two source columns independently and preserves this incomplete coverage.

@@ -565,3 +565,10 @@ The supplied archive's new-Wilaya wilayas.csv has the correct Wilaya names but a
 Earlier name-set differences for the upload groups labelled Bou Saada (local code 64, correct official code 68) and El Abiodh Sidi Cheikh (local code 60, correct official code 69) remain valid when comparing by Wilaya name. Their local numeric keys are not legal code assertions. See docs/reference-data/P1-01-UPLOADED-WILAYA-CODE-MAPPING-CORRECTION-2026-11-22.md.
 
 No candidate CSV, master ledger, runtime/API/schema/migration, DB or production data changed. All 1,541 sign-offs remain PENDING, W30-R007 NEEDS_EVIDENCE, communesCount=0; P1-01/P1-35 In Progress/Pending; P1-02 Blocked.
+
+
+## P1-35 Arabic JO61 secondary-source discrepancy register — 22 November 2026
+
+A second Arabic searchable-PDF text mirror (JaridaBot-hosted) was compared with the Kanonix Arabic issue transcription already captured in the 108-row sidecar. The two secondary text extracts match on 100/108 strings and differ on eight: W60/03, W64/02, W65/03, W67/08, W67/09, W67/20, W67/21 and W68/09. All alternative strings, source URL, secondary printed-page locators and pending-review state are retained in the Arabic sidecar. Neither secondary extraction is treated as authoritative; all eight remain pending review against the official JORADP Arabic page images, which have not been visually inspected. The validator now checks the exact eight discrepancy keys and strings, the 100 exact matches, and the non-visual-review evidence state.
+
+This is still limited to new-Wilaya headings 59–69 only. It does not complete Annex II across the other 58 headings, prove legal commune identity or parentage, or interpret Article 124. P1-35 and P1-01 remain In Progress/Pending; all 1,541 practitioner sign-offs remain PENDING; P1-02 remains Blocked; no effective date or commune import is authorized (communesCount=0).

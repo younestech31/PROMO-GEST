@@ -591,6 +591,45 @@ public sealed partial class PostgresEndToEndTests : IClassFixture<PostgreSql18In
         "AtlasAdmin#2026");
 
     [Fact]
+    public async Task ProductionHost_AddsHstsOnHttpsWhileDevelopmentDoesNot()
+    {
+        var connectionString = await _fixture.CreateIsolatedDatabaseConnectionStringAsync();
+        var productionRoot = Path.Combine(Path.GetTempPath(), $"promogest_hsts_production_{Guid.NewGuid():N}");
+
+        await using var productionFactory = CreateFactory(
+            connectionString,
+            productionRoot,
+            environmentName: "Production");
+        using var productionClient = productionFactory.CreateClient(new WebApplicationFactoryClientOptions
+        {
+            BaseAddress = new Uri("https://promogest.test"),
+            HandleCookies = true
+        });
+
+        var productionResponse = await productionClient.GetAsync("/health/live");
+        Assert.Equal(HttpStatusCode.OK, productionResponse.StatusCode);
+        var hsts = Assert.Single(productionResponse.Headers.GetValues("Strict-Transport-Security"));
+        Assert.Contains("max-age=86400", hsts);
+        Assert.DoesNotContain("includeSubDomains", hsts);
+        Assert.DoesNotContain("preload", hsts);
+
+        var developmentRoot = Path.Combine(Path.GetTempPath(), $"promogest_hsts_development_{Guid.NewGuid():N}");
+        await using var developmentFactory = CreateFactory(
+            connectionString,
+            developmentRoot,
+            environmentName: "Development");
+        using var developmentClient = developmentFactory.CreateClient(new WebApplicationFactoryClientOptions
+        {
+            BaseAddress = new Uri("https://promogest.test"),
+            HandleCookies = true
+        });
+
+        var developmentResponse = await developmentClient.GetAsync("/health/live");
+        Assert.Equal(HttpStatusCode.OK, developmentResponse.StatusCode);
+        Assert.False(developmentResponse.Headers.Contains("Strict-Transport-Security"));
+    }
+
+    [Fact]
     public async Task AuthorizationFallback_DeniesUnannotatedControllerAndPreservesIntentionalAnonymousRoutes()
     {
         var connectionString = await _fixture.CreateIsolatedDatabaseConnectionStringAsync();

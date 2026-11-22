@@ -1,3 +1,8 @@
+## Row-level JO58 code comparison for the second archive — 22 November 2026
+
+The second archive's 108 moved-commune names were normalized and compared against the repository's official JO58/2026 108-row new-Wilaya register extract: 108/108 names matched with no missing/extra names by Wilaya. Their codes do not match: all 108 archive codes retain the former-Wilaya prefix; JO58 assigns current 59xx–69xx register codes. Examples: Aflou 0319→5901; Barika 0542→6001; El Kantara 0717→6101; Bou Saada 2820→6801. The JO58 extract still has practitioner status PENDING and effective_date blank. This is a code-lineage discrepancy, not authorization to infer effective dates or automatically remap data. See the [artifact audit](reference-data/P1-01-SECOND-CANDIDATE-ARCHIVE-AUDIT-2026-11-22.md).
+
+
 ## Critical four-digit Commune-code lineage conflict in the second candidate archive — 22 November 2026
 
 The second archive has the correct **Wilaya-level** 59–69 code/name mapping, but its four-digit Commune codes are not current JO58 register codes. All 108 communes moved by Law 26-06 retain the former-Wilaya prefix; 0/108 use the new Wilaya prefix, and all 108 raw `previous_codes` arrays are empty. Examples: Aflou 59 retains 0319; Barika 60 retains 0542; Khoubana 68 retains 2807. The archive README explicitly says these codes were not renumbered.

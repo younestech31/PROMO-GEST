@@ -44,6 +44,14 @@ PROMO GEST enforces **at most one System Administrator per installation** at thr
 - Production enables HSTS only after `UseForwardedHeaders()` has restored the external scheme. Its initial policy is deliberately short (`max-age=86400`), with no subdomain expansion or preload; Development/preview does not emit HSTS. Increase the lifetime only after the internal HTTPS certificate and hostname lifecycle are confirmed stable.
 - Kestrel applies an explicit 30,000,000-byte global request-body cap, a 15-second request-header timeout, and a two-minute keep-alive timeout. Project document upload keeps its stricter 26 MiB action-level limit, leaving a small outer allowance for multipart framing.
 
+## 5A. Session Cookie Prefix
+
+- Production and all HTTPS contexts issue the session token only as `__Host-promogest_session` with `Secure; HttpOnly; Path=/` and no `Domain` attribute.
+- Plain-HTTP Development alone retains the legacy `promogest_session` name so localhost workflows continue to work. HTTPS Development preview uses the host-prefixed cookie and retains its existing `SameSite=None; Secure; Partitioned` adaptation.
+- The authentication handler reads only the cookie name valid for the current environment/request; it never authenticates a legacy non-prefixed cookie in a secure context.
+- On secure-context login, any presented legacy session is revoked and the legacy cookie is cleared. Logout also revokes a presented legacy token and clears both names. Existing browsers will need to sign in again after the cookie-name change; no production session is migrated into a less restrictive cookie.
+- Antiforgery cookies are also forced Secure in secure contexts, even if the development override is false.
+
 ## 6. Data-at-Rest Protection — Deployment Requirement
 
 - Production hosts must use full-volume encryption for the operating-system and every data-bearing volume that can contain PostgreSQL files, customer document storage, Data Protection keys, application configuration, logs, temporary work, exports, or local backups.

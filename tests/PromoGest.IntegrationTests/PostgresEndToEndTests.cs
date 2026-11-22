@@ -2489,6 +2489,109 @@ public sealed partial class PostgresEndToEndTests : IClassFixture<PostgreSql18In
     }
 
     [Fact]
+    public async Task SecureContexts_UseHostPrefixedSessionCookies_AndDevelopmentHttpKeepsLegacyName()
+    {
+        var productionConnection = await _fixture.CreateIsolatedDatabaseConnectionStringAsync();
+        var productionRoot = Path.Combine(Path.GetTempPath(), $"promogest_host_cookie_production_{Guid.NewGuid():N}");
+        var productionConfiguration = new Dictionary<string, string?>
+        {
+            ["Security:RequireHttpsCookies"] = "true"
+        };
+
+        await using var productionFactory = CreateFactory(
+            productionConnection,
+            productionRoot,
+            environmentName: "Production",
+            extraConfiguration: productionConfiguration,
+            simulatedRemoteIp: IPAddress.Loopback);
+        using var productionClient = productionFactory.CreateClient(new WebApplicationFactoryClientOptions
+        {
+            BaseAddress = new Uri("https://promogest.internal"),
+            HandleCookies = true
+        });
+
+        await AttachCsrfTokenAsync(productionClient);
+        var productionSetup = await productionClient.PostAsJsonAsync("/api/setup/initialize", ValidInitRequest());
+        Assert.Equal(HttpStatusCode.Created, productionSetup.StatusCode);
+
+        var productionLogin = await productionClient.PostAsJsonAsync(
+            "/api/auth/login",
+            new LoginRequest("sysadmin", "AtlasAdmin#2026"));
+        Assert.Equal(HttpStatusCode.OK, productionLogin.StatusCode);
+
+        Assert.True(productionLogin.Headers.TryGetValues("Set-Cookie", out var productionCookies));
+        var hostSessionCookie = Assert.Single(
+            productionCookies!,
+            value => value.StartsWith("__Host-promogest_session=", StringComparison.Ordinal));
+        var hostCookieAttributes = hostSessionCookie.ToLowerInvariant();
+        Assert.Contains("; path=/", hostCookieAttributes);
+        Assert.Contains("; secure", hostCookieAttributes);
+        Assert.Contains("; httponly", hostCookieAttributes);
+        Assert.DoesNotContain("; domain=", hostCookieAttributes);
+        Assert.Contains(productionCookies!, value =>
+            value.StartsWith("promogest_session=;", StringComparison.Ordinal));
+
+        await AttachCsrfTokenAsync(productionClient);
+        Assert.Equal(HttpStatusCode.OK, (await productionClient.GetAsync("/api/auth/me")).StatusCode);
+
+        var productionLogout = await productionClient.PostAsync("/api/auth/logout", content: null);
+        Assert.Equal(HttpStatusCode.NoContent, productionLogout.StatusCode);
+        Assert.True(productionLogout.Headers.TryGetValues("Set-Cookie", out var productionLogoutCookies));
+        var deletedHostCookie = Assert.Single(
+            productionLogoutCookies!,
+            value => value.StartsWith("__Host-promogest_session=;", StringComparison.Ordinal));
+        var deletionAttributes = deletedHostCookie.ToLowerInvariant();
+        Assert.Contains("; path=/", deletionAttributes);
+        Assert.Contains("; secure", deletionAttributes);
+        Assert.DoesNotContain("; domain=", deletionAttributes);
+        Assert.Equal(HttpStatusCode.Unauthorized, (await productionClient.GetAsync("/api/auth/me")).StatusCode);
+
+        var previewConnection = await _fixture.CreateIsolatedDatabaseConnectionStringAsync();
+        var previewRoot = Path.Combine(Path.GetTempPath(), $"promogest_host_cookie_preview_{Guid.NewGuid():N}");
+        var previewConfiguration = new Dictionary<string, string?>
+        {
+            ["Security:RequireHttpsCookies"] = "false"
+        };
+
+        await using var previewFactory = CreateFactory(
+            previewConnection,
+            previewRoot,
+            environmentName: "Development",
+            extraConfiguration: previewConfiguration,
+            simulatedRemoteIp: IPAddress.Loopback);
+        using var previewClient = previewFactory.CreateClient(new WebApplicationFactoryClientOptions
+        {
+            BaseAddress = new Uri("https://promogest-preview.run.app"),
+            HandleCookies = true
+        });
+
+        await AttachCsrfTokenAsync(previewClient);
+        var previewSetup = await previewClient.PostAsJsonAsync("/api/setup/initialize", ValidInitRequest());
+        Assert.Equal(HttpStatusCode.Created, previewSetup.StatusCode);
+
+        var previewLogin = await previewClient.PostAsJsonAsync(
+            "/api/auth/login",
+            new LoginRequest("sysadmin", "AtlasAdmin#2026"));
+        Assert.Equal(HttpStatusCode.OK, previewLogin.StatusCode);
+        Assert.True(previewLogin.Headers.TryGetValues("Set-Cookie", out var previewCookies));
+        var previewHostCookie = Assert.Single(
+            previewCookies!,
+            value => value.StartsWith("__Host-promogest_session=", StringComparison.Ordinal));
+        var previewAttributes = previewHostCookie.ToLowerInvariant();
+        Assert.Contains("; path=/", previewAttributes);
+        Assert.Contains("; secure", previewAttributes);
+        Assert.Contains("; samesite=none", previewAttributes);
+        Assert.Contains("partitioned", previewAttributes);
+        Assert.DoesNotContain("; domain=", previewAttributes);
+        Assert.DoesNotContain(previewCookies!, value =>
+            value.StartsWith("promogest_session=", StringComparison.Ordinal) &&
+            !value.StartsWith("promogest_session=;", StringComparison.Ordinal));
+
+        await AttachCsrfTokenAsync(previewClient);
+        Assert.Equal(HttpStatusCode.OK, (await previewClient.GetAsync("/api/auth/me")).StatusCode);
+    }
+
+    [Fact]
     public async Task Logout_RevokesServerSession_AndRejectsCurrentAndReplayedCookies()
     {
         var connStr = await _fixture.CreateIsolatedDatabaseConnectionStringAsync();

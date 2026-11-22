@@ -609,9 +609,9 @@ public sealed partial class PostgresEndToEndTests : IClassFixture<PostgreSql18In
         var productionResponse = await productionClient.GetAsync("/health/live");
         Assert.Equal(HttpStatusCode.OK, productionResponse.StatusCode);
         var hsts = Assert.Single(productionResponse.Headers.GetValues("Strict-Transport-Security"));
-        Assert.Contains("max-age=86400", hsts, StringComparison.OrdinalIgnoreCase);
-        Assert.DoesNotContain("includeSubDomains", hsts, StringComparison.OrdinalIgnoreCase);
-        Assert.DoesNotContain("preload", hsts, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("max-age=86400", hsts);
+        Assert.DoesNotContain("includeSubDomains", hsts);
+        Assert.DoesNotContain("preload", hsts);
 
         var developmentRoot = Path.Combine(Path.GetTempPath(), $"promogest_hsts_development_{Guid.NewGuid():N}");
         await using var developmentFactory = CreateFactory(

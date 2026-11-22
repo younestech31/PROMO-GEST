@@ -329,3 +329,12 @@ This correction does not erase the independently observed name-set differences w
 The uploaded generator propagates its upstream wilaya_code into 46 daira rows and 96 commune rows under the ten mismatched Wilaya groups; their generated sequence IDs are not official codes. The 11-new-Wilaya population remains 108 commune rows and 46 daira rows; arithmetic consistency does not cure the 10 incorrect code/name pairs. See [P1-01-UPLOADED-WILAYA-CODE-MAPPING-CORRECTION-2026-11-22.md](P1-01-UPLOADED-WILAYA-CODE-MAPPING-CORRECTION-2026-11-22.md).
 
 **Corrected disposition:** do not import or directly remap these generated IDs. Treat the archive as candidate-only name-discovery material. Resolve every row using official name, statute, Decree 26-206 code, JO58 register code/seat, and independently sourced parent/time assertions. No candidate, legal ledger, database, or application row was changed; all practitioner sign-offs remain PENDING and communesCount=0.
+
+
+## Separate candidate archive intake — 22 November 2026
+
+A second ZIP was supplied after the earlier candidate archive audit. Its SHA-256 is `bd8ae8914b1d08cf4ab06c3e01158d9880d7c2c6c811cf4ea756272f0d92fa81`, distinct from the `dd35...` artifact addressed by PR #200. The second archive has the correct official new-Wilaya code/name sequence 59–69; the PR #200 ten-of-eleven mismatch must not be applied to this artifact.
+
+The second archive rebuilds reproducibly with 31/31 checks passing and SQLite integrity/FK checks clean. It remains candidate-only because its 91-306/26-253 source attributions conflate Daira-Chief service lists with legal territorial membership, it has no separate operational assignment relation, it asserts 2026-04-05 as the effective boundary for all 108 commune moves without qualified legal determination, and its original JORADP PDF binaries are absent. See [the artifact-specific audit](P1-01-SECOND-CANDIDATE-ARCHIVE-AUDIT-2026-11-22.md).
+
+No candidate data or master-ledger row was changed. All practitioner approvals remain PENDING; no valid_from was accepted; no commune import; P1-01/P1-35 In Progress/Pending; P1-02 Blocked.

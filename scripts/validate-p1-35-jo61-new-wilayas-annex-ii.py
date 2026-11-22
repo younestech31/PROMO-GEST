@@ -10,6 +10,8 @@ from __future__ import annotations
 
 import csv
 import sys
+import re
+import unicodedata
 from collections import Counter, defaultdict
 from pathlib import Path
 
@@ -46,6 +48,14 @@ REQUIRED = {
 def fail(message: str) -> None:
     print(f"ERROR: {message}", file=sys.stderr)
     raise SystemExit(1)
+
+
+def normalize_name(value: str) -> str:
+    value = unicodedata.normalize("NFKD", value)
+    value = "".join(char for char in value if not unicodedata.combining(char))
+    value = value.replace("’", "'").replace("‘", "'").replace("`", "'")
+    value = value.casefold()
+    return " ".join(re.sub(r"[^a-z0-9]+", " ", value).split())
 
 
 def main() -> None:
@@ -115,6 +125,8 @@ def main() -> None:
                 fail(f"line {line_no}: secondary transcription variant was not preserved")
             if row["normalized_name_crosswalk_status"] != "PENDING_SECONDARY_SOURCE_VARIANT":
                 fail(f"line {line_no}: variant row must remain pending")
+            if normalize_name(alt_name) != normalize_name(row["jo58_commune_name_fr"]):
+                fail(f"line {line_no}: alternative secondary text does not match JO58 normalized label")
             pending_variants.add(key)
         else:
             if row["jo61_alternative_secondary_transcription_fr"]:
@@ -123,6 +135,8 @@ def main() -> None:
                 fail(f"line {line_no}: unexpected variant status")
             if row["normalized_name_crosswalk_status"] != "MATCHED_NORMALIZED":
                 fail(f"line {line_no}: direct normalized match status changed")
+            if normalize_name(name) != normalize_name(row["jo58_commune_name_fr"]):
+                fail(f"line {line_no}: direct French-name match does not normalize equally")
             direct_matches += 1
 
         if wilaya in {"59", "60"}:

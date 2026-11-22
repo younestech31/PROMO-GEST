@@ -44,7 +44,7 @@ Decree 26-206 Article 1 (JO40/2026) states the new-Wilaya mapping explicitly:
 - 68 Bou Saada
 - 69 El Abiodh Sidi Cheikh
 
-JO58/2026's official French register annex, printed page 9, independently lists exactly the same pairs in its WILAYAS / NUMEROS DE CODE table. The row-level JO58 108-commune extract already stored in this repository also uses those codes and links the names to the P1-01 candidate workpaper rows using the official sequence. The official code order must not be inferred from the order in the uploaded wilayas.csv, from a third-party JSON source, or from the Article 52 bis item number.
+The French edition of JO40/2026, printed page 5 (PDF page index 4), was visually inspected during this audit; its Article 1 table visibly prints all eleven pairs 59–69. The Arabic edition's official PDF text layer independently contains the same mapping, but the page-image screenshot request returned Cache miss; no Arabic visual inspection is claimed in this pass. JO58/2026's official French register annex, printed page 9, independently lists the same pairs in its WILAYAS / NUMEROS DE CODE table. The repository's JO58 108-commune extract records visual PNG review of printed pages 9–25 in both French and Arabic and links the names to the P1-01 candidate workpaper rows using the official sequence. The official code order must not be inferred from the order in the uploaded wilayas.csv, from a third-party JSON source, or from the Article 52 bis item number.
 
 ## 3. Propagation into the uploaded CSVs and generator
 

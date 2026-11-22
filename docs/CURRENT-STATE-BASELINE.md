@@ -1,3 +1,7 @@
+
+
+**Arabic secondary evidence extension:** a separate Annex II Arabic-text sidecar now contains 100/108 rows for Wilayas 59–69. Coverage by Wilaya is 12/12, 8/8, 5/5, 4/4, 4/4, 6/6, 10/10, 8/8, 21/21, 15/23, and 7/7. Wilaya 68 sequences 01–08 remain untranscribed (8 rows / 142 seats); they are not backfilled from Law 26-06. The 100 Arabic strings account for 1,606 seats. All are secondary text, not official PDF visual readings; Arabic page locators remain unpinned. The CI validator checks this partial coverage and preserves its gaps. [Arabic sidecar](reference-data/P1-35-JO61-ANNEX-II-NEW-WILAYAS-100-ARABIC-SECONDARY-TRANSCRIPTION.csv).
+
 ## P1-35 JO61 Annex II — partial Arabic secondary text cross-reference — 22 November 2026
 
 Added `P1-35-JO61-ANNEX-II-NEW-WILAYAS-100-ARABIC-SECONDARY-TRANSCRIPTION.csv`, recording 100 Arabic electoral-constituency name strings for new-Wilaya headings 59–69. Coverage by Wilaya is 12, 8, 5, 4, 4, 6, 10, 8, 21, 15 and 7 respectively. The eight missing records are exactly Wilaya 68 sequences 01–08; they are left missing rather than backfilled from Law 26-06 or translated. The sidecar cross-references Arabic text to the French secondary extract by Wilaya+sequence only. It does not prove legal identity and does not represent official page-image reading: all rows are secondary text, no official page images were visually inspected, and printed Arabic page locators remain unpinned. See [extraction notes](reference-data/P1-35-JO61-ANNEX-II-NEW-WILAYAS-108-EXTRACTION-NOTES.md).

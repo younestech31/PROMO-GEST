@@ -1,13 +1,16 @@
 #!/usr/bin/env python3
 """Validate the artifact-specific 108-row JO58 code-lineage crosswalk.
 
-This checks row mapping and source-state invariants only. It does not approve
-legal identity, code-effective dates, practitioner sign-off, or data import.
+This checks the row crosswalk and pinned source-state invariants only. It does
+not approve legal identity, code-effective dates, practitioner sign-off, or
+data import.
 """
 from __future__ import annotations
 
 import csv
+import re
 import sys
+import unicodedata
 from collections import Counter
 from pathlib import Path
 
@@ -37,6 +40,14 @@ def fail(message: str) -> None:
     raise SystemExit(1)
 
 
+def normalize_name(value: str) -> str:
+    value = unicodedata.normalize("NFKD", value)
+    value = "".join(char for char in value if not unicodedata.combining(char))
+    value = value.replace("’", "'").replace("‘", "'").replace("`", "'")
+    value = value.casefold()
+    return " ".join(re.sub(r"[^a-z0-9]+", " ", value).split())
+
+
 def main() -> None:
     with SOURCE.open("r", encoding="utf-8-sig", newline="") as stream:
         reader = csv.DictReader(stream)
@@ -47,13 +58,12 @@ def main() -> None:
 
     if len(rows) != 108:
         fail(f"expected 108 rows, found {len(rows)}")
-
     if len({r["archive_legacy_code"] for r in rows}) != 108:
         fail("archive legacy codes must be unique")
     if len({r["jo58_current_register_code"] for r in rows}) != 108:
         fail("JO58 current register codes must be unique")
-    if len({r["commune_name_fr_archive"] for r in rows}) != 108:
-        fail("archive French commune names must be unique")
+    if len({normalize_name(r["commune_name_fr_archive"]) for r in rows}) != 108:
+        fail("normalized archive French commune names must be unique")
 
     groups = Counter(r["current_wilaya_code"] for r in rows)
     if dict(groups) != EXPECTED_GROUP_COUNTS:
@@ -83,8 +93,10 @@ def main() -> None:
             fail(f"row {index}: legacy code equals JO58 current code")
         if row["archive_previous_codes_count"] != "0":
             fail(f"row {index}: expected empty archive previous_codes array")
+        if normalize_name(row["commune_name_fr_archive"]) != normalize_name(row["jo58_commune_name_fr"]):
+            fail(f"row {index}: archive and JO58 French names do not normalize equally")
         if row["normalized_fr_name_match_status"] != "MATCHED_NORMALIZED":
-            fail(f"row {index}: name crosswalk is not a normalized match")
+            fail(f"row {index}: name crosswalk status is not MATCHED_NORMALIZED")
         if row["jo58_official_journal"] != "JO 58/2026":
             fail(f"row {index}: wrong official-journal identifier")
         if row["jo58_pdf_sha256"] != EXPECTED_JO58_PDF_SHA:

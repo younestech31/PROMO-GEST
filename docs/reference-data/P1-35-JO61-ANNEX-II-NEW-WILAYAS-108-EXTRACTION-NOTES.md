@@ -23,6 +23,25 @@ Arabic-source and French-source seat counts are stored in separate columns. They
 
 All Arabic entries are explicitly classified as secondary text, not official-image-verified. Arabic printed-page locators remain `NOT_PINNED_IN_SEARCH_EXCERPT`; no official Arabic JO61 image or binary rendering was visually reviewed. The French secondary transcription still has two unresolved variants (W64 `Hammadia/Hamadia`; W67 `El Ouin et/El Ouinet`). This improves bilingual secondary-text coverage but does not complete official-source verification or close P1-35.
 
+### Independent Arabic secondary-text cross-check
+
+A separate Arabic issue-PDF text mirror hosted by JaridaBot ([source PDF](https://jaridabot.com/FTP/jo-arabe/2026/joradp-61-26-Aout-2026.pdf)) was compared row-by-row against the Kanonix Arabic issue transcription. This is a second **secondary text extraction**, not the official JORADP binary and not page-image verification. The sidecar records the second spelling, printed-page locator and comparison state separately for every row. The mirror's text layer identifies printed page 32 for Wilayas 59–60, page 33 for Wilayas 61–67 and page 34 for Wilayas 68–69; the page images were not visually reviewed.
+
+The two secondary extracts match exactly on 100/108 rows. Eight text differences are preserved without adjudication:
+
+| Wilaya / sequence | Kanonix Arabic transcription | JaridaBot PDF text extraction |
+|---|---|---|
+| 60 / 03 | عبد القادر عزيل | عبد القادر عزيّل |
+| 64 / 02 | زمالة الأمير عبد القادر | زمّالة الأمير عبد القادر |
+| 65 / 03 | بويرة الأحدب | بويره الأحدب |
+| 67 / 08 | أولاد هلال | أولاد لاد هلال |
+| 67 / 09 | تافراوت | تاقافروت |
+| 67 / 20 | أولاد عنتر | أولاد لاد عنتر |
+| 67 / 21 | السانق | السوايق |
+| 68 / 09 | الحوامد | الحمامد |
+
+Every discrepancy remains `SECONDARY_TEXT_VARIANT_PENDING_OFFICIAL_IMAGE_REVIEW`. Neither transcription is assumed correct. The validator enforces the 100 exact matches, exact eight discrepancy keys/strings, source URL and printed-page locators, and the non-visual-review state. Official JORADP Arabic page images must settle these differences before row-level acceptance.
+
 ## Reconciled counts
 
 | Wilaya code | Wilaya | Electoral constituency rows | APC seats |

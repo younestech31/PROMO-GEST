@@ -353,3 +353,10 @@ The current archive's 108 moved-commune French names also match the official JO5
 ## Second candidate archive — complete 108-row JO58 code-lineage crosswalk — 22 November 2026
 
 A machine-readable crosswalk now links all 108 moved commune names in the second archive to the official JO58/2026 current register rows: 108/108 normalized French-name matches, 108 unique legacy codes, 108 unique JO58 codes, 108 old-code prefixes under former Wilayas and 108 current-code prefixes under their new Wilayas. The archive's 108 `previous_codes` arrays are empty. The CSV retains the JO58 register code, administrative seat, printed page, source hash, pending practitioner review and blank effective date separately. Its CI validator does not legalize the candidate or authorize import. See [P1-01-SECOND-ARCHIVE-JO58-108-COMMUNE-CODE-CROSSWALK.csv](P1-01-SECOND-ARCHIVE-JO58-108-COMMUNE-CODE-CROSSWALK.csv) and the [artifact audit](P1-01-SECOND-CANDIDATE-ARCHIVE-AUDIT-2026-11-22.md).
+
+
+## P1-35 JO61 Annex II — bounded secondary extraction for Wilayas 59–69 — 22 November 2026
+
+A 108-row secondary-text sidecar records Annex II APC electoral-constituency names and seats for the 11 new Wilayas, with a separate JO58 code/administrative-seat cross-reference. Totals: 108 rows, 1,748 seats; 106 direct normalized French-name matches and two unresolved parser variants (`Hammadia/Hamadia`, `El Ouin et/El Ouinet`). Official JO61 page-image review and Arabic Annex II row transcription have not been completed; rows under 59/60 do not yet have a pinned printed-page locator. The source is a third-party structured transcription of JO61 and is explicitly not treated as an authoritative page-image transcript. See [P1-35 notes](P1-35-JO61-ANNEX-II-NEW-WILAYAS-108-EXTRACTION-NOTES.md) and [sidecar](P1-35-JO61-ANNEX-II-NEW-WILAYAS-108-SECONDARY-EXTRACT.csv).
+
+A Frontend CI validator checks only structural counts, seat totals, source labels and the two preserved variants. This is not legal identity, parentage, effective-date or practitioner approval. P1-35 remains In Progress/Pending; no JO44 ledger, database or application data changed.

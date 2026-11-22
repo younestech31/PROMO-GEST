@@ -664,7 +664,7 @@ public sealed partial class PostgresEndToEndTests : IClassFixture<PostgreSql18In
                 Assert.Equal("anonymous", entry.ActorUsername);
                 Assert.Equal(AuditSeverity.Security, entry.Severity);
                 Assert.Equal("192.0.2.25", entry.IpAddress);
-                Assert.DoesNotContain("test-only-bootstrap-token", entry.Summary, StringComparison.Ordinal);
+                Assert.DoesNotContain("test-only-bootstrap-token", entry.Summary);
             });
         }
 

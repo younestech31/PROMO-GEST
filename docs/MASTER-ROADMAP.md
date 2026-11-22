@@ -239,3 +239,6 @@ This is a partial electoral-source extraction, not legal commune master data. Ar
 
 
 P1-35 Arabic secondary-text coverage has been expanded to 100/108 rows for the new Wilayas, using a separate sidecar. Eight Arabic rows under Wilaya 68 sequences 01–08 are not present in the retrieved secondary text and remain missing; no backfill or translation was used. All Arabic rows remain secondary text, no official JO61 page-image review is claimed, and printed-page locators remain unpinned. The validator enforces this evidence boundary. See [P1-35 extraction notes](reference-data/P1-35-JO61-ANNEX-II-NEW-WILAYAS-108-EXTRACTION-NOTES.md).
+
+
+The Arabic secondary-text sidecar now captures 100/108 rows under Wilayas 59–69 (1,606 seats). The only absent Arabic rows are Wilaya 68 sequences 01–08 (8 rows / 142 seats), deliberately not filled from another legal source or by translation. All Arabic strings remain secondary extraction and page locators unpinned; no official PDF visual review is claimed. Validator guards these constraints. P1-35 remains pending.

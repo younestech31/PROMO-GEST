@@ -504,3 +504,12 @@ Automated acceptance is verified. Manual browser/practitioner and production-ins
 - Confirmed uploaded candidate membership errors: code 64/Bou Saada has four M'Sila Article 32 communes (Sidi Hadjeres, Maadid, M'tarfa, Maarif) and lacks Khoubana, M'Cif, El Houamed, Djebel Messaad; code 60/El Abiodh Sidi Cheikh has three El Bayadh Article 36 communes (Brezina, Ghassoul, Cheguig) and lacks Aïn El Orak, El Bnoud, El Mehara. Exact row IDs/source limits are in `docs/reference-data/P1-01-JO52-LEGAL-OPERATIONAL-MEMBERSHIP-AUDIT-2026-11-22.md`.
 - JO52 lists 13 of the 23 legal Bou Saada members under the Daira-Chief assignment group headed by Ksar El Boukhari (67) and 10 under Bou Saada (68). Its assignment scope is different from legal territorial membership. Article 54 transition to 31 December 2026 must not be used as per-row valid_from.
 - Documentation-only follow-up. No legal ledger row, commune code, parentage, valid_from, candidate data, runtime/API/schema/migration, database or security policy changed. All 1,541 practitioner sign-offs remain PENDING; W30-R007 NEEDS_EVIDENCE; `communesCount=0`; P1-01/P1-35 In Progress/Pending; P1-02 Blocked.
+
+
+## Critical uploaded Wilaya-code mapping finding — 22 November 2026
+
+The supplied archive's new-Wilaya wilayas.csv has the correct Wilaya names but attaches the wrong official codes to 10/11 names. Decree 26-206 (JO40/2026 Art.1) and JO58/2026 printed p.9 give the authoritative mapping 59 Aflou, 60 Barika, 61 El Kantara, 62 Bir El Ater, 63 El Aricha, 64 Ksar Chellala, 65 Aïn Oussara, 66 Messaad, 67 Ksar El Boukhari, 68 Bou Saada, 69 El Abiodh Sidi Cheikh. Only Aflou/59 matches the archive. The archive's 46 daira and 96 commune generated IDs in the ten affected groups inherit the mismatched code prefixes; they are not official IDs and must not be imported.
+
+Earlier name-set differences for the upload groups labelled Bou Saada (local code 64, correct official code 68) and El Abiodh Sidi Cheikh (local code 60, correct official code 69) remain valid when comparing by Wilaya name. Their local numeric keys are not legal code assertions. See docs/reference-data/P1-01-UPLOADED-WILAYA-CODE-MAPPING-CORRECTION-2026-11-22.md.
+
+No candidate CSV, master ledger, runtime/API/schema/migration, DB or production data changed. All 1,541 sign-offs remain PENDING, W30-R007 NEEDS_EVIDENCE, communesCount=0; P1-01/P1-35 In Progress/Pending; P1-02 Blocked.

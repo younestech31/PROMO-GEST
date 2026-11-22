@@ -31,14 +31,8 @@ EXPECTED_VARIANTS = {
     ("64", "Hammadia"): ("Hamadia", "SECONDARY_TRANSCRIPTION_VARIANTS_HAMMADIA_HAMADIA"),
     ("67", "El Ouin et"): ("El Ouinet", "SECONDARY_TRANSCRIPTION_VARIANTS_EL_OUIN_ET_EL_OUINET"),
 }
-EXPECTED_ARABIC_ROWS = {
-    "59": 12, "60": 8, "61": 5, "62": 4, "63": 4, "64": 6,
-    "65": 10, "66": 8, "67": 21, "68": 15, "69": 7,
-}
-EXPECTED_ARABIC_SEATS = {
-    "59": 186, "60": 140, "61": 71, "62": 74, "63": 58, "64": 106,
-    "65": 184, "66": 138, "67": 325, "68": 227, "69": 97,
-}
+EXPECTED_ARABIC_ROWS = EXPECTED_ROWS
+EXPECTED_ARABIC_SEATS = EXPECTED_SEATS
 REQUIRED = {
     "decree", "annex", "current_wilaya_code", "wilaya_fr_jo61_heading",
     "jo61_constituency_sequence", "jo61_constituency_name_fr_verbatim",
@@ -186,8 +180,8 @@ def main() -> None:
             fail(f"Arabic sidecar missing required fields: {sorted(arabic_required - arabic_fields)}")
         arabic_rows = list(arabic_reader)
 
-    if len(arabic_rows) != 100:
-        fail(f"expected 100 Arabic secondary records, found {len(arabic_rows)}")
+    if len(arabic_rows) != 108:
+        fail(f"expected 108 Arabic secondary records, found {len(arabic_rows)}")
     arabic_counts = Counter(row["current_wilaya_code"] for row in arabic_rows)
     if dict(arabic_counts) != EXPECTED_ARABIC_ROWS:
         fail(f"unexpected Arabic-record coverage by Wilaya: {dict(arabic_counts)}")
@@ -232,20 +226,19 @@ def main() -> None:
 
     all_annex_keys = set(french_by_key)
     missing_arabic = all_annex_keys - arabic_keys
-    expected_missing_arabic = {("68", f"{sequence:02d}") for sequence in range(1, 9)}
-    if missing_arabic != expected_missing_arabic:
-        fail(f"expected only Wilaya 68 sequences 01-08 to lack Arabic transcription, got {sorted(missing_arabic)}")
+    if missing_arabic:
+        fail(f"Arabic secondary transcription has missing Wilaya/sequence keys: {sorted(missing_arabic)}")
     if dict(arabic_seats) != EXPECTED_ARABIC_SEATS:
         fail(f"unexpected Arabic secondary-record seat totals: {dict(arabic_seats)}")
-    if sum(arabic_seats.values()) != 1606:
-        fail(f"expected 1,606 seats represented by the 100 captured Arabic rows, got {sum(arabic_seats.values())}")
+    if sum(arabic_seats.values()) != 1748:
+        fail(f"expected 1,748 Arabic-source seat readings, got {sum(arabic_seats.values())}")
 
     print(
         "P1-35 bounded JO61 Annex II extraction: 108 French-secondary rows across 11 new Wilayas, "
         "1,748 electoral seats, 106 direct normalized French-name matches, "
         "2 preserved French secondary-transcription variants; Arabic secondary "
-        "text is captured for 100/108 rows with only Wilaya 68 sequences 01-08 "
-        "not yet transcribed and no printed-page locators asserted. Official PDF "
+        "text is captured for 108/108 rows with separate Arabic/French seat values "
+        "matching 108/108 (1,748 seats); no Arabic printed-page locators are asserted. Official PDF "
         "visual review remains incomplete; no legal commune identity or parentage is approved."
     )
 

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Validate selected Arabic JO61 legacy-Wilaya group seat-total cross-checks.
 
-Only six group aggregates are checked against a second secondary text mirror.
+Fourteen group aggregates are checked against a second secondary text mirror.
 No municipality-name identity, row-level equivalence, official-page image
 review, Article 124 relationship or practitioner approval is established.
 """
@@ -14,12 +14,20 @@ from pathlib import Path
 CSV_PATH = Path(__file__).resolve().parents[1] / "docs/reference-data/P1-35-JO61-ANNEX-II-ARABIC-LEGACY-GROUP-SEAT-CHECK-SAMPLE.csv"
 SOURCE_URL = "https://jaridabot.com/FTP/jo-arabe/2026/joradp-61-26-Aout-2026.pdf"
 EXPECTED = {
-    1: ("أدرار", "Adrar", 16, 266),
-    29: ("معسكر", "Mascara", 47, 753),
-    36: ("الطارف", "El Tarf", 24, 384),
-    39: ("الوادي", "El Oued", 22, 414),
-    49: ("تيميمون", "Timimoun", 10, 160),
-    58: ("المنيعة", "El Meniaa", 3, 55),
+    1: ("أدرار", "Adrar", 16, 266, "249-271", "DIRECT_GROUP_BLOCK"),
+    2: ("الشلف", "Chlef", 35, 679, "281-316", "DIRECT_GROUP_BLOCK"),
+    3: ("الأغواط", "Laghouat", 12, 220, "328-340", "DIRECT_GROUP_BLOCK"),
+    4: ("أم البواقي", "Oum El Bouaghi", 29, 495, "347-361; 370-384", "CROSS_COLUMN_ORDER_SPLIT"),
+    5: ("باتنة", "Batna", 53, 855, "393-408; 461-508", "CROSS_COLUMN_ORDER_SPLIT"),
+    6: ("بجاية", "Bejaia", 52, 816, "415-460; 561-585", "CROSS_COLUMN_ORDER_SPLIT"),
+    7: ("بسكرة", "Biskra", 22, 382, "520-539; 587-602", "CROSS_COLUMN_ORDER_SPLIT"),
+    8: ("بشار", "Bechar", 11, 173, "541-559", "DIRECT_GROUP_BLOCK"),
+    9: ("البليدة", "Blida", 25, 531, "610-641", "DIRECT_GROUP_BLOCK"),
+    29: ("معسكر", "Mascara", 47, 753, "1598-1658; split text order", "SPLIT_ACROSS_LAYOUT_BLOCKS"),
+    36: ("الطارف", "El Tarf", 24, 384, "1866-1905; split text order", "SPLIT_ACROSS_LAYOUT_BLOCKS"),
+    39: ("الوادي", "El Oued", 22, 414, "1973-2017", "CONTINUATION_ACROSS_BLOCKS"),
+    49: ("تيميمون", "Timimoun", 10, 160, "2375-2391", "DIRECT_GROUP_BLOCK"),
+    58: ("المنيعة", "El Meniaa", 3, 55, "2520-2529", "DIRECT_GROUP_BLOCK"),
 }
 REQUIRED = {
     "annex_heading_number", "wilaya_title_ar_secondary",
@@ -63,13 +71,17 @@ def main() -> None:
         if expected is None or number in seen:
             fail(f"line {line}: unexpected or duplicate Wilaya heading {number}")
         seen.add(number)
-        ar_name, fr_name, expected_seq, expected_seats = expected
+        ar_name, fr_name, expected_seq, expected_seats, expected_locator, expected_layout = expected
         if (row["wilaya_title_ar_secondary"], row["wilaya_title_fr_secondary"], seq, ar_seats) != (
             ar_name, fr_name, expected_seq, expected_seats
         ):
             fail(f"line {line}: Arabic secondary group values differ from the captured evidence")
         if fr_seats != expected_seats or ar_seats != fr_seats:
             fail(f"line {line}: Arabic/French secondary seat totals do not match")
+        if row["secondary_source_line_locator"] != expected_locator:
+            fail(f"line {line}: Arabic text-source line locator does not match captured evidence")
+        if row["text_layout_status"] != expected_layout:
+            fail(f"line {line}: text reading-order/layout state changed")
         if row["secondary_arabic_pdf_url"] != SOURCE_URL:
             fail(f"line {line}: unexpected Arabic secondary PDF source")
         if row["crosscheck_status"] != "SEAT_TOTAL_MATCH_SECONDARY_TEXT_ONLY":
@@ -87,8 +99,8 @@ def main() -> None:
         fail("sample does not contain exactly the six expected Wilaya headings")
 
     print(
-        "P1-35 Arabic legacy sample: six secondary-text group seat totals "
-        "match the French secondary group index (1, 29, 36, 39, 49, 58); "
+        "P1-35 Arabic legacy sample: fourteen secondary-text group seat totals "
+        "match the French secondary group index (01-09, 29, 36, 39, 49, 58); "
         "no row-level commune crosswalk, official image review, or legal approval."
     )
 

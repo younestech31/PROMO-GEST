@@ -96,7 +96,7 @@ def main() -> None:
             fail(f"line {line}: practitioner review must remain PENDING")
 
     if seen != set(EXPECTED):
-        fail("sample does not contain exactly the six expected Wilaya headings")
+        fail("sample does not contain exactly the expected 14 selected Wilaya headings")
 
     print(
         "P1-35 Arabic legacy sample: fourteen secondary-text group seat totals "

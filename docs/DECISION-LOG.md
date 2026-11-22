@@ -238,3 +238,21 @@
 - **Integrity and rollback:** Migration #15 rejects invalid canonical lengths and duplicate groups under `(project_id, parties.normalized_display_name, canonical normalized_phone)` before updating the derived key. Its Down path restores the previous digits-only derivation and fails closed if rollback would recreate collisions. The read-only PostgreSQL 18 preflight reports counts and opaque row IDs rather than contact values.
 - **Evidence:** PR #184 merged at `1914703bce77aaeda49830a396d39acce04ea58f`; PR-head CI #44839944794 / CodeQL #44839944849 and post-merge main CI #44840514137 / CodeQL #44840514142 passed. Domain 48/48, Application 24/24 and PostgreSQL 18 Integration 37/37 passed; CI preflight/migration/restore evidence uses disposable databases.
 - **Acceptance boundary:** No organization-local customer database has been preflighted or migrated in this work. P1-11 remains In Review / Pending and capability `IMPLEMENTED_NOT_VERIFIED` until a restorable local backup, quiesced writes, read-only preflight, disposable existing-install rehearsal (Up/verification/Down/restore), separately approved local migration and operator evidence are complete.
+
+
+## Operational decision — temporarily defer municipality approval — 22 November 2026
+
+**Context.** The official municipality approval workstream has consumed disproportionate schedule time and remains substantively incomplete. The available JO61 Annex II materials are bounded secondary-text evidence: the legacy 01–58 inventory is heading-level only (the 1,433 ending-sequence sum is not a row recount), selected Arabic aggregate comparison covers 14 headings only, and 108 new-Wilaya rows remain secondary with unresolved name variants. Official JO61 page images have not been visually reviewed. Organic Law 21-01 Article 124 does not permit equating electoral constituency rows one-to-one with legal communes.
+
+**Decision.** Temporarily defer P1-01 and P1-35 in the operational backlog. This is a reprioritization decision, not Done, not Verified, not legal acceptance, and not a change to their acceptance criteria. Their Notion statuses are Deferred / Verification Pending. Preserve all evidence and unresolved items for resumption.
+
+**Consequences and boundaries.**
+- P1-02 remains Blocked because its hard dependency on full P1-01 approval is unchanged.
+- Phase 1 remains IN_PROGRESS; the Phase 1 closure task cannot pass and Phase 2–5 remain gated. Only independent Phase 1 tasks may proceed after checking their own dependencies and the ordered backlog.
+- All 1,541 practitioner approvals remain PENDING; W30-R007 remains NEEDS_EVIDENCE; no valid_from is assigned; no import is authorized; communesCount remains 0.
+- Do not mutate the legal master ledger, inferred commune identities, codes, names, parent relationships, or effective dates. No runtime, API, schema, migration, database, production-data, authorization, or security-policy changes are authorized by this scheduling decision.
+
+**Resumption criteria.** Reopen P1-01/P1-35 explicitly; finish the original statutory/source work and complete row-level bilingual commune reconciliation; inspect the relevant official Arabic/French source pages; resolve source lineage, legal parentage and effective dates with qualified Algerian practitioner review; then reassess P1-02. JO61 Annex II remains an electoral schedule rather than the legal commune register, and Article 124 requires explicit handling of partial-commune and multi-commune constituencies.
+
+**Evidence checkpoint.** At the time of this decision, main was `bee71579d4a12944021d7c00e57bed2becb9326e`; PR #209's exact merge-SHA push CI #45060399541 passed 3/3 and CodeQL #45060399500 passed 2/2 on event=push, branch=main, with exact matching head_sha. Green technical checks do not constitute legal-data acceptance.
+

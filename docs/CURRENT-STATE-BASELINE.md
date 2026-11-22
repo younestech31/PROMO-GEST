@@ -1,3 +1,15 @@
+## Operating decision — municipality approval temporarily deferred — 22 November 2026
+
+- **Decision:** temporarily defer the municipality approval workstream to limit further schedule consumption. This is an operational reprioritization only; it is not approval, closure, legal acceptance, a waiver of acceptance criteria, or evidence that the 1,541-commune register is complete.
+- **Notion execution state:** P1-01 = `Deferred` / Verification `Pending`; P1-35 = `Deferred` / Verification `Pending`. Preserve all existing evidence and unresolved variants. P1-02 remains `Blocked` on the P1-01 approval dependency.
+- **Phase boundary:** Phase 1 remains `IN_PROGRESS`; its closure task remains blocked by unmet dependencies. Phase 2–5 do not start. Only Phase 1 work with no dependency on municipality approval may be considered, subject to its own backlog order and gates.
+- **Data/security boundary:** do not change the 1,541-row legal master ledger, names, codes, parent relationships, or effective dates; do not set `valid_from`; do not import municipality rows. All 1,541 practitioner statuses remain `PENDING`, W30-R007 remains `NEEDS_EVIDENCE`, and `communesCount = 0`. Existing 69-Wilaya server reference remains the current supported scope; municipality fields remain free text.
+- **Resume gate:** explicitly reprioritize/reopen P1-01 and P1-35; complete the original authoritative-source and full row-level bilingual reconciliation requirements; visually inspect the relevant official Arabic/French source pages where required; resolve names/codes/parentage/effective-date lineage using qualified Algerian legal/practitioner review; only then may P1-02 be reconsidered. JO61 Annex II remains an electoral-constituency schedule, and Organic Law 21-01 Article 124 forbids assuming one Annex II row equals one commune.
+- **Technical checkpoint at decision time:** main was independently resolved to `bee71579d4a12944021d7c00e57bed2becb9326e`. PR #209 merge-SHA push CI [#45060399541](https://github.com/younestech31/PROMO-GEST/actions/runs/45060399541) completed successfully (3/3 jobs); CodeQL [#45060399500](https://github.com/younestech31/PROMO-GEST/actions/runs/45060399500) completed successfully (2/2 analyses), both on exact `push` to `main` with matching SHA. These checks verify the code/docs workflows, not commune identity or legal approval.
+- **Scope of this decision:** planning and documentation only; no runtime, API, schema, migration, database, production-data, authorization, or security-policy change.
+
+---
+
 
 
 **Arabic secondary Annex II cross-reference now covers 108/108 rows** under new-Wilaya headings 59–69. A second indexed Arabic issue excerpt supplied the previously absent Wilaya 68 sequences 01–08. Arabic and French source seat counts are stored in separate columns and match 108/108 (1,748 seats). Arabic printed-page locators remain unpinned, all text is still secondary transcription, and the official JO61 PDF pages have not been visually reviewed. This does not establish legal commune identity, one-to-one constituency mapping, or effective dates.

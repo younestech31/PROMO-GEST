@@ -15,6 +15,12 @@ Official source locators:
 
 The page number for the 59 and 60 excerpts was not pinned by the retrieved result, so the CSV retains `NOT_PINNED_IN_EXCERPT`; it does not guess a page. The exact official JO61 PDFs are in the repository under `.tmp-joradp/`, but PDF screenshot retrieval returned `Cache miss`. No official page-image visual review is claimed. Arabic Annex II row transcription was not completed in this slice.
 
+## Arabic Annex II secondary-text coverage
+
+The separate sidecar [P1-35-JO61-ANNEX-II-NEW-WILAYAS-100-ARABIC-SECONDARY-TRANSCRIPTION.csv](P1-35-JO61-ANNEX-II-NEW-WILAYAS-100-ARABIC-SECONDARY-TRANSCRIPTION.csv) preserves 100 Arabic constituency-name strings from the secondary Arabic text transcription of JO61. Coverage by Wilaya: 59 (12), 60 (8), 61 (5), 62 (4), 63 (4), 64 (6), 65 (10), 66 (8), 67 (21), 68 (15), 69 (7). The eight missing Arabic entries are specifically Wilaya 68, Annex II sequence 01–08; they remain absent rather than being filled from Law 26-06 or by translation. The sidecar links each secondary Arabic string to the French row by Wilaya heading and sequence, and preserves seats separately. It is a positional cross-reference, not independent proof of row identity or a practitioner decision.
+
+All Arabic rows are explicitly classified as secondary text captured but not official-image-verified. Printed-page locators are left as NOT_PINNED_IN_SEARCH_EXCERPT for all Arabic rows. No official Arabic JO61 image or binary rendering was reviewed. The two French secondary transcription variants remain pending. This improves bilingual evidence coverage but does not complete the Arabic Annex II transcript or close P1-35.
+
 ## Reconciled counts
 
 | Wilaya code | Wilaya | Electoral constituency rows | APC seats |
@@ -50,7 +56,7 @@ The 1,748 figure is the sum of seats in this bounded eleven-Wilaya Annex II exce
 
 1. Obtain locally renderable official JO61 French and Arabic PDF bytes; confirm the exact GitHub blobs, sizes and SHA-256 values before transcription.
 2. Visually review official printed pp.32–34 for new-Wilaya entries and establish the exact printed page for groups 59 and 60.
-3. Transcribe the Arabic Annex II rows and pair each Arabic/French row, retaining source spellings and parser discrepancies.
+3. Complete the Arabic Annex II transcription, especially Wilaya 68 sequences 01–08; then compare the preserved Arabic rows against the official Arabic JO61 page images and pair each Arabic/French row, retaining source spellings and parser discrepancies.
 4. Resolve `Hammadia/Hamadia` and `El Ouin et/El Ouinet` against both official page images; do not decide from a third-party parser.
 5. Continue the other 58 Wilaya groups. Interpret every discrepancy using Article 124; do not assume one row equals one legal commune.
 6. Keep all 1,541 P1-01 practitioner sign-offs pending until the full legal evidence chain and qualified reviewer decision are recorded.

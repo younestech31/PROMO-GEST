@@ -288,3 +288,16 @@ A user-supplied archive containing `communes.csv`, `dairas.csv`, `wilayas.csv`, 
 **Disposition:** preserve this archive only as a non-approved candidate set for name comparison/anomaly discovery. No ledger rows are approved or edited; no commune import; no official code, legal parent, or `valid_from` inferred. All 1,541 practitioner sign-offs remain PENDING; W30-R007 remains NEEDS_EVIDENCE; `communesCount=0`; P1-01 In Progress/Pending; P1-02 Blocked.
 
 Archive SHA-256: `dd35a4f9f44117c4f0fda7bc34277aa98b6cb874bed975f18c3c38665d1b79ae`. The per-file SHA-256 values and detailed findings are in the linked audit report.
+
+
+## New-wilaya statutory membership cross-check — JO25/2026 — 22 November 2026
+
+The uploaded archive's 108 candidate commune rows assigned to wilaya codes 59–69 were compared by wilaya name with Law 26-06's amended Law 84-09 Article 52 bis items 10–20 (JO25/2026, printed pp.9–11). Each of the 11 per-wilaya candidate row counts equals the corresponding statutory list count, for 108/108 in total. This is a count control only.
+
+Strict normalized French-name comparison found 81 matches and 20 spelling/transliteration/order candidates. Two groups have substantive unresolved set differences:
+- **Bou Saada (uploaded code 64, law list item 19):** statutory list-only names Khoubana, M'Cif, El Houamed and Djebel Messaad; uploaded-only names M'tarfa, Maadid, Maarif and Sidi Hadjeres.
+- **El Abiodh Sidi Cheikh (uploaded code 60, law list item 20):** statutory list-only names Ain El Orak, El Bnoud and El Meharra; uploaded-only names Brezina, Cheguig and Ghassoul. “El Abiodh Sidi Cheikh” vs “Labiodh Sidi Cheikh” is a tentative alias candidate only.
+
+The full table, all 20 potential variants, JO61 Annex II count comparison, source/image limitations and Article 54 transition caution are recorded in [P1-01-LAW26-06-NEW-WILAYA-RECONCILIATION-2026-11-22.md](P1-01-LAW26-06-NEW-WILAYA-RECONCILIATION-2026-11-22.md). The JO61 Annex II headings use a different numbering sequence from the uploaded administrative wilaya codes; join by wilaya name, not heading number. JO61 remains an electoral schedule under Organic Law 21-01 Article 124, not a one-row-per-commune legal register.
+
+Disposition remains candidate-only. Do not alter the master ledger, accept a proposed name, infer legal parentage or valid_from, or import any commune. All 1,541 practitioner sign-offs remain PENDING; W30-R007 remains NEEDS_EVIDENCE; communesCount=0; P1-01 In Progress/Pending; P1-02 Blocked.

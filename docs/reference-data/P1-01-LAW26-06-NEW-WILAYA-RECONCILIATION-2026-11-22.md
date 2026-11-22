@@ -8,22 +8,22 @@
 
 The official Arabic Journal Officiel No.25, dated 5 April 2026, publishes Law 26-06 of 4 April 2026. Article 3 states the national baseline of 69 wilayas and 1,541 communes (printed p.4). The amended Law 84-09 text then inserts the new-wilaya commune-membership lists in Article 52 bis, numbered items 10–20, printed pp.9–11.
 
-| Law 84-09 amended list item | Wilaya named in the law | Uploaded wilaya.csv code | Uploaded commune rows |
-|---:|---|---:|---:|
-| 10 | Aflou | 59 | 12 |
-| 11 | Barika | 63 | 8 |
-| 12 | El Kantara | 62 | 5 |
-| 13 | Bir El Ater | 65 | 4 |
-| 14 | El Aricha | 61 | 4 |
-| 15 | Ksar Chellala | 67 | 6 |
-| 16 | Ain Oussara | 68 | 10 |
-| 17 | Messaad | 69 | 8 |
-| 18 | Ksar El Boukhari | 66 | 21 |
-| 19 | Bou Saada | 64 | 23 |
-| 20 | El Abiodh Sidi Cheikh | 60 | 7 |
-| **Total** | **11 wilayas** | — | **108** |
+| Law 84-09 amended list item | Wilaya named in the law | Archive-local code (not official) | Official 26-206/JO58 code | Uploaded commune rows |
+|---:|---|---:|---:|---:|
+| 10 | Aflou | 59 | 59 | 12 |
+| 11 | Barika | 63 | 60 | 8 |
+| 12 | El Kantara | 62 | 61 | 5 |
+| 13 | Bir El Ater | 65 | 62 | 4 |
+| 14 | El Aricha | 61 | 63 | 4 |
+| 15 | Ksar Chellala | 67 | 64 | 6 |
+| 16 | Ain Oussara | 68 | 65 | 10 |
+| 17 | Messaad | 69 | 66 | 8 |
+| 18 | Ksar El Boukhari | 66 | 67 | 21 |
+| 19 | Bou Saada | 64 | 68 | 23 |
+| 20 | El Abiodh Sidi Cheikh | 60 | 69 | 7 |
+| **Total** | **11 wilayas** | — | — | **108** |
 
-The Article 52 bis item numbers are not the same thing as the uploaded administrative wilaya_code. Match by the wilaya name and keep the code column separate. JO61 Annex II has a third sequence: its new-wilaya headings are numbered Aflou 59, Barika 60, El Kantara 61, Bir El Ater 62, El Aricha 63, Ksar Chellala 64, Ain Oussara 65, Messaad 66, Ksar El Boukhari 67, Bou Saada 68 and El Abiodh Sidi Cheikh 69. These are Annex II electoral-table heading numbers; do not overwrite the official administrative wilaya code with that electoral sequence.
+The Article 52 bis item numbers (10–20) are not the official Wilaya codes. The authoritative official codes are fixed by Presidential Decree 26-206 (JO40/2026, Art.1) and independently repeated in the JO58/2026 register annex, printed p.9: Aflou 59, Barika 60, El Kantara 61, Bir El Ater 62, El Aricha 63, Ksar Chellala 64, Ain Oussara 65, Messaad 66, Ksar El Boukhari 67, Bou Saada 68 and El Abiodh Sidi Cheikh 69. Those are also the JO61 Annex II new-Wilaya headings. The uploaded archive misassigns the Wilaya codes for ten of these eleven names (only Aflou/59 matches); its wilaya_code values are archive-local identifiers, not official code assertions. All comparisons in this reconciliation are by Wilaya name, never by the uploaded code. See [the code-mapping correction audit](P1-01-UPLOADED-WILAYA-CODE-MAPPING-CORRECTION-2026-11-22.md).
 
 **Important legal boundary:** JO61/2026 Decree 26-282 is an APC/APW electoral constituency and seat schedule. Organic Law 21-01 Article 124 allows an electoral constituency to consist of part of a commune, one commune, or several communes. Therefore, even where an Annex II table has the same number of rows as the territorial list, row equality alone is not proof of a one-to-one legal commune identity. JO25/2026 is the controlling territorial membership source for this comparison.
 

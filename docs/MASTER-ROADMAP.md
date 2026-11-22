@@ -229,3 +229,10 @@ The row-level name crosswalk against the official JO58 108-row extract is 108/10
 ## Second archive — pinned 108-row old/current code crosswalk — 22 November 2026
 
 Added `docs/reference-data/P1-01-SECOND-ARCHIVE-JO58-108-COMMUNE-CODE-CROSSWALK.csv` to map each of the 108 moved candidate rows to the current JO58 register-code field by normalized French name. Recorded invariant counts: 108/108 names matched; 108 unique legacy codes and 108 unique JO58 codes; every old code prefix matches the former Wilaya; every JO58 code prefix matches the current Wilaya; every candidate `previous_codes` array is empty. Practitioner status remains PENDING and effective dates remain blank. A new Python validator runs in Frontend CI and recomputes these limited structural/source crosswalk checks. This does not establish an effective date, legal sign-off or import permission. [Audit detail](reference-data/P1-01-SECOND-CANDIDATE-ARCHIVE-AUDIT-2026-11-22.md).
+
+
+## P1-35 — JO61 Annex II bounded new-Wilaya extraction — 22 November 2026
+
+Added a bounded 108-row secondary-text extract for JO61 Annex II new-Wilaya headings 59–69. It captures the electoral constituency name and seats, plus a separate JO58 current-code/administrative-seat cross-reference. Group row counts: 12, 8, 5, 4, 4, 6, 10, 8, 21, 23 and 7; seats total 1,748. 106 French names directly normalize to JO58; two secondary transcription variants remain unresolved (`Hammadia/Hamadia`, `El Ouin et/El Ouinet`). Arabic Annex II transcription and official page-image review remain outstanding; groups 59/60 page locators are not pinned. See [P1-35 extraction notes](reference-data/P1-35-JO61-ANNEX-II-NEW-WILAYAS-108-EXTRACTION-NOTES.md).
+
+This is a partial electoral-source extraction, not legal commune master data. Article 124 requires no 1:1 assumption. Remaining 58 Wilaya headings and legal interpretation are not closed; P1-35 remains In Progress/Pending, P1-01 In Progress/Pending, P1-02 Blocked, no import or valid_from.

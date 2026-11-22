@@ -57,7 +57,24 @@ The build validator contains an explicit set of 4-digit commune-code assertions 
 
 **Evidence boundary:** those assertions compare code sets and counts. They do not independently transcribe every Arabic/French name from the original official page images, decide all alias/orthography variants, or provide practitioner sign-off. The code mapping in this artifact is correct; this does not make the archive a legally approved 1,541-row register.
 
-## 4. Source-role and territorial-membership limitations
+## 4. Four-digit Commune-code lineage conflict — all 108 transferred communes
+
+The archive explicitly says in its README that the four-digit Commune codes were **not renumbered after the 2026 reform**; the SQLite schema comment repeats that position. The raw data and SQLite database confirm:
+
+- All 108 rows moved under Law 26-06 retain a four-digit code whose first two digits equal the **former** Wilaya (`wilaya_before`).
+- **0/108** codes begin with the current new Wilaya code.
+- All 108 raw JSON records have an empty `previous_codes` array, so the old→new code lineage is not represented there.
+- Examples: Aflou (Wilaya 59) remains `0319`; Barika (60) remains `0542`; Khoubana (68) remains `2807`; Aïn El Orak (69) remains `3208`.
+
+This is a direct unresolved conflict with the code rule recorded in [P1-01-CODE-LINEAGE-CROSSCHECKS.md](P1-01-CODE-LINEAGE-CROSSCHECKS.md): Decree 85-20, Article 3, defines the first two digits as the attached Wilaya; Article 4 requires a new code when a Commune is transferred to another Wilaya and says the old code is not reused.
+
+The repository's official [JO58/2026 108-new-Wilaya register extract](P1-01-JO58-NEW-WILAYAS-108-REGISTER-EXTRACT.csv) records 108 current register codes under the new prefixes 59–69 (examples: Aflou `5901`, Barika `6001`, El Kantara `6101`, Bou Saada `6801`, El Abiodh Sidi Cheikh `6901`). Its metadata records French and Arabic PNG visual review of printed pp.9–25 and source PDF SHA-256 `6a1e59f7c0e8396115657c6376dabeb3fa07543ac8a7036ee3003af6a415aad6`; practitioner review remains PENDING and its effective_date cells remain blank.
+
+The archive's 11 hard-coded `expected_2026` tests validate the **legacy four-digit code sets** and row counts; they do not test the current JO58 register-code values or Decree 85-20 Article 4. Therefore 31/31 structural checks passing does not close this 108-row code-lineage conflict.
+
+**Disposition:** preserve the archive's four-digit strings as candidate historical assertions only. Do not import them as current official Commune codes, auto-generate replacements, infer a code-effective date, or populate `valid_from`. Reconcile each old code, JO58 current register code, name, seat, former/current Wilaya and legal effective interval against the official register, then obtain qualified Algerian practitioner review. The 31 December 2026 transitional-administration deadline must not be assumed to be the code-change effective date.
+
+## 5. Source-role and territorial-membership limitations
 
 The archive attributes the 1,541 commune rows to these instruments:
 
@@ -82,7 +99,7 @@ The SQLite model has a Commune `wilaya` foreign key and a Commune `daira` foreig
 
 Do not reinterpret the archive's `daira` relation as a complete operational assignment relation, and do not merge operational authority with legal territorial parentage. This remains subject to the existing ADR 0010 and P1-01 JO52 audit boundaries.
 
-## 5. Effective-date assertions require legal review
+## 6. Effective-date assertions require legal review
 
 The archive sets:
 
@@ -95,7 +112,7 @@ The first three values use the Law 26-06 publication date. They are date asserti
 
 Do not copy these values into PROMO-GEST `valid_from` fields or approve them without a qualified Algerian legal determination. Preserve publication date, legal effective date, and operational transfer date as distinct concepts.
 
-## 6. Official PDF binary and provenance limits
+## 7. Official PDF binary and provenance limits
 
 The archive's `texts.csv` contains JORADP URLs and SHA-256 values for several legal instruments, but the original official PDF binaries are not included in this ZIP. Its README states that direct JORADP downloads failed in the build environment because of TLS errors and that physical comparison with the original issues remains necessary.
 
@@ -106,7 +123,7 @@ Accordingly:
 - The `84-365` and `21-128` text records lack complete JORADP issue/date/URL/hash metadata in the supplied table and require source completion.
 - The existence of a URL or a recorded hash is not evidence that the binary was downloaded, inspected visually or matched to that hash.
 
-## 7. Disposition and next work
+## 8. Disposition and next work
 
 1. Preserve this ZIP unchanged as a distinct candidate artifact, identified by its SHA-256.
 2. Do not import its SQLite database or CSVs into the PROMO-GEST master reference or PostgreSQL.

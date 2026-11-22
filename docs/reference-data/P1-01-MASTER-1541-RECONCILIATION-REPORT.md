@@ -348,3 +348,8 @@ No canonical code or effective date is accepted. All practitioner sign-offs rema
 
 
 The current archive's 108 moved-commune French names also match the official JO58/2026 108-row new-Wilaya extract by normalized name (108/108; no missing/extra names by Wilaya), but all 108 codes differ: legacy archive code 0319 for Aflou vs JO58 5901, 0542 for Barika vs 6001, 2820 for Bou Saada vs 6801, and similarly across the other eight groups. JO58 practitioner status remains PENDING and effective_date blank; this crosswalk does not authorize automatic remapping or an effective-date decision.
+
+
+## Second candidate archive — complete 108-row JO58 code-lineage crosswalk — 22 November 2026
+
+A machine-readable crosswalk now links all 108 moved commune names in the second archive to the official JO58/2026 current register rows: 108/108 normalized French-name matches, 108 unique legacy codes, 108 unique JO58 codes, 108 old-code prefixes under former Wilayas and 108 current-code prefixes under their new Wilayas. The archive's 108 `previous_codes` arrays are empty. The CSV retains the JO58 register code, administrative seat, printed page, source hash, pending practitioner review and blank effective date separately. Its CI validator does not legalize the candidate or authorize import. See [P1-01-SECOND-ARCHIVE-JO58-108-COMMUNE-CODE-CROSSWALK.csv](P1-01-SECOND-ARCHIVE-JO58-108-COMMUNE-CODE-CROSSWALK.csv) and the [artifact audit](P1-01-SECOND-CANDIDATE-ARCHIVE-AUDIT-2026-11-22.md).

@@ -624,3 +624,9 @@ PR #206 adds a six-group comparison of an Arabic secondary searchable-PDF text m
 - Article 124 of Organic Law 21-01 prevents assuming that one electoral constituency row is one legal commune.
 - All 1,541 P1-01 practitioner sign-offs remain PENDING; W30-R007 remains NEEDS_EVIDENCE; no valid_from has been inferred; no import is authorized; P1-01 and P1-35 remain In Progress/Pending; P1-02 remains Blocked; `communesCount=0`.
 
+
+
+
+## P1-35 — Arabic secondary aggregate sample expanded to 14 headings — 22 November 2026
+
+The selected Arabic/French secondary group aggregate sample now covers 14 headings (01–09, 29, 36, 39, 49, 58). Eight newly added Arabic text checks W02–W09 agree with the French secondary group index: Chlef 35/679, Laghouat 12/220, Oum El Bouaghi 29/495, Batna 53/855, Bejaia 52/816, Biskra 22/382, Bechar 11/173, Blida 25/531 (final sequence / seats). The Arabic text layer interleaves some tables and headings because of two-column/continued-table layout; the sample records source line fragments and split-order status. This is selected aggregate agreement only, not a row-level bilingual municipality identity crosswalk or official visual review. All legal identity and practitioner fields remain unapproved.

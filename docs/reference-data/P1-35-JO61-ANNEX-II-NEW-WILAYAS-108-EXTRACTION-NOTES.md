@@ -128,3 +128,20 @@ PR #206 adds a six-group comparison of an Arabic secondary searchable-PDF text m
 - Article 124 of Organic Law 21-01 prevents assuming that one electoral constituency row is one legal commune.
 - All 1,541 P1-01 practitioner sign-offs remain PENDING; W30-R007 remains NEEDS_EVIDENCE; no valid_from has been inferred; no import is authorized; P1-01 and P1-35 remain In Progress/Pending; P1-02 remains Blocked; `communesCount=0`.
 
+
+### Expanded Arabic secondary aggregate sample — headings 02–09 added — 22 November 2026
+
+The Arabic mirror comparison is extended by eight groups (W02–W09), taking the selected sample from 6/69 to 14/69 headings. Arabic secondary text reports the same final sequence and total APC seats as the French secondary group index:
+
+| Heading | Arabic title | Final sequence | Seats | Arabic text-line locator | Layout note |
+|---:|---|---:|---:|---|---|
+| 02 | الشلف | 35 | 679 | 281–316 | Direct group block |
+| 03 | الأغواط | 12 | 220 | 328–340 | Direct group block |
+| 04 | أم البواقي | 29 | 495 | 347–361; 370–384 | Table fragments appear on opposite sides of the heading in extracted reading order |
+| 05 | باتنة | 53 | 855 | 393–408; 461–508 | Continuation table is extracted apart from the heading/first fragment |
+| 06 | بجاية | 52 | 816 | 415–460; 561–585 | Two table fragments |
+| 07 | بسكرة | 22 | 382 | 520–539; 587–602 | Sequence 09–22 appears before heading; 01–08 after it |
+| 08 | بشار | 11 | 173 | 541–559 | Direct group block |
+| 09 | البليدة | 25 | 531 | 610–641 | Direct group block |
+
+The previous six sample entries remain unchanged. The validator now enforces all 14 exact values, line locators and layout classifications. The result is still a selected aggregate check based on a third-party searchable Arabic PDF text mirror. It is not a row-level bilingual spelling/canonical identity review, not visual reading of official JORADP pages, not practitioner-approved legal evidence, and not a municipal parentage determination. The table's two-column reading order is the reason some line blocks are recorded as split rather than reconstructed silently.

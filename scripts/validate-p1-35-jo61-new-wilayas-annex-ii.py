@@ -17,6 +17,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 SOURCE = ROOT / "docs/reference-data/P1-35-JO61-ANNEX-II-NEW-WILAYAS-108-SECONDARY-EXTRACT.csv"
+ARABIC_SOURCE = ROOT / "docs/reference-data/P1-35-JO61-ANNEX-II-NEW-WILAYAS-100-ARABIC-SECONDARY-TRANSCRIPTION.csv"
 
 EXPECTED_ROWS = {
     "59": 12, "60": 8, "61": 5, "62": 4, "63": 4,
@@ -29,6 +30,10 @@ EXPECTED_SEATS = {
 EXPECTED_VARIANTS = {
     ("64", "Hammadia"): ("Hamadia", "SECONDARY_TRANSCRIPTION_VARIANTS_HAMMADIA_HAMADIA"),
     ("67", "El Ouin et"): ("El Ouinet", "SECONDARY_TRANSCRIPTION_VARIANTS_EL_OUIN_ET_EL_OUINET"),
+}
+EXPECTED_ARABIC_ROWS = {
+    "59": 12, "60": 8, "61": 5, "62": 4, "63": 4, "64": 6,
+    "65": 10, "66": 8, "67": 21, "68": 15, "69": 7,
 }
 REQUIRED = {
     "decree", "annex", "current_wilaya_code", "wilaya_fr_jo61_heading",
@@ -158,12 +163,71 @@ def main() -> None:
     if len(jo58_codes) != 108:
         fail("expected 108 unique JO58 code crosswalks")
 
+    arabic_required = {
+        "current_wilaya_code", "jo61_constituency_sequence",
+        "jo61_constituency_name_ar_secondary_verbatim", "jo61_seats_to_fill",
+        "jo61_secondary_transcription_source", "jo61_secondary_source_url",
+        "jo61_source_page_locator", "jo61_page_locator_type",
+        "jo61_official_arabic_pdf_url", "jo61_official_pdf_visual_review_status",
+        "jo61_arabic_transcription_status", "jo61_french_constituency_name_secondary",
+        "jo58_current_french_register_name", "jo58_current_register_code",
+        "jo58_administrative_seat_fr", "jo58_practitioner_review_status",
+        "jo58_effective_date", "crosswalk_basis", "legal_commune_identity_status",
+    }
+    with ARABIC_SOURCE.open("r", encoding="utf-8-sig", newline="") as stream:
+        arabic_reader = csv.DictReader(stream)
+        arabic_fields = set(arabic_reader.fieldnames or [])
+        if not arabic_required.issubset(arabic_fields):
+            fail(f"Arabic sidecar missing required fields: {sorted(arabic_required - arabic_fields)}")
+        arabic_rows = list(arabic_reader)
+
+    if len(arabic_rows) != 100:
+        fail(f"expected 100 Arabic secondary records, found {len(arabic_rows)}")
+    arabic_counts = Counter(row["current_wilaya_code"] for row in arabic_rows)
+    if dict(arabic_counts) != EXPECTED_ARABIC_ROWS:
+        fail(f"unexpected Arabic-record coverage by Wilaya: {dict(arabic_counts)}")
+
+    french_by_key = {
+        (row["current_wilaya_code"], row["jo61_constituency_sequence"]): row
+        for row in rows
+    }
+    arabic_keys: set[tuple[str, str]] = set()
+    for index, row in enumerate(arabic_rows, start=2):
+        key = (row["current_wilaya_code"], row["jo61_constituency_sequence"])
+        if key in arabic_keys:
+            fail(f"Arabic sidecar line {index}: duplicate Wilaya/sequence key {key}")
+        arabic_keys.add(key)
+        french = french_by_key.get(key)
+        if french is None:
+            fail(f"Arabic sidecar line {index}: no French row for key {key}")
+        if row["jo61_seats_to_fill"] != french["jo61_seats_to_fill"]:
+            fail(f"Arabic sidecar line {index}: seat count differs from French row")
+        if row["jo61_french_constituency_name_secondary"] != french["jo61_constituency_name_fr_verbatim"]:
+            fail(f"Arabic sidecar line {index}: French secondary text changed")
+        if row["jo58_current_register_code"] != french["jo58_current_register_code"]:
+            fail(f"Arabic sidecar line {index}: JO58 current code differs from French crosswalk")
+        if row["jo61_official_pdf_visual_review_status"] != "NOT_VISUALLY_REVIEWED_CACHE_MISS":
+            fail(f"Arabic sidecar line {index}: cannot overstate official Arabic PDF visual review")
+        if row["jo61_arabic_transcription_status"] != "SECONDARY_TEXT_CAPTURED_NOT_OFFICIAL_IMAGE_VERIFIED":
+            fail(f"Arabic sidecar line {index}: incorrect Arabic evidence classification")
+        if row["jo58_practitioner_review_status"] != "PENDING" or row["jo58_effective_date"]:
+            fail(f"Arabic sidecar line {index}: practitioner/effective-date guard changed")
+        if row["legal_commune_identity_status"] != "NOT_ADJUDICATED":
+            fail(f"Arabic sidecar line {index}: legal identity must remain unadjudicated")
+
+    all_annex_keys = set(french_by_key)
+    missing_arabic = all_annex_keys - arabic_keys
+    expected_missing_arabic = {("68", f"{sequence:02d}") for sequence in range(1, 9)}
+    if missing_arabic != expected_missing_arabic:
+        fail(f"expected only Wilaya 68 sequences 01-08 to lack Arabic transcription, got {sorted(missing_arabic)}")
+
     print(
         "P1-35 bounded JO61 Annex II extraction: 108 rows across 11 new Wilayas, "
         "1,748 electoral seats, 106 direct normalized French-name matches, "
-        "2 preserved secondary-transcription variants. Official PDF visual "
-        "review and Arabic Annex II transcription remain incomplete; no legal "
-        "commune identity or parentage is approved."
+        "2 preserved French secondary-transcription variants; Arabic secondary "
+        "text is captured for 100/108 rows with only Wilaya 68 sequences 01-08 "
+        "not yet transcribed. Official PDF visual review remains incomplete; "
+        "no legal commune identity or parentage is approved."
     )
 
 

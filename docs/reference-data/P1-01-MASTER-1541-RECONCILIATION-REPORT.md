@@ -329,3 +329,22 @@ This correction does not erase the independently observed name-set differences w
 The uploaded generator propagates its upstream wilaya_code into 46 daira rows and 96 commune rows under the ten mismatched Wilaya groups; their generated sequence IDs are not official codes. The 11-new-Wilaya population remains 108 commune rows and 46 daira rows; arithmetic consistency does not cure the 10 incorrect code/name pairs. See [P1-01-UPLOADED-WILAYA-CODE-MAPPING-CORRECTION-2026-11-22.md](P1-01-UPLOADED-WILAYA-CODE-MAPPING-CORRECTION-2026-11-22.md).
 
 **Corrected disposition:** do not import or directly remap these generated IDs. Treat the archive as candidate-only name-discovery material. Resolve every row using official name, statute, Decree 26-206 code, JO58 register code/seat, and independently sourced parent/time assertions. No candidate, legal ledger, database, or application row was changed; all practitioner sign-offs remain PENDING and communesCount=0.
+
+
+## Separate candidate archive intake — 22 November 2026
+
+A second ZIP was supplied after the earlier candidate archive audit. Its SHA-256 is `bd8ae8914b1d08cf4ab06c3e01158d9880d7c2c6c811cf4ea756272f0d92fa81`, distinct from the `dd35...` artifact addressed by PR #200. The second archive has the correct official new-Wilaya code/name sequence 59–69; the PR #200 ten-of-eleven mismatch must not be applied to this artifact.
+
+The second archive rebuilds reproducibly with 31/31 checks passing and SQLite integrity/FK checks clean. It remains candidate-only because its 91-306/26-253 source attributions conflate Daira-Chief service lists with legal territorial membership, it has no separate operational assignment relation, it asserts 2026-04-05 as the effective boundary for all 108 commune moves without qualified legal determination, and its original JORADP PDF binaries are absent. See [the artifact-specific audit](P1-01-SECOND-CANDIDATE-ARCHIVE-AUDIT-2026-11-22.md).
+
+No candidate data or master-ledger row was changed. All practitioner approvals remain PENDING; no valid_from was accepted; no commune import; P1-01/P1-35 In Progress/Pending; P1-02 Blocked.
+
+
+## Second candidate archive — four-digit Commune-code lineage conflict — 22 November 2026
+
+The second archive correctly maps the 11 new Wilayas to codes 59–69, but its 108 moved Commune rows retain legacy four-digit codes under their former Wilayas (108/108 old prefixes; 0/108 new prefixes), with empty `previous_codes` arrays. Decree 85-20 Articles 3–4 require the first two digits to identify the attached Wilaya and a new code on transfer. The official JO58/2026 108-row extract supplies current 59xx–69xx codes. The archive's 11 `expected_2026` checks validate the legacy code sets, not the JO58 codes. This is an unresolved critical code-lineage issue; no import or automatic remapping. Full evidence: [second archive audit](P1-01-SECOND-CANDIDATE-ARCHIVE-AUDIT-2026-11-22.md).
+
+No canonical code or effective date is accepted. All practitioner sign-offs remain PENDING; P1-01/P1-35 In Progress/Pending; P1-02 Blocked; `communesCount=0`.
+
+
+The current archive's 108 moved-commune French names also match the official JO58/2026 108-row new-Wilaya extract by normalized name (108/108; no missing/extra names by Wilaya), but all 108 codes differ: legacy archive code 0319 for Aflou vs JO58 5901, 0542 for Barika vs 6001, 2820 for Bou Saada vs 6801, and similarly across the other eight groups. JO58 practitioner status remains PENDING and effective_date blank; this crosswalk does not authorize automatic remapping or an effective-date decision.

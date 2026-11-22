@@ -207,3 +207,20 @@ The next bounded evidence slice records Decree 26-253 / JO52/2026 as the Daira-C
 A follow-up check against Presidential Decree 26-206 / JO40/2026 Article 1 and the official JO58/2026 Wilaya code annex identifies a critical flaw in the supplied candidate archive: only Aflou/59 matches; the other ten 2026 Wilaya names are attached to the wrong official code. This propagates to 46 synthetic daira IDs and 96 synthetic commune IDs. The earlier Bou Saada and El Abiodh name-set mismatches remain valid by Wilaya name, but references to local codes 64 and 60 must not be read as official codes; legal codes are 68 and 69.
 
 The detailed correction is in docs/reference-data/P1-01-UPLOADED-WILAYA-CODE-MAPPING-CORRECTION-2026-11-22.md. Do not edit/import the uploaded dataset. Continue P1-01 source reconciliation and P1-35 bilingual JO61/JO58 evidence; P1-01/P1-35 remain In Progress/Pending; P1-02 Blocked; all 1,541 approvals pending; communesCount=0.
+
+
+## Additional candidate archive intake — 22 November 2026
+
+A second candidate archive (`bd8ae8914b1d08cf4ab06c3e01158d9880d7c2c6c811cf4ea756272f0d92fa81`) is now separately documented. It is not the earlier `dd35...` archive audited in PR #200; the second archive's 59–69 official Wilaya code mapping is correct. It passes 31 reproducibility/structural checks but remains unapproved: 91-306/26-253 service-assignment source attributions do not establish complete legal territorial membership, operational authority is not modeled separately, 2026-04-05 move dates are not approved effective dates, and original official PDF binaries are not present. See [artifact-specific audit](reference-data/P1-01-SECOND-CANDIDATE-ARCHIVE-AUDIT-2026-11-22.md).
+
+This is evidence intake only, not a new import task or phase transition. Continue P1-01/P1-35 in order; P1-02 remains Blocked, all 1,541 approvals remain pending, and `communesCount=0`.
+
+
+## Second candidate archive — critical Commune-code lineage finding — 22 November 2026
+
+The second archive's Wilaya-level codes 59–69 are correct, but its 108 transferred Commune records retain old four-digit codes beginning with the former Wilaya prefix (0/108 use the new prefix); all 108 `previous_codes` arrays are empty. Example: Aflou is Wilaya 59 but remains 0319. This conflicts with Decree 85-20 Articles 3–4 and the official JO58/2026 108-row extract's current codes (e.g. 5901, 6001, 6801). The archive's own validator checks legacy code sets, not current JO58 code assignments. Do not import or auto-renumber; require row-level reconciliation of old/new codes and effective intervals. See [second archive audit](reference-data/P1-01-SECOND-CANDIDATE-ARCHIVE-AUDIT-2026-11-22.md).
+
+This is a P1-01 evidence blocker, not a phase transition. P1-01/P1-35 remain In Progress/Pending; P1-02 remains Blocked; no commune import; `communesCount=0`.
+
+
+The row-level name crosswalk against the official JO58 108-row extract is 108/108 normalized matches with no group omissions/extras, while all 108 four-digit codes differ (legacy former-Wilaya prefix in the archive vs current 59xx–69xx code in JO58). Example: Aflou 0319→5901; Bou Saada 2820→6801. The JO58 extract's practitioner status is still PENDING and effective_date blank. Do not auto-remap or infer an effective date; see the [artifact audit](reference-data/P1-01-SECOND-CANDIDATE-ARCHIVE-AUDIT-2026-11-22.md).

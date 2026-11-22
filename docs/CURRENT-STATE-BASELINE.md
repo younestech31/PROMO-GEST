@@ -1,3 +1,26 @@
+## Row-level JO58 code comparison for the second archive — 22 November 2026
+
+The second archive's 108 moved-commune names were normalized and compared against the repository's official JO58/2026 108-row new-Wilaya register extract: 108/108 names matched with no missing/extra names by Wilaya. Their codes do not match: all 108 archive codes retain the former-Wilaya prefix; JO58 assigns current 59xx–69xx register codes. Examples: Aflou 0319→5901; Barika 0542→6001; El Kantara 0717→6101; Bou Saada 2820→6801. The JO58 extract still has practitioner status PENDING and effective_date blank. This is a code-lineage discrepancy, not authorization to infer effective dates or automatically remap data. See the [artifact audit](reference-data/P1-01-SECOND-CANDIDATE-ARCHIVE-AUDIT-2026-11-22.md).
+
+
+## Critical four-digit Commune-code lineage conflict in the second candidate archive — 22 November 2026
+
+The second archive has the correct **Wilaya-level** 59–69 code/name mapping, but its four-digit Commune codes are not current JO58 register codes. All 108 communes moved by Law 26-06 retain the former-Wilaya prefix; 0/108 use the new Wilaya prefix, and all 108 raw `previous_codes` arrays are empty. Examples: Aflou 59 retains 0319; Barika 60 retains 0542; Khoubana 68 retains 2807. The archive README explicitly says these codes were not renumbered.
+
+This conflicts with Decree 85-20 Articles 3–4 (first two digits identify attached Wilaya; a Commune transferred to another Wilaya receives a new code and its old code is not reused) and with the current JO58/2026 108-row register extract, which assigns new 59xx–69xx codes (e.g. 5901 Aflou, 6001 Barika, 6801 Bou Saada). The archive's 11 hard-coded 2026 checks validate the old code sets, not the JO58 current codes. This is a critical 108-row unresolved code-lineage issue; do not import or auto-remap. See the expanded [second archive audit](reference-data/P1-01-SECOND-CANDIDATE-ARCHIVE-AUDIT-2026-11-22.md) and [Decree 85-20 code rule](reference-data/P1-01-CODE-LINEAGE-CROSSCHECKS.md).
+
+P1-01 remains In Progress/Pending; P1-35 remains In Progress/Pending; P1-02 Blocked; all 1,541 practitioner sign-offs PENDING; no `valid_from`; `communesCount=0`; no import.
+
+## Separate candidate archive intake — exact artifact identity and limits — 22 November 2026
+
+A second, distinct candidate ZIP was supplied and audited: SHA-256 `bd8ae8914b1d08cf4ab06c3e01158d9880d7c2c6c811cf4ea756272f0d92fa81`. It is not the earlier `dd35a4f9f44117c4f0fda7bc34277aa98b6cb874bed975f18c3c38665d1b79ae` artifact corrected in PR #200. **The PR #200 finding that ten of eleven new-Wilaya code/name pairs were wrong applies only to the earlier fingerprint; this second archive's 59–69 mapping is correct.**
+
+The second archive reproducibly rebuilds in isolation: 31 validation checks pass; generated CSVs and validation report match the supplied files; SQLite integrity is `ok` and foreign-key check is empty. Counts are 69 Wilayas, 538 Dairas, 1,541 Communes and 119 change rows. These are structural/reproducibility results, not legal approval.
+
+The second archive still cannot be imported. Its 934 rows cite Decree 91-306 and 404 cite Decree 26-253, instruments whose relevant scope is Daira-Chief service assignment rather than a complete statutory Commune→Wilaya membership register. The model has no separate operational assignment relation. It also asserts 2026-04-05 for all 108 commune moves and all 11 Wilaya creations; those candidate dates are not qualified per-row legal effective dates. Original JORADP PDFs are absent, so PDF hashes in `texts.csv` were not independently verified. Full detail: [P1-01 second candidate archive audit](reference-data/P1-01-SECOND-CANDIDATE-ARCHIVE-AUDIT-2026-11-22.md).
+
+P1-01 remains In Progress/Pending; P1-35 remains In Progress/Pending; P1-02 remains Blocked; all 1,541 practitioner sign-offs remain PENDING; W30-R007 remains NEEDS_EVIDENCE; `communesCount = 0`; no commune import.
+
 ## Official 2026 territorial reference intake — JO25 + JO61 — 22 November 2026
 
 - **Legal total:** official JO25/2026 Law 26-06, Article 3, printed page 4, explicitly sets **69 wilayas / 1,541 communes**. Both French and Arabic page 4 were visually reviewed: [FR PDF](https://www.joradp.dz/FTP/jo-francais/2026/F2026025.pdf) / [AR PDF](https://www.joradp.dz/FTP/jo-arabe/2026/A2026025.pdf).

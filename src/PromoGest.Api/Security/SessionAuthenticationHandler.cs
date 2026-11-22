@@ -3,6 +3,7 @@ using System.Text.Encodings.Web;
 using Microsoft.AspNetCore.Antiforgery;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.Extensions.Options;
+using Microsoft.Extensions.Hosting;
 using PromoGest.Application.Services;
 using PromoGest.Contracts.Auth;
 
@@ -11,9 +12,26 @@ namespace PromoGest.Api.Security;
 public static class SessionCookieDefaults
 {
     public const string AuthenticationScheme = "PromoGestSession";
+
+    // Legacy non-prefixed name is intentionally limited to plain-HTTP Development.
+    // Secure environments use the browser-enforced __Host- cookie prefix.
     public const string CookieName = "promogest_session";
+    public const string HostCookieName = "__Host-promogest_session";
     public const string CsrfCookieName = "promogest_csrf";
     public const string CsrfHeaderName = "X-CSRF-TOKEN";
+
+    public static bool UsesHostPrefix(HttpContext context, IHostEnvironment environment)
+    {
+        ArgumentNullException.ThrowIfNull(context);
+        ArgumentNullException.ThrowIfNull(environment);
+
+        return !environment.IsDevelopment() ||
+               context.Request.IsHttps ||
+               DevelopmentPreviewCookiePolicy.IsHttpsPreviewRequest(context.Request);
+    }
+
+    public static string GetCookieName(HttpContext context, IHostEnvironment environment)
+        => UsesHostPrefix(context, environment) ? HostCookieName : CookieName;
 }
 
 public static class SessionClaimsFactory
@@ -68,20 +86,24 @@ public static class SessionClaimsFactory
 public sealed class SessionAuthenticationHandler : AuthenticationHandler<AuthenticationSchemeOptions>
 {
     private readonly AuthService _authService;
+    private readonly IHostEnvironment _environment;
 
     public SessionAuthenticationHandler(
         IOptionsMonitor<AuthenticationSchemeOptions> options,
         ILoggerFactory logger,
         UrlEncoder encoder,
-        AuthService authService)
+        AuthService authService,
+        IHostEnvironment environment)
         : base(options, logger, encoder)
     {
         _authService = authService;
+        _environment = environment;
     }
 
     protected override async Task<AuthenticateResult> HandleAuthenticateAsync()
     {
-        if (!Request.Cookies.TryGetValue(SessionCookieDefaults.CookieName, out var token) || string.IsNullOrWhiteSpace(token))
+        var cookieName = SessionCookieDefaults.GetCookieName(Context, _environment);
+        if (!Request.Cookies.TryGetValue(cookieName, out var token) || string.IsNullOrWhiteSpace(token))
         {
             return AuthenticateResult.NoResult();
         }

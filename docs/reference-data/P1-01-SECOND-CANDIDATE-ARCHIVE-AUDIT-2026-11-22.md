@@ -68,6 +68,24 @@ The archive explicitly says in its README that the four-digit Commune codes were
 
 This is a direct unresolved conflict with the code rule recorded in [P1-01-CODE-LINEAGE-CROSSCHECKS.md](P1-01-CODE-LINEAGE-CROSSCHECKS.md): Decree 85-20, Article 3, defines the first two digits as the attached Wilaya; Article 4 requires a new code when a Commune is transferred to another Wilaya and says the old code is not reused.
 
+The current archive's 108 French commune names were independently compared by normalized name against the 108 rows in the official JO58 extract: **108/108 matched**, with no missing or extra names in any of the eleven Wilaya groups. This establishes a row-name crosswalk for the code comparison; it is not practitioner sign-off or effective-date approval.
+
+| Wilaya | Commune | Code in candidate archive | Current JO58 register code |
+|---:|---|---:|---:|
+| 59 | Aflou | 0319 | 5901 |
+| 60 | Barika | 0542 | 6001 |
+| 61 | El Kantara | 0717 | 6101 |
+| 62 | Bir El Ater | 1202 | 6201 |
+| 63 | El Aricha | 1332 | 6301 |
+| 64 | Ksar Chellala | 1429 | 6401 |
+| 65 | Aïn Ouessara | 1731 | 6501 |
+| 66 | Messaad | 1717 | 6601 |
+| 67 | Ksar El Boukhari | 2635 | 6701 |
+| 68 | Bou Saada | 2820 | 6801 |
+| 69 | El Abiodh Sidi Cheikh | 3207 | 6901 |
+
+The JO58 extract's `practitioner_review_status` remains PENDING and its `effective_date` fields are blank. Preserve this as an official code crosswalk requiring the remaining legal/effective-date decision, not as authority to infer when the code transition took effect.
+
 The repository's official [JO58/2026 108-new-Wilaya register extract](P1-01-JO58-NEW-WILAYAS-108-REGISTER-EXTRACT.csv) records 108 current register codes under the new prefixes 59–69 (examples: Aflou `5901`, Barika `6001`, El Kantara `6101`, Bou Saada `6801`, El Abiodh Sidi Cheikh `6901`). Its metadata records French and Arabic PNG visual review of printed pp.9–25 and source PDF SHA-256 `6a1e59f7c0e8396115657c6376dabeb3fa07543ac8a7036ee3003af6a415aad6`; practitioner review remains PENDING and its effective_date cells remain blank.
 
 The archive's 11 hard-coded `expected_2026` tests validate the **legacy four-digit code sets** and row counts; they do not test the current JO58 register-code values or Decree 85-20 Article 4. Therefore 31/31 structural checks passing does not close this 108-row code-lineage conflict.

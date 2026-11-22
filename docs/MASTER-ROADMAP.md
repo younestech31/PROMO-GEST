@@ -214,3 +214,10 @@ The detailed correction is in docs/reference-data/P1-01-UPLOADED-WILAYA-CODE-MAP
 A second candidate archive (`bd8ae8914b1d08cf4ab06c3e01158d9880d7c2c6c811cf4ea756272f0d92fa81`) is now separately documented. It is not the earlier `dd35...` archive audited in PR #200; the second archive's 59–69 official Wilaya code mapping is correct. It passes 31 reproducibility/structural checks but remains unapproved: 91-306/26-253 service-assignment source attributions do not establish complete legal territorial membership, operational authority is not modeled separately, 2026-04-05 move dates are not approved effective dates, and original official PDF binaries are not present. See [artifact-specific audit](reference-data/P1-01-SECOND-CANDIDATE-ARCHIVE-AUDIT-2026-11-22.md).
 
 This is evidence intake only, not a new import task or phase transition. Continue P1-01/P1-35 in order; P1-02 remains Blocked, all 1,541 approvals remain pending, and `communesCount=0`.
+
+
+## Second candidate archive — critical Commune-code lineage finding — 22 November 2026
+
+The second archive's Wilaya-level codes 59–69 are correct, but its 108 transferred Commune records retain old four-digit codes beginning with the former Wilaya prefix (0/108 use the new prefix); all 108 `previous_codes` arrays are empty. Example: Aflou is Wilaya 59 but remains 0319. This conflicts with Decree 85-20 Articles 3–4 and the official JO58/2026 108-row extract's current codes (e.g. 5901, 6001, 6801). The archive's own validator checks legacy code sets, not current JO58 code assignments. Do not import or auto-renumber; require row-level reconciliation of old/new codes and effective intervals. See [second archive audit](reference-data/P1-01-SECOND-CANDIDATE-ARCHIVE-AUDIT-2026-11-22.md).
+
+This is a P1-01 evidence blocker, not a phase transition. P1-01/P1-35 remain In Progress/Pending; P1-02 remains Blocked; no commune import; `communesCount=0`.

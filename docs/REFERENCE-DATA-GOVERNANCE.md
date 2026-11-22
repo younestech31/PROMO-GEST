@@ -408,3 +408,18 @@ The ONS *Code Géographique National* table provides a later official W./C. cros
 - Arabic p.1622 visibly retains `1600 — Ville d'Alger` as a separate special assertion; it remains excluded from 1,541 communes. The Arabic page images also show the previously recorded printed-code anomalies W39 `4907` vs `3907`, W41 `4012` vs `4112` and `1415` vs `4115`, W42 `4228` for `4229`, and W44 `4403` / `بومدفع`. These are preserved as print facts, not automatic corrections.
 - Frontend CI now runs `scripts/validate-p1-01-jo44-arabic-page-images.py` after the three existing P1-01 validators. It checks the page-image manifest and Git blob hashes, 1,541 source-key locators, code-range coverage, printed counts, 1600 separation and W36 duplicate preservation. It does not validate handwritten interpretation or practitioner approval.
 - No commune import; `communesCount = 0`; all 1,541 practitioner sign-offs remain PENDING; P1-01 remains In Progress / Pending; P1-02 remains Blocked.
+
+
+## 9. JO52/2026 Daira-Chief assignment is distinct from territorial membership — 22 November 2026
+
+Official JO52/2026 Decree 26-253 Article 1 modifies the annexed list of communes animated by each Daira Chief under Decree 91-306. Treat this as a source for Daira-Chief service assignments, not as the statutory Commune→Wilaya territorial membership list. The controlling membership lists for the 2026 territorial map are in Law 26-06's amendments to Law 84-09 in JO25/2026.
+
+A cross-check of a user-supplied 1,541-row candidate archive found two confirmed new-Wilaya membership set errors:
+- Uploaded code 64 (Bou Saada) substitutes four M'Sila Article 32 communes (Sidi Hadjeres, Maadid, M'tarfa, Maarif) and omits four Bou Saada Article 52 bis 19 communes (Khoubana, M'Cif, El Houamed, Djebel Messaad).
+- Uploaded code 60 (El Abiodh Sidi Cheikh) substitutes three El Bayadh Article 36 communes (Brezina, Ghassoul, Cheguig) and omits Aïn El Orak, El Bnoud and El Mehara from Article 52 bis 20.
+
+The JO52 Annex also demonstrates why the service-assignment source must remain a separate relation: it lists 13 communes that are legally in Bou Saada under the Daira-Chief assignment group for heading 67 Ksar El Boukhari, and the other 10 under heading 68 Bou Saada. The Annex's headings and row counts are not proof of a one-to-one territorial parent mapping. The transitional Article 54 in JO25 gives mother-Wilaya authorities a progressive transfer deadline no later than 31 December 2026; that is not a valid_from date for individual commune parentage or operational service.
+
+This is consistent with the accepted ADR 0010 rule to preserve separate legal/geographic jurisdiction and operational authority. No schema change is made or proposed as part of this source audit; any future data-model implementation requires a separate review of domain entities, APIs, migrations, historical workflows, data integrity and rollback.
+
+Detailed evidence: [P1-01-JO52-LEGAL-OPERATIONAL-MEMBERSHIP-AUDIT-2026-11-22.md](reference-data/P1-01-JO52-LEGAL-OPERATIONAL-MEMBERSHIP-AUDIT-2026-11-22.md). The official JO52 searchable text was inspected in both editions, but relevant PDF screenshots returned Cache miss; no visual page inspection is claimed. No commune import, candidate correction, valid_from assignment or practitioner sign-off occurred.

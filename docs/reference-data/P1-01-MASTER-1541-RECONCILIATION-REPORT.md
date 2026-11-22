@@ -386,3 +386,11 @@ This is still limited to new-Wilaya headings 59–69 only. It does not complete 
 - Merged bounded extraction: French/Arabic secondary sidecars for new-Wilaya headings 59–69, 108 rows, 1,748 APC seats. The independent Arabic secondary text extractions match exactly on 100/108 rows; eight spelling differences are preserved with separate sources/locators and remain pending official page-image review. The two French secondary variants remain unresolved.
 - Official JO61 PDFs could not be retrieved/rendered in this session (local DNS retrieval failed; prior screenshot attempts returned Cache miss); no official JO61 page image is claimed visually reviewed. The remaining 58 Wilaya headings have not been extracted. Organic Law 21-01 Article 124 still prevents assuming an Annex II electoral row is one legal commune.
 - No legal identity, parentage, code, effective date, practitioner approval, JO44 master-ledger change, database write or import. All 1,541 approvals remain PENDING; W30-R007 NEEDS_EVIDENCE; P1-01 and P1-35 In Progress/Pending; P1-02 Blocked; `communesCount=0`.
+
+
+
+## JO61 Annex II legacy group-index aggregate control — headings 01–58 — 22 November 2026
+
+The secondary French searchable-text mirror yields a first-pass index for all 58 earlier headings. Reported final sequence indexes sum to 1,433; table-stated APC seats sum to 24,827. With the new-Wilaya headings 59–69 sidecars (108 final sequence entries and 1,748 seats), the combined end-sequence index sum is 1,541 and the combined stated seats are 26,575. The equality between end-sequence-index sum and JO25's 1,541 legal commune total is not evidence that the electoral constituency rows are legally identical to communes. Article 124 explicitly permits an electoral constituency to consist of part of a commune, one commune or several communes.
+
+The legacy index is group-level only: its 1,433 sum is not an independently re-extracted row population; Arabic row extraction, pinned page/line locators, official image review, and legal/practitioner adjudication are outstanding. Source: third-party searchable-text mirror only. No master-ledger change, valid_from, sign-off or import is made. See P1-35-JO61-ANNEX-II-LEGACY-WILAYA-GROUP-INDEX-01-58.csv.

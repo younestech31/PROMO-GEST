@@ -37,6 +37,8 @@ jobs:
         run: |
           python3 scripts/p1_01_bilingual_supplements.py
           python3 scripts/test_p1_01_bilingual_supplements.py
+      - name: Validate second candidate archive JO58 108-row code lineage (not legal approval)
+        run: python3 scripts/validate-p1-01-second-archive-jo58-crosswalk.py
       - name: Verify reproducible practitioner review queue (not a seed)
         run: python3 scripts/prepare-p1-01-review.py
       - name: Validate independent commune decision book (no sign-off)

@@ -224,3 +224,8 @@ This is a P1-01 evidence blocker, not a phase transition. P1-01/P1-35 remain In 
 
 
 The row-level name crosswalk against the official JO58 108-row extract is 108/108 normalized matches with no group omissions/extras, while all 108 four-digit codes differ (legacy former-Wilaya prefix in the archive vs current 59xx–69xx code in JO58). Example: Aflou 0319→5901; Bou Saada 2820→6801. The JO58 extract's practitioner status is still PENDING and effective_date blank. Do not auto-remap or infer an effective date; see the [artifact audit](reference-data/P1-01-SECOND-CANDIDATE-ARCHIVE-AUDIT-2026-11-22.md).
+
+
+## Second archive — pinned 108-row old/current code crosswalk — 22 November 2026
+
+Added `docs/reference-data/P1-01-SECOND-ARCHIVE-JO58-108-COMMUNE-CODE-CROSSWALK.csv` to map each of the 108 moved candidate rows to the current JO58 register-code field by normalized French name. Recorded invariant counts: 108/108 names matched; 108 unique legacy codes and 108 unique JO58 codes; every old code prefix matches the former Wilaya; every JO58 code prefix matches the current Wilaya; every candidate `previous_codes` array is empty. Practitioner status remains PENDING and effective dates remain blank. A new Python validator runs in Frontend CI and recomputes these limited structural/source crosswalk checks. This does not establish an effective date, legal sign-off or import permission. [Audit detail](reference-data/P1-01-SECOND-CANDIDATE-ARCHIVE-AUDIT-2026-11-22.md).

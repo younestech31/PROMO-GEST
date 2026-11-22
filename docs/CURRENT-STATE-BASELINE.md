@@ -1,3 +1,11 @@
+## Critical four-digit Commune-code lineage conflict in the second candidate archive — 22 November 2026
+
+The second archive has the correct **Wilaya-level** 59–69 code/name mapping, but its four-digit Commune codes are not current JO58 register codes. All 108 communes moved by Law 26-06 retain the former-Wilaya prefix; 0/108 use the new Wilaya prefix, and all 108 raw `previous_codes` arrays are empty. Examples: Aflou 59 retains 0319; Barika 60 retains 0542; Khoubana 68 retains 2807. The archive README explicitly says these codes were not renumbered.
+
+This conflicts with Decree 85-20 Articles 3–4 (first two digits identify attached Wilaya; a Commune transferred to another Wilaya receives a new code and its old code is not reused) and with the current JO58/2026 108-row register extract, which assigns new 59xx–69xx codes (e.g. 5901 Aflou, 6001 Barika, 6801 Bou Saada). The archive's 11 hard-coded 2026 checks validate the old code sets, not the JO58 current codes. This is a critical 108-row unresolved code-lineage issue; do not import or auto-remap. See the expanded [second archive audit](reference-data/P1-01-SECOND-CANDIDATE-ARCHIVE-AUDIT-2026-11-22.md) and [Decree 85-20 code rule](reference-data/P1-01-CODE-LINEAGE-CROSSCHECKS.md).
+
+P1-01 remains In Progress/Pending; P1-35 remains In Progress/Pending; P1-02 Blocked; all 1,541 practitioner sign-offs PENDING; no `valid_from`; `communesCount=0`; no import.
+
 ## Separate candidate archive intake — exact artifact identity and limits — 22 November 2026
 
 A second, distinct candidate ZIP was supplied and audited: SHA-256 `bd8ae8914b1d08cf4ab06c3e01158d9880d7c2c6c811cf4ea756272f0d92fa81`. It is not the earlier `dd35a4f9f44117c4f0fda7bc34277aa98b6cb874bed975f18c3c38665d1b79ae` artifact corrected in PR #200. **The PR #200 finding that ten of eleven new-Wilaya code/name pairs were wrong applies only to the earlier fingerprint; this second archive's 59–69 mapping is correct.**

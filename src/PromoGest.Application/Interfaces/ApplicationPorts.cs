@@ -48,6 +48,8 @@ public interface IUserRepository
     Task ReplaceUserRolesAsync(Guid userId, IEnumerable<UserRole> newRoles, CancellationToken ct = default);
     Task AddSessionAsync(UserSession session, CancellationToken ct = default);
     Task<UserSession?> GetSessionByTokenHashAsync(string tokenHash, CancellationToken ct = default);
+    Task<IReadOnlyList<UserSession>> ListSessionsByUserAsync(Guid userId, CancellationToken ct = default);
+    Task<UserSession?> GetSessionByIdAsync(Guid userId, Guid sessionId, CancellationToken ct = default);
     Task RevokeAllUserSessionsAsync(Guid userId, DateTimeOffset revokedAtUtc, CancellationToken ct = default);
     Task SaveChangesAsync(CancellationToken ct = default);
 }

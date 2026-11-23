@@ -1,4 +1,15 @@
-## Current decision checkpoint — no new decision since ADR-0018; live main is PR #230 — 23 November 2026
+## Current decision checkpoint — no new decision since ADR-0018; live main is PR #231 — 23 November 2026
+
+- **Verified live source:** GitHub `main` = `71a973beb3ecabffd0652729a34d237f634d5f04`, the squash-merge SHA for [PR #231](https://github.com/younestech31/PROMO-GEST/pull/231), resolved live on 23 November 2026 with 0 open pull requests ([CI 45227025283](https://github.com/younestech31/PROMO-GEST/actions/runs/45227025283) 3/3, [CodeQL 45227025334](https://github.com/younestech31/PROMO-GEST/actions/runs/45227025334) 2/2 on that exact SHA).
+- **Latest recorded decision:** ADR-0018 — *Project Commercialization Eligibility and CRM/Reservation Separation* — remains the most recent approved decision. No new ADR has been recorded since PR #223.
+- **Enforcement status unchanged:** `P1-10` remains `In Progress / Pending`. Runtime enforcement of ADR-0018 in Domain, Application and API has not started and stays gated by `P1-09`. Only `ProjectStatus.Commercialization` may allow marketing and new internal reservations; suspension keeps blocking new reservations and must never auto-cancel active holds or release their units.
+- **Decision-neutral engineering guard added (`P1-46`):** the `Documentation baseline consistency` CI job enforces that every canonical document states the same `main` SHA, merge PR, and checkpoint date, and that a canonical-document change moves that baseline to its own merge base. It records no decision, approves nothing, and does not alter any gate or acceptance state.
+- **Correction:** the previous checkpoint named `690471236b1af36323e2e7ea89aa0cbc0e76a0c8` (PR #230) as the live `main`; that went stale when PR #231 merged at `71a973beb3ecabffd0652729a34d237f634d5f04`.
+- **Scope:** documentation, workflow configuration, and verification scripts only. No production business data, configuration, credentials, role/permission grant, authorization, CSRF policy, deployment, or branch-protection setting was changed. Phase 1 remains `IN_PROGRESS`; Phases 2-5 remain gated.
+
+---
+
+## Historical decision checkpoint — no new decision since ADR-0018; live main was PR #230 (superseded by PR #231) — 23 November 2026
 
 - **Verified live source:** GitHub `main` = `690471236b1af36323e2e7ea89aa0cbc0e76a0c8`, the squash-merge SHA for [PR #230](https://github.com/younestech31/PROMO-GEST/pull/230), resolved live on 23 November 2026 with 0 open pull requests ([CI 45216916775](https://github.com/younestech31/PROMO-GEST/actions/runs/45216916775) 3/3, [CodeQL 45216916842](https://github.com/younestech31/PROMO-GEST/actions/runs/45216916842) 2/2 on that exact SHA). The PR #223 block below records the ADR-0018 decision and its then-current verification; it is historical provenance, not the current branch tip.
 - **Latest recorded decision:** ADR-0018 — *Project Commercialization Eligibility and CRM/Reservation Separation* — remains the most recent approved decision. No new ADR has been recorded since PR #223.

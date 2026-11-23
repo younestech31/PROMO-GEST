@@ -312,6 +312,73 @@ public sealed class AuthService
         return BuildSessionResponse(user, org, permissions);
     }
 
+    public async Task<SessionResponse> UpdatePreferredLanguageAsync(
+        Guid actorUserId,
+        UpdatePreferredLanguageRequest request,
+        RequestMetadata metadata,
+        CancellationToken ct = default)
+    {
+        var user = await _userRepository.GetByIdWithRolesAsync(actorUserId, ct)
+            ?? throw new UnauthorizedDomainException("AUTH_REQUIRED", "Authentication is required.");
+
+        if (!user.IsActive)
+        {
+            throw new UnauthorizedDomainException("AUTH_INVALID_CREDENTIALS", "Invalid username or password.");
+        }
+
+        if (user.MustChangePasswordAtNextLogin)
+        {
+            throw new ForbiddenDomainException(
+                "PASSWORD_CHANGE_REQUIRED",
+                "Change the temporary password before updating account preferences.");
+        }
+
+        if (request.ExpectedConcurrencyStamp == Guid.Empty ||
+            request.ExpectedConcurrencyStamp != user.ConcurrencyStamp)
+        {
+            throw new ConflictDomainException(
+                "USER_CONCURRENCY_CONFLICT",
+                "This account changed after it was loaded. Reload the session before saving your preference.");
+        }
+
+        var organization = await _installationRepository.GetOrganizationSettingsAsync(ct);
+        if (organization is null || !organization.IsInitialized)
+        {
+            throw new ConflictDomainException(
+                "SETUP_REQUIRED",
+                "System installation must be initialized before updating account preferences.");
+        }
+
+        var previousLanguage = user.PreferredLanguage;
+        var nowUtc = _clock.UtcNow;
+        user.SetPreferredLanguage(request.PreferredLanguage, nowUtc);
+
+        if (!string.Equals(previousLanguage, user.PreferredLanguage, StringComparison.Ordinal))
+        {
+            await _auditWriter.WriteAsync(
+                AuditLog.Record(
+                    nowUtc,
+                    user.Id,
+                    user.Username,
+                    "USER_PREFERRED_LANGUAGE_UPDATED",
+                    AuditSeverity.Info,
+                    "User",
+                    user.Id.ToString(),
+                    $"Updated the preferred language for '{user.Username}' from '{previousLanguage}' to '{user.PreferredLanguage}'.",
+                    null,
+                    metadata.IpAddress,
+                    metadata.UserAgent),
+                ct);
+
+            // The user mutation and its audit record share the scoped AppDbContext and
+            // SaveChanges transaction. A concurrency failure therefore rolls both back.
+            await _userRepository.SaveChangesAsync(ct);
+        }
+
+        var permissions = await _userRepository.GetEffectivePermissionsAsync(user.Id, ct);
+        return BuildSessionResponse(user, organization, permissions);
+    }
+
     public async Task ChangePasswordAsync(
         Guid actorUserId,
         ChangePasswordRequest request,
@@ -455,7 +522,10 @@ public sealed class AuthService
                 Array.Empty<string>(),
                 user.LastLoginAtUtc,
                 true,
-                user.PasswordChangeRequiredUntilUtc);
+                user.PasswordChangeRequiredUntilUtc)
+            {
+                ConcurrencyStamp = user.ConcurrencyStamp
+            };
 
             var restrictedOrganization = new OrganizationSummaryResponse(
                 Guid.Empty,
@@ -499,7 +569,10 @@ public sealed class AuthService
                 permissions,
                 user.LastLoginAtUtc,
                 user.MustChangePasswordAtNextLogin,
-                user.PasswordChangeRequiredUntilUtc),
+                user.PasswordChangeRequiredUntilUtc)
+            {
+                ConcurrencyStamp = user.ConcurrencyStamp
+            },
             new OrganizationSummaryResponse(
                 org.Id,
                 org.LegalName,

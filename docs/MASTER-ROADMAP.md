@@ -1,3 +1,19 @@
+## Current operating checkpoint — PR #221 merged and verified — 23 November 2026
+
+- **Verified live source:** GitHub `main` = `993617b9c854fa65de3833af38df9a140a9c2e81`. This checkpoint supersedes earlier opening snapshots that identify PR #220 / `5d547e239be653cde0bb848b9b2a17e91acf356a` as the current main tip; those remain historical evidence only.
+- **PR #221:** [merged](https://github.com/younestech31/PROMO-GEST/pull/221) at `993617b9c854fa65de3833af38df9a140a9c2e81`. Exactly three paths were repaired: `package-lock.json` restored to known-good blob `6922f9d559a2639a63cc2b21ad1f5dc4fdd871bd`; `scripts/check-backup-freshness.sh` and `scripts/test_check-backup-freshness.sh` restored to Git mode `100755` with their original contents/blobs unchanged. No application/runtime/API/schema/migration/business-data changes.
+- **Exact main CI:** [run #1325](https://github.com/younestech31/PROMO-GEST/actions/runs/45169522807) completed `success` on `head_sha=993617b9c854fa65de3833af38df9a140a9c2e81`; all 3 jobs passed: Frontend install/checks/static hosting, .NET 10 + PostgreSQL 18 least-privilege tests, and Windows publish/PowerShell validation.
+- **Exact main CodeQL:** [run #213](https://github.com/younestech31/PROMO-GEST/actions/runs/45169522787) completed `success` on the same `head_sha=993617b9c854fa65de3833af38df9a140a9c2e81`; both C# and JavaScript/TypeScript analyses passed (2/2).
+- **P1-40:** Done / Verified on 2026-11-23; its scope is only the lockfile and backup-script mode regression.
+- **Phase 1 boundaries remain unchanged:** P1-09 implementation PR #89 is merged, but Arabic RTL / French LTR manual browser acceptance remains pending. P1-10 remains Blocked pending the Product Owner's explicit marketing/booking lifecycle decision. P1-11 remains In Review / Pending and capability `IMPLEMENTED_NOT_VERIFIED`; no authorized organization-local preflight, disposable rehearsal, restore evidence or local migration has been performed.
+- **Municipality workstream:** P1-01 and P1-35 remain Deferred / Pending; P1-02 remains Blocked; all practitioner/legal approvals remain pending; no commune import or effective-date assignment is authorized.
+- **Other release gates:** P0-A01 and P0-A04 manual operator acceptance remain `NOT_RUN`; P1-34 remains Blocked (main branch protection is still disabled; no settings were changed); P1-36/P1-38 remain In Review / Pending for real Linux/Windows Caddy HTTPS staging acceptance. Phase 1 remains `IN_PROGRESS`; Phases 2–5 remain gated.
+- **Work split:** UI/visual implementation remains delegated to Google AI Studio per Product Owner direction. This does not alter server authorization or phase gates.
+
+Automated CI/CodeQL success is evidence only for the checks run; it does not establish production readiness, live-host acceptance, legal correctness, or manual bilingual UX acceptance.
+
+---
+
 ## Operating decision — municipality approval temporarily deferred — 22 November 2026
 
 - **Decision:** temporarily defer the municipality approval workstream to limit further schedule consumption. This is an operational reprioritization only; it is not approval, closure, legal acceptance, a waiver of acceptance criteria, or evidence that the 1,541-commune register is complete.

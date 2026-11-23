@@ -5,6 +5,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Diagnostics;
 using Microsoft.Extensions.DependencyInjection;
 using PromoGest.Contracts.Auth;
+using PromoGest.Contracts.Common;
 using PromoGest.Domain.Entities;
 using PromoGest.Infrastructure.Persistence;
 using Xunit;

@@ -2052,6 +2052,10 @@ public sealed partial class PostgresEndToEndTests : IClassFixture<PostgreSql18In
             {
                 NameAr = "إقامة الأطلس - تحديث مدير المشاريع",
                 NameFr = "Résidence Atlas - Mise à jour du directeur",
+                // ADR-0018: this request is reused for several later master-data writes, and the
+                // flows below create reservations, so it must not move the project out of
+                // commercialization.
+                Status = "Commercialization",
                 ExpectedConcurrencyStamp = updatedProject.ConcurrencyStamp
             };
 
@@ -2193,19 +2197,6 @@ public sealed partial class PostgresEndToEndTests : IClassFixture<PostgreSql18In
             Assert.Equal(directorUpdate.NameAr, directorUpdatedProject!.NameAr);
             Assert.Null(directorUpdatedProject.EstimatedBudgetDzd);
 
-            // ADR-0018: the flows below create reservations, and only commercialization allows that, so the
-            // project returns to commercialization through an explicit, audited status change.
-            var returnToCommercializationResponse = await directorClient.PutAsJsonAsync(
-                $"/api/projects/{createdProject.Id}",
-                directorUpdate with
-                {
-                    Status = "Commercialization",
-                    ExpectedConcurrencyStamp = directorUpdatedProject.ConcurrencyStamp
-                });
-            Assert.Equal(HttpStatusCode.OK, returnToCommercializationResponse.StatusCode);
-            var commercializingAgain = await returnToCommercializationResponse.Content.ReadFromJsonAsync<ProjectDto>();
-            Assert.NotNull(commercializingAgain);
-            Assert.Equal("Commercialization", commercializingAgain!.Status);
 
             var grantFinancials = await adminClient.PutAsJsonAsync(
                 $"/api/projects/{createdProject.Id}/members",

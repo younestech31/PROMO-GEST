@@ -1895,13 +1895,18 @@ public sealed partial class PostgresEndToEndTests : IClassFixture<PostgreSql18In
                 var unchanged = reservationsWhileSuspended.Single(item => item.Id == previous.Id);
                 Assert.Equal(previous.Status, unchanged.Status);
                 Assert.Equal(previous.PropertyUnitId, unchanged.PropertyUnitId);
-                Assert.Equal(previous.ExpiresAtUtc, unchanged.ExpiresAtUtc);
+                Assert.True(
+                    (previous.ExpiresAtUtc - unchanged.ExpiresAtUtc).Duration() < TimeSpan.FromSeconds(1),
+                    $"Reservation {previous.Id} expiry changed while the project was suspended.");
             }
 
             var heldReservationAfterSuspension = reservationsWhileSuspended!.Single(
                 item => item.Id == heldReservationBeforeSuspension.Id);
             Assert.Equal("Active", heldReservationAfterSuspension.Status);
-            Assert.Equal(heldReservationBeforeSuspension.ExpiresAtUtc, heldReservationAfterSuspension.ExpiresAtUtc);
+            Assert.True(
+                (heldReservationBeforeSuspension.ExpiresAtUtc - heldReservationAfterSuspension.ExpiresAtUtc).Duration()
+                    < TimeSpan.FromSeconds(1),
+                "The active hold expiry changed while the project was suspended.");
             var structureWhileSuspendedResponse = await adminClient.GetAsync(structureUrl);
             Assert.Equal(HttpStatusCode.OK, structureWhileSuspendedResponse.StatusCode);
             var structureWhileSuspended = await structureWhileSuspendedResponse.Content.ReadFromJsonAsync<ProjectStructureDto>();

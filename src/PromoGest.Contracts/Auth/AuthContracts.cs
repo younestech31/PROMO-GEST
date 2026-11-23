@@ -8,6 +8,17 @@ public sealed record UpdatePreferredLanguageRequest(
     string PreferredLanguage,
     Guid ExpectedConcurrencyStamp);
 
+public sealed record UserSessionDto(
+    Guid Id,
+    DateTimeOffset CreatedAtUtc,
+    DateTimeOffset LastSeenAtUtc,
+    DateTimeOffset ExpiresAtUtc,
+    string? IpAddress,
+    string? UserAgent,
+    bool IsCurrentSession);
+
+public sealed record RevokeUserSessionRequest(bool EndCurrentSession);
+
 public sealed record AuthenticatedUserResponse(
     Guid Id,
     string Username,

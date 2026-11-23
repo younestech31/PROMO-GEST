@@ -44,6 +44,34 @@ public sealed class DomainInvariantTests
     }
 
     [Fact]
+    public void UserSession_TouchAndRevoke_RotateConcurrencyStamp()
+    {
+        var session = UserSession.Create(
+            Guid.NewGuid(),
+            new string('a', 64),
+            Guid.NewGuid(),
+            FixedNow,
+            FixedNow.AddHours(2),
+            "192.0.2.10",
+            "PromoGest test client");
+
+        var initialStamp = session.ConcurrencyStamp;
+        session.Touch(FixedNow.AddMinutes(1));
+
+        Assert.NotEqual(initialStamp, session.ConcurrencyStamp);
+        Assert.Equal(FixedNow.AddMinutes(1), session.LastSeenAtUtc);
+
+        var touchStamp = session.ConcurrencyStamp;
+        var revokedAt = FixedNow.AddMinutes(2);
+        session.Revoke(revokedAt);
+
+        Assert.True(session.IsRevoked);
+        Assert.Equal(revokedAt, session.RevokedAtUtc);
+        Assert.NotEqual(touchStamp, session.ConcurrencyStamp);
+        Assert.False(session.IsValid(FixedNow.AddMinutes(2)));
+    }
+
+    [Fact]
     public void User_SetPreferredLanguage_ValidatesSupportedLanguagesAndRotatesConcurrencyStamp()
     {
         var user = User.CreateEmployee(

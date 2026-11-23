@@ -197,6 +197,12 @@ public sealed class PostgreSql18IntegrationFixture : IAsyncLifetime
                 throw new InvalidOperationException(
                     "The CanonicalizeAlgerianProjectCustomerPhones migration was not discovered and applied.");
             }
+            if (targetMigration is null &&
+                !applied.Contains("20261123151500_UserSessionConcurrencyStamp"))
+            {
+                throw new InvalidOperationException(
+                    "The UserSessionConcurrencyStamp migration was not discovered and applied.");
+            }
             if (targetMigration is not null && !applied.Contains(targetMigration))
             {
                 throw new InvalidOperationException(

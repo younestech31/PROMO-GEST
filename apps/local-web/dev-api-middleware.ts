@@ -342,6 +342,9 @@ export function createPromoGestDevMiddleware(): (
   const parties: PartyDirectoryItemDto[] = [];
   const projectCustomers = new Map<string, ProjectCustomerDto[]>();
   const projectReservations = new Map<string, ProjectSalesReservationDto[]>();
+
+  const isPreviewReservationAwaitingReview = (row: ProjectSalesReservationDto): boolean =>
+    row.status === 'Active' && Boolean(row.reviewRequiredAtUtc) && !row.reviewCompletedAtUtc;
   const projectDocuments = new Map<string, Array<{ meta: ProjectDocumentDto; content: Buffer }>>();
   const auditLogs: AuditLogDto[] = [];
   const csrfSecret = crypto.randomBytes(32);
@@ -1318,7 +1321,27 @@ export function createPromoGestDevMiddleware(): (
                 message: 'Updating the estimated budget requires projects.manage, ProjectManager membership, and CanViewFinancials.',
               });
             }
+            const previousStatus = project.status;
             const updated = updateProjectInStore(project, body);
+            if (previousStatus !== 'Suspended' && updated.status === 'Suspended') {
+              const nowIso = new Date().toISOString();
+              const activeHolds = (projectReservations.get(updated.id) ?? []).filter(
+                (row) => row.status === 'Active' && !row.reviewRequiredAtUtc
+              );
+              for (const hold of activeHolds) {
+                hold.reviewRequiredAtUtc = nowIso;
+                hold.isAwaitingReview = true;
+                hold.concurrencyStamp = crypto.randomUUID();
+              }
+              addAudit(
+                'PROJECT_RESERVATION_SUSPENSION_REVIEW_REQUIRED',
+                'Security',
+                `Project '${updated.code}' entered suspension with ${activeHolds.length} active reservation(s) queued for review; no hold was cancelled, expired, or released.`,
+                currentUser,
+                'Project',
+                updated.id
+              );
+            }
             addAudit(
               'PROJECT_UPDATED',
               'Info',
@@ -2419,9 +2442,13 @@ export function createPromoGestDevMiddleware(): (
         if (reservationsMatch && method === 'GET') {
           const scope = authorizeProjectReservationScope(reservationsMatch[1], false);
           if (!scope) return;
-          const rows = projectReservations.get(scope.project.id) ?? [];
+          const reviewQueueOnly = parsedUrl.searchParams.get('reviewRequired') === 'true';
+          const registerRows = projectReservations.get(scope.project.id) ?? [];
+          const rows = reviewQueueOnly
+            ? registerRows.filter((row) => isPreviewReservationAwaitingReview(row))
+            : registerRows;
           addAudit(
-            'PROJECT_RESERVATIONS_LISTED',
+            reviewQueueOnly ? 'PROJECT_RESERVATION_REVIEW_QUEUE_VIEWED' : 'PROJECT_RESERVATIONS_LISTED',
             'Info',
             `Listed ${rows.length} internal reservation(s) in project '${scope.project.code}'.`,
             currentUser,
@@ -2500,6 +2527,9 @@ export function createPromoGestDevMiddleware(): (
             createdByUserId: currentUser.id,
             createdAtUtc: nowIso,
             concurrencyStamp: crypto.randomUUID(),
+            reviewRequiredAtUtc: null,
+            reviewCompletedAtUtc: null,
+            isAwaitingReview: false,
           };
           list.unshift(created);
           projectReservations.set(scope.project.id, list);
@@ -2565,6 +2595,45 @@ export function createPromoGestDevMiddleware(): (
             'PROJECT_RESERVATION_CANCELLED',
             'Info',
             `Cancelled internal hold '${resItem.reservationNumber}' on unit '${resItem.unitNumber}'.`,
+            currentUser,
+            'ProjectSalesReservation',
+            resItem.id
+          );
+          return sendJson(res, 200, resItem);
+        }
+
+        // ADR-0018 suspension review queue: bookkeeping only, no status change.
+        const reviewResMatch = pathname.match(/^\/api\/projects\/([^/]+)\/reservations\/([^/]+)\/review$/);
+        if (reviewResMatch && method === 'POST') {
+          const scope = authorizeProjectReservationScope(reviewResMatch[1], true);
+          if (!scope) return;
+          const list = projectReservations.get(scope.project.id) ?? [];
+          const resItem = list.find((r) => r.id === decodeURIComponent(reviewResMatch[2]));
+          if (!resItem) return sendJson(res, 404, { code: 'RESERVATION_NOT_FOUND', message: 'Reservation not found.' });
+          const body = await readJsonBody<{ expectedConcurrencyStamp: string }>(req);
+          if (!body.expectedConcurrencyStamp || body.expectedConcurrencyStamp !== resItem.concurrencyStamp) {
+            return sendJson(res, 409, { code: 'CONCURRENCY_CONFLICT', message: 'Concurrency conflict.' });
+          }
+          if (!resItem.reviewRequiredAtUtc) {
+            return sendJson(res, 409, {
+              code: 'RESERVATION_REVIEW_NOT_REQUIRED',
+              message: 'This reservation was never queued for a suspension review.',
+            });
+          }
+          if (resItem.reviewCompletedAtUtc) {
+            return sendJson(res, 409, {
+              code: 'RESERVATION_REVIEW_ALREADY_COMPLETED',
+              message: 'The suspension review for this reservation is already recorded.',
+            });
+          }
+
+          resItem.reviewCompletedAtUtc = new Date().toISOString();
+          resItem.isAwaitingReview = false;
+          resItem.concurrencyStamp = crypto.randomUUID();
+          addAudit(
+            'PROJECT_RESERVATION_REVIEW_COMPLETED',
+            'Info',
+            `Recorded the suspension review of '${resItem.reservationNumber}' without approving, cancelling, or releasing it.`,
             currentUser,
             'ProjectSalesReservation',
             resItem.id

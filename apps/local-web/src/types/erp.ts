@@ -335,6 +335,9 @@ export interface ProjectSalesReservationDto {
   createdByUserId: string;
   createdAtUtc: string;
   concurrencyStamp: string;
+  reviewRequiredAtUtc: string | null;
+  reviewCompletedAtUtc: string | null;
+  isAwaitingReview: boolean;
 }
 
 export interface CreateProjectSalesReservationRequest {
@@ -345,6 +348,10 @@ export interface CreateProjectSalesReservationRequest {
 
 export interface CancelProjectSalesReservationRequest {
   reason: string;
+  expectedConcurrencyStamp: string;
+}
+
+export interface ReviewProjectSalesReservationRequest {
   expectedConcurrencyStamp: string;
 }
 

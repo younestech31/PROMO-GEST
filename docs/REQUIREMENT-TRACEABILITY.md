@@ -1,9 +1,9 @@
-## Current implementation traceability checkpoint — PR #235 merged; ADR-0018 suspension review queue implemented — 23 November 2026
+## Current implementation traceability checkpoint — PR #236 merged; ADR-0018 suspension review queue and operator UI implemented — 23 November 2026
 
 
 
 
-- Current verified main SHA: `77a78b7b752d28331dafdc0f4972157faab8ca45` (PR #235, suspension review queue migration, API, and tests), resolved live on 23 November 2026 with 0 open pull requests.
+- Current verified main SHA: `9b0a4c95b198aa5b072e38804123ab66a32492ca` (PR #236, canonical-baseline sync for the suspension review queue), resolved live on 23 November 2026 with 0 open pull requests.
 - PR #235 added the queryable ADR-0018 suspension review queue on top of the merged marker and gate; exact-main push [CI 45277326925](https://github.com/younestech31/PROMO-GEST/actions/runs/45277326925) passed 4/4 and [CodeQL 45277326953](https://github.com/younestech31/PROMO-GEST/actions/runs/45277326953) passed 2/2 on the same SHA, and PR head `9f85eddedd55368241e64988048275700b3c7bab` passed [CI 45276458181](https://github.com/younestech31/PROMO-GEST/actions/runs/45276458181) 4/4 and [CodeQL 45276458182](https://github.com/younestech31/PROMO-GEST/actions/runs/45276458182) 2/2.
 - New enforcement: `scripts/validate-doc-baseline.py` plus the `Documentation baseline consistency` CI job require every canonical document to state the same `main` SHA, merge PR, and checkpoint date, and require a canonical-document change to move that baseline to the branch merge base; `scripts/test_validate_doc_baseline.py` holds 12 self-tests. This closes the drift that left nine documents naming PR #228 after PR #230 had merged.
 - `REQ-A10` / `P1-19` remain `IMPLEMENTED_NOT_VERIFIED` and `In Review / Pending` pending the delegated account-security UI, the IP/User-Agent privacy warning, and manual Arabic RTL / French LTR acceptance. `REQ-A09` / `P1-17` and `REQ-B03` / `P1-15` remain `IMPLEMENTED_NOT_VERIFIED` pending their own manual bilingual acceptance.

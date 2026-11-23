@@ -10,6 +10,19 @@ permissions:
   contents: read
 
 jobs:
+  docs-baseline:
+    name: Documentation baseline consistency
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+      - name: Make the main ref available for the merge-base check
+        run: git fetch --no-tags origin "+refs/heads/main:refs/remotes/origin/main" || true
+      - name: Test the baseline validator
+        run: python3 scripts/test_validate_doc_baseline.py
+      - name: Verify the documented baseline matches this branch
+        run: python3 scripts/validate-doc-baseline.py --main-ref origin/main
   frontend:
     name: Frontend install, checks, and static hosting
     runs-on: ubuntu-latest

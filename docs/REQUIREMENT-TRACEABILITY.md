@@ -1,4 +1,15 @@
-## Current implementation traceability checkpoint — PR #230 merged — 23 November 2026
+## Current implementation traceability checkpoint — PR #231 merged — 23 November 2026
+
+- Current verified main SHA: `71a973beb3ecabffd0652729a34d237f634d5f04` (PR #231, documentation and verification scripts only), resolved live on 23 November 2026 with 0 open pull requests.
+- PR #231 re-synchronized the canonical baselines after PR #230; exact-main push [CI 45227025283](https://github.com/younestech31/PROMO-GEST/actions/runs/45227025283) passed 3/3 and [CodeQL 45227025334](https://github.com/younestech31/PROMO-GEST/actions/runs/45227025334) passed 2/2 on the same SHA, and PR head `0509d47cca23acebbfe492ab659c48acce3d5479` passed [CI 45226138616](https://github.com/younestech31/PROMO-GEST/actions/runs/45226138616) 3/3 and [CodeQL 45226138537](https://github.com/younestech31/PROMO-GEST/actions/runs/45226138537) 2/2.
+- New enforcement: `scripts/validate-doc-baseline.py` plus the `Documentation baseline consistency` CI job require every canonical document to state the same `main` SHA, merge PR, and checkpoint date, and require a canonical-document change to move that baseline to the branch merge base; `scripts/test_validate_doc_baseline.py` holds 12 self-tests. This closes the drift that left nine documents naming PR #228 after PR #230 had merged.
+- `REQ-A10` / `P1-19` remain `IMPLEMENTED_NOT_VERIFIED` and `In Review / Pending` pending the delegated account-security UI, the IP/User-Agent privacy warning, and manual Arabic RTL / French LTR acceptance. `REQ-A09` / `P1-17` and `REQ-B03` / `P1-15` remain `IMPLEMENTED_NOT_VERIFIED` pending their own manual bilingual acceptance.
+- `P1-09`/`P1-10` gating, the `P1-01`/`P1-35` municipality deferral, the `P1-02`/`P1-34` blockers, and Phase 1 `IN_PROGRESS` remain unchanged; Phases 2-5 remain gated.
+- No product runtime, schema, migration, database, authorization, CSRF, deployment, UI, or branch-protection setting was changed; `main.protected=false` remains as previously observed and was not re-readable with the API token used here (HTTP 403).
+
+---
+
+## Historical implementation traceability checkpoint — PR #230 merged (superseded by PR #231) — 23 November 2026
 
 - Current verified main SHA: `690471236b1af36323e2e7ea89aa0cbc0e76a0c8` (PR #230, documentation only), resolved live on 23 November 2026 with 0 open pull requests. It records the last verified implementation merge, not this documentation synchronization's own merge commit.
 - PR #230 is documentation-only: Module A `P1-19` traceability, latest API/session migration provenance, GitHub branch-write safety guidance, and the `P1-19` PostgreSQL 18 security regression matrix. Exact-main push [CI 45216916775](https://github.com/younestech31/PROMO-GEST/actions/runs/45216916775) passed 3/3 and [CodeQL 45216916842](https://github.com/younestech31/PROMO-GEST/actions/runs/45216916842) passed 2/2 on the same SHA; the .NET 10 / PostgreSQL 18 job passed again on the documentation-only SHA, and the recorded test counts remain Domain 51/51, Application 24/24, PostgreSQL 18 Integration 50/50 from the PR #228 baseline.

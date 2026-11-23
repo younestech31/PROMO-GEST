@@ -738,6 +738,18 @@ export function getTranslations(lang: AppLanguage): TranslationBundle {
 }
 
 const API_ERROR_MESSAGES: Record<string, { ar: string; fr: string }> = {
+  SESSION_NOT_FOUND: {
+    ar: 'الجلسة غير موجودة أو لم تعد نشطة.',
+    fr: 'Cette session n’existe pas ou n’est plus active.',
+  },
+  CURRENT_SESSION_CONFIRMATION_REQUIRED: {
+    ar: 'إنهاء الجلسة الحالية سيخرجك من الحساب. أكد هذا الاختيار للمتابعة.',
+    fr: 'La fin de la session actuelle vous déconnectera. Confirmez cette action pour continuer.',
+  },
+  SESSION_DISPOSITION_INVALID: {
+    ar: 'خيار إنهاء الجلسة لا يتوافق مع الجلسة المحددة.',
+    fr: 'L’option de déconnexion ne correspond pas à la session sélectionnée.',
+  },
   USER_CONCURRENCY_CONFLICT: {
     ar: 'تغيّر الحساب منذ تحميل بياناته. أعد تحميل الجلسة ثم حاول حفظ تفضيل اللغة مجدداً.',
     fr: 'Le compte a changé depuis son chargement. Rechargez la session avant de réessayer.',

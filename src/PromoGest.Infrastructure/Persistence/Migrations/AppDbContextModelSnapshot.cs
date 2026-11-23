@@ -1391,6 +1391,11 @@ namespace PromoGest.Infrastructure.Persistence.Migrations
                         .HasColumnType("uuid")
                         .HasColumnName("security_stamp");
 
+                    b.Property<Guid>("ConcurrencyStamp")
+                        .IsConcurrencyToken()
+                        .HasColumnType("uuid")
+                        .HasColumnName("concurrency_stamp");
+
                     b.Property<DateTimeOffset>("UpdatedAtUtc")
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("updated_at_utc");

@@ -1804,6 +1804,9 @@ public sealed partial class PostgresEndToEndTests : IClassFixture<PostgreSql18In
 
             // ADR-0018: a project outside commercialization must refuse new reservations while
             // leaving existing holds, units, and customers untouched.
+            var reservationsBeforeSuspension = await adminClient.GetFromJsonAsync<List<ProjectSalesReservationDto>>(
+                $"/api/projects/{createdProject.Id}/reservations");
+            Assert.NotNull(reservationsBeforeSuspension);
             var projectBeforeSuspension = await adminClient.GetFromJsonAsync<ProjectDto>(
                 $"/api/projects/{createdProject.Id}");
             Assert.NotNull(projectBeforeSuspension);
@@ -1863,6 +1866,15 @@ public sealed partial class PostgresEndToEndTests : IClassFixture<PostgreSql18In
                 $"/api/projects/{createdProject.Id}/reservations");
             Assert.NotNull(reservationsWhileSuspended);
             Assert.DoesNotContain(reservationsWhileSuspended!, item => item.PropertyUnitId == eligibilityUnit.Id);
+            // ADR-0018: suspension blocks new holds but must never auto-cancel, expire, or release existing ones.
+            Assert.Equal(reservationsBeforeSuspension!.Count, reservationsWhileSuspended!.Count);
+            foreach (var previous in reservationsBeforeSuspension)
+            {
+                var unchanged = reservationsWhileSuspended.Single(item => item.Id == previous.Id);
+                Assert.Equal(previous.Status, unchanged.Status);
+                Assert.Equal(previous.PropertyUnitId, unchanged.PropertyUnitId);
+                Assert.Equal(previous.ExpiresAtUtc, unchanged.ExpiresAtUtc);
+            }
 
             using (var denialScope = factory.Services.CreateScope())
             {
@@ -2180,6 +2192,20 @@ public sealed partial class PostgresEndToEndTests : IClassFixture<PostgreSql18In
             Assert.NotNull(directorUpdatedProject);
             Assert.Equal(directorUpdate.NameAr, directorUpdatedProject!.NameAr);
             Assert.Null(directorUpdatedProject.EstimatedBudgetDzd);
+
+            // ADR-0018: the flows below create reservations, and only commercialization allows that, so the
+            // project returns to commercialization through an explicit, audited status change.
+            var returnToCommercializationResponse = await directorClient.PutAsJsonAsync(
+                $"/api/projects/{createdProject.Id}",
+                directorUpdate with
+                {
+                    Status = "Commercialization",
+                    ExpectedConcurrencyStamp = directorUpdatedProject.ConcurrencyStamp
+                });
+            Assert.Equal(HttpStatusCode.OK, returnToCommercializationResponse.StatusCode);
+            var commercializingAgain = await returnToCommercializationResponse.Content.ReadFromJsonAsync<ProjectDto>();
+            Assert.NotNull(commercializingAgain);
+            Assert.Equal("Commercialization", commercializingAgain!.Status);
 
             var grantFinancials = await adminClient.PutAsJsonAsync(
                 $"/api/projects/{createdProject.Id}/members",

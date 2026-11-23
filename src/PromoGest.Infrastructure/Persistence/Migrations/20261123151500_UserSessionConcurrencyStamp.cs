@@ -1,13 +1,9 @@
-using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Migrations;
-using PromoGest.Infrastructure.Persistence;
 
 #nullable disable
 
 namespace PromoGest.Infrastructure.Persistence.Migrations;
 
-[DbContext(typeof(AppDbContext))]
-[Migration("20261123151500_UserSessionConcurrencyStamp")]
 public partial class UserSessionConcurrencyStamp : Migration
 {
     protected override void Up(MigrationBuilder migrationBuilder)

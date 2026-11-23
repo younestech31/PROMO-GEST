@@ -1,4 +1,19 @@
-## Current security checkpoint — PR #234 merged; ADR-0018 suspension review marker implemented; ADR-0018 commercialization gate implemented on branch on exact main SHA — 23 November 2026
+## Current security checkpoint — PR #235 merged; ADR-0018 suspension review queue implemented — 23 November 2026
+
+
+
+
+- Current verified main SHA: `77a78b7b752d28331dafdc0f4972157faab8ca45` (PR #235, suspension review queue migration, API, and tests; resolved live on 23 November 2026 with 0 open pull requests).
+- Exact-main push [CI 45277326925](https://github.com/younestech31/PROMO-GEST/actions/runs/45277326925) passed 4/4 and [CodeQL 45277326953](https://github.com/younestech31/PROMO-GEST/actions/runs/45277326953) passed 2/2 on this SHA, including the C# and JavaScript/TypeScript analyses; PR head `9f85eddedd55368241e64988048275700b3c7bab` passed [CI 45276458181](https://github.com/younestech31/PROMO-GEST/actions/runs/45276458181) 4/4 and [CodeQL 45276458182](https://github.com/younestech31/PROMO-GEST/actions/runs/45276458182) 2/2.
+- PR #235 added only two nullable review timestamps, one partial index, and one consistency constraint on `project_sales_reservations`; the review endpoint reuses the existing project-scoped write gate and writes an append-only `PROJECT_RESERVATION_REVIEW_COMPLETED` audit record. It changed no authentication, session, cookie, CSRF, authorization, rate-limit, or deployment behaviour. The added `Documentation baseline consistency` CI job runs with `contents: read`, reads documentation and the local git graph only, and holds no repository write permission.
+- `REQ-A10` / `P1-19` remain `IMPLEMENTED_NOT_VERIFIED`: the sessions API is merged and automated-tested, but the account-security UI, the explicit IP/User-Agent privacy warning, and manual Arabic RTL / French LTR acceptance remain pending. IP/User-Agent stay device metadata, not proof of physical location or identity; token material must never reach UI or logs.
+- `P1-17`, `P1-15`, `P1-36`, `P1-38`, `P1-11` remain `In Review / Pending`; `P1-09`/`P1-10` ordering, the `P1-01`/`P1-35` deferral, `P1-02`/`P1-34` blockers, and Phase 1 `IN_PROGRESS` are unchanged.
+- `main.protected=false` remains as previously observed; the token used here received HTTP 403 on the branch-protection endpoint, so it is not re-verified by this change, and no protection or ruleset setting was altered.
+
+---
+
+## Historical checkpoint — PR #234 merged; ADR-0018 suspension review marker implemented; ADR-0018 commercialization gate implemented on branch on exact main SHA (superseded by PR #235) — 23 November 2026
+
 
 
 

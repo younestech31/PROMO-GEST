@@ -1,4 +1,21 @@
-## Current implementation traceability checkpoint — PR #234 merged; ADR-0018 suspension review marker implemented; ADR-0018 commercialization gate implemented on branch — 23 November 2026
+## Current implementation traceability checkpoint — PR #235 merged; ADR-0018 suspension review queue implemented — 23 November 2026
+
+
+
+
+- Current verified main SHA: `77a78b7b752d28331dafdc0f4972157faab8ca45` (PR #235, suspension review queue migration, API, and tests), resolved live on 23 November 2026 with 0 open pull requests.
+- PR #235 added the queryable ADR-0018 suspension review queue on top of the merged marker and gate; exact-main push [CI 45277326925](https://github.com/younestech31/PROMO-GEST/actions/runs/45277326925) passed 4/4 and [CodeQL 45277326953](https://github.com/younestech31/PROMO-GEST/actions/runs/45277326953) passed 2/2 on the same SHA, and PR head `9f85eddedd55368241e64988048275700b3c7bab` passed [CI 45276458181](https://github.com/younestech31/PROMO-GEST/actions/runs/45276458181) 4/4 and [CodeQL 45276458182](https://github.com/younestech31/PROMO-GEST/actions/runs/45276458182) 2/2.
+- New enforcement: `scripts/validate-doc-baseline.py` plus the `Documentation baseline consistency` CI job require every canonical document to state the same `main` SHA, merge PR, and checkpoint date, and require a canonical-document change to move that baseline to the branch merge base; `scripts/test_validate_doc_baseline.py` holds 12 self-tests. This closes the drift that left nine documents naming PR #228 after PR #230 had merged.
+- `REQ-A10` / `P1-19` remain `IMPLEMENTED_NOT_VERIFIED` and `In Review / Pending` pending the delegated account-security UI, the IP/User-Agent privacy warning, and manual Arabic RTL / French LTR acceptance. `REQ-A09` / `P1-17` and `REQ-B03` / `P1-15` remain `IMPLEMENTED_NOT_VERIFIED` pending their own manual bilingual acceptance.
+- **ADR-0018 suspension review queue (`P1-10`, merged in PR #235 — automated evidence only):** `ProjectSalesReservation.ReviewRequiredAtUtc` / `ReviewCompletedAtUtc` plus the pure `RequestSuspensionReview` / `CompleteSuspensionReview` behaviours; suspension stamps the request on active holds, `GET /api/projects/{projectId}/reservations?reviewRequired=true` lists only holds awaiting review, and `POST /api/projects/{projectId}/reservations/{reservationId}/review` records the completion and an append-only `PROJECT_RESERVATION_REVIEW_COMPLETED` audit record naming the reviewer. Evidence: `ProjectSalesReservationReviewTests`, the PostgreSQL 18 end-to-end queue case (queue content, 401/403 access refusals, stale-stamp `409`, duplicate-review `409`, hold still `Active` on the same unit, project still `Suspended`), EF migration `20261123230000_ProjectSalesReservationReviewQueue`, and the pending-model-changes assertion. Recording a review is deliberately not an approval, cancellation, or release.
+- **ADR-0018 runtime enforcement (`P1-10`, merged in PR #234 — automated evidence only):** `ProjectSalesReservationService.CreateAsync` delegates to the pure Domain policy `ProjectCommercializationPolicy`, which allow-lists `ProjectStatus.Commercialization` only; every other status, undefined numeric value, and any future status is denied with HTTP `409` `PROJECT_NOT_COMMERCIALIZABLE` and an append-only `PROJECT_RESERVATION_DENIED` audit record written before the refusal is raised. Suspension never auto-cancels, expires, or releases existing holds; each real transition into `Suspended` writes the append-only `PROJECT_RESERVATION_SUSPENSION_REVIEW_REQUIRED` marker naming the active holds to review. Evidence: `tests/PromoGest.Domain.Tests/ProjectCommercializationPolicyTests.cs` and the PostgreSQL 18 end-to-end case in `tests/PromoGest.IntegrationTests/PostgresEndToEndTests.cs`. `P1-10` remains `In Progress / Pending` until `P1-09` acceptance; this is not acceptance evidence.
+- `P1-09`/`P1-10` gating, the `P1-01`/`P1-35` municipality deferral, the `P1-02`/`P1-34` blockers, and Phase 1 `IN_PROGRESS` remain unchanged; Phases 2-5 remain gated.
+- No product runtime, schema, migration, database, authorization, CSRF, deployment, UI, or branch-protection setting was changed; `main.protected=false` remains as previously observed and was not re-readable with the API token used here (HTTP 403).
+
+---
+
+## Historical checkpoint — PR #234 merged; ADR-0018 suspension review marker implemented; ADR-0018 commercialization gate implemented on branch (superseded by PR #235) — 23 November 2026
+
 
 
 

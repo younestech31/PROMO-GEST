@@ -174,6 +174,10 @@ public sealed class ApplicationSecurityAndFoundationTests
         public Task AddSessionAsync(UserSession session, CancellationToken ct = default) { Sessions.Add(session); return Task.CompletedTask; }
         public Task<UserSession?> GetSessionByTokenHashAsync(string tokenHash, CancellationToken ct = default)
             => Task.FromResult(Sessions.FirstOrDefault(s => s.TokenHash == tokenHash));
+        public Task<IReadOnlyList<UserSession>> ListSessionsByUserAsync(Guid userId, CancellationToken ct = default)
+            => Task.FromResult<IReadOnlyList<UserSession>>(Sessions.Where(session => session.UserId == userId).ToList());
+        public Task<UserSession?> GetSessionByIdAsync(Guid userId, Guid sessionId, CancellationToken ct = default)
+            => Task.FromResult(Sessions.FirstOrDefault(session => session.UserId == userId && session.Id == sessionId));
         public Task RevokeAllUserSessionsAsync(Guid userId, DateTimeOffset revokedAtUtc, CancellationToken ct = default)
         {
             foreach (var s in Sessions.Where(s => s.UserId == userId && !s.IsRevoked))

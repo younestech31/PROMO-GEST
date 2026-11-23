@@ -108,6 +108,7 @@ Every contributor or engineering session **must** complete these 5 preparation s
    - **Acceptance Criteria:** Exact tests, permission checks, UI direction checks (`ar` RTL + `fr` LTR), and gates (`G1–G10`) that prove completion. For Phase 0, use the result register and evidence rules in `PHASE-0-MANUAL-ACCEPTANCE.md`.
 4. **Enforce Constitutional Guardrails Upfront:**
    - Reject any design introducing multi-tenant SaaS, cloud DB dependencies in runtime, public internet exposure, bearer tokens in browser storage, primary business data in IndexedDB/localStorage, or weakening single `SYSTEM_ADMIN`.
+   - **GitHub write-target guard:** every contents create/update/delete operation must explicitly name the dedicated feature branch; never rely on the API's default branch. After each write, fetch the exact path from that branch and verify the resulting blob/content and branch ref. Confirm `main` is unchanged before opening the PR. If an unintended default-branch write occurs, disclose it immediately and repair only through a separate corrective PR; never hide it or rewrite branch-protection settings.
 5. **Confirm Dependency Direction:**
    - `PromoGest.Domain` → zero external/EF dependencies.
    - `PromoGest.Contracts` → pure DTOs/records.

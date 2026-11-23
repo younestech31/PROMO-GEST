@@ -1,10 +1,11 @@
-## Current security checkpoint — PR #236 merged; ADR-0018 suspension review queue and operator UI implemented — 23 November 2026
+## Current security checkpoint — PR #237 merged; ADR-0018 suspension review queue and operator UI implemented — 23 November 2026
 
 
 
 
-- Current verified main SHA: `9b0a4c95b198aa5b072e38804123ab66a32492ca` (PR #236, canonical-baseline sync for the suspension review queue), resolved live on 23 November 2026 with 0 open pull requests.
-- Exact-main push [CI 45279083672](https://github.com/younestech31/PROMO-GEST/actions/runs/45279083672) passed 4/4 and [CodeQL 45279083649](https://github.com/younestech31/PROMO-GEST/actions/runs/45279083649) passed 2/2 on this SHA; PR head `f2d73b3f6fba2081f623fdf558e12d155befbf15` passed CI 45278223900 4/4 and CodeQL 45278223864 2/2.
+- Current verified main SHA: `5498e2e9e9040afb83054c11c13964ae29164093` (PR #237, suspension review queue operator UI), resolved live on 23 November 2026 with 0 open pull requests.
+- Exact-main push [CI 45282162897](https://github.com/younestech31/PROMO-GEST/actions/runs/45282162897) passed 4/4 and [CodeQL 45282162988](https://github.com/younestech31/PROMO-GEST/actions/runs/45282162988) passed 2/2 on this SHA; PR head `5ca7483db5c117e0b677f5443ef81d93ce46dca5` passed CI 45281303388 4/4 and CodeQL 45281303420 2/2.
+- **Review queue UI is not a privilege boundary (merged in PR #237):** the Module E reservations screen only renders the review action for users who already hold the project-scoped `sales.reservations.manage` write gate, and the POST still carries the optimistic concurrency stamp; hiding or showing the control never replaces the server-side authorization, project-scope, and state checks, and the action changes no status, unit, expiry, or project state.
 - PR #235 added only two nullable review timestamps, one partial index, and one consistency constraint on `project_sales_reservations`; the review endpoint reuses the existing project-scoped write gate and writes an append-only `PROJECT_RESERVATION_REVIEW_COMPLETED` audit record. It changed no authentication, session, cookie, CSRF, authorization, rate-limit, or deployment behaviour. The added `Documentation baseline consistency` CI job runs with `contents: read`, reads documentation and the local git graph only, and holds no repository write permission.
 - `REQ-A10` / `P1-19` remain `IMPLEMENTED_NOT_VERIFIED`: the sessions API is merged and automated-tested, but the account-security UI, the explicit IP/User-Agent privacy warning, and manual Arabic RTL / French LTR acceptance remain pending. IP/User-Agent stay device metadata, not proof of physical location or identity; token material must never reach UI or logs.
 - `P1-17`, `P1-15`, `P1-36`, `P1-38`, `P1-11` remain `In Review / Pending`; `P1-09`/`P1-10` ordering, the `P1-01`/`P1-35` deferral, `P1-02`/`P1-34` blockers, and Phase 1 `IN_PROGRESS` are unchanged.

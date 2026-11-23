@@ -12,7 +12,6 @@ using PromoGest.Infrastructure.Persistence;
 namespace PromoGest.Infrastructure.Persistence.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [DbContext(typeof(AppDbContext))]
     [Migration("20261123151500_UserSessionConcurrencyStamp")]
     partial class UserSessionConcurrencyStamp : Migration
     {

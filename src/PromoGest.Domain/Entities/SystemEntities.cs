@@ -183,6 +183,7 @@ public sealed class UserSession
     public User User { get; private set; } = null!;
     public string TokenHash { get; private set; } = string.Empty;
     public Guid SecurityStamp { get; private set; }
+    public Guid ConcurrencyStamp { get; private set; } = Guid.NewGuid();
     public DateTimeOffset CreatedAtUtc { get; private set; }
     public DateTimeOffset ExpiresAtUtc { get; private set; }
     public DateTimeOffset LastSeenAtUtc { get; private set; }
@@ -206,6 +207,7 @@ public sealed class UserSession
             UserId = userId,
             TokenHash = tokenHash,
             SecurityStamp = securityStamp,
+            ConcurrencyStamp = Guid.NewGuid(),
             CreatedAtUtc = createdAtUtc,
             ExpiresAtUtc = expiresAtUtc,
             LastSeenAtUtc = createdAtUtc,
@@ -227,11 +229,16 @@ public sealed class UserSession
     public void Touch(DateTimeOffset nowUtc)
     {
         LastSeenAtUtc = nowUtc;
+        ConcurrencyStamp = Guid.NewGuid();
     }
 
     public void Revoke(DateTimeOffset nowUtc)
     {
+        if (IsRevoked)
+            return;
+
         IsRevoked = true;
         RevokedAtUtc = nowUtc;
+        ConcurrencyStamp = Guid.NewGuid();
     }
 }

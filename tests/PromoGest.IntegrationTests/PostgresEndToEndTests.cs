@@ -1804,9 +1804,31 @@ public sealed partial class PostgresEndToEndTests : IClassFixture<PostgreSql18In
 
             // ADR-0018: a project outside commercialization must refuse new reservations while
             // leaving existing holds, units, and customers untouched.
+            // A real active hold exists before suspension, so the "no cancellation" invariant below
+            // is meaningful instead of comparing two empty lists.
+            var heldUnitResponse = await adminClient.PostAsJsonAsync(
+                unitsUrl,
+                new CreatePropertyUnitRequest("A-004", "Apartment", "AvailableForSale", 88m, 80m, 3));
+            Assert.Equal(HttpStatusCode.OK, heldUnitResponse.StatusCode);
+            var heldUnitStructure = await heldUnitResponse.Content.ReadFromJsonAsync<ProjectStructureDto>();
+            Assert.NotNull(heldUnitStructure);
+            var heldUnit = heldUnitStructure!.Buildings.SelectMany(building => building.Floors)
+                .SelectMany(floor => floor.Units).Single(unit => unit.UnitNumber == "A-004");
+            var heldReservationResponse = await adminClient.PostAsJsonAsync(
+                $"/api/projects/{createdProject.Id}/reservations",
+                new CreateProjectSalesReservationRequest(
+                    heldUnit.Id,
+                    createdCustomer.Id,
+                    DateTimeOffset.UtcNow.AddDays(4)));
+            Assert.Equal(HttpStatusCode.Created, heldReservationResponse.StatusCode);
+            var heldReservationBeforeSuspension = await heldReservationResponse.Content.ReadFromJsonAsync<ProjectSalesReservationDto>();
+            Assert.NotNull(heldReservationBeforeSuspension);
+            Assert.Equal("Active", heldReservationBeforeSuspension!.Status);
+
             var reservationsBeforeSuspension = await adminClient.GetFromJsonAsync<List<ProjectSalesReservationDto>>(
                 $"/api/projects/{createdProject.Id}/reservations");
             Assert.NotNull(reservationsBeforeSuspension);
+            Assert.Contains(reservationsBeforeSuspension!, item => item.Id == heldReservationBeforeSuspension.Id);
             var projectBeforeSuspension = await adminClient.GetFromJsonAsync<ProjectDto>(
                 $"/api/projects/{createdProject.Id}");
             Assert.NotNull(projectBeforeSuspension);
@@ -1834,14 +1856,14 @@ public sealed partial class PostgresEndToEndTests : IClassFixture<PostgreSql18In
 
             var eligibilityUnitResponse = await adminClient.PostAsJsonAsync(
                 unitsUrl,
-                new CreatePropertyUnitRequest("A-004", "Apartment", "AvailableForSale", 88m, 80m, 3));
+                new CreatePropertyUnitRequest("A-005", "Apartment", "AvailableForSale", 86m, 78m, 3));
             Assert.Equal(HttpStatusCode.OK, eligibilityUnitResponse.StatusCode);
             var eligibilityUnitStructure = await eligibilityUnitResponse.Content.ReadFromJsonAsync<ProjectStructureDto>();
             Assert.NotNull(eligibilityUnitStructure);
             var eligibilityUnit = eligibilityUnitStructure!.Buildings
                 .SelectMany(building => building.Floors)
                 .SelectMany(floor => floor.Units)
-                .Single(unit => unit.UnitNumber == "A-004");
+                .Single(unit => unit.UnitNumber == "A-005");
 
             var suspendedReservationResponse = await adminClient.PostAsJsonAsync(
                 $"/api/projects/{createdProject.Id}/reservations",
@@ -1876,6 +1898,18 @@ public sealed partial class PostgresEndToEndTests : IClassFixture<PostgreSql18In
                 Assert.Equal(previous.ExpiresAtUtc, unchanged.ExpiresAtUtc);
             }
 
+            var heldReservationAfterSuspension = reservationsWhileSuspended!.Single(
+                item => item.Id == heldReservationBeforeSuspension.Id);
+            Assert.Equal("Active", heldReservationAfterSuspension.Status);
+            Assert.Equal(heldReservationBeforeSuspension.ExpiresAtUtc, heldReservationAfterSuspension.ExpiresAtUtc);
+            var structureWhileSuspendedResponse = await adminClient.GetAsync(structureUrl);
+            Assert.Equal(HttpStatusCode.OK, structureWhileSuspendedResponse.StatusCode);
+            var structureWhileSuspended = await structureWhileSuspendedResponse.Content.ReadFromJsonAsync<ProjectStructureDto>();
+            Assert.NotNull(structureWhileSuspended);
+            var heldUnitWhileSuspended = structureWhileSuspended!.Buildings.SelectMany(building => building.Floors)
+                .SelectMany(floor => floor.Units).Single(unit => unit.Id == heldUnit.Id);
+            Assert.Equal("Reserved", heldUnitWhileSuspended.Status);
+
             using (var denialScope = factory.Services.CreateScope())
             {
                 var denialDb = denialScope.ServiceProvider.GetRequiredService<AppDbContext>();
@@ -1883,6 +1917,15 @@ public sealed partial class PostgresEndToEndTests : IClassFixture<PostgreSql18In
                     .Where(log => log.EventType == "PROJECT_RESERVATION_DENIED")
                     .ToListAsync();
                 Assert.Contains(denialAudits, log => log.TargetEntityId == createdProject.Id.ToString());
+
+                // ADR-0018: entering suspension must leave a durable, auditable review marker that names
+                // the holds an operator has to review, without touching them.
+                var suspensionMarkers = await denialDb.AuditLogs
+                    .Where(log => log.EventType == "PROJECT_RESERVATION_SUSPENSION_REVIEW_REQUIRED")
+                    .ToListAsync();
+                var suspensionMarker = suspensionMarkers.Single(log => log.TargetEntityId == createdProject.Id.ToString());
+                Assert.Contains(heldReservationBeforeSuspension.Id.ToString(), suspensionMarker.MetadataJson, StringComparison.Ordinal);
+                Assert.Contains("\"activeReservationCount\":1", suspensionMarker.MetadataJson!.Replace(" ", string.Empty), StringComparison.Ordinal);
             }
 
             var projectBeforeRestore = await adminClient.GetFromJsonAsync<ProjectDto>(

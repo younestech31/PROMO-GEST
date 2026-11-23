@@ -1,9 +1,11 @@
+using System.Text.Json;
 using PromoGest.Application.Interfaces;
 using PromoGest.Contracts.Projects;
 using PromoGest.Domain.Entities;
 using PromoGest.Domain.Enums;
 using PromoGest.Domain.Exceptions;
 using PromoGest.Domain.Interfaces;
+using PromoGest.Domain.Policies;
 using PromoGest.Domain.Reference;
 
 namespace PromoGest.Application.Services;
@@ -14,17 +16,25 @@ public sealed class ProjectService
     private readonly IUserRepository _userRepository;
     private readonly IAuditWriter _auditWriter;
     private readonly IClock _clock;
+    private readonly IProjectSalesReservationRepository? _reservationRepository;
 
+    /// <param name="reservationRepository">
+    /// Optional only so existing focused unit tests can keep constructing this service with their
+    /// in-memory fakes; dependency injection always supplies the real repository, which writes the
+    /// ADR-0018 suspension review marker in production.
+    /// </param>
     public ProjectService(
         IProjectRepository projectRepository,
         IUserRepository userRepository,
         IAuditWriter auditWriter,
-        IClock clock)
+        IClock clock,
+        IProjectSalesReservationRepository? reservationRepository = null)
     {
         _projectRepository = projectRepository;
         _userRepository = userRepository;
         _auditWriter = auditWriter;
         _clock = clock;
+        _reservationRepository = reservationRepository;
     }
 
     public Task<IReadOnlyList<ProjectDto>> ListAccessibleProjectsAsync(
@@ -283,6 +293,7 @@ public sealed class ProjectService
             "PROJECT_WILAYA_INVALID",
             "PROJECT_WILAYA_NAME_MISMATCH");
 
+        var previousStatus = project.Status;
         var nowUtc = _clock.UtcNow;
         project.UpdateDetails(
             request.NameAr,
@@ -315,6 +326,44 @@ public sealed class ProjectService
                 metadata.UserAgent),
             ct);
         await _projectRepository.SaveChangesAsync(ct);
+
+        // ADR-0018: suspension blocks new reservations and must never cancel, expire, or release an
+        // existing hold. Every real transition into Suspended therefore records one durable,
+        // append-only review marker naming the holds an operator has to review. Nothing else is
+        // mutated here: units, holds, and customers keep their state.
+        if (ProjectCommercializationPolicy.RequiresSuspensionReview(previousStatus, project.Status) &&
+            _reservationRepository is not null)
+        {
+            var reservations = await _reservationRepository.ListByProjectAsync(project.Id, ct);
+            var activeReservationIds = reservations
+                .Where(item => item.Reservation.Status == SalesReservationStatus.Active)
+                .Select(item => item.Reservation.Id)
+                .OrderBy(id => id)
+                .ToArray();
+
+            await _auditWriter.WriteAsync(
+                AuditLog.Record(
+                    nowUtc,
+                    actor.Id,
+                    actor.Username,
+                    ProjectCommercializationPolicy.SuspensionReviewEventType,
+                    AuditSeverity.Security,
+                    "Project",
+                    project.Id.ToString(),
+                    $"Project '{project.Code}' entered suspension with {activeReservationIds.Length} active reservation(s) "
+                        + "requiring review; no hold was cancelled, expired, or released.",
+                    JsonSerializer.Serialize(new
+                    {
+                        previousStatus = previousStatus.ToString(),
+                        projectStatus = project.Status.ToString(),
+                        activeReservationCount = activeReservationIds.Length,
+                        activeReservationIds
+                    }),
+                    metadata.IpAddress,
+                    metadata.UserAgent),
+                ct);
+            await _projectRepository.SaveChangesAsync(ct);
+        }
 
         var reloaded = await _projectRepository.GetByIdWithMembersAsync(project.Id, ct) ?? project;
         return await MapProjectAsync(reloaded, actorUserId, ct);

@@ -14,6 +14,89 @@ namespace PromoGest.IntegrationTests;
 public sealed partial class PostgresEndToEndTests
 {
     [Fact]
+    public async Task UserSessionConcurrencyMigration_BackfillsExistingSessionsBeforeEnforcingNotNull()
+    {
+        var runtimeConnectionString = await _fixture.CreateIsolatedDatabaseConnectionStringAsync(
+            "20261121120000_CanonicalizeAlgerianProjectCustomerPhones");
+        var migrationConnectionString = _fixture.GetMigrationConnectionString(runtimeConnectionString);
+        var nowUtc = DateTimeOffset.UtcNow;
+
+        var options = new DbContextOptionsBuilder<AppDbContext>()
+            .UseNpgsql(runtimeConnectionString)
+            .Options;
+
+        Guid userId;
+        Guid securityStamp;
+        await using (var runtimeDb = new AppDbContext(options))
+        {
+            var user = User.CreateEmployee(
+                "session.migration",
+                "Session Migration User",
+                "session.migration@promogest.dz",
+                null,
+                "migration-test-only-hash",
+                "ar",
+                nowUtc);
+            await runtimeDb.Users.AddAsync(user);
+            await runtimeDb.SaveChangesAsync();
+            userId = user.Id;
+            securityStamp = user.SecurityStamp;
+        }
+
+        var firstSessionId = Guid.NewGuid();
+        var secondSessionId = Guid.NewGuid();
+        await using (var ownerConnection = new Npgsql.NpgsqlConnection(migrationConnectionString))
+        {
+            await ownerConnection.OpenAsync();
+            await using var insertLegacySessions = new Npgsql.NpgsqlCommand(
+                """
+                INSERT INTO user_sessions (
+                    id, user_id, token_hash, security_stamp,
+                    created_at_utc, expires_at_utc, last_seen_at_utc,
+                    ip_address, user_agent, is_revoked, revoked_at_utc)
+                VALUES
+                    (@first_id, @user_id, @first_hash, @security_stamp,
+                     @created_at, @expires_at, @last_seen_at,
+                     '192.0.2.40', 'Migration test device one', FALSE, NULL),
+                    (@second_id, @user_id, @second_hash, @security_stamp,
+                     @created_at, @expires_at, @last_seen_at,
+                     '192.0.2.41', 'Migration test device two', FALSE, NULL);
+                """,
+                ownerConnection);
+            insertLegacySessions.Parameters.AddWithValue("first_id", firstSessionId);
+            insertLegacySessions.Parameters.AddWithValue("second_id", secondSessionId);
+            insertLegacySessions.Parameters.AddWithValue("user_id", userId);
+            insertLegacySessions.Parameters.AddWithValue("first_hash", new string('d', 64));
+            insertLegacySessions.Parameters.AddWithValue("second_hash", new string('e', 64));
+            insertLegacySessions.Parameters.AddWithValue("security_stamp", securityStamp);
+            insertLegacySessions.Parameters.AddWithValue("created_at", nowUtc);
+            insertLegacySessions.Parameters.AddWithValue("expires_at", nowUtc.AddHours(12));
+            insertLegacySessions.Parameters.AddWithValue("last_seen_at", nowUtc);
+            Assert.Equal(2, await insertLegacySessions.ExecuteNonQueryAsync());
+        }
+
+        await using (var migrationDb = new AppDbContext(
+            new DbContextOptionsBuilder<AppDbContext>()
+                .UseNpgsql(migrationConnectionString)
+                .Options))
+        {
+            await migrationDb.Database.MigrateAsync();
+            var applied = await migrationDb.Database.GetAppliedMigrationsAsync();
+            Assert.Contains("20261123151500_UserSessionConcurrencyStamp", applied);
+
+            var migratedSessions = await migrationDb.UserSessions
+                .AsNoTracking()
+                .Where(session => session.UserId == userId)
+                .ToListAsync();
+            Assert.Equal(2, migratedSessions.Count);
+            Assert.All(migratedSessions, session => Assert.NotEqual(Guid.Empty, session.ConcurrencyStamp));
+            Assert.Equal(
+                2,
+                migratedSessions.Select(session => session.ConcurrencyStamp).Distinct().Count());
+        }
+    }
+
+    [Fact]
     public async Task SessionManagement_ListOwnActiveSessionsWithoutSecrets_AndRevokeSelectedSession()
     {
         var connectionString = await _fixture.CreateIsolatedDatabaseConnectionStringAsync();

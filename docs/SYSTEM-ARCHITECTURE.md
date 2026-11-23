@@ -26,7 +26,7 @@ Strict inward dependency direction enforced across `.NET 10` assemblies (`src/Pr
 | `PromoGest.Application` | Use-case orchestration services (`SetupService`, `AuthService`, `UserManagementService`, `AuditQueryService`, `ProjectService`, `ProjectStructureService`, `ProjectDocumentService`, `ProjectCustomerService`, `PartyDirectoryService`, `ProjectSalesReservationService`, `AdminRecoveryService`), repository & port interfaces (`I*Repository`, `IPasswordHasher`, `ISessionTokenGenerator`, `IProjectFileStorage`, `IAuditWriter`, `IClock`). | Direct `Npgsql` / `AppDbContext` queries, `Microsoft.AspNetCore.*` HTTP types. |
 | `PromoGest.Infrastructure` | `AppDbContext`, EF Core entity configurations, PostgreSQL 18 migrations (`Persistence/Migrations/`), repositories (`Ef*Repository`), **`Pbkdf2PasswordHasher`**, **`CryptoSessionTokenGenerator`**, `LocalFileStorageService`, `DbInitializer`, `CloudSqlRuntimePermissions`. | Direct controller logic or UI concerns. |
 | `PromoGest.Api` | Thin REST controllers (`SetupController`, `AuthController`, `UsersController`, `AuditController`, `HealthController`, `ProjectsController`, `ProjectStructureController`, `ProjectDocumentsController`, `ProjectCustomersController`, `PartiesController`, `ProjectSalesReservationsController`), middleware (`SecurityHeadersMiddleware`, `ExceptionHandlingMiddleware`, `CsrfValidationMiddleware`), **`SessionAuthenticationHandler`**, SPA fallback hosting, `--migrate` / `--unlock-admin` / `--reset-admin-password` CLI modes. | Business rule invention or direct SQL. |
-| `apps/local-web` | Bilingual RTL-first (`ar` / `fr`) React 19 + TypeScript + Tailwind v4 SPA. Consumes same-origin `/api/*` with `credentials: 'same-origin'` and `X-CSRF-TOKEN`. | Primary persistence in IndexedDB/localStorage, external SaaS calls, bearer tokens in `localStorage`. |
+| `apps/local-web` | Bilingual RTL-first (`ar` / `fr`) React 19 + TypeScript + Tailwind v4 SPA. Consumes same-origin `/api/*` with `credentials: 'include'` and `X-CSRF-TOKEN`. | Primary persistence in IndexedDB/localStorage, external SaaS calls, bearer tokens in `localStorage`. |
 
 ---
 
@@ -42,7 +42,7 @@ Strict inward dependency direction enforced across `.NET 10` assemblies (`src/Pr
        ▼
   [ Single Kestrel Process: PromoGest.Api (127.0.0.1:5080) ]
        ├── Serves static SPA from wwwroot/ (HTML/JS/CSS/Fonts/SW shell)
-       ├── Authenticates via cookie `promogest_session` + `X-CSRF-TOKEN`
+       ├── Authenticates via cookie `__Host-promogest_session` (HTTPS/Prod) or `promogest_session` (plain-HTTP Dev) + `X-CSRF-TOKEN`
        ├── Writes binary project files ─► [ Local Filesystem Storage + SHA-256 ]
        └── Connects via least-privilege ─► [ PostgreSQL 18 (127.0.0.1:5432, role: promogest_app) ]
 ```
@@ -56,8 +56,8 @@ Strict inward dependency direction enforced across `.NET 10` assemblies (`src/Pr
 
 Observed pipeline order on every incoming HTTP request:
 
-1. **Forwarded Headers (`UseForwardedHeaders`)** — honors `X-Forwarded-For` / `X-Forwarded-Proto` (`ForwardLimit = 1`) from local reverse proxy (`Caddy`).
-2. **`SecurityHeadersMiddleware`** — injects `X-Content-Type-Options: nosniff`, `X-Frame-Options: DENY`, `Referrer-Policy: no-referrer`, `Permissions-Policy`, and strict CSP (`default-src 'self'`, `script-src 'self'`, `frame-ancestors 'none'`, `base-uri 'self'`, `form-action 'self'`).
+1. **Forwarded Headers (`UseForwardedHeaders`)** — honors `X-Forwarded-For` / `X-Forwarded-Proto` (`ForwardLimit = 1`) from local loopback reverse proxy (`Caddy` on `127.0.0.1` / `::1`).
+2. **Production HSTS (`if (app.Environment.IsProduction()) app.UseHsts()`) & `SecurityHeadersMiddleware`** — emits `Strict-Transport-Security: max-age=86400` in Production after forwarded-header scheme restoration (no `includeSubDomains`/`preload`, absent in Development/preview), and injects `X-Content-Type-Options: nosniff`, `X-Frame-Options: DENY`, `Referrer-Policy: no-referrer`, `Permissions-Policy`, `Cache-Control: no-store` on `/api`/`/health`, and strict CSP (`default-src 'self'`, `script-src 'self'`, `object-src 'none'`, `frame-ancestors 'none'`, `base-uri 'self'`, `form-action 'self'`). Kestrel explicitly enforces a `30_000_000`-byte body cap, `15s` request-header timeout, and `2m` keep-alive timeout.
 3. **`ExceptionHandlingMiddleware`** — translates typed `DomainException` hierarchy and PostgreSQL/EF conflicts into standardized `ApiErrorResponse` JSON:
    - `UnauthorizedDomainException` → **401**
    - `ForbiddenDomainException` → **403**
@@ -71,7 +71,7 @@ Observed pipeline order on every incoming HTTP request:
 5. **Rate Limiting (`UseRateLimiter`)** — `"login"` fixed-window policy (`10` requests / minute / IP, HTTP `429`).
 6. **Static Files (`UseDefaultFiles`, `UseStaticFiles`)** — serves built React assets from `wwwroot/`.
 7. **Development-Only Preview Cookie Policy (`if (app.Environment.IsDevelopment()) UseCookiePolicy`)** — invokes `DevelopmentPreviewCookiePolicy` solely in Development behind cross-site HTTPS preview proxies; Production always enforces `SameSite=Strict`.
-8. **Authentication (`SessionAuthenticationHandler`, scheme `"PromoGestSession"`)** — reads raw **`promogest_session`** cookie, hashes with SHA-256 via `CryptoSessionTokenGenerator`, validates active non-expired `UserSession` + matching `User.SecurityStamp` + `IsActive` via `AuthService.ValidateSessionAsync`, and builds `ClaimsPrincipal`.
+8. **Authentication (`SessionAuthenticationHandler`, scheme `"PromoGestSession"`)** — reads **`__Host-promogest_session`** in Production and HTTPS requests (or `promogest_session` only in plain-HTTP Development; never authenticates legacy non-prefixed tokens in secure contexts), hashes with SHA-256 via `CryptoSessionTokenGenerator`, validates active non-expired `UserSession` + matching `User.SecurityStamp` + `IsActive` via `AuthService.ValidateSessionAsync`, and builds `ClaimsPrincipal`.
 9. **`CsrfValidationMiddleware`** — for **every** unsafe `/api/*` request (`POST`, `PUT`, `PATCH`, `DELETE`), enforces Antiforgery validation matching the `.PromoGest.Antiforgery` cookie against the `X-CSRF-TOKEN` header (clients first obtain a token from `GET /api/auth/csrf`, including prior to `POST /api/auth/login` and `POST /api/setup/initialize`). Rejects invalid/missing tokens with `403` (`CSRF_TOKEN_INVALID`).
 10. **Authorization (`UseAuthorization`)** — enforces `[Authorize]` per controller; fine-grained permission and explicit `ProjectMember` resource checks run in Application services.
 11. **Controllers + JSON API 404 Fallbacks (`/api/{**slug}`, `/health/{**slug}`) + SPA Fallback (`MapFallbackToFile("index.html")`)**.

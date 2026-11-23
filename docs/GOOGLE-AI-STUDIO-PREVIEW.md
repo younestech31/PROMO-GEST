@@ -1,6 +1,6 @@
 # Google AI Studio Preview Workspace
 
-PROMO GEST has a development-only preview API implemented by `apps/local-web/dev-api-middleware.ts`. It is used only when Vite is serving the frontend and `ASPNETCORE_URL` is not configured. It is not part of the production frontend bundle or the ASP.NET Core API.
+PROMO GEST has a development-only preview API implemented by `apps/local-web/dev-api-middleware.ts`. It is active only when explicitly opted in with `PROMOGEST_VITE_ONLY=1` and when neither `ASPNETCORE_URL` nor any Cloud SQL (`SQL_HOST`, `SQL_DB_NAME`, `SQL_USER`, `SQL_PASSWORD`, `SQL_ADMIN_USER`, `SQL_ADMIN_PASSWORD`) variable is set. It is not part of the production frontend bundle or the ASP.NET Core API.
 
 ## Opening the demo workspace
 

@@ -24,7 +24,7 @@ PROMO GEST enforces a strict **3-role database separation**:
 - **Root Path:** Configured via `Storage:RootDirectory` (Linux template: `/var/lib/promogest/storage`; Windows template: `C:\PromoGest\storage`).
 - **Path Traversal Defense:** Relative storage paths are server-generated (`projects/{projectId}/...`) and validated against root canonical path before I/O.
 - **Cryptographic Verification:** SHA-256 digest computed on upload, persisted in `stored_files.sha256_checksum`, and re-verified on download to detect disk corruption or tampering.
-- **Upload Guardrails:** Whitelisted extensions/MIME types (`pdf`, `png`, `jpg`, `jpeg`, `webp`, `doc`, `docx`, `xls`, `xlsx`, `txt`, `csv`) and magic-byte/archive validation with a 25 MB per-file cap enforced server-side.
+- **Upload Guardrails:** Whitelisted extensions/MIME types (`pdf`, `png`, `jpg`, `jpeg`, `webp`, `doc`, `docx`, `xls`, `xlsx`, `txt`, `csv`) and magic-byte/archive validation with a `25 MiB` file-content cap (`ProjectDocumentService.cs`) inside the endpoint `[RequestSizeLimit]` (`26 MiB`) and Kestrel's explicit `30,000,000`-byte body cap.
 
 ---
 
@@ -48,7 +48,7 @@ ASP.NET Core Data Protection secures Antiforgery/CSRF tokens and server-side pro
 - **Scheduled Backup:** `promogest-backup.timer` triggers `promogest-backup.service` daily at `22:00` (`Persistent=true`).
 
 ### Windows Server (`deploy/windows/`)
-- **Service Installer:** `install-service.ps1` registers `PromoGest` Windows Service running published self-contained `PromoGest.Api.exe` on `127.0.0.1:5080` + configures ACLs for `C:\PromoGest\storage` & `dataprotection-keys`.
+- **Service Installer:** `install-service.ps1` registers the `PromoGestLocalErp` Windows Service running published self-contained `PromoGest.Api.exe` on `127.0.0.1:5080` + configures ACLs for `C:\PromoGest\storage` & `dataprotection-keys`.
 - **Reverse Proxy:** `caddy-local-https.Caddyfile` exposes HTTPS over office LAN (`https://promogest.lan` / LAN IP with `tls internal`).
 
 ### Production Build Pipeline (`scripts/build-production.sh` & `.ps1`)
@@ -72,4 +72,4 @@ ASP.NET Core Data Protection secures Antiforgery/CSRF tokens and server-side pro
 ## 6. Strict Non-Production Boundary (Cloud SQL & Preview)
 
 - **Cloud SQL (`docs/GOOGLE-AI-STUDIO-CLOUD-SQL.md`):** Provisioned solely for ephemeral development inspection in AI Studio if `SQL_HOST` environment variables are configured (`CloudSqlDevelopmentConnectionStringsTests.cs`). **Explicitly forbidden** for customer/organization ERP runtime or production data (`ADR-0001`, `ADR-0002`, `ADR-0005`).
-- **Vite Preview (`dev-api-middleware.ts`):** Ephemeral in-memory simulator using `.promogest-dev-state.json` for rapid UI previewing only when ASP.NET Core on port 5055 is absent. Never deployed to production.
+- **Vite Preview (`dev-api-middleware.ts`):** Ephemeral in-memory simulator using `.promogest-dev-state.json` for rapid UI previewing only when explicitly opted in via `PROMOGEST_VITE_ONLY=1` with no `ASPNETCORE_URL` or Cloud SQL (`SQL_*`) environment variables configured (fail-closed startup policy). Never deployed to production.

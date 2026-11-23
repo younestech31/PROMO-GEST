@@ -599,7 +599,8 @@ public sealed partial class PostgresEndToEndTests : IClassFixture<PostgreSql18In
         await using var productionFactory = CreateFactory(
             connectionString,
             productionRoot,
-            environmentName: "Production");
+            environmentName: "Production",
+            simulatedRemoteIp: IPAddress.Loopback);
         using var productionClient = productionFactory.CreateClient(new WebApplicationFactoryClientOptions
         {
             BaseAddress = new Uri("https://promogest.test"),
@@ -612,6 +613,43 @@ public sealed partial class PostgresEndToEndTests : IClassFixture<PostgreSql18In
         Assert.Contains("max-age=86400", hsts);
         Assert.DoesNotContain("includeSubDomains", hsts);
         Assert.DoesNotContain("preload", hsts);
+
+        using var productionHttpClient = productionFactory.CreateClient(new WebApplicationFactoryClientOptions
+        {
+            BaseAddress = new Uri("http://promogest.test"),
+            HandleCookies = true
+        });
+        var plainHttpProductionResponse = await productionHttpClient.GetAsync("/health/live");
+        Assert.Equal(HttpStatusCode.OK, plainHttpProductionResponse.StatusCode);
+        Assert.False(plainHttpProductionResponse.Headers.Contains("Strict-Transport-Security"));
+
+        using (var forwardedHttpsRequest = new HttpRequestMessage(HttpMethod.Get, "/health/live"))
+        {
+            forwardedHttpsRequest.Headers.TryAddWithoutValidation("X-Forwarded-Proto", "https");
+            var forwardedHttpsResponse = await productionHttpClient.SendAsync(forwardedHttpsRequest);
+            Assert.Equal(HttpStatusCode.OK, forwardedHttpsResponse.StatusCode);
+            var forwardedHsts = Assert.Single(forwardedHttpsResponse.Headers.GetValues("Strict-Transport-Security"));
+            Assert.Contains("max-age=86400", forwardedHsts);
+        }
+
+        var untrustedProxyRoot = Path.Combine(Path.GetTempPath(), $"promogest_hsts_untrusted_{Guid.NewGuid():N}");
+        await using var untrustedProxyFactory = CreateFactory(
+            connectionString,
+            untrustedProxyRoot,
+            environmentName: "Production",
+            simulatedRemoteIp: IPAddress.Parse("192.0.2.25"));
+        using var untrustedProxyClient = untrustedProxyFactory.CreateClient(new WebApplicationFactoryClientOptions
+        {
+            BaseAddress = new Uri("http://promogest.test"),
+            HandleCookies = true
+        });
+        using (var spoofedProtoRequest = new HttpRequestMessage(HttpMethod.Get, "/health/live"))
+        {
+            spoofedProtoRequest.Headers.TryAddWithoutValidation("X-Forwarded-Proto", "https");
+            var spoofedProtoResponse = await untrustedProxyClient.SendAsync(spoofedProtoRequest);
+            Assert.Equal(HttpStatusCode.OK, spoofedProtoResponse.StatusCode);
+            Assert.False(spoofedProtoResponse.Headers.Contains("Strict-Transport-Security"));
+        }
 
         var developmentRoot = Path.Combine(Path.GetTempPath(), $"promogest_hsts_development_{Guid.NewGuid():N}");
         await using var developmentFactory = CreateFactory(
@@ -2589,6 +2627,127 @@ public sealed partial class PostgresEndToEndTests : IClassFixture<PostgreSql18In
 
         await AttachCsrfTokenAsync(previewClient);
         Assert.Equal(HttpStatusCode.OK, (await previewClient.GetAsync("/api/auth/me")).StatusCode);
+
+        // Pre-prefix legacy session cookies must be ignored on authentication in Production HTTPS,
+        // yet explicitly revoked when presented during Production login or logout.
+        string legacyLoginToken;
+        string legacyLoginHash;
+        string legacyLogoutToken;
+        string legacyLogoutHash;
+        await using (var scope = productionFactory.Services.CreateAsyncScope())
+        {
+            var authService = scope.ServiceProvider.GetRequiredService<AuthService>();
+            var tokenGenerator = scope.ServiceProvider.GetRequiredService<ISessionTokenGenerator>();
+
+            var loginLegacy = await authService.LoginAsync(
+                new LoginRequest("sysadmin", "AtlasAdmin#2026"),
+                new RequestMetadata("127.0.0.1", "LegacyMigrationAgent"));
+            legacyLoginToken = loginLegacy.OpaqueSessionToken;
+            legacyLoginHash = tokenGenerator.HashToken(legacyLoginToken);
+
+            var logoutLegacy = await authService.LoginAsync(
+                new LoginRequest("sysadmin", "AtlasAdmin#2026"),
+                new RequestMetadata("127.0.0.1", "LegacyLogoutAgent"));
+            legacyLogoutToken = logoutLegacy.OpaqueSessionToken;
+            legacyLogoutHash = tokenGenerator.HashToken(legacyLogoutToken);
+        }
+
+        using var legacyMigrationClient = productionFactory.CreateClient(new WebApplicationFactoryClientOptions
+        {
+            BaseAddress = new Uri("https://promogest.internal"),
+            HandleCookies = false
+        });
+        using (var rejectedLegacyMe = new HttpRequestMessage(HttpMethod.Get, "/api/auth/me"))
+        {
+            rejectedLegacyMe.Headers.TryAddWithoutValidation("Cookie", $"promogest_session={legacyLoginToken}");
+            var rejectedLegacyMeResponse = await legacyMigrationClient.SendAsync(rejectedLegacyMe);
+            Assert.Equal(HttpStatusCode.Unauthorized, rejectedLegacyMeResponse.StatusCode);
+        }
+
+        var csrfForLegacyLogin = await legacyMigrationClient.GetAsync("/api/auth/csrf");
+        csrfForLegacyLogin.EnsureSuccessStatusCode();
+        var csrfForLegacyLoginPayload = await csrfForLegacyLogin.Content.ReadFromJsonAsync<CsrfTokenResponse>();
+        Assert.NotNull(csrfForLegacyLoginPayload);
+        Assert.True(csrfForLegacyLogin.Headers.TryGetValues("Set-Cookie", out var csrfForLegacyLoginCookies));
+        var legacyLoginCookiePairs = csrfForLegacyLoginCookies!
+            .Select(value => value.Split(';', 2)[0])
+            .Append($"promogest_session={legacyLoginToken}");
+
+        using (var migrateOnLoginRequest = new HttpRequestMessage(HttpMethod.Post, "/api/auth/login"))
+        {
+            migrateOnLoginRequest.Content = JsonContent.Create(new LoginRequest("sysadmin", "AtlasAdmin#2026"));
+            migrateOnLoginRequest.Headers.Add(csrfForLegacyLoginPayload!.HeaderName, csrfForLegacyLoginPayload.Token);
+            migrateOnLoginRequest.Headers.TryAddWithoutValidation("Cookie", string.Join("; ", legacyLoginCookiePairs));
+
+            var migrateOnLoginResponse = await legacyMigrationClient.SendAsync(migrateOnLoginRequest);
+            Assert.Equal(HttpStatusCode.OK, migrateOnLoginResponse.StatusCode);
+            Assert.True(migrateOnLoginResponse.Headers.TryGetValues("Set-Cookie", out var migratedCookies));
+            Assert.Contains(migratedCookies!, value =>
+                value.StartsWith("__Host-promogest_session=", StringComparison.Ordinal));
+            Assert.Contains(migratedCookies!, value =>
+                value.StartsWith("promogest_session=;", StringComparison.Ordinal));
+        }
+
+        var csrfForLegacyLogout = await legacyMigrationClient.GetAsync("/api/auth/csrf");
+        csrfForLegacyLogout.EnsureSuccessStatusCode();
+        var csrfForLegacyLogoutPayload = await csrfForLegacyLogout.Content.ReadFromJsonAsync<CsrfTokenResponse>();
+        Assert.NotNull(csrfForLegacyLogoutPayload);
+        Assert.True(csrfForLegacyLogout.Headers.TryGetValues("Set-Cookie", out var csrfForLegacyLogoutCookies));
+        var legacyLogoutCookiePairs = csrfForLegacyLogoutCookies!
+            .Select(value => value.Split(';', 2)[0])
+            .Append($"promogest_session={legacyLogoutToken}");
+
+        using (var revokeOnLogoutRequest = new HttpRequestMessage(HttpMethod.Post, "/api/auth/logout"))
+        {
+            revokeOnLogoutRequest.Headers.Add(csrfForLegacyLogoutPayload!.HeaderName, csrfForLegacyLogoutPayload.Token);
+            revokeOnLogoutRequest.Headers.TryAddWithoutValidation("Cookie", string.Join("; ", legacyLogoutCookiePairs));
+
+            var revokeOnLogoutResponse = await legacyMigrationClient.SendAsync(revokeOnLogoutRequest);
+            Assert.Equal(HttpStatusCode.NoContent, revokeOnLogoutResponse.StatusCode);
+            Assert.True(revokeOnLogoutResponse.Headers.TryGetValues("Set-Cookie", out var logoutDeletedCookies));
+            Assert.Contains(logoutDeletedCookies!, value =>
+                value.StartsWith("__Host-promogest_session=;", StringComparison.Ordinal));
+            Assert.Contains(logoutDeletedCookies!, value =>
+                value.StartsWith("promogest_session=;", StringComparison.Ordinal));
+        }
+
+        await using (var scope = productionFactory.Services.CreateAsyncScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+            var revokedOnLogin = await db.UserSessions.AsNoTracking()
+                .SingleAsync(item => item.TokenHash == legacyLoginHash);
+            Assert.True(revokedOnLogin.IsRevoked);
+            Assert.NotNull(revokedOnLogin.RevokedAtUtc);
+
+            var revokedOnLogout = await db.UserSessions.AsNoTracking()
+                .SingleAsync(item => item.TokenHash == legacyLogoutHash);
+            Assert.True(revokedOnLogout.IsRevoked);
+            Assert.NotNull(revokedOnLogout.RevokedAtUtc);
+        }
+
+        // Plain-HTTP Development retains the non-prefixed session cookie for local localhost workflows.
+        var devHttpConnection = await _fixture.CreateIsolatedDatabaseConnectionStringAsync();
+        var devHttpRoot = Path.Combine(Path.GetTempPath(), $"promogest_legacy_cookie_devhttp_{Guid.NewGuid():N}");
+        await using var devHttpFactory = CreateFactory(
+            devHttpConnection,
+            devHttpRoot,
+            environmentName: "Development",
+            simulatedRemoteIp: IPAddress.Loopback);
+        using var devHttpClient = devHttpFactory.CreateClient(new WebApplicationFactoryClientOptions
+        {
+            BaseAddress = new Uri("http://localhost"),
+            HandleCookies = true
+        });
+
+        await AttachCsrfTokenAsync(devHttpClient);
+        Assert.Equal(HttpStatusCode.Created, (await devHttpClient.PostAsJsonAsync("/api/setup/initialize", ValidInitRequest())).StatusCode);
+        var devHttpLogin = await devHttpClient.PostAsJsonAsync(
+            "/api/auth/login",
+            new LoginRequest("sysadmin", "AtlasAdmin#2026"));
+        Assert.Equal(HttpStatusCode.OK, devHttpLogin.StatusCode);
+        Assert.True(devHttpLogin.Headers.TryGetValues("Set-Cookie", out var devHttpCookies));
+        Assert.Single(devHttpCookies!, value => value.StartsWith("promogest_session=", StringComparison.Ordinal));
+        Assert.DoesNotContain(devHttpCookies!, value => value.StartsWith("__Host-promogest_session=", StringComparison.Ordinal));
     }
 
     [Fact]

@@ -1,4 +1,14 @@
-## Current operating checkpoint — PR #223 merged; P1-09 acceptance still blocked — 23 November 2026
+## Current decision checkpoint — no new decision since ADR-0018; live main is PR #230 — 23 November 2026
+
+- **Verified live source:** GitHub `main` = `690471236b1af36323e2e7ea89aa0cbc0e76a0c8`, the squash-merge SHA for [PR #230](https://github.com/younestech31/PROMO-GEST/pull/230), resolved live on 23 November 2026 with 0 open pull requests ([CI 45216916775](https://github.com/younestech31/PROMO-GEST/actions/runs/45216916775) 3/3, [CodeQL 45216916842](https://github.com/younestech31/PROMO-GEST/actions/runs/45216916842) 2/2 on that exact SHA). The PR #223 block below records the ADR-0018 decision and its then-current verification; it is historical provenance, not the current branch tip.
+- **Latest recorded decision:** ADR-0018 — *Project Commercialization Eligibility and CRM/Reservation Separation* — remains the most recent approved decision. No new ADR has been recorded since PR #223.
+- **Enforcement status unchanged:** `P1-10` remains `In Progress / Pending`. Runtime enforcement of ADR-0018 in Domain, Application and API has not started and stays gated by `P1-09`. Only `ProjectStatus.Commercialization` may allow marketing and new internal reservations; suspension keeps blocking new reservations and must never auto-cancel active holds or release their units.
+- **Correction disclosed by this synchronization:** this document's opening checkpoint previously named `54235f1d96a15204cfe43ad51c9b37c37a7d0d5d` (PR #223) as the live `main`, and the governing documents named `690a0c4e8235f93846c267fb4ab5b985b354bd21` (PR #228). Both went stale as later PRs merged; the live value is the SHA above.
+- **Scope:** documentation and evidence only. No production business data, configuration, credentials, role/permission grant, authorization, CSRF policy, deployment or branch-protection setting was changed. Phase 1 remains `IN_PROGRESS`; Phases 2-5 remain gated.
+
+---
+
+## Historical decision checkpoint — PR #223 merged; P1-09 acceptance still blocked (superseded by PR #230) — 23 November 2026
 
 - **Verified live source:** GitHub `main` = `54235f1d96a15204cfe43ad51c9b37c37a7d0d5d`, the squash-merge SHA for [PR #223](https://github.com/younestech31/PROMO-GEST/pull/223). This SHA was resolved from GitHub commit search and matches PR #223's merge commit.
 - **PR #223 / ADR-0018:** exactly one documentation file changed, `docs/DECISION-LOG.md`. Approved policy: only `ProjectStatus.Commercialization` allows marketing and new internal reservations; all other current/future non-allow-listed statuses deny by default; suspension blocks new reservations and requires auditable review of active reservations without automatic cancellation or unit release; `ProjectCustomerStatus.Customer` is CRM-only and does not create contracts, receipts, instalments or accounting entries.

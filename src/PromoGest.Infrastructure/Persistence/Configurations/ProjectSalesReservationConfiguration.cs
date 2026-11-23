@@ -17,6 +17,10 @@ public sealed class ProjectSalesReservationConfiguration : IEntityTypeConfigurat
                 "ck_project_sales_reservations_expiry",
                 "expires_at_utc > reserved_at_utc");
             table.HasCheckConstraint(
+                "ck_project_sales_reservations_review",
+                "(review_required_at_utc IS NULL AND review_completed_at_utc IS NULL) OR " +
+                "(review_required_at_utc IS NOT NULL AND (review_completed_at_utc IS NULL OR review_completed_at_utc >= review_required_at_utc))");
+            table.HasCheckConstraint(
                 "ck_project_sales_reservations_closure",
                 "(status = 'Active' AND closed_at_utc IS NULL AND closed_by_user_id IS NULL AND close_reason IS NULL) OR " +
                 "(status = 'Cancelled' AND closed_at_utc IS NOT NULL AND closed_by_user_id IS NOT NULL AND close_reason IS NOT NULL AND length(btrim(close_reason)) > 0) OR " +
@@ -36,6 +40,9 @@ public sealed class ProjectSalesReservationConfiguration : IEntityTypeConfigurat
         builder.Property(x => x.ClosedByUserId).HasColumnName("closed_by_user_id");
         builder.Property(x => x.CloseReason).HasColumnName("close_reason").HasMaxLength(300);
         builder.Property(x => x.CreatedByUserId).HasColumnName("created_by_user_id").IsRequired();
+        builder.Ignore(x => x.IsAwaitingReview);
+        builder.Property(x => x.ReviewRequiredAtUtc).HasColumnName("review_required_at_utc");
+        builder.Property(x => x.ReviewCompletedAtUtc).HasColumnName("review_completed_at_utc");
         builder.Property(x => x.CreatedAtUtc).HasColumnName("created_at_utc").IsRequired();
         builder.Property(x => x.UpdatedAtUtc).HasColumnName("updated_at_utc").IsRequired();
         builder.Property(x => x.ConcurrencyStamp).HasColumnName("concurrency_stamp").IsConcurrencyToken().IsRequired();
@@ -49,6 +56,9 @@ public sealed class ProjectSalesReservationConfiguration : IEntityTypeConfigurat
             .HasDatabaseName("ux_project_sales_reservations_active_unit");
         builder.HasIndex(x => new { x.ProjectId, x.Status, x.ExpiresAtUtc })
             .HasDatabaseName("ix_project_sales_reservations_project_status_expiry");
+        builder.HasIndex(x => new { x.ProjectId, x.ReviewRequiredAtUtc })
+            .HasFilter("review_required_at_utc IS NOT NULL AND review_completed_at_utc IS NULL")
+            .HasDatabaseName("ix_project_sales_reservations_review_pending");
         builder.HasIndex(x => x.ProjectCustomerId)
             .HasDatabaseName("ix_project_sales_reservations_customer");
         builder.HasIndex(x => x.CreatedByUserId)

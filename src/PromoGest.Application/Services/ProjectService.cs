@@ -334,10 +334,12 @@ public sealed class ProjectService
         if (ProjectCommercializationPolicy.RequiresSuspensionReview(previousStatus, project.Status) &&
             _reservationRepository is not null)
         {
-            var reservations = await _reservationRepository.ListByProjectAsync(project.Id, ct);
-            var activeReservationIds = reservations
-                .Where(item => item.Reservation.Status == SalesReservationStatus.Active)
-                .Select(item => item.Reservation.Id)
+            var activeReservations = await _reservationRepository.ListTrackedActiveAsync(project.Id, ct);
+            foreach (var activeReservation in activeReservations)
+                activeReservation.RequestSuspensionReview(nowUtc);
+
+            var activeReservationIds = activeReservations
+                .Select(reservation => reservation.Id)
                 .OrderBy(id => id)
                 .ToArray();
 
@@ -351,18 +353,19 @@ public sealed class ProjectService
                     "Project",
                     project.Id.ToString(),
                     $"Project '{project.Code}' entered suspension with {activeReservationIds.Length} active reservation(s) "
-                        + "requiring review; no hold was cancelled, expired, or released.",
+                        + "queued for review; no hold was cancelled, expired, or released.",
                     JsonSerializer.Serialize(new
                     {
                         previousStatus = previousStatus.ToString(),
                         projectStatus = project.Status.ToString(),
                         activeReservationCount = activeReservationIds.Length,
-                        activeReservationIds
+                        activeReservationIds,
+                        reviewRequiredAtUtc = nowUtc
                     }),
                     metadata.IpAddress,
                     metadata.UserAgent),
                 ct);
-            await _projectRepository.SaveChangesAsync(ct);
+            await _reservationRepository.SaveChangesAsync(ct);
         }
 
         var reloaded = await _projectRepository.GetByIdWithMembersAsync(project.Id, ct) ?? project;

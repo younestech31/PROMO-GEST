@@ -67,6 +67,16 @@ public sealed class EfProjectSalesReservationRepository : IProjectSalesReservati
             .Take(Math.Clamp(limit, 1, 500))
             .ToListAsync(ct);
 
+    public async Task<IReadOnlyList<ProjectSalesReservation>> ListTrackedActiveAsync(
+        Guid projectId,
+        CancellationToken ct = default)
+        => await _dbContext.ProjectSalesReservations
+            .Where(reservation =>
+                reservation.ProjectId == projectId &&
+                reservation.Status == Domain.Enums.SalesReservationStatus.Active)
+            .OrderBy(reservation => reservation.ReservedAtUtc)
+            .ToListAsync(ct);
+
     public async Task AddAsync(ProjectSalesReservation reservation, CancellationToken ct = default)
         => await _dbContext.ProjectSalesReservations.AddAsync(reservation, ct);
 

@@ -902,6 +902,14 @@ namespace PromoGest.Infrastructure.Persistence.Migrations
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("reserved_at_utc");
 
+                    b.Property<DateTimeOffset?>("ReviewCompletedAtUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("review_completed_at_utc");
+
+                    b.Property<DateTimeOffset?>("ReviewRequiredAtUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("review_required_at_utc");
+
                     b.Property<string>("Status")
                         .IsRequired()
                         .HasMaxLength(20)
@@ -927,6 +935,10 @@ namespace PromoGest.Infrastructure.Persistence.Migrations
                         .IsUnique()
                         .HasDatabaseName("ux_project_sales_reservations_project_number");
 
+                    b.HasIndex("ProjectId", "ReviewRequiredAtUtc")
+                        .HasFilter("review_required_at_utc IS NOT NULL AND review_completed_at_utc IS NULL")
+                        .HasDatabaseName("ix_project_sales_reservations_review_pending");
+
                     b.HasIndex("ProjectId", "Status", "ExpiresAtUtc")
                         .HasDatabaseName("ix_project_sales_reservations_project_status_expiry");
 
@@ -940,6 +952,8 @@ namespace PromoGest.Infrastructure.Persistence.Migrations
                             t.HasCheckConstraint("ck_project_sales_reservations_closure", "(status = 'Active' AND closed_at_utc IS NULL AND closed_by_user_id IS NULL AND close_reason IS NULL) OR (status = 'Cancelled' AND closed_at_utc IS NOT NULL AND closed_by_user_id IS NOT NULL AND close_reason IS NOT NULL AND length(btrim(close_reason)) > 0) OR (status = 'Expired' AND closed_at_utc IS NOT NULL AND closed_by_user_id IS NULL AND close_reason = 'EXPIRED')");
 
                             t.HasCheckConstraint("ck_project_sales_reservations_expiry", "expires_at_utc > reserved_at_utc");
+
+                            t.HasCheckConstraint("ck_project_sales_reservations_review", "(review_required_at_utc IS NULL AND review_completed_at_utc IS NULL) OR (review_required_at_utc IS NOT NULL AND (review_completed_at_utc IS NULL OR review_completed_at_utc >= review_required_at_utc))");
 
                             t.HasCheckConstraint("ck_project_sales_reservations_status", "status IN ('Active', 'Cancelled', 'Expired')");
                         });

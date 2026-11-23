@@ -22,11 +22,12 @@ public sealed class ProjectSalesReservationsController : ControllerBase
     [HttpGet]
     public async Task<ActionResult<IReadOnlyList<ProjectSalesReservationDto>>> List(
         Guid projectId,
+        [FromQuery] bool reviewRequired,
         CancellationToken ct)
     {
         Response.Headers.CacheControl = "no-store, no-cache";
         var reservations = await _reservationService.ListAsync(
-            GetActorUserId(), projectId, GetMetadata(), ct);
+            GetActorUserId(), projectId, GetMetadata(), reviewRequired, ct);
         return Ok(reservations);
     }
 
@@ -64,6 +65,19 @@ public sealed class ProjectSalesReservationsController : ControllerBase
         CancellationToken ct)
     {
         var reservation = await _reservationService.CancelAsync(
+            GetActorUserId(), projectId, reservationId, request, GetMetadata(), ct);
+        return Ok(reservation);
+    }
+
+    [HttpPost("{reservationId:guid}/review")]
+    public async Task<ActionResult<ProjectSalesReservationDto>> Review(
+        Guid projectId,
+        Guid reservationId,
+        [FromBody] ReviewProjectSalesReservationRequest request,
+        CancellationToken ct)
+    {
+        Response.Headers.CacheControl = "no-store, no-cache";
+        var reservation = await _reservationService.ReviewAsync(
             GetActorUserId(), projectId, reservationId, request, GetMetadata(), ct);
         return Ok(reservation);
     }

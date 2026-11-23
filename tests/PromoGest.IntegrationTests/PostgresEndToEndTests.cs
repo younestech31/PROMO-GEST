@@ -1933,6 +1933,114 @@ public sealed partial class PostgresEndToEndTests : IClassFixture<PostgreSql18In
                 Assert.Contains("\"activeReservationCount\":1", suspensionMarker.MetadataJson!.Replace(" ", string.Empty), StringComparison.Ordinal);
             }
 
+            // ADR-0018 review queue: the suspended hold is queued, reviewable, and recording the review
+            // changes no state at all.
+            var reviewQueueResponse = await adminClient.GetAsync(
+                $"/api/projects/{createdProject.Id}/reservations?reviewRequired=true");
+            Assert.Equal(HttpStatusCode.OK, reviewQueueResponse.StatusCode);
+            var reviewQueue = await reviewQueueResponse.Content.ReadFromJsonAsync<List<ProjectSalesReservationDto>>();
+            Assert.NotNull(reviewQueue);
+            var queuedHold = Assert.Single(reviewQueue!);
+            Assert.Equal(heldReservationBeforeSuspension.Id, queuedHold.Id);
+            Assert.NotNull(queuedHold.ReviewRequiredAtUtc);
+            Assert.Null(queuedHold.ReviewCompletedAtUtc);
+            Assert.True(queuedHold.IsAwaitingReview);
+            Assert.Equal("Active", queuedHold.Status);
+
+            var fullRegister = await adminClient.GetFromJsonAsync<List<ProjectSalesReservationDto>>(
+                $"/api/projects/{createdProject.Id}/reservations");
+            Assert.NotNull(fullRegister);
+            Assert.True(fullRegister!.Count > reviewQueue!.Count);
+
+            var anonymousQueueProbe = await factory.CreateClient().GetAsync(
+                $"/api/projects/{createdProject.Id}/reservations?reviewRequired=true");
+            Assert.Equal(HttpStatusCode.Unauthorized, anonymousQueueProbe.StatusCode);
+
+            var staleReviewResponse = await adminClient.PostAsJsonAsync(
+                $"/api/projects/{createdProject.Id}/reservations/{queuedHold.Id}/review",
+                new ReviewProjectSalesReservationRequest(Guid.NewGuid()));
+            Assert.Equal(HttpStatusCode.Conflict, staleReviewResponse.StatusCode);
+
+            var reviewResponse = await adminClient.PostAsJsonAsync(
+                $"/api/projects/{createdProject.Id}/reservations/{queuedHold.Id}/review",
+                new ReviewProjectSalesReservationRequest(queuedHold.ConcurrencyStamp));
+            Assert.Equal(HttpStatusCode.OK, reviewResponse.StatusCode);
+            var reviewedHold = await reviewResponse.Content.ReadFromJsonAsync<ProjectSalesReservationDto>();
+            Assert.NotNull(reviewedHold);
+            Assert.NotNull(reviewedHold!.ReviewCompletedAtUtc);
+            Assert.False(reviewedHold.IsAwaitingReview);
+            Assert.True(
+                reviewedHold.ReviewCompletedAtUtc!.Value >= queuedHold.ReviewRequiredAtUtc!.Value,
+                "A review cannot complete before it was requested.");
+            // Recording the review is not an approval: the hold keeps its status and unit, the project
+            // stays suspended, and the unit stays reserved.
+            Assert.Equal("Active", reviewedHold.Status);
+            Assert.Equal(queuedHold.PropertyUnitId, reviewedHold.PropertyUnitId);
+            var projectAfterReview = await adminClient.GetFromJsonAsync<ProjectDto>($"/api/projects/{createdProject.Id}");
+            Assert.NotNull(projectAfterReview);
+            Assert.Equal("Suspended", projectAfterReview!.Status);
+
+            var emptyQueueResponse = await adminClient.GetAsync(
+                $"/api/projects/{createdProject.Id}/reservations?reviewRequired=true");
+            Assert.Equal(HttpStatusCode.OK, emptyQueueResponse.StatusCode);
+            var emptyQueue = await emptyQueueResponse.Content.ReadFromJsonAsync<List<ProjectSalesReservationDto>>();
+            Assert.NotNull(emptyQueue);
+            Assert.Empty(emptyQueue!);
+
+            var duplicateReviewResponse = await adminClient.PostAsJsonAsync(
+                $"/api/projects/{createdProject.Id}/reservations/{queuedHold.Id}/review",
+                new ReviewProjectSalesReservationRequest(reviewedHold.ConcurrencyStamp));
+            Assert.Equal(HttpStatusCode.Conflict, duplicateReviewResponse.StatusCode);
+            Assert.Contains(
+                "RESERVATION_REVIEW_ALREADY_COMPLETED",
+                await duplicateReviewResponse.Content.ReadAsStringAsync(),
+                StringComparison.Ordinal);
+
+            using (var reviewScope = factory.Services.CreateScope())
+            {
+                var reviewDb = reviewScope.ServiceProvider.GetRequiredService<AppDbContext>();
+                var reviewAudits = await reviewDb.AuditLogs
+                    .Where(log => log.EventType == "PROJECT_RESERVATION_REVIEW_COMPLETED")
+                    .ToListAsync();
+                var completedReviewAudit = reviewAudits.Single(log => log.TargetEntityId == queuedHold.Id.ToString());
+                Assert.NotNull(completedReviewAudit.ActorUserId);
+                Assert.False(string.IsNullOrWhiteSpace(completedReviewAudit.ActorUsername));
+                Assert.Contains(
+                    heldReservationBeforeSuspension.Id.ToString(),
+                    completedReviewAudit.MetadataJson,
+                    StringComparison.Ordinal);
+
+                var persistedReview = await reviewDb.ProjectSalesReservations
+                    .AsNoTracking()
+                    .SingleAsync(reservation => reservation.Id == queuedHold.Id);
+                Assert.NotNull(persistedReview.ReviewRequiredAtUtc);
+                Assert.NotNull(persistedReview.ReviewCompletedAtUtc);
+                Assert.Equal(SalesReservationStatus.Active, persistedReview.Status);
+                var persistedHeldUnit = await reviewDb.PropertyUnits
+                    .AsNoTracking()
+                    .SingleAsync(unit => unit.Id == heldUnit.Id);
+                Assert.Equal(PropertyUnitStatus.Reserved, persistedHeldUnit.Status);
+
+                // The database refuses a completion timestamp without a request, so the invariant does
+                // not depend on application code being the only writer.
+                var reviewCheckConstraintViolated = false;
+                try
+                {
+                    await reviewDb.Database.ExecuteSqlRawAsync(
+                        "UPDATE project_sales_reservations SET review_completed_at_utc = now() WHERE id = {0}",
+                        cancelledReservation!.Id);
+                }
+                catch (PostgresException postgresException)
+                    when (postgresException.SqlState == PostgresErrorCodes.CheckViolation)
+                {
+                    reviewCheckConstraintViolated = true;
+                }
+
+                Assert.True(
+                    reviewCheckConstraintViolated,
+                    "ck_project_sales_reservations_review must reject a completion without a review request.");
+            }
+
             var projectBeforeRestore = await adminClient.GetFromJsonAsync<ProjectDto>(
                 $"/api/projects/{createdProject.Id}");
             Assert.NotNull(projectBeforeRestore);
@@ -2403,6 +2511,10 @@ public sealed partial class PostgresEndToEndTests : IClassFixture<PostgreSql18In
             var deniedReservationList = await employeeClient.GetAsync(
                 $"/api/projects/{createdProject.Id}/reservations");
             Assert.Equal(HttpStatusCode.Forbidden, deniedReservationList.StatusCode);
+            var deniedReservationReview = await employeeClient.PostAsJsonAsync(
+                $"/api/projects/{createdProject.Id}/reservations/{heldReservationBeforeSuspension.Id}/review",
+                new ReviewProjectSalesReservationRequest(Guid.NewGuid()));
+            Assert.Equal(HttpStatusCode.Forbidden, deniedReservationReview.StatusCode);
             var deniedCustomerDetails = await employeeClient.GetAsync(
                 $"/api/projects/{createdProject.Id}/customers/{createdCustomer!.Id}");
             Assert.Equal(HttpStatusCode.Forbidden, deniedCustomerDetails.StatusCode);

@@ -1,4 +1,18 @@
-## Current security checkpoint — PR #233 merged; ADR-0018 suspension review marker implemented; ADR-0018 commercialization gate implemented on branch on exact main SHA — 23 November 2026
+## Current security checkpoint — PR #234 merged; ADR-0018 suspension review marker implemented; ADR-0018 commercialization gate implemented on branch on exact main SHA — 23 November 2026
+
+
+
+- Current verified main SHA: `3052125e54524ed047e31ed70f1d1ae50c501d92` (PR #234, documentation and verification scripts only; resolved live on 23 November 2026 with 0 open pull requests).
+- Exact-main push [CI 45260908072](https://github.com/younestech31/PROMO-GEST/actions/runs/45260908072) passed 4/4 and [CodeQL 45260907054](https://github.com/younestech31/PROMO-GEST/actions/runs/45260907054) passed 2/2 on this SHA, including the C# and JavaScript/TypeScript analyses; PR head `7056075df9b018df798e94ae228449a5e9f72797` passed [CI 45260095700](https://github.com/younestech31/PROMO-GEST/actions/runs/45260095700) 4/4 and [CodeQL 45260095291](https://github.com/younestech31/PROMO-GEST/actions/runs/45260095291) 2/2.
+- PR #234 changed no authentication, session, cookie, CSRF, authorization, rate-limit, audit, schema, or deployment behaviour. The added `Documentation baseline consistency` CI job runs with `contents: read`, reads documentation and the local git graph only, and holds no repository write permission.
+- `REQ-A10` / `P1-19` remain `IMPLEMENTED_NOT_VERIFIED`: the sessions API is merged and automated-tested, but the account-security UI, the explicit IP/User-Agent privacy warning, and manual Arabic RTL / French LTR acceptance remain pending. IP/User-Agent stay device metadata, not proof of physical location or identity; token material must never reach UI or logs.
+- `P1-17`, `P1-15`, `P1-36`, `P1-38`, `P1-11` remain `In Review / Pending`; `P1-09`/`P1-10` ordering, the `P1-01`/`P1-35` deferral, `P1-02`/`P1-34` blockers, and Phase 1 `IN_PROGRESS` are unchanged.
+- `main.protected=false` remains as previously observed; the token used here received HTTP 403 on the branch-protection endpoint, so it is not re-verified by this change, and no protection or ruleset setting was altered.
+
+---
+
+## Historical checkpoint — PR #233 merged; ADR-0018 suspension review marker implemented; ADR-0018 commercialization gate implemented on branch on exact main SHA (superseded by PR #234) — 23 November 2026
+
 
 
 - Current verified main SHA: `d82ce3111404ca09b65b890cc83333ae14c1207e` (PR #233, documentation and verification scripts only; resolved live on 23 November 2026 with 0 open pull requests).
@@ -226,6 +240,7 @@ For all non-`SYSTEM_ADMIN` users, holding an organization role permission is **n
 | Create / Update Customers & Interactions | `customers.manage` + `customers.read` | `CanManageSales == true \|\| RoleInProject == ProjectManager` |
 | Read Sales Reservations | `sales.reservations.read` + `customers.read` | Any `ProjectMember` row |
 | Create / Cancel Reservations | `sales.reservations.manage` + `sales.reservations.read` + `customers.read` | `CanManageSales == true \|\| RoleInProject == ProjectManager` |
+| Review Suspended-Project Holds | `sales.reservations.manage` + `sales.reservations.read` + `customers.read` (same write gate as cancellation) | `CanManageSales == true \|\| RoleInProject == ProjectManager` |
 
 ### 4.1 Last Project Manager invariant under concurrent membership changes
 

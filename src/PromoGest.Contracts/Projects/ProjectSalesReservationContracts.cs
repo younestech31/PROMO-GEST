@@ -9,6 +9,9 @@ public sealed record CancelProjectSalesReservationRequest(
     string Reason,
     Guid ExpectedConcurrencyStamp);
 
+public sealed record ReviewProjectSalesReservationRequest(
+    Guid ExpectedConcurrencyStamp);
+
 public sealed record ProjectSalesReservationDto(
     Guid Id,
     Guid ProjectId,
@@ -25,4 +28,7 @@ public sealed record ProjectSalesReservationDto(
     string? CloseReason,
     Guid CreatedByUserId,
     DateTimeOffset CreatedAtUtc,
-    Guid ConcurrencyStamp);
+    Guid ConcurrencyStamp,
+    DateTimeOffset? ReviewRequiredAtUtc,
+    DateTimeOffset? ReviewCompletedAtUtc,
+    bool IsAwaitingReview);

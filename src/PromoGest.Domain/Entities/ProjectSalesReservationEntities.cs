@@ -20,6 +20,18 @@ public sealed class ProjectSalesReservation : BaseEntity
     public string? CloseReason { get; private set; }
     public Guid CreatedByUserId { get; private set; }
 
+    /// <summary>When the suspension review was requested for this hold (ADR-0018), if ever.</summary>
+    public DateTimeOffset? ReviewRequiredAtUtc { get; private set; }
+
+    /// <summary>When an operator recorded the review. Recording a review never approves or cancels the hold.</summary>
+    public DateTimeOffset? ReviewCompletedAtUtc { get; private set; }
+
+    /// <summary>True only while an active hold is queued and its review has not been recorded yet.</summary>
+    public bool IsAwaitingReview =>
+        Status == SalesReservationStatus.Active &&
+        ReviewRequiredAtUtc is not null &&
+        ReviewCompletedAtUtc is null;
+
     public static ProjectSalesReservation Create(
         Guid projectId,
         Guid propertyUnitId,
@@ -99,6 +111,54 @@ public sealed class ProjectSalesReservation : BaseEntity
         ClosedAtUtc = nowUtc;
         ClosedByUserId = null;
         CloseReason = "EXPIRED";
+        Touch(nowUtc);
+    }
+
+    /// <summary>
+    /// Queues an active hold for the suspension review. Idempotent: a hold that is already queued or
+    /// already reviewed is left untouched, and a hold that is no longer active needs no review.
+    /// </summary>
+    public void RequestSuspensionReview(DateTimeOffset nowUtc)
+    {
+        if (Status != SalesReservationStatus.Active)
+            return;
+        if (ReviewRequiredAtUtc is not null)
+            return;
+
+        ReviewRequiredAtUtc = nowUtc.ToUniversalTime();
+        Touch(nowUtc);
+    }
+
+    /// <summary>
+    /// Records that an operator reviewed the hold. Deliberately changes no reservation state: the hold
+    /// stays active, keeps its unit and expiry, and the project stays suspended until someone decides
+    /// otherwise. Approval, cancellation, and release remain separate, explicit operations.
+    /// </summary>
+    public void CompleteSuspensionReview(DateTimeOffset nowUtc)
+    {
+        if (ReviewRequiredAtUtc is null)
+        {
+            throw new ConflictDomainException(
+                "RESERVATION_REVIEW_NOT_REQUIRED",
+                "This reservation was never queued for a suspension review.");
+        }
+
+        if (ReviewCompletedAtUtc is not null)
+        {
+            throw new ConflictDomainException(
+                "RESERVATION_REVIEW_ALREADY_COMPLETED",
+                "The suspension review for this reservation is already recorded.");
+        }
+
+        var completedAtUtc = nowUtc.ToUniversalTime();
+        if (completedAtUtc < ReviewRequiredAtUtc.Value)
+        {
+            throw new DomainException(
+                "RESERVATION_REVIEW_TIMESTAMP_INVALID",
+                "A suspension review cannot be completed before it was requested.");
+        }
+
+        ReviewCompletedAtUtc = completedAtUtc;
         Touch(nowUtc);
     }
 

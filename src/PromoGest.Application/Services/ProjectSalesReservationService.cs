@@ -40,23 +40,108 @@ public sealed class ProjectSalesReservationService
         Guid projectId,
         RequestMetadata metadata,
         CancellationToken ct = default)
+        => await ListAsync(actorUserId, projectId, metadata, reviewQueueOnly: false, ct);
+
+    public async Task<IReadOnlyList<ProjectSalesReservationDto>> ListAsync(
+        Guid actorUserId,
+        Guid projectId,
+        RequestMetadata metadata,
+        bool reviewQueueOnly,
+        CancellationToken ct = default)
     {
         var (actor, project) = await RequireProjectAccessAsync(
             actorUserId, projectId, canWrite: false, metadata, ct);
 
         var reservations = await _reservationRepository.ListByProjectAsync(project.Id, ct);
+        var visible = reviewQueueOnly
+            ? reservations.Where(item => item.Reservation.IsAwaitingReview).ToList()
+            : reservations;
+
         await WriteAuditAsync(
             actor,
-            "PROJECT_RESERVATIONS_LISTED",
+            reviewQueueOnly ? "PROJECT_RESERVATION_REVIEW_QUEUE_VIEWED" : "PROJECT_RESERVATIONS_LISTED",
             "ProjectSalesReservation",
             project.Id.ToString(),
-            "Viewed the project reservation register.",
-            new { projectId, resultCount = reservations.Count },
+            reviewQueueOnly
+                ? "Viewed the project suspension review queue."
+                : "Viewed the project reservation register.",
+            new { projectId, resultCount = visible.Count, reviewQueueOnly },
             metadata,
             ct,
             saveChanges: true);
 
-        return reservations.Select(item => Map(item.Reservation, item.UnitNumber, item.CustomerName)).ToList();
+        return visible.Select(item => Map(item.Reservation, item.UnitNumber, item.CustomerName)).ToList();
+    }
+
+    /// <summary>
+    /// Records that an operator reviewed a hold that was queued by a suspension. This is bookkeeping
+    /// only: the hold keeps its status, unit, and expiry, and the project status is untouched. It is
+    /// therefore not an approval, a cancellation, or a release.
+    /// </summary>
+    public async Task<ProjectSalesReservationDto> ReviewAsync(
+        Guid actorUserId,
+        Guid projectId,
+        Guid reservationId,
+        ReviewProjectSalesReservationRequest request,
+        RequestMetadata metadata,
+        CancellationToken ct = default)
+    {
+        var (actor, project) = await RequireProjectAccessAsync(
+            actorUserId, projectId, canWrite: true, metadata, ct);
+
+        var reservation = await _reservationRepository.GetByProjectAsync(project.Id, reservationId, ct)
+            ?? throw new NotFoundDomainException(
+                "RESERVATION_NOT_FOUND",
+                "The reservation was not found in this project.");
+
+        if (request.ExpectedConcurrencyStamp == Guid.Empty ||
+            request.ExpectedConcurrencyStamp != reservation.ConcurrencyStamp)
+        {
+            throw new ConflictDomainException(
+                "CONCURRENCY_CONFLICT",
+                "The reservation changed after it was loaded. Reload it before recording the review.");
+        }
+
+        var unit = await _reservationRepository.GetPropertyUnitForProjectAsync(
+            project.Id, reservation.PropertyUnitId, ct)
+            ?? throw new NotFoundDomainException(
+                "RESERVATION_UNIT_NOT_FOUND",
+                "The property unit linked to this reservation was not found.");
+
+        var customer = await _customerRepository.GetByProjectAsync(
+            project.Id, reservation.ProjectCustomerId, ct)
+            ?? throw new NotFoundDomainException(
+                "RESERVATION_CUSTOMER_NOT_FOUND",
+                "The customer linked to this reservation was not found.");
+
+        var reviewRequiredAtUtc = reservation.ReviewRequiredAtUtc;
+        var nowUtc = _clock.UtcNow;
+        reservation.CompleteSuspensionReview(nowUtc);
+
+        await WriteAuditAsync(
+            actor,
+            "PROJECT_RESERVATION_REVIEW_COMPLETED",
+            "ProjectSalesReservation",
+            reservation.Id.ToString(),
+            "Recorded the suspension review of a project unit reservation without approving, cancelling, or releasing it.",
+            new
+            {
+                projectId,
+                reservationId = reservation.Id,
+                reservationNumber = reservation.ReservationNumber,
+                projectStatus = project.Status.ToString(),
+                reservationStatus = reservation.Status.ToString(),
+                reviewRequiredAtUtc,
+                reviewCompletedAtUtc = reservation.ReviewCompletedAtUtc,
+                stateChanged = false
+            },
+            metadata,
+            ct,
+            saveChanges: false);
+
+        await _reservationRepository.SaveChangesAsync(ct);
+
+        return Map(reservation, unit.UnitNumber, customer.Party.DisplayName);
     }
 
     public async Task<ProjectSalesReservationDto> GetAsync(
@@ -408,7 +493,10 @@ public sealed class ProjectSalesReservationService
             reservation.CloseReason,
             reservation.CreatedByUserId,
             reservation.CreatedAtUtc,
-            reservation.ConcurrencyStamp);
+            reservation.ConcurrencyStamp,
+            reservation.ReviewRequiredAtUtc,
+            reservation.ReviewCompletedAtUtc,
+            reservation.IsAwaitingReview);
 }
 
 public sealed class ProjectSalesReservationExpiryProcessor

@@ -108,6 +108,9 @@ public interface IProjectSalesReservationRepository
     Task<ProjectSalesReservation?> GetByProjectAsync(Guid projectId, Guid reservationId, CancellationToken ct = default);
     Task<PropertyUnit?> GetPropertyUnitForProjectAsync(Guid projectId, Guid propertyUnitId, CancellationToken ct = default);
     Task<IReadOnlyList<ProjectSalesReservation>> ListDueForExpiryAsync(DateTimeOffset nowUtc, int limit, CancellationToken ct = default);
+
+    /// <summary>Tracked read used to queue the ADR-0018 suspension review on active holds.</summary>
+    Task<IReadOnlyList<ProjectSalesReservation>> ListTrackedActiveAsync(Guid projectId, CancellationToken ct = default);
     Task AddAsync(ProjectSalesReservation reservation, CancellationToken ct = default);
     Task SaveChangesAsync(CancellationToken ct = default);
 }

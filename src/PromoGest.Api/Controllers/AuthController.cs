@@ -107,6 +107,65 @@ public sealed class AuthController : ControllerBase
         return Ok(session);
     }
 
+    [HttpGet("sessions")]
+    [Authorize]
+    public async Task<ActionResult<IReadOnlyList<UserSessionDto>>> ListOwnSessions(CancellationToken ct)
+    {
+        var rawUserId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        if (!Guid.TryParse(rawUserId, out var userId))
+            return Unauthorized();
+
+        var sessions = await _authService.ListOwnSessionsAsync(
+            userId,
+            GetCurrentOpaqueSessionToken(),
+            ct);
+        return Ok(sessions);
+    }
+
+    [HttpPost("sessions/{sessionId:guid}/revoke")]
+    [Authorize]
+    public async Task<IActionResult> RevokeOwnSession(
+        Guid sessionId,
+        [FromBody] RevokeUserSessionRequest request,
+        CancellationToken ct)
+    {
+        var rawUserId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        if (!Guid.TryParse(rawUserId, out var userId))
+            return Unauthorized();
+
+        var metadata = new RequestMetadata(
+            HttpContext.Connection.RemoteIpAddress?.ToString(),
+            Request.Headers.UserAgent.ToString());
+
+        var revokedCurrentSession = await _authService.RevokeOwnSessionAsync(
+            userId,
+            sessionId,
+            GetCurrentOpaqueSessionToken(),
+            request,
+            metadata,
+            ct);
+
+        if (revokedCurrentSession)
+        {
+            var useHostCookie = SessionCookieDefaults.UsesHostPrefix(HttpContext, _environment);
+            Response.Cookies.Delete(
+                SessionCookieDefaults.GetCookieName(HttpContext, _environment),
+                CreateSessionCookieDeletionOptions(useHostCookie));
+
+            if (useHostCookie)
+            {
+                DeleteLegacySessionCookie();
+            }
+
+            HttpContext.User = new ClaimsPrincipal(new ClaimsIdentity());
+            var requireHttps = _configuration.GetValue<bool>("Security:RequireHttpsCookies", true) ||
+                                SessionCookieDefaults.UsesHostPrefix(HttpContext, _environment);
+            SessionClaimsFactory.IssueCsrfToken(HttpContext, _antiforgery, requireHttps);
+        }
+
+        return NoContent();
+    }
+
     [HttpPost("change-password")]
     [Authorize]
     [EnableRateLimiting("login")]
@@ -180,6 +239,12 @@ public sealed class AuthController : ControllerBase
         SessionClaimsFactory.IssueCsrfToken(HttpContext, _antiforgery, requireHttps);
 
         return NoContent();
+    }
+
+    private string? GetCurrentOpaqueSessionToken()
+    {
+        var cookieName = SessionCookieDefaults.GetCookieName(HttpContext, _environment);
+        return Request.Cookies.TryGetValue(cookieName, out var token) ? token : null;
     }
 
     private void DeleteLegacySessionCookie()

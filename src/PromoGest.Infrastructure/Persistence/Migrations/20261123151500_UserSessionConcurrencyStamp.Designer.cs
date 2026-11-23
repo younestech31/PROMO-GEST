@@ -1493,6 +1493,11 @@ namespace PromoGest.Infrastructure.Persistence.Migrations
                         .HasColumnType("uuid")
                         .HasColumnName("security_stamp");
 
+                    b.Property<Guid>("ConcurrencyStamp")
+                        .IsConcurrencyToken()
+                        .HasColumnType("uuid")
+                        .HasColumnName("concurrency_stamp");
+
                     b.Property<string>("TokenHash")
                         .IsRequired()
                         .HasMaxLength(64)

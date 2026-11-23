@@ -51,6 +51,44 @@ public sealed class ProjectCommercializationPolicyTests
         Assert.Equal(ProjectCommercializationPolicy.DeniedCode, denied.Code);
     }
 
+    [Theory]
+    [InlineData(ProjectStatus.Planning, true)]
+    [InlineData(ProjectStatus.UnderConstruction, true)]
+    [InlineData(ProjectStatus.Commercialization, true)]
+    [InlineData(ProjectStatus.Delivered, true)]
+    [InlineData(ProjectStatus.Suspended, false)]
+    public void EnteringSuspensionRequiresOneReviewMarker(ProjectStatus previousStatus, bool expected)
+    {
+        var requiresReview = ProjectCommercializationPolicy.RequiresSuspensionReview(
+            previousStatus,
+            ProjectStatus.Suspended);
+
+        Assert.Equal(expected, requiresReview);
+    }
+
+    [Theory]
+    [InlineData(ProjectStatus.Planning)]
+    [InlineData(ProjectStatus.UnderConstruction)]
+    [InlineData(ProjectStatus.Commercialization)]
+    [InlineData(ProjectStatus.Delivered)]
+    public void LeavingSuspensionDoesNotCreateAReviewMarker(ProjectStatus nextStatus)
+    {
+        Assert.False(ProjectCommercializationPolicy.RequiresSuspensionReview(
+            ProjectStatus.Suspended,
+            nextStatus));
+        Assert.False(ProjectCommercializationPolicy.RequiresSuspensionReview(
+            ProjectStatus.Commercialization,
+            nextStatus));
+    }
+
+    [Fact]
+    public void SuspensionReviewEventTypeIsStable()
+    {
+        Assert.Equal(
+            "PROJECT_RESERVATION_SUSPENSION_REVIEW_REQUIRED",
+            ProjectCommercializationPolicy.SuspensionReviewEventType);
+    }
+
     [Fact]
     public void OnlyOneStatusIsAllowListed()
     {

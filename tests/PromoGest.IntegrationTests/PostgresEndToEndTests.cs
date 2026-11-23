@@ -1714,6 +1714,33 @@ public sealed partial class PostgresEndToEndTests : IClassFixture<PostgreSql18In
                 new ChangePropertyUnitStatusRequest("Reserved", reservationUnit.ConcurrencyStamp));
             Assert.Equal(HttpStatusCode.BadRequest, directReservedStatusResponse.StatusCode);
 
+            // ADR-0018: reservations are allowed only while the project is explicitly commercializing.
+            var projectBeforeReservation = await adminClient.GetFromJsonAsync<ProjectDto>(
+                $"/api/projects/{createdProject.Id}");
+            Assert.NotNull(projectBeforeReservation);
+            Assert.Equal("UnderConstruction", projectBeforeReservation!.Status);
+            var commercializationResponse = await adminClient.PutAsJsonAsync(
+                $"/api/projects/{createdProject.Id}",
+                new UpdateProjectRequest(
+                    projectBeforeReservation.NameAr,
+                    projectBeforeReservation.NameFr,
+                    projectBeforeReservation.WilayaCode,
+                    projectBeforeReservation.WilayaName,
+                    projectBeforeReservation.Municipality,
+                    projectBeforeReservation.Address,
+                    projectBeforeReservation.LandTitleReference,
+                    projectBeforeReservation.BuildingPermitNumber,
+                    projectBeforeReservation.BuildingPermitDate,
+                    "Commercialization",
+                    projectBeforeReservation.EstimatedBudgetDzd,
+                    projectBeforeReservation.PlannedBlocksCount,
+                    projectBeforeReservation.PlannedUnitsCount,
+                    projectBeforeReservation.ConcurrencyStamp));
+            Assert.Equal(HttpStatusCode.OK, commercializationResponse.StatusCode);
+            var commercializingProject = await commercializationResponse.Content.ReadFromJsonAsync<ProjectDto>();
+            Assert.NotNull(commercializingProject);
+            Assert.Equal("Commercialization", commercializingProject!.Status);
+
             var createReservationRequest = new CreateProjectSalesReservationRequest(
                 reservationUnit.Id,
                 createdCustomer.Id,
@@ -1774,6 +1801,102 @@ public sealed partial class PostgresEndToEndTests : IClassFixture<PostgreSql18In
             var releasedUnit = releasedStructure!.Buildings.SelectMany(building => building.Floors)
                 .SelectMany(floor => floor.Units).Single(unit => unit.Id == reservationUnit.Id);
             Assert.Equal("AvailableForSale", releasedUnit.Status);
+
+            // ADR-0018: a project outside commercialization must refuse new reservations while
+            // leaving existing holds, units, and customers untouched.
+            var projectBeforeSuspension = await adminClient.GetFromJsonAsync<ProjectDto>(
+                $"/api/projects/{createdProject.Id}");
+            Assert.NotNull(projectBeforeSuspension);
+            var suspensionResponse = await adminClient.PutAsJsonAsync(
+                $"/api/projects/{createdProject.Id}",
+                new UpdateProjectRequest(
+                    projectBeforeSuspension!.NameAr,
+                    projectBeforeSuspension.NameFr,
+                    projectBeforeSuspension.WilayaCode,
+                    projectBeforeSuspension.WilayaName,
+                    projectBeforeSuspension.Municipality,
+                    projectBeforeSuspension.Address,
+                    projectBeforeSuspension.LandTitleReference,
+                    projectBeforeSuspension.BuildingPermitNumber,
+                    projectBeforeSuspension.BuildingPermitDate,
+                    "Suspended",
+                    projectBeforeSuspension.EstimatedBudgetDzd,
+                    projectBeforeSuspension.PlannedBlocksCount,
+                    projectBeforeSuspension.PlannedUnitsCount,
+                    projectBeforeSuspension.ConcurrencyStamp));
+            Assert.Equal(HttpStatusCode.OK, suspensionResponse.StatusCode);
+            var suspendedProject = await suspensionResponse.Content.ReadFromJsonAsync<ProjectDto>();
+            Assert.NotNull(suspendedProject);
+            Assert.Equal("Suspended", suspendedProject!.Status);
+
+            var eligibilityUnitResponse = await adminClient.PostAsJsonAsync(
+                unitsUrl,
+                new CreatePropertyUnitRequest("A-004", "Apartment", "AvailableForSale", 88m, 80m, 3));
+            Assert.Equal(HttpStatusCode.OK, eligibilityUnitResponse.StatusCode);
+            var eligibilityUnitStructure = await eligibilityUnitResponse.Content.ReadFromJsonAsync<ProjectStructureDto>();
+            Assert.NotNull(eligibilityUnitStructure);
+            var eligibilityUnit = eligibilityUnitStructure!.Buildings
+                .SelectMany(building => building.Floors)
+                .SelectMany(floor => floor.Units)
+                .Single(unit => unit.UnitNumber == "A-004");
+
+            var suspendedReservationResponse = await adminClient.PostAsJsonAsync(
+                $"/api/projects/{createdProject.Id}/reservations",
+                new CreateProjectSalesReservationRequest(
+                    eligibilityUnit.Id,
+                    createdCustomer.Id,
+                    DateTimeOffset.UtcNow.AddDays(5)));
+            Assert.Equal(HttpStatusCode.Conflict, suspendedReservationResponse.StatusCode);
+            var suspendedReservationError = await suspendedReservationResponse.Content.ReadFromJsonAsync<ApiErrorResponse>();
+            Assert.NotNull(suspendedReservationError);
+            Assert.Equal("PROJECT_NOT_COMMERCIALIZABLE", suspendedReservationError!.Code);
+
+            var unitAfterRefusalResponse = await adminClient.GetAsync(structureUrl);
+            Assert.Equal(HttpStatusCode.OK, unitAfterRefusalResponse.StatusCode);
+            var structureAfterRefusal = await unitAfterRefusalResponse.Content.ReadFromJsonAsync<ProjectStructureDto>();
+            Assert.NotNull(structureAfterRefusal);
+            var unitAfterRefusal = structureAfterRefusal!.Buildings.SelectMany(building => building.Floors)
+                .SelectMany(floor => floor.Units).Single(unit => unit.Id == eligibilityUnit.Id);
+            Assert.Equal("AvailableForSale", unitAfterRefusal.Status);
+
+            var reservationsWhileSuspended = await adminClient.GetFromJsonAsync<List<ProjectSalesReservationDto>>(
+                $"/api/projects/{createdProject.Id}/reservations");
+            Assert.NotNull(reservationsWhileSuspended);
+            Assert.DoesNotContain(reservationsWhileSuspended!, item => item.PropertyUnitId == eligibilityUnit.Id);
+
+            using (var denialScope = factory.Services.CreateScope())
+            {
+                var denialDb = denialScope.ServiceProvider.GetRequiredService<AppDbContext>();
+                var denialAudits = await denialDb.AuditLogs
+                    .Where(log => log.EventType == "PROJECT_RESERVATION_DENIED")
+                    .ToListAsync();
+                Assert.Contains(denialAudits, log => log.TargetEntityId == createdProject.Id.ToString());
+            }
+
+            var projectBeforeRestore = await adminClient.GetFromJsonAsync<ProjectDto>(
+                $"/api/projects/{createdProject.Id}");
+            Assert.NotNull(projectBeforeRestore);
+            var restoreCommercializationResponse = await adminClient.PutAsJsonAsync(
+                $"/api/projects/{createdProject.Id}",
+                new UpdateProjectRequest(
+                    projectBeforeRestore!.NameAr,
+                    projectBeforeRestore.NameFr,
+                    projectBeforeRestore.WilayaCode,
+                    projectBeforeRestore.WilayaName,
+                    projectBeforeRestore.Municipality,
+                    projectBeforeRestore.Address,
+                    projectBeforeRestore.LandTitleReference,
+                    projectBeforeRestore.BuildingPermitNumber,
+                    projectBeforeRestore.BuildingPermitDate,
+                    "Commercialization",
+                    projectBeforeRestore.EstimatedBudgetDzd,
+                    projectBeforeRestore.PlannedBlocksCount,
+                    projectBeforeRestore.PlannedUnitsCount,
+                    projectBeforeRestore.ConcurrencyStamp));
+            Assert.Equal(HttpStatusCode.OK, restoreCommercializationResponse.StatusCode);
+            var restoredProject = await restoreCommercializationResponse.Content.ReadFromJsonAsync<ProjectDto>();
+            Assert.NotNull(restoredProject);
+            Assert.Equal("Commercialization", restoredProject!.Status);
 
             // Two requests racing for one free unit must produce one active reservation only.
             var raceUnitResponse = await adminClient.PostAsJsonAsync(

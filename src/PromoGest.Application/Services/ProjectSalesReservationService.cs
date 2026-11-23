@@ -6,6 +6,7 @@ using PromoGest.Domain.Entities;
 using PromoGest.Domain.Enums;
 using PromoGest.Domain.Exceptions;
 using PromoGest.Domain.Interfaces;
+using PromoGest.Domain.Policies;
 
 namespace PromoGest.Application.Services;
 
@@ -108,6 +109,32 @@ public sealed class ProjectSalesReservationService
     {
         var (actor, project) = await RequireProjectAccessAsync(
             actorUserId, projectId, canWrite: true, metadata, ct);
+
+        // ADR-0018 — allow-list gate: marketing and new internal reservations exist only while the
+        // project is explicitly in commercialization. The denial is audited and persisted before the
+        // conflict is raised so a refused attempt is always traceable. Existing reservations are
+        // deliberately untouched: suspension never auto-cancels, expires, or releases them.
+        if (!ProjectCommercializationPolicy.AllowsMarketingAndNewReservation(project.Status))
+        {
+            await WriteAuditAsync(
+                actor,
+                "PROJECT_RESERVATION_DENIED",
+                "Project",
+                project.Id.ToString(),
+                "New reservation refused because the project is not in commercialization.",
+                new
+                {
+                    reason = ProjectCommercializationPolicy.DeniedCode,
+                    projectStatus = project.Status.ToString(),
+                    propertyUnitId = request.PropertyUnitId,
+                    projectCustomerId = request.ProjectCustomerId
+                },
+                metadata,
+                ct,
+                saveChanges: true);
+
+            ProjectCommercializationPolicy.EnsureMarketingAndNewReservation(project.Status);
+        }
 
         var nowUtc = _clock.UtcNow;
         var expiresAtUtc = request.ExpiresAtUtc.ToUniversalTime();

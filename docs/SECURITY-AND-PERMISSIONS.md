@@ -1,4 +1,16 @@
-## Current security checkpoint — PR #231 merged on exact main SHA — 23 November 2026
+## Current security checkpoint — PR #232 merged; ADR-0018 commercialization gate implemented on branch on exact main SHA — 23 November 2026
+
+- Current verified main SHA: `dcfcc9468e312c358bbf3b259663dcae542e3baf` (PR #232, documentation and verification scripts only; resolved live on 23 November 2026 with 0 open pull requests).
+- Exact-main push [CI 45230230554](https://github.com/younestech31/PROMO-GEST/actions/runs/45230230554) passed 4/4 and [CodeQL 45230230992](https://github.com/younestech31/PROMO-GEST/actions/runs/45230230992) passed 2/2 on this SHA, including the C# and JavaScript/TypeScript analyses; PR head `00264c1745b070c6c9ac1561321590b3213f7c38` passed [CI 45229345952](https://github.com/younestech31/PROMO-GEST/actions/runs/45229345952) 4/4 and [CodeQL 45229345930](https://github.com/younestech31/PROMO-GEST/actions/runs/45229345930) 2/2.
+- PR #232 changed no authentication, session, cookie, CSRF, authorization, rate-limit, audit, schema, or deployment behaviour. The added `Documentation baseline consistency` CI job runs with `contents: read`, reads documentation and the local git graph only, and holds no repository write permission.
+- `REQ-A10` / `P1-19` remain `IMPLEMENTED_NOT_VERIFIED`: the sessions API is merged and automated-tested, but the account-security UI, the explicit IP/User-Agent privacy warning, and manual Arabic RTL / French LTR acceptance remain pending. IP/User-Agent stay device metadata, not proof of physical location or identity; token material must never reach UI or logs.
+- `P1-17`, `P1-15`, `P1-36`, `P1-38`, `P1-11` remain `In Review / Pending`; `P1-09`/`P1-10` ordering, the `P1-01`/`P1-35` deferral, `P1-02`/`P1-34` blockers, and Phase 1 `IN_PROGRESS` are unchanged.
+- `main.protected=false` remains as previously observed; the token used here received HTTP 403 on the branch-protection endpoint, so it is not re-verified by this change, and no protection or ruleset setting was altered.
+
+---
+
+## Historical checkpoint — PR #231 merged on exact main SHA (superseded by PR #232) — 23 November 2026
+
 
 - Current verified main SHA: `71a973beb3ecabffd0652729a34d237f634d5f04` (PR #231, documentation and verification scripts only; resolved live on 23 November 2026 with 0 open pull requests).
 - Exact-main push [CI 45227025283](https://github.com/younestech31/PROMO-GEST/actions/runs/45227025283) passed 3/3 and [CodeQL 45227025334](https://github.com/younestech31/PROMO-GEST/actions/runs/45227025334) passed 2/2 on this SHA, including the C# and JavaScript/TypeScript analyses; PR head `0509d47cca23acebbfe492ab659c48acce3d5479` passed [CI 45226138616](https://github.com/younestech31/PROMO-GEST/actions/runs/45226138616) 3/3 and [CodeQL 45226138537](https://github.com/younestech31/PROMO-GEST/actions/runs/45226138537) 2/2.

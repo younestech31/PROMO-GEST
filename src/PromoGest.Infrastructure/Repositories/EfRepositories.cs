@@ -165,6 +165,18 @@ public sealed class EfUserRepository : IUserRepository
     public Task<UserSession?> GetSessionByTokenHashAsync(string tokenHash, CancellationToken ct = default)
         => _dbContext.UserSessions.FirstOrDefaultAsync(s => s.TokenHash == tokenHash, ct);
 
+    public async Task<IReadOnlyList<UserSession>> ListSessionsByUserAsync(Guid userId, CancellationToken ct = default)
+        => await _dbContext.UserSessions
+            .Where(session => session.UserId == userId)
+            .OrderByDescending(session => session.LastSeenAtUtc)
+            .ThenByDescending(session => session.CreatedAtUtc)
+            .ToListAsync(ct);
+
+    public Task<UserSession?> GetSessionByIdAsync(Guid userId, Guid sessionId, CancellationToken ct = default)
+        => _dbContext.UserSessions.FirstOrDefaultAsync(
+            session => session.UserId == userId && session.Id == sessionId,
+            ct);
+
     public async Task RevokeAllUserSessionsAsync(Guid userId, DateTimeOffset revokedAtUtc, CancellationToken ct = default)
     {
         var activeSessions = await _dbContext.UserSessions

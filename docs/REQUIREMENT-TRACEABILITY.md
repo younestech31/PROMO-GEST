@@ -1,4 +1,15 @@
-## Current implementation traceability checkpoint — PR #228 merged — 23 November 2026
+## Current implementation traceability checkpoint — PR #230 merged — 23 November 2026
+
+- Current verified main SHA: `690471236b1af36323e2e7ea89aa0cbc0e76a0c8` (PR #230, documentation only), resolved live on 23 November 2026 with 0 open pull requests. It records the last verified implementation merge, not this documentation synchronization's own merge commit.
+- PR #230 is documentation-only: Module A `P1-19` traceability, latest API/session migration provenance, GitHub branch-write safety guidance, and the `P1-19` PostgreSQL 18 security regression matrix. Exact-main push [CI 45216916775](https://github.com/younestech31/PROMO-GEST/actions/runs/45216916775) passed 3/3 and [CodeQL 45216916842](https://github.com/younestech31/PROMO-GEST/actions/runs/45216916842) passed 2/2 on the same SHA; the .NET 10 / PostgreSQL 18 job passed again on the documentation-only SHA, and the recorded test counts remain Domain 51/51, Application 24/24, PostgreSQL 18 Integration 50/50 from the PR #228 baseline.
+- Correction: the previous checkpoint header named `690a0c4e8235f93846c267fb4ab5b985b354bd21` (PR #228) as the live `main`, which went stale when PR #230 merged at `690471236b1af36323e2e7ea89aa0cbc0e76a0c8`. The PR #228 block below is historical provenance, not the current branch tip.
+- `REQ-A10` / `P1-19` remain `IMPLEMENTED_NOT_VERIFIED` and `In Review / Pending` pending the delegated account-security UI, the IP/User-Agent privacy warning, and manual Arabic RTL / French LTR acceptance. `REQ-A09` / `P1-17` and `REQ-B03` / `P1-15` remain `IMPLEMENTED_NOT_VERIFIED` pending their own manual bilingual acceptance.
+- `P1-09`/`P1-10` gating, the `P1-01`/`P1-35` municipality deferral, the `P1-02`/`P1-34` blockers, and Phase 1 `IN_PROGRESS` remain unchanged; Phases 2-5 remain gated.
+- No code, schema, migration, database, authorization, CSRF, deployment, or branch-protection setting was changed by this synchronization; `main.protected=false` remains as previously observed and was not re-readable with the API token used here (HTTP 403).
+
+---
+
+## Historical implementation traceability checkpoint — PR #228 merged (superseded by PR #230) — 23 November 2026
 
 - Current verified main SHA: `690a0c4e8235f93846c267fb4ab5b985b354bd21`.
 - PR #228 merged; PR-head [CI 45205903191](https://github.com/younestech31/PROMO-GEST/actions/runs/45205903191) 3/3 and [CodeQL 45205903184](https://github.com/younestech31/PROMO-GEST/actions/runs/45205903184) 2/2 passed. Exact-main push [CI 45207224823](https://github.com/younestech31/PROMO-GEST/actions/runs/45207224823) 3/3 and [CodeQL 45207225005](https://github.com/younestech31/PROMO-GEST/actions/runs/45207225005) 2/2 passed on the same SHA.

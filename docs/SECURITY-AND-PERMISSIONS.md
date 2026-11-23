@@ -1,4 +1,15 @@
-## Current security checkpoint — PR #228 merged and verified on exact main SHA — 23 November 2026
+## Current security checkpoint — PR #230 merged on exact main SHA — 23 November 2026
+
+- Current verified main SHA: `690471236b1af36323e2e7ea89aa0cbc0e76a0c8` (PR #230, documentation only; resolved live on 23 November 2026 with 0 open pull requests; it records the last verified implementation merge, not this documentation synchronization's own merge commit).
+- Exact-main push [CI 45216916775](https://github.com/younestech31/PROMO-GEST/actions/runs/45216916775) passed 3/3 and [CodeQL 45216916842](https://github.com/younestech31/PROMO-GEST/actions/runs/45216916842) passed 2/2 on this SHA, including the C# and JavaScript/TypeScript analyses. PR #230 changed documentation only: no authentication, session, cookie, CSRF, authorization, rate-limit, audit, schema, or deployment behaviour was modified.
+- Correction: the previous checkpoint named `690a0c4e8235f93846c267fb4ab5b985b354bd21` (PR #228) as the live `main`; that header went stale when PR #230 merged at `690471236b1af36323e2e7ea89aa0cbc0e76a0c8`. The PR #228 security block below is historical provenance and its P1-19 control description remains accurate.
+- `REQ-A10` / `P1-19` remain `IMPLEMENTED_NOT_VERIFIED`: the sessions API is merged and automated-tested, but the account-security UI, the explicit IP/User-Agent privacy warning, and manual Arabic RTL / French LTR acceptance remain pending. IP/User-Agent stay device metadata, not proof of physical location or identity; token material must never reach UI or logs.
+- `P1-17`, `P1-15`, `P1-36`, `P1-38`, `P1-11` remain `In Review / Pending`; `P1-09`/`P1-10` ordering, the `P1-01`/`P1-35` deferral, `P1-02`/`P1-34` blockers, and Phase 1 `IN_PROGRESS` are unchanged.
+- `main.protected=false` remains as previously observed; the token used here received HTTP 403 on the branch-protection endpoint, so it is not re-verified by this change, and no protection or ruleset setting was altered.
+
+---
+
+## Historical security checkpoint — PR #228 merged and verified on exact main SHA (superseded by PR #230) — 23 November 2026
 
 - Current verified main SHA: `690a0c4e8235f93846c267fb4ab5b985b354bd21` (PR #228).
 - PR-head CI [45205903191](https://github.com/younestech31/PROMO-GEST/actions/runs/45205903191) passed 3/3 and CodeQL [45205903184](https://github.com/younestech31/PROMO-GEST/actions/runs/45205903184) passed 2/2. Exact-main push CI [45207224823](https://github.com/younestech31/PROMO-GEST/actions/runs/45207224823) passed 3/3 and CodeQL [45207225005](https://github.com/younestech31/PROMO-GEST/actions/runs/45207225005) passed 2/2 on the same merge SHA.

@@ -1,7 +1,8 @@
 # PROMO GEST — Project Navigation & Active Context UX
 
-**Status:** Design approved (D-013); single-switcher / sidebar-only refinement D-015 is implemented in PR #90 (merge SHA `16ed3fdd93a4a2685d37433b0eed5cdf256f953d`). Current main `cd57a5912ccb3631a6e9581d48d1aab2600180d2` passed all three jobs in [CI #825](https://github.com/younestech31/PROMO-GEST/actions/runs/44310687822). The UX remains `IMPLEMENTED_NOT_VERIFIED` pending manual browser acceptance.  
+**Status:** Design approved (D-013); single-switcher / sidebar-only refinement D-015 is implemented in PR #90 (merge SHA `16ed3fdd93a4a2685d37433b0eed5cdf256f953d`). Main at the last inspection `cd57a5912ccb3631a6e9581d48d1aab2600180d2` passed all three jobs in [CI #825](https://github.com/younestech31/PROMO-GEST/actions/runs/44310687822). The UX remains `IMPLEMENTED_NOT_VERIFIED` pending manual browser acceptance.  
 **Scope:** Project selection, switching, multi-project work, and project-specific navigation  
+**Currency note (23 November 2026):** this design document's last source inspection predates the current baseline; the verified live `main` and Phase 1 gate state are maintained in [CURRENT-STATE-BASELINE.md](CURRENT-STATE-BASELINE.md). No re-inspection of the navigation code is claimed here.  
 **Applies to:** The local-first organization-wide ERP shell and project workspace
 
 ## D-015 implementation refinement — one switch point and one project menu (17 November 2026)

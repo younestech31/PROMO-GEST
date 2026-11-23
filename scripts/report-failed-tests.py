@@ -58,8 +58,11 @@ def report(path: Path) -> int:
                 message_node = error_info.find(f"{NS}Message")
                 stack_node = error_info.find(f"{NS}StackTrace")
                 message = message_node.text if message_node is not None and message_node.text else ""
-                if not message and stack_node is not None and stack_node.text:
-                    message = stack_node.text
+                if stack_node is not None and stack_node.text:
+                    for trace_line in stack_node.text.splitlines():
+                        if ":line " in trace_line:
+                            message = f"{message} | {trace_line.strip()}"
+                            break
         print(f"::error title={name}::{class_name} — {_one_line(message)}")
 
     if failures == 0:

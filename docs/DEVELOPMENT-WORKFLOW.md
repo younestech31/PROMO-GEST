@@ -108,16 +108,7 @@ Every contributor or engineering session **must** complete these 5 preparation s
    - **Acceptance Criteria:** Exact tests, permission checks, UI direction checks (`ar` RTL + `fr` LTR), and gates (`G1–G10`) that prove completion. For Phase 0, use the result register and evidence rules in `PHASE-0-MANUAL-ACCEPTANCE.md`.
 4. **Enforce Constitutional Guardrails Upfront:**
    - Reject any design introducing multi-tenant SaaS, cloud DB dependencies in runtime, public internet exposure, bearer tokens in browser storage, primary business data in IndexedDB/localStorage, or weakening single `SYSTEM_ADMIN`.
-   - **GitHub write-target guard:** every contents create/update/delete operation must explicitly name the dedicated feature branch; never rely on the API's default branch. After each write, fetch the exact path from that branch and verify the resulting blob/content and branch ref. Confirm `main` is unchanged before opening the PR. If an unintended default-branch write occurs, disclose it immediately and repair only through a separate corrective PR; never hide it or rewrite branch-protection settings.
-### 1A. GitHub write safety — mandatory
-
-- Resolve and record the exact `main` SHA before starting a change; create a focused working branch from that SHA.
-- For **every** GitHub Contents API write (create/update/delete), explicitly pass the intended non-main branch. Never omit the branch/ref argument: an omitted branch defaults to the repository default branch and can write directly to `main`.
-- Verify the branch exists and points to the intended base before the first write. After each write, re-fetch the changed path from that branch and verify its blob/commit; then independently confirm the live `main` SHA has not changed.
-- Do not run writes or deletes concurrently against the same path. Use sequential operations with the latest blob SHA.
-- Before opening a PR, compare the complete changed-path list and diff against the task's explicit scope; fail closed on any unrelated manifest, lockfile, script-mode, migration or generated-file change.
-- If an unintended direct-main write occurs, stop further writes, disclose the exact commit and diff, inspect the affected tree, and repair only through a focused PR. Never hide the incident, force-push/rewrite shared history, or alter branch protection/rulesets as a workaround.
-
+   - **GitHub write-target guard:** resolve and record the exact `main` SHA before editing, then create a focused branch from it. Every Contents API create/update/delete must explicitly pass that non-main branch; never omit the branch/ref because the API defaults to the repository default branch. Verify the branch ref before the first write and re-fetch each changed path after every write to verify the resulting blob/content. Keep writes sequential per path and use the latest blob SHA; never race updates/deletes to the same path. Before opening the PR, inspect the complete changed-path list and diff against the task scope; fail closed on unrelated manifests, lockfiles, script modes, migrations or generated files. Confirm `main` is unchanged. If an unintended default-branch write occurs, stop, disclose the exact commit/diff, and repair only through a focused corrective PR; never hide it, rewrite shared history, or alter branch protection/rulesets.
 5. **Confirm Dependency Direction:**
    - `PromoGest.Domain` → zero external/EF dependencies.
    - `PromoGest.Contracts` → pure DTOs/records.

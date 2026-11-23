@@ -379,6 +379,130 @@ public sealed class AuthService
         return BuildSessionResponse(user, organization, permissions);
     }
 
+    public async Task<IReadOnlyList<UserSessionDto>> ListOwnSessionsAsync(
+        Guid actorUserId,
+        string? currentOpaqueToken,
+        CancellationToken ct = default)
+    {
+        var (user, currentSession) = await RequireCurrentUserSessionAsync(actorUserId, currentOpaqueToken, ct);
+        var nowUtc = _clock.UtcNow;
+        var sessions = await _userRepository.ListSessionsByUserAsync(user.Id, ct);
+
+        return sessions
+            .Where(session =>
+                session.IsValid(nowUtc, _sessionPolicy.IdleTimeout) &&
+                session.SecurityStamp == user.SecurityStamp)
+            .Select(session => new UserSessionDto(
+                session.Id,
+                session.CreatedAtUtc,
+                session.LastSeenAtUtc,
+                session.ExpiresAtUtc,
+                session.IpAddress,
+                session.UserAgent,
+                session.Id == currentSession.Id))
+            .ToList();
+    }
+
+    public async Task<bool> RevokeOwnSessionAsync(
+        Guid actorUserId,
+        Guid targetSessionId,
+        string? currentOpaqueToken,
+        RevokeUserSessionRequest request,
+        RequestMetadata metadata,
+        CancellationToken ct = default)
+    {
+        var (user, currentSession) = await RequireCurrentUserSessionAsync(actorUserId, currentOpaqueToken, ct);
+        var nowUtc = _clock.UtcNow;
+        var targetSession = await _userRepository.GetSessionByIdAsync(user.Id, targetSessionId, ct);
+
+        // Owner-bound lookup deliberately makes foreign, expired, and already-revoked IDs
+        // indistinguishable to the caller and prevents cross-account session IDOR.
+        if (targetSession is null ||
+            !targetSession.IsValid(nowUtc, _sessionPolicy.IdleTimeout) ||
+            targetSession.SecurityStamp != user.SecurityStamp)
+        {
+            throw new NotFoundDomainException("SESSION_NOT_FOUND", "The session does not exist or is no longer active.");
+        }
+
+        var isCurrentSession = targetSession.Id == currentSession.Id;
+        if (isCurrentSession && !request.EndCurrentSession)
+        {
+            throw new ConflictDomainException(
+                "CURRENT_SESSION_CONFIRMATION_REQUIRED",
+                "Revoking the current session will sign you out. Confirm this choice to continue.");
+        }
+
+        if (!isCurrentSession && request.EndCurrentSession)
+        {
+            throw new DomainException(
+                "SESSION_DISPOSITION_INVALID",
+                "The sign-out confirmation is valid only when revoking the current session.");
+        }
+
+        targetSession.Revoke(nowUtc);
+        await _auditWriter.WriteAsync(
+            AuditLog.Record(
+                nowUtc,
+                user.Id,
+                user.Username,
+                "AUTH_SESSION_REVOKED_BY_USER",
+                AuditSeverity.Security,
+                "UserSession",
+                targetSession.Id.ToString(),
+                isCurrentSession
+                    ? $"User '{user.Username}' revoked the current session and signed out."
+                    : $"User '{user.Username}' revoked another session.",
+                null,
+                metadata.IpAddress,
+                metadata.UserAgent),
+            ct);
+
+        // The session row and append-only audit event use the same scoped AppDbContext
+        // and SaveChanges transaction. EF's UserSession concurrency token ensures only
+        // one of two competing revocations can commit.
+        await _userRepository.SaveChangesAsync(ct);
+        return isCurrentSession;
+    }
+
+    private async Task<(User User, UserSession Session)> RequireCurrentUserSessionAsync(
+        Guid actorUserId,
+        string? currentOpaqueToken,
+        CancellationToken ct)
+    {
+        if (string.IsNullOrWhiteSpace(currentOpaqueToken))
+        {
+            throw new UnauthorizedDomainException("AUTH_REQUIRED", "Authentication is required.");
+        }
+
+        var user = await _userRepository.GetByIdWithRolesAsync(actorUserId, ct)
+            ?? throw new UnauthorizedDomainException("AUTH_REQUIRED", "Authentication is required.");
+
+        if (!user.IsActive)
+        {
+            throw new UnauthorizedDomainException("AUTH_REQUIRED", "Authentication is required.");
+        }
+
+        if (user.MustChangePasswordAtNextLogin)
+        {
+            throw new ForbiddenDomainException(
+                "PASSWORD_CHANGE_REQUIRED",
+                "Change the temporary password before managing account sessions.");
+        }
+
+        var tokenHash = _tokenGenerator.HashToken(currentOpaqueToken);
+        var currentSession = await _userRepository.GetSessionByTokenHashAsync(tokenHash, ct);
+        var nowUtc = _clock.UtcNow;
+        if (currentSession is null ||
+            currentSession.UserId != user.Id ||
+            !currentSession.IsValid(nowUtc, _sessionPolicy.IdleTimeout) ||
+            currentSession.SecurityStamp != user.SecurityStamp)
+        {
+            throw new UnauthorizedDomainException("AUTH_REQUIRED", "Authentication is required.");
+        }
+
+        return (user, currentSession);
+    }
+
     public async Task ChangePasswordAsync(
         Guid actorUserId,
         ChangePasswordRequest request,

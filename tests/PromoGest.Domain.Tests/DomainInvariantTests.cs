@@ -44,6 +44,37 @@ public sealed class DomainInvariantTests
     }
 
     [Fact]
+    public void User_SetPreferredLanguage_ValidatesSupportedLanguagesAndRotatesConcurrencyStamp()
+    {
+        var user = User.CreateEmployee(
+            "language.user",
+            "Language User",
+            "language.user@promogest.dz",
+            null,
+            "hash",
+            "ar",
+            FixedNow);
+
+        var originalStamp = user.ConcurrencyStamp;
+        var changedAt = FixedNow.AddMinutes(3);
+
+        user.SetPreferredLanguage("fr", changedAt);
+
+        Assert.Equal("fr", user.PreferredLanguage);
+        Assert.NotEqual(originalStamp, user.ConcurrencyStamp);
+        Assert.Equal(changedAt, user.UpdatedAtUtc);
+
+        var updatedStamp = user.ConcurrencyStamp;
+        var updatedAt = user.UpdatedAtUtc;
+        var ex = Assert.Throws<DomainException>(() => user.SetPreferredLanguage("en", changedAt.AddMinutes(1)));
+
+        Assert.Equal("USER_PREFERRED_LANGUAGE_INVALID", ex.Code);
+        Assert.Equal("fr", user.PreferredLanguage);
+        Assert.Equal(updatedStamp, user.ConcurrencyStamp);
+        Assert.Equal(updatedAt, user.UpdatedAtUtc);
+    }
+
+    [Fact]
     public void User_LocksOutAfterFiveFailedAttempts_AndRecoversOnSuccess()
     {
         var employee = User.CreateEmployee(

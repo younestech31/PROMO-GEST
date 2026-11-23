@@ -738,6 +738,14 @@ export function getTranslations(lang: AppLanguage): TranslationBundle {
 }
 
 const API_ERROR_MESSAGES: Record<string, { ar: string; fr: string }> = {
+  USER_CONCURRENCY_CONFLICT: {
+    ar: 'تغيّر الحساب منذ تحميل بياناته. أعد تحميل الجلسة ثم حاول حفظ تفضيل اللغة مجدداً.',
+    fr: 'Le compte a changé depuis son chargement. Rechargez la session avant de réessayer.',
+  },
+  USER_PREFERRED_LANGUAGE_INVALID: {
+    ar: 'اللغة المختارة غير مدعومة. اختر العربية أو الفرنسية.',
+    fr: 'La langue sélectionnée n’est pas prise en charge. Choisissez l’arabe ou le français.',
+  },
   SETUP_ALREADY_INITIALIZED: {
     ar: 'تمت تهيئة هذا التثبيت مسبقاً ولا يمكن إعادة تشغيل معالج التثبيت.',
     fr: 'Cette installation est déjà initialisée et ne peut pas être réinitialisée.',

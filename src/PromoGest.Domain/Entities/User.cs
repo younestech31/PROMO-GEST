@@ -184,6 +184,24 @@ public sealed partial class User : BaseEntity
         Touch(nowUtc);
     }
 
+    public void SetPreferredLanguage(string preferredLanguage, DateTimeOffset nowUtc)
+    {
+        if (preferredLanguage is not ("ar" or "fr"))
+        {
+            throw new DomainException(
+                "USER_PREFERRED_LANGUAGE_INVALID",
+                "Preferred language must be either 'ar' or 'fr'.");
+        }
+
+        if (PreferredLanguage == preferredLanguage)
+        {
+            return;
+        }
+
+        PreferredLanguage = preferredLanguage;
+        Touch(nowUtc);
+    }
+
     public void SetActiveStatus(bool isActive, DateTimeOffset nowUtc)
     {
         if (IsSystemAdministrator && !isActive)

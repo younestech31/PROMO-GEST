@@ -4,6 +4,10 @@ public sealed record LoginRequest(
     string UsernameOrEmail,
     string Password);
 
+public sealed record UpdatePreferredLanguageRequest(
+    string PreferredLanguage,
+    Guid ExpectedConcurrencyStamp);
+
 public sealed record AuthenticatedUserResponse(
     Guid Id,
     string Username,
@@ -17,7 +21,10 @@ public sealed record AuthenticatedUserResponse(
     IReadOnlyList<string> Permissions,
     DateTimeOffset? LastLoginAtUtc,
     bool MustChangePasswordAtNextLogin,
-    DateTimeOffset? PasswordChangeRequiredUntilUtc);
+    DateTimeOffset? PasswordChangeRequiredUntilUtc)
+{
+    public Guid ConcurrencyStamp { get; init; }
+}
 
 public sealed record OrganizationSummaryResponse(
     Guid Id,

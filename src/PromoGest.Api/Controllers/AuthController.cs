@@ -89,6 +89,24 @@ public sealed class AuthController : ControllerBase
         return Ok(result.Session);
     }
 
+    [HttpPut("preferred-language")]
+    [Authorize]
+    public async Task<ActionResult<SessionResponse>> UpdatePreferredLanguage(
+        [FromBody] UpdatePreferredLanguageRequest request,
+        CancellationToken ct)
+    {
+        var rawUserId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        if (!Guid.TryParse(rawUserId, out var userId))
+            return Unauthorized();
+
+        var metadata = new RequestMetadata(
+            HttpContext.Connection.RemoteIpAddress?.ToString(),
+            Request.Headers.UserAgent.ToString());
+
+        var session = await _authService.UpdatePreferredLanguageAsync(userId, request, metadata, ct);
+        return Ok(session);
+    }
+
     [HttpPost("change-password")]
     [Authorize]
     [EnableRateLimiting("login")]

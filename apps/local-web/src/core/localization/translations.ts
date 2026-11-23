@@ -1167,6 +1167,18 @@ const API_ERROR_MESSAGES: Record<string, { ar: string; fr: string }> = {
     ar: 'سبب الإلغاء يجب ألا يتجاوز 300 حرف.',
     fr: 'Le motif d’annulation ne doit pas dépasser 300 caractères.',
   },
+  RESERVATION_REVIEW_NOT_REQUIRED: {
+    ar: 'هذا الحجز لم يُدرج في طابور مراجعة التعليق.',
+    fr: 'Cette réservation n’a jamais été mise en file pour une revue de suspension.',
+  },
+  RESERVATION_REVIEW_ALREADY_COMPLETED: {
+    ar: 'تم تسجيل مراجعة هذا الحجز مسبقاً.',
+    fr: 'La revue de cette réservation est déjà enregistrée.',
+  },
+  RESERVATION_REVIEW_TIMESTAMP_INVALID: {
+    ar: 'لا يمكن إتمام المراجعة قبل تاريخ طلبها.',
+    fr: 'Une revue ne peut pas être clôturée avant sa date de demande.',
+  },
   RESERVATION_CONCURRENCY_CONFLICT: {
     ar: 'تغير الحجز أو الوحدة في الوقت نفسه. أعد تحميل البيانات وحاول مجدداً.',
     fr: 'La réservation ou l’unité a été modifiée simultanément. Actualisez puis réessayez.',

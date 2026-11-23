@@ -2276,7 +2276,7 @@ public sealed partial class PostgresEndToEndTests : IClassFixture<PostgreSql18In
             Assert.Equal(470_000_000m, adminProjectManagerBudgetRead!.EstimatedBudgetDzd);
             var adminProjectManagerBudgetUpdate = await adminClient.PutAsJsonAsync(
                 $"/api/projects/{createdProject.Id}",
-                projectUpdate with
+                directorUpdate with
                 {
                     EstimatedBudgetDzd = 490_000_000m,
                     ExpectedConcurrencyStamp = adminProjectManagerBudgetRead.ConcurrencyStamp

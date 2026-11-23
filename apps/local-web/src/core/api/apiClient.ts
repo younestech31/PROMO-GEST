@@ -8,6 +8,7 @@ import type {
   ProjectSalesReservationDto,
   CreateProjectSalesReservationRequest,
   CancelProjectSalesReservationRequest,
+  ReviewProjectSalesReservationRequest,
   ProjectCustomerListItemDto,
   CreateProjectCustomerRequest,
   UpdateProjectCustomerRequest,
@@ -425,11 +426,16 @@ export const apiClient = {
       { method: 'POST', body: JSON.stringify(payload) }
     ),
 
-  listProjectSalesReservations: (projectId: string) =>
-    requestJson<ProjectSalesReservationDto[]>(`/api/projects/${encodeURIComponent(projectId)}/reservations`, {
-      method: 'GET',
-      cache: 'no-store',
-    }),
+  listProjectSalesReservations: (projectId: string, options?: { reviewRequired?: boolean }) =>
+    requestJson<ProjectSalesReservationDto[]>(
+      `/api/projects/${encodeURIComponent(projectId)}/reservations${
+        options?.reviewRequired ? '?reviewRequired=true' : ''
+      }`,
+      {
+        method: 'GET',
+        cache: 'no-store',
+      }
+    ),
 
   createProjectSalesReservation: (projectId: string, payload: CreateProjectSalesReservationRequest) =>
     requestJson<ProjectSalesReservationDto>(`/api/projects/${encodeURIComponent(projectId)}/reservations`, {
@@ -444,6 +450,16 @@ export const apiClient = {
   ) =>
     requestJson<ProjectSalesReservationDto>(
       `/api/projects/${encodeURIComponent(projectId)}/reservations/${encodeURIComponent(reservationId)}/cancel`,
+      { method: 'POST', body: JSON.stringify(payload) }
+    ),
+
+  reviewProjectSalesReservation: (
+    projectId: string,
+    reservationId: string,
+    payload: ReviewProjectSalesReservationRequest
+  ) =>
+    requestJson<ProjectSalesReservationDto>(
+      `/api/projects/${encodeURIComponent(projectId)}/reservations/${encodeURIComponent(reservationId)}/review`,
       { method: 'POST', body: JSON.stringify(payload) }
     ),
 

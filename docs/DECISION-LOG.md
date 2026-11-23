@@ -1,9 +1,9 @@
-## Current decision checkpoint — no new decision; ADR-0018 suspension review queue implemented; live main is PR #235 — 23 November 2026
+## Current decision checkpoint — no new decision; ADR-0018 suspension review queue and operator UI implemented; live main is PR #235 — 23 November 2026
 
 
 
 
-- **Verified live source:** GitHub `main` = `77a78b7b752d28331dafdc0f4972157faab8ca45`, the squash-merge SHA for [PR #235](https://github.com/younestech31/PROMO-GEST/pull/235), resolved live on 23 November 2026 with 0 open pull requests ([CI 45277326925](https://github.com/younestech31/PROMO-GEST/actions/runs/45277326925) 3/3, [CodeQL 45277326953](https://github.com/younestech31/PROMO-GEST/actions/runs/45277326953) 2/2 on that exact SHA).
+- **Verified live source:** GitHub `main` = `9b0a4c95b198aa5b072e38804123ab66a32492ca`, the squash-merge SHA for [PR #236](https://github.com/younestech31/PROMO-GEST/pull/236) (`docs(p1-10): record the suspension review queue merge in the canonical baseline`, 9 files), resolved live on 23 November 2026 with 0 open pull requests. Resolve the live branch ref again before any later merge or current-state claim.
 - **Latest recorded decision:** ADR-0018 — *Project Commercialization Eligibility and CRM/Reservation Separation* — remains the most recent approved decision. No new ADR has been recorded since PR #223.
 - **Enforcement status:** ADR-0018 is enforced at runtime in `main` (`ProjectCommercializationPolicy` + `ProjectSalesReservationService.CreateAsync`, HTTP `409` `PROJECT_NOT_COMMERCIALIZABLE`, append-only `PROJECT_RESERVATION_DENIED` audit, no automatic release). `P1-10` remains `In Progress / Pending`: the change is not merged and `P1-09` still gates acceptance.
 - **Decision-neutral engineering guard added (`P1-46`):** the `Documentation baseline consistency` CI job enforces that every canonical document states the same `main` SHA, merge PR, and checkpoint date, and that a canonical-document change moves that baseline to its own merge base. It records no decision, approves nothing, and does not alter any gate or acceptance state.

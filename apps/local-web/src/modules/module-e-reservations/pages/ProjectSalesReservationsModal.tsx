@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState, type FormEvent } from 'react';
-import { CalendarClock, CheckCircle2, LoaderCircle, Plus, X } from 'lucide-react';
+import { CalendarClock, CheckCircle2, LoaderCircle, Plus, ShieldAlert, X } from 'lucide-react';
 import type {
   AppLanguage,
   ProjectCustomerListItemDto,
@@ -11,6 +11,10 @@ import { apiClient, ApiError } from '@/core/api/apiClient';
 import { translateApiError } from '@/core/localization/translations';
 import { Modal } from '@/shared/components/Modal';
 import { ConfirmDialog } from '@/shared/components/StateViews';
+import {
+  RESERVATION_REVIEW_NOT_APPROVAL_NOTE,
+  isReservationAwaitingReview,
+} from '../review';
 
 interface ProjectSalesReservationsModalProps {
   project: ProjectDto;
@@ -75,6 +79,8 @@ export function ProjectSalesReservationsModal({
   const [cancelTarget, setCancelTarget] = useState<ProjectSalesReservationDto | null>(null);
   const [cancelReason, setCancelReason] = useState('');
   const [confirmDiscardOpen, setConfirmDiscardOpen] = useState(false);
+  const [reviewQueue, setReviewQueue] = useState<ProjectSalesReservationDto[]>([]);
+  const [reviewTarget, setReviewTarget] = useState<ProjectSalesReservationDto | null>(null);
 
   const isDirty = canManage && (hasFormEdits || cancelTarget !== null || cancelReason.trim() !== '');
 
@@ -100,8 +106,14 @@ export function ProjectSalesReservationsModal({
     setLoading(true);
     setError(null);
     try {
-      const reservationRows = await apiClient.listProjectSalesReservations(project.id);
+      const [reservationRows, reviewQueueRows] = await Promise.all([
+        apiClient.listProjectSalesReservations(project.id),
+        apiClient.listProjectSalesReservations(project.id, { reviewRequired: true }),
+      ]);
       setReservations(reservationRows);
+      // The server already filtered the queue; the predicate is re-applied here so a completed or
+      // closed hold can never appear as awaiting review.
+      setReviewQueue(reviewQueueRows.filter(isReservationAwaitingReview));
 
       if (canManage) {
         const [structure, customerRows] = await Promise.all([
@@ -178,6 +190,24 @@ export function ProjectSalesReservationsModal({
     }
   };
 
+  const submitReview = async (event: FormEvent) => {
+    event.preventDefault();
+    if (!reviewTarget) return;
+    setSaving(true);
+    setError(null);
+    try {
+      await apiClient.reviewProjectSalesReservation(project.id, reviewTarget.id, {
+        expectedConcurrencyStamp: reviewTarget.concurrencyStamp,
+      });
+      setReviewTarget(null);
+      await loadData();
+    } catch (reviewError) {
+      setError(errorText(reviewError, language));
+    } finally {
+      setSaving(false);
+    }
+  };
+
   const title = isArabic ? 'حجوزات المشروع' : 'Réservations du projet';
 
   const reservationsContent = (
@@ -190,6 +220,118 @@ export function ProjectSalesReservationsModal({
       </div>
 
       {error && <div role="alert" className="rounded border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-800">{error}</div>}
+
+      <section
+        aria-labelledby="reservation-review-queue-title"
+        className="space-y-3 rounded-md border border-amber-300 bg-amber-50/40 p-3"
+      >
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <div className="flex min-w-0 items-center gap-2">
+            <ShieldAlert className="h-4 w-4 shrink-0 text-amber-700" aria-hidden="true" />
+            <h3 id="reservation-review-queue-title" className="text-sm font-bold text-slate-900">
+              {isArabic ? 'طابور مراجعة التعليق' : 'File de revue de suspension'}{' '}
+              <span className="rounded-full bg-amber-200 px-2 py-0.5 text-[11px] font-semibold text-amber-950">
+                {reviewQueue.length}
+              </span>
+            </h3>
+          </div>
+          <p className="max-w-xl text-[11px] leading-5 text-amber-950">
+            {isArabic
+              ? 'حجوزات نشطة في مشروع معلّق أو محجوز تنتظر مراجعة موثّقة. المراجعة لا تعتمد الحجز ولا ترفع التعليق.'
+              : 'Réservations actives d’un projet suspendu ou gelé en attente d’une revue documentée. La revue n’approuve pas la réservation et ne lève pas la suspension.'}
+          </p>
+        </div>
+
+        {reviewTarget ? (
+          <form onSubmit={submitReview} className="space-y-2 rounded border border-amber-300 bg-white p-3">
+            <div className="text-xs font-semibold text-slate-900">
+              {isArabic
+                ? `تسجيل مراجعة الحجز ${reviewTarget.reservationNumber}`
+                : `Enregistrer la revue de ${reviewTarget.reservationNumber}`}
+            </div>
+            <p className="rounded border border-amber-200 bg-amber-50 px-2.5 py-2 text-[11px] leading-5 text-amber-950">
+              {RESERVATION_REVIEW_NOT_APPROVAL_NOTE[language]}
+            </p>
+            <div className="flex flex-wrap gap-2">
+              <button
+                type="submit"
+                disabled={saving}
+                className="inline-flex items-center gap-1.5 rounded bg-amber-700 px-3 py-2 text-xs font-semibold text-white hover:bg-amber-800 disabled:opacity-50"
+              >
+                {saving ? <LoaderCircle className="h-4 w-4 animate-spin" /> : <CheckCircle2 className="h-4 w-4" />}
+                {isArabic ? 'تأكيد تسجيل المراجعة' : 'Confirmer la revue'}
+              </button>
+              <button
+                type="button"
+                disabled={saving}
+                onClick={() => setReviewTarget(null)}
+                className="rounded border border-slate-300 px-3 py-2 text-xs text-slate-700 disabled:opacity-50"
+              >
+                {isArabic ? 'تراجع' : 'Retour'}
+              </button>
+            </div>
+          </form>
+        ) : null}
+
+        {loading ? (
+          <div className="flex items-center justify-center gap-2 py-4 text-xs text-slate-500">
+            <LoaderCircle className="h-4 w-4 animate-spin" />
+            {isArabic ? 'جارٍ التحميل...' : 'Chargement...'}
+          </div>
+        ) : reviewQueue.length === 0 ? (
+          <p className="rounded border border-dashed border-amber-300 bg-white px-3 py-4 text-center text-xs text-slate-600">
+            {isArabic ? 'لا توجد حجوزات بانتظار المراجعة.' : 'Aucune réservation en attente de revue.'}
+          </p>
+        ) : (
+          <>
+            <div className="overflow-x-auto rounded border border-amber-200 bg-white">
+              <table className="min-w-full divide-y divide-amber-100 text-xs">
+                <thead className="bg-amber-50 text-amber-950">
+                  <tr>
+                    <th className="px-3 py-2 text-start font-semibold">{isArabic ? 'المرجع الداخلي' : 'Référence interne'}</th>
+                    <th className="px-3 py-2 text-start font-semibold">{isArabic ? 'الوحدة' : 'Unité'}</th>
+                    <th className="px-3 py-2 text-start font-semibold">{isArabic ? 'الزبون' : 'Client'}</th>
+                    <th className="px-3 py-2 text-start font-semibold">{isArabic ? 'تاريخ الطلب' : 'Demande'}</th>
+                    <th className="px-3 py-2 text-start font-semibold">{isArabic ? 'انتهاء الحجز' : 'Expiration'}</th>
+                    {canManage && <th className="px-3 py-2 text-start font-semibold">{isArabic ? 'إجراء' : 'Action'}</th>}
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-amber-50">
+                  {reviewQueue.map((reservation) => (
+                    <tr key={reservation.id} className="text-slate-800">
+                      <td className="px-3 py-2.5 font-mono text-[11px]">{reservation.reservationNumber}</td>
+                      <td className="px-3 py-2.5 font-semibold">{reservation.unitNumber}</td>
+                      <td className="px-3 py-2.5">{reservation.customerName}</td>
+                      <td className="whitespace-nowrap px-3 py-2.5">
+                        {reservation.reviewRequiredAtUtc ? displayDate(reservation.reviewRequiredAtUtc, language) : '—'}
+                      </td>
+                      <td className="whitespace-nowrap px-3 py-2.5">{displayDate(reservation.expiresAtUtc, language)}</td>
+                      {canManage && (
+                        <td className="px-3 py-2.5">
+                          <button
+                            type="button"
+                            onClick={() => setReviewTarget(reservation)}
+                            className="rounded border border-amber-700 px-2.5 py-1.5 text-[11px] font-semibold text-amber-900 hover:bg-amber-100"
+                          >
+                            {isArabic ? 'تمت المراجعة' : 'Revue effectuée'}
+                          </button>
+                        </td>
+                      )}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            {!canManage && (
+              <p className="text-[11px] text-amber-900">
+                {isArabic
+                  ? 'تحتاج صلاحية إدارة الحجوزات في هذا المشروع لتسجيل المراجعة.'
+                  : 'La permission de gestion des réservations de ce projet est requise pour enregistrer une revue.'}
+              </p>
+            )}
+          </>
+        )}
+      </section>
 
       {canManage && (
             <form onSubmit={submitReservation} className="grid grid-cols-1 items-end gap-3 rounded-md border border-slate-200 p-3 md:grid-cols-[1fr_1fr_1fr_auto]">
@@ -296,6 +438,7 @@ export function ProjectSalesReservationsModal({
                       <th className="px-3 py-2 text-start font-semibold">{isArabic ? 'الزبون' : 'Client'}</th>
                       <th className="px-3 py-2 text-start font-semibold">{isArabic ? 'الحالة' : 'État'}</th>
                       <th className="px-3 py-2 text-start font-semibold">{isArabic ? 'انتهاء الحجز' : 'Expiration'}</th>
+                      <th className="px-3 py-2 text-start font-semibold">{isArabic ? 'المراجعة' : 'Revue'}</th>
                       {canManage && <th className="px-3 py-2 text-start font-semibold">{isArabic ? 'إجراء' : 'Action'}</th>}
                     </tr>
                   </thead>
@@ -311,6 +454,20 @@ export function ProjectSalesReservationsModal({
                           </span>
                         </td>
                         <td className="whitespace-nowrap px-3 py-2.5">{displayDate(reservation.expiresAtUtc, language)}</td>
+                        <td className="px-3 py-2.5">
+                          {isReservationAwaitingReview(reservation) ? (
+                            <span className="rounded bg-amber-100 px-2 py-1 font-semibold text-amber-900">
+                              {isArabic ? 'بانتظار المراجعة' : 'En attente de revue'}
+                            </span>
+                          ) : reservation.reviewCompletedAtUtc ? (
+                            <span className="text-slate-600">
+                              {isArabic ? 'روجع في ' : 'Revu le '}
+                              {displayDate(reservation.reviewCompletedAtUtc, language)}
+                            </span>
+                          ) : (
+                            <span className="text-slate-400">—</span>
+                          )}
+                        </td>
                         {canManage && (
                           <td className="px-3 py-2.5">
                             {reservation.status === 'Active' ? (

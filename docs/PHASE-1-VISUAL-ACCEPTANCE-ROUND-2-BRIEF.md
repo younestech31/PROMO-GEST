@@ -507,6 +507,8 @@ The register above is recorded as returned; its **52 PASS / 11 FAIL / 1 N-A / 3 
 | `W9-7` | FAIL, major | Real. The active item relied on `bg-teal-800 text-white` with `ariaCurrent: null`. Fixed in code: `aria-current="page"` on the active nav button, a 2 px light inline-start rule and a heavier weight, with a transparent border on the inactive item so nothing shifts. | `FIXED_IN_CODE / NOT_RE-VERIFIED` |
 | `W5-3` | FAIL, major | Not a product defect: `ProjectCustomer.Create` already refuses a phone whose digits fall outside 7–15 (`CUSTOMER_PHONE_INVALID`) and the SPA already localizes that code in AR/FR. `dev-api-middleware.ts` enforces nothing, so `201` was the preview's answer, not the product's. | **Preview-parity gap** — untested, must not be scored from the preview |
 
+**Follow-up (round 3):** the two parity gaps are no longer structural. `dev-api-middleware.ts` now issues employees with `mustChangePasswordAtNextLogin: true` and a 24-hour deadline, implements `POST /api/auth/change-password` like `AuthService.ChangePasswordAsync`, re-flags an account on an administrator reset, and refuses a customer phone whose digits fall outside 7–15 — so `W2-5`, `W2-8` and `W5-3` are scoreable in the next round. See `docs/PHASE-1-VISUAL-ACCEPTANCE-ROUND-3-BRIEF.md`.
+
 What this addendum does **not** do: it does not close a check, does not change a gate, and does not convert a code change into evidence. The next browser round must re-execute `W1-5`, `W2-5`, `W2-7`, `W2-8` and `W9-7` in both locales, and the forced-password rows additionally need `dev-api-middleware.ts` to stop hard-coding the flag before they can be scored at all.
 
 ### How the repository owner will record the result

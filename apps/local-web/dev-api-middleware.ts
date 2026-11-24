@@ -164,6 +164,20 @@ const ROLE_PERMS: Record<string, string[]> = {
 
 const PASSWORD_MAX_LENGTH = 128;
 
+// The ASP.NET Core API issues every employee account with a temporary password that must be
+// changed on first sign-in (User.RequirePasswordChange, 24-hour lifetime). The preview mirror
+// used to hard-code `mustChangePasswordAtNextLogin: false`, which made the whole forced-change
+// flow unobservable; round-2 acceptance could therefore neither pass nor fail it.
+const TEMPORARY_PASSWORD_LIFETIME_MS = 24 * 3600_000;
+
+// Mirrors ProjectCustomer.Create: at most 40 characters, only phone punctuation, and 7-15 digits
+// once the punctuation is stripped.
+const CUSTOMER_PHONE_PATTERN = /^\+?[0-9().\s\/-]+$/;
+function isValidCustomerPhone(phone: string): boolean {
+  const digits = phone.replace(/\D/g, '');
+  return phone.length <= 40 && CUSTOMER_PHONE_PATTERN.test(phone) && digits.length >= 7 && digits.length <= 15;
+}
+
 function hashPassword(password: string): string {
   const salt = crypto.randomBytes(16);
   const derived = crypto.pbkdf2Sync(password, salt, 100_000, 32, 'sha512');
@@ -938,16 +952,36 @@ export function createPromoGestDevMiddleware(): (
             return sendJson(res, 401, { code: 'AUTH_INVALID_CREDENTIALS', message: 'Invalid username or password.' });
           }
 
+          if (user.mustChangePasswordAtNextLogin) {
+            const deadlineMs = user.passwordChangeRequiredUntilUtc
+              ? new Date(user.passwordChangeRequiredUntilUtc).getTime()
+              : 0;
+            if (!deadlineMs || deadlineMs <= Date.now()) {
+              addAudit(
+                'AUTH_TEMPORARY_PASSWORD_EXPIRED',
+                'Security',
+                `Temporary password login rejected after its mandatory-change deadline for '${user.username}'.`,
+                user,
+                'User',
+                user.id
+              );
+              return sendJson(res, 401, { code: 'AUTH_INVALID_CREDENTIALS', message: 'Invalid username or password.' });
+            }
+          }
+
           user.failedLoginAttempts = 0;
           user.lockoutEndUtc = null;
           user.lastLoginAtUtc = new Date().toISOString();
 
           const rawToken = crypto.randomBytes(32).toString('base64url');
+          const sessionDeadlineMs = user.mustChangePasswordAtNextLogin && user.passwordChangeRequiredUntilUtc
+            ? new Date(user.passwordChangeRequiredUntilUtc).getTime()
+            : Number.POSITIVE_INFINITY;
           sessions.push({
             tokenHash: hashToken(rawToken),
             userId: user.id,
             securityStamp: user.securityStamp,
-            expiresAtMs: Date.now() + 12 * 3600_000,
+            expiresAtMs: Math.min(Date.now() + 12 * 3600_000, sessionDeadlineMs),
           });
 
           addAudit('AUTH_LOGIN_SUCCESS', 'Info', `User '${user.username}' signed in.`, user, 'UserSession');
@@ -1014,6 +1048,76 @@ export function createPromoGestDevMiddleware(): (
         const currentUser = authCtx?.user ?? null;
         if (!currentUser || !organization) {
           return sendJson(res, 401, { code: 'AUTH_REQUIRED', message: 'Authentication is required.' });
+        }
+
+        if (method === 'POST' && pathname === '/api/auth/change-password') {
+          const body = await readJsonBody<{ currentPassword?: string; newPassword?: string }>(req);
+          const newPassword = body.newPassword ?? '';
+          if (
+            currentUser.mustChangePasswordAtNextLogin &&
+            (!currentUser.passwordChangeRequiredUntilUtc ||
+              new Date(currentUser.passwordChangeRequiredUntilUtc).getTime() <= Date.now())
+          ) {
+            addAudit(
+              'AUTH_TEMPORARY_PASSWORD_EXPIRED',
+              'Security',
+              `Password change rejected after the temporary-password deadline for '${currentUser.username}'.`,
+              currentUser,
+              'User',
+              currentUser.id
+            );
+            return sendJson(res, 401, {
+              code: 'TEMPORARY_PASSWORD_EXPIRED',
+              message: 'The temporary password has expired. Ask the System Administrator for a new reset.',
+            });
+          }
+          if (!verifyPassword(body.currentPassword ?? '', currentUser.passwordHash)) {
+            addAudit(
+              'AUTH_PASSWORD_CHANGE_FAILED',
+              'Security',
+              `Password change rejected for '${currentUser.username}' (current password incorrect).`,
+              currentUser,
+              'User',
+              currentUser.id
+            );
+            return sendJson(res, 401, { code: 'PASSWORD_CURRENT_INVALID', message: 'The current password is incorrect.' });
+          }
+          if (newPassword.length < 10) {
+            return sendJson(res, 400, { code: 'PASSWORD_TOO_SHORT', message: 'Password must be at least 10 characters.' });
+          }
+          if (newPassword.length > PASSWORD_MAX_LENGTH) {
+            return sendJson(res, 400, {
+              code: 'PASSWORD_TOO_LONG',
+              message: `Password must not exceed ${PASSWORD_MAX_LENGTH} characters.`,
+            });
+          }
+          if (verifyPassword(newPassword, currentUser.passwordHash)) {
+            return sendJson(res, 400, {
+              code: 'PASSWORD_REUSE_NOT_ALLOWED',
+              message: 'Choose a password different from the current password.',
+            });
+          }
+
+          currentUser.passwordHash = hashPassword(newPassword);
+          currentUser.mustChangePasswordAtNextLogin = false;
+          currentUser.passwordChangeRequiredUntilUtc = null;
+          currentUser.securityStamp = crypto.randomUUID();
+          for (let i = sessions.length - 1; i >= 0; i -= 1) {
+            if (sessions[i].userId === currentUser.id) {
+              sessions.splice(i, 1);
+            }
+          }
+          addAudit(
+            'USER_PASSWORD_CHANGED',
+            'Security',
+            `User '${currentUser.username}' changed their password.`,
+            currentUser,
+            'User',
+            currentUser.id
+          );
+          res.statusCode = 204;
+          res.end();
+          return;
         }
 
         if (method === 'GET' && pathname === '/api/auth/me') {
@@ -1094,8 +1198,8 @@ export function createPromoGestDevMiddleware(): (
             lastLoginAtUtc: null,
             createdAtUtc: new Date().toISOString(),
             roleCodes: body.roleCodes,
-            mustChangePasswordAtNextLogin: false,
-            passwordChangeRequiredUntilUtc: null,
+            mustChangePasswordAtNextLogin: true,
+            passwordChangeRequiredUntilUtc: new Date(Date.now() + TEMPORARY_PASSWORD_LIFETIME_MS).toISOString(),
             passwordHash: hashPassword(body.password),
             securityStamp: crypto.randomUUID(),
           };
@@ -1168,7 +1272,14 @@ export function createPromoGestDevMiddleware(): (
             return sendJson(res, 400, { code: 'PASSWORD_TOO_LONG', message: `Password must not exceed ${PASSWORD_MAX_LENGTH} characters.` });
           }
           target.passwordHash = hashPassword(body.newPassword);
+          target.mustChangePasswordAtNextLogin = true;
+          target.passwordChangeRequiredUntilUtc = new Date(Date.now() + TEMPORARY_PASSWORD_LIFETIME_MS).toISOString();
           target.securityStamp = crypto.randomUUID();
+          for (let i = sessions.length - 1; i >= 0; i -= 1) {
+            if (sessions[i].userId === target.id) {
+              sessions.splice(i, 1);
+            }
+          }
           addAudit('USER_PASSWORD_RESET', 'Security', `Reset password for '${target.username}'.`, currentUser, 'User', target.id);
           res.statusCode = 204;
           res.end();
@@ -2075,6 +2186,12 @@ export function createPromoGestDevMiddleware(): (
           if (!phone || (!body.partyId && !requestedDisplayName)) {
             return sendJson(res, 400, { code: 'VALIDATION_ERROR', message: 'Display name and phone are required.' });
           }
+          if (!isValidCustomerPhone(phone)) {
+            return sendJson(res, 400, {
+              code: 'CUSTOMER_PHONE_INVALID',
+              message: 'Enter a valid contact phone number containing 7 to 15 digits.',
+            });
+          }
           const list = projectCustomers.get(scope.project.id) ?? [];
 
           let party: PartyDirectoryItemDto | undefined;
@@ -2263,6 +2380,12 @@ export function createPromoGestDevMiddleware(): (
                 : item.customerType;
           if (!nextPhone || !nextDisplayName) {
             return sendJson(res, 400, { code: 'VALIDATION_ERROR', message: 'Display name and phone are required.' });
+          }
+          if (!isValidCustomerPhone(nextPhone)) {
+            return sendJson(res, 400, {
+              code: 'CUSTOMER_PHONE_INVALID',
+              message: 'Enter a valid contact phone number containing 7 to 15 digits.',
+            });
           }
 
           if (

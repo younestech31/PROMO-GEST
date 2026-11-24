@@ -1,9 +1,9 @@
-## Current decision checkpoint — no new decision; ADR-0018 suspension review queue and operator UI implemented; live main is PR #235 — 23 November 2026
+## Current decision checkpoint — no new decision; Phase 1 acceptance round 2 recorded and the canonical baseline re-synchronized — 24 November 2026
 
 
 
 
-- **Verified live source:** GitHub `main` = `5498e2e9e9040afb83054c11c13964ae29164093`, the squash-merge SHA for [PR #237](https://github.com/younestech31/PROMO-GEST/pull/237) (`feat(p1-10): operator UI for the suspension review queue`, 19 files), resolved live on 23 November 2026 with 0 open pull requests. Resolve the live branch ref again before any later merge or current-state claim.
+- **Verified live source:** GitHub `main` = `c9d6f19430cd89f8205dd1bac230ab18bd2f044d`, the squash-merge SHA for [PR #241](https://github.com/younestech31/PROMO-GEST/pull/237) (`docs(acceptance): add the round-2 visual and practical acceptance brief`, 19 files), resolved live on 24 November 2026 with 0 open pull requests. Resolve the live branch ref again before any later merge or current-state claim.
 - **Latest recorded decision:** ADR-0018 — *Project Commercialization Eligibility and CRM/Reservation Separation* — remains the most recent approved decision. No new ADR has been recorded since PR #223.
 - **Enforcement status:** ADR-0018 is enforced at runtime in `main` (`ProjectCommercializationPolicy` + `ProjectSalesReservationService.CreateAsync`, HTTP `409` `PROJECT_NOT_COMMERCIALIZABLE`, append-only `PROJECT_RESERVATION_DENIED` audit, no automatic release). `P1-10` remains `In Progress / Pending`: the change is not merged and `P1-09` still gates acceptance.
 - **Decision-neutral engineering guard added (`P1-46`):** the `Documentation baseline consistency` CI job enforces that every canonical document states the same `main` SHA, merge PR, and checkpoint date, and that a canonical-document change moves that baseline to its own merge base. It records no decision, approves nothing, and does not alter any gate or acceptance state.
@@ -11,6 +11,8 @@
 - **Scope:** documentation, workflow configuration, and verification scripts only. No production business data, configuration, credentials, role/permission grant, authorization, CSRF policy, deployment, or branch-protection setting was changed. Phase 1 remains `IN_PROGRESS`; Phases 2-5 remain gated.
 
 ---
+
+- **No decision taken (24 November 2026):** the Phase 1 acceptance round 2 result — 52 PASS, 11 FAIL, 1 NOT APPLICABLE, 3 observations on the Vite in-memory preview, with blocking defects `W1-5` and `W2-8` — is recorded in `docs/PHASE-1-VISUAL-ACCEPTANCE-ROUND-2-BRIEF.md` §10. Recording a result decides nothing: no gate, permission, policy or scope changed, and the ADR-0018 preview-parity gap stays a separate task.
 
 ## Historical checkpoint — no new decision since ADR-0018; live main is PR #234 (superseded by PR #235) — 23 November 2026
 

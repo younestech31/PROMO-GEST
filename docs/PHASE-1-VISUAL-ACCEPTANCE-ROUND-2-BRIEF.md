@@ -316,35 +316,124 @@ Path: project → documents.
 
 ---
 
-## 10. Result register
+## 10. Result register — executed
 
-**State: `AWAITING RUN`.** Nothing in this section is evidence until an executor has filled it in, dated it, and attached the screenshots. Round 1's register is §10 of `docs/P1-10-VISUAL-ACCEPTANCE-BRIEF.md`; this section is its successor for the W-series.
+**State: `EXECUTED — RECORDED 24 November 2026`.** Ten work packages were run in the required order against the disposable Vite in-memory preview, Arabic `dir="rtl"` first and French `dir="ltr"` second, with a fresh in-memory server per locale and W8 last on an uninitialized store in each locale.
+
+**Verdict: 52 PASS, 11 FAIL, 1 NOT APPLICABLE, 3 non-scored observations — across 67 checks.** Two failures block a task (`W1-5`, `W2-8`). **No gate moves:** the preview is not Staging, not the ASP.NET Core API, not PostgreSQL 18, and every failing row keeps its task `Pending`.
 
 | Field | Value |
 |---|---|
-| Run date | _pending_ |
-| Executor + environment | _pending_ |
-| Workspace identity (SHA or archive) | _pending_ |
-| Startup commands | _pending_ |
-| Viewports | _pending_ |
-| W9 shell | _pending_ |
-| W1 entry regression (round-1 defect 1) | _pending_ |
-| W2 `P1-09` users & roles | _pending_ |
-| W3 `P1-15` / `REQ-B03` project team | _pending_ |
-| W4 Module C structure | _pending_ |
-| W5 Module D customers | _pending_ |
-| W6 Module E reservations + queue regression | _pending_ |
-| W7 Module K documents | _pending_ |
-| W10 connectivity + audit | _pending_ |
-| W8 setup wizard | _pending_ |
-| Defects found | _pending_ |
-| Statuses kept | `P1-09` `In Review / Pending`, `P1-10` `In Progress / Pending`, `P1-11`/`P1-15`/`P1-17`/`P1-19`/`P1-36`/`P1-38` unchanged, Phase 1 `IN_PROGRESS`, Phases 2–5 locked |
+| Run date | 24 November 2026 |
+| Environment | Vite in-memory contract preview, `environmentMode: "ViteDevContractPreview"`, `previewMode: true`; no `.NET`, no `psql`, no Cloud SQL, no Staging |
+| Startup command | `ASPNETCORE_URL="" SQL_HOST="" SQL_DB_NAME="" SQL_USER="" SQL_PASSWORD="" SQL_ADMIN_USER="" SQL_ADMIN_PASSWORD="" PROMOGEST_VITE_ONLY=1 ./node_modules/.bin/vite --config apps/local-web/vite.config.ts --port=5173` |
+| Workspace identity | **No SHA could be resolved** — the executor's filesystem snapshot (`/app/applet`) had no `.git`. Recorded as *unresolved*, not as a SHA |
+| Viewports | `1440×900`, `390×844`, plus `720×450` for the W9-6 200 % zoom check |
+| Server restarts | One per work package series and per locale; W8 on a fresh uninitialized server in each locale |
+| Post-run checks (executor side) | `scripts/validate-doc-baseline.py`, the applet compile, and `tsc -p apps/local-web/tsconfig.json --noEmit` passed after the register was written |
 
-### How the repository owner will record the result
+### 10.1 Per-package result
 
-When the register comes back:
+| Package | Arabic (RTL) | French (LTR) | Failing / N/A / observation |
+|---|---|---|---|
+| W9 — shell, bidi, layout, keyboard | 7 PASS / 1 FAIL | 7 PASS / 1 FAIL | `W9-7` FAIL |
+| W1 — entry regression | 5 PASS / 1 FAIL | 5 PASS / 1 FAIL | `W1-5` FAIL — **blocks the task** |
+| W2 — `P1-09` users and roles | 6 PASS / 3 FAIL | 6 PASS / 3 FAIL | `W2-5`, `W2-7` FAIL; `W2-8` FAIL — **blocks the task** |
+| W3 — `P1-15` / `REQ-B03` project team | 7 PASS | 7 PASS | — |
+| W4 — Module C structure | 5 PASS / 1 FAIL | 5 PASS / 1 FAIL | `W4-5` FAIL |
+| W5 — Module D parties and customers | 6 PASS / 1 FAIL | 6 PASS / 1 FAIL | `W5-3` FAIL |
+| W6 — Module E reservations and queue regression | 5 PASS | 5 PASS | `W6-5` observation only |
+| W7 — Module K documents | 5 PASS / 1 N/A | 5 PASS / 1 N/A | `W7-5` NOT APPLICABLE (no delete/replace UI exists) |
+| W10 — connectivity and audit | 3 PASS / 2 FAIL | 3 PASS / 2 FAIL | `W10-3`, `W10-5` FAIL; `W10-4` observation only |
+| W8 — first-run setup wizard | 3 PASS / 2 FAIL | 3 PASS / 2 FAIL | `W8-2`, `W8-3` FAIL; `W8-6` observation only |
 
-1. This file's §10 is filled in from the returned table, row by row, with failures quoted verbatim — never summarised.
-2. `docs/P1-10-VISUAL-ACCEPTANCE-BRIEF.md` §10 gets a one-line cross-reference for the queue regression (W6-1..3) and for the round-1 defect closure (W1).
-3. `docs/CURRENT-STATE-BASELINE.md`, `docs/REQUIREMENT-TRACEABILITY.md` and the Notion task pages are updated **in a separate baseline re-point commit**, because their claim block must move to the merge base of that PR. Anything that failed keeps its status `Pending`.
-4. Any FAIL becomes a defect with an owner and is routed as its own task; it is not absorbed into a passing summary.
+### 10.2 Per-check register
+
+Every row below is `AR / FR`; a row is PASS in both locales unless it appears in the failing lists above.
+
+| Check | Result | Note |
+|---|---|---|
+| W9-1 `lang`/`dir` flip | PASS / PASS | `ar`/`rtl` and `fr`/`ltr` |
+| W9-2 no page overflow (`scrollWidth === innerWidth`) | PASS / PASS | both viewports |
+| W9-3 table scrolling confined to container | PASS / PASS | |
+| W9-4 bidi hygiene on codes, dates, amounts, phones | PASS / PASS | the audit-log exception is `W10-5` |
+| W9-5 keyboard reachability and visible `:focus-visible` | PASS / PASS | ring measured |
+| W9-6 200 % zoom at `720×450` | PASS / PASS | no clipping |
+| W9-7 active nav distinguishable without colour alone | **FAIL / FAIL** | colour-only highlight |
+| W9-8 identical instant, locale-correct formatting | PASS / PASS | |
+| W1-1 preview entry appears without `visibilitychange` or the 60 s poll | PASS / PASS | round-1 defect (1) not reproduced |
+| W1-2 no console error under StrictMode double mount | PASS / PASS | |
+| W1-3 five consecutive hard reloads | PASS / PASS | button present every time |
+| W1-4 `/health/ready` reports `previewMode: true` | PASS / PASS | |
+| W1-5 **click on the preview entry signs in and lands on the workspace** | **FAIL / FAIL** | stuck on the wizard until a manual reload |
+| W1-6 reload while signed in restores the session | PASS / PASS | |
+| W2-1 screen title | PASS / PASS | |
+| W2-2 table headers | PASS / PASS | |
+| W2-3 create employee, required-field refusal | PASS / PASS | |
+| W2-4 temporary-password notice on creation | PASS / PASS | |
+| W2-5 «يتطلب تغيير كلمة المرور» badge on the new employee | **FAIL / FAIL** | badge absent for `karim.dir` / `nadia.com` |
+| W2-6 deactivate / reactivate | PASS / PASS | |
+| W2-7 System Administrator cannot be deactivated | **FAIL / FAIL** | label reads «مدير النظام» / «Administrateur Système», and no deactivate control is rendered, so the refusal cannot be reached from the UI |
+| W2-8 sign in as the new employee, forced password change, restricted navigation | **FAIL / FAIL** | no forced-change screen; direct `/admin/users` silently redirects to `/` with no in-language refusal |
+| W2-9 reset-password flow | PASS / PASS | |
+| W3-1 … W3-7 (access modal, member row, assign manager, demote with a second manager, last-manager refusal `409 PROJECT_LAST_MANAGER_REQUIRED`, non-silent refusal, audit entry) | PASS / PASS | **the only package with no defects**; the last-manager invariant was proven from outside |
+| W4-1 … W4-4, W4-6 (structure modal, buildings/floors/units, create chain, unit status + sales-workflow notice, RTL tables at 390) | PASS / PASS | |
+| W4-5 in-language validation on empty required fields | **FAIL / FAIL** | native HTML5 tooltip "Please fill out this field." in English |
+| W5-1, W5-2, W5-4, W5-5, W5-6, W5-7 (directory, create customer, duplicate refusal, detail, interaction timeline, customer language does not switch the operator UI) | PASS / PASS | |
+| W5-3 invalid phone refused | **FAIL / FAIL** | `123` returned `201 Created` and was saved |
+| W6-1 review queue still matches round 1 | PASS / PASS | amber panel, badge `2`, six columns |
+| W6-2 record one review | PASS / PASS | badge `2 → 1` |
+| W6-3 no side effects after review | PASS / PASS | hold `Active`, unit `Reserved`, project `Suspended` |
+| W6-4 cancel-hold flow | PASS / PASS | concurrency stamp carried |
+| W6-5 new hold on a suspended project | OBSERVATION | form stayed enabled, as §9 predicted; **not scored** |
+| W6-6 F/G/H/I/J still planned placeholders | PASS / PASS | |
+| W7-1, W7-2, W7-3, W7-4, W7-6 (upload, byte-identical download, >25 MiB refusal, unsupported extension, RTL tables) | PASS / PASS | |
+| W7-5 delete/replace | NOT APPLICABLE | no delete or replace UI exists — the check was mis-specified in this brief |
+| W10-1 offline action shows a localized banner | PASS / PASS | |
+| W10-2 back online, retry succeeds | PASS / PASS | |
+| W10-3 reload while offline | **FAIL / FAIL** | `net::ERR_INTERNET_DISCONNECTED` / `chrome-error://chromewebdata/` — no localized offline page |
+| W10-4 abort a logout | OBSERVATION | session stayed active, localized retry banners in both locales; does **not** close `P0-A04` |
+| W10-5 audit log content and bidi | **FAIL / FAIL** | مستوى/Sévérité values ("Info", "Security") and summary text ("Listed 4 customer(s) in project 'DEMO-16-001'.") stay English, producing RTL bidi inversion (`.'Listed 4 customer(s)…`); a direct `/admin/users` attempt produced **no** access-denial audit event |
+| W10-6 audit table at 390 | PASS / PASS | scrolling confined |
+| W8-1 fresh server opens the wizard | PASS / PASS | |
+| W8-2 wizard fully localized | **FAIL / FAIL** | password hint renders "chars 128–10" (AR) / "10–128 chars" (FR) |
+| W8-3 required-field validation in-language | **FAIL / FAIL** | native "Please fill out this field."; with `novalidate` or weak non-empty values the custom AR/FR errors do fire |
+| W8-4 initialize with fictional data, handoff to login | PASS / PASS | |
+| W8-5 resubmission refused, no second organization | PASS / PASS | |
+| W8-6 demo entry after manual initialization | OBSERVATION | button stayed clickable and rendered untranslated English (`Demo access is only available before a real organization is initialized in this preview server.`); does **not** close `P0-A01` |
+
+### 10.3 Defects recorded — none fixed by this round
+
+| # | Check | Severity | Observed | Scope |
+|---|---|---|---|---|
+| D1 | `W1-5` | **Blocks the task** | Clicking «الدخول إلى مساحة المعاينة» / «Ouvrir l’espace de démonstration» returns `200` on `GET /api/auth/preview-session`, but the UI stays on «تهيئة مؤسسة الترقية العقارية» / «Initialisation de l'entreprise immobilière» until a manual reload | Preview entry; both locales; `1440×900` |
+| D2 | `W2-8` | **Blocks the task** | No forced password-change screen after creation or reset; a direct `/admin/users` visit silently redirects to `/` with no in-language refusal and no audit event | `P1-09` scope; both locales |
+| D3 | `W2-5` | Major | New employee shows no «يتطلب تغيير كلمة المرور» badge | `P1-09` scope |
+| D4 | `W2-7` | Major | System Administrator row reads «مدير النظام» / «Administrateur Système» instead of the "unique" wording, and renders no deactivate control — so `CANNOT_DEACTIVATE_SYSTEM_ADMIN` is unreachable from the UI | `P1-09` scope |
+| D5 | `W9-7` | Major | Active sidebar item is conveyed by colour alone (`bg-teal-800 text-white`, no `aria-current`, no border, no marker) | Shell, global |
+| D6 | `W5-3` | Major | Phone `123` accepted with `201 Created` in the CRM customer form | Module D |
+| D7 | `W10-3` | Major | Offline reload lands on the Chromium error page instead of a localized offline screen | Shell/offline |
+| D8 | `W10-5` | Major | Audit values and summaries are English-only, causing bidi inversion inside RTL; access-denial attempts are not audited | Technical admin + audit |
+| D9 | `W4-5`, `W8-3` | Minor | Native English HTML5 validation tooltips on empty required submits | Modules C and setup |
+| D10 | `W8-2` | Minor | Untranslated, reversed password-length hint ("chars 128–10") | Setup wizard |
+
+D1 replaces the round-1 defect (1) rather than confirming it: the button now **appears** correctly and was never found hidden, so the `pollHealth` race recorded in round 1 is not reproducible after `c1b10a9` — but entry is still blocked, one step later.
+
+### 10.4 Evidence ledger — **binaries not received**
+
+The executor reports **25 screenshots** under `docs/evidence/p1-round-2/`, and cites these in the defect list: `W1-5-{ar,fr}-1440.png`, `W9-7-{ar,fr}-1440.png`, `W2-5-{ar,fr}-1440.png` (also cited for `W2-7`), `W2-8-{ar,fr}-1440.png`, `W5-3-{ar,fr}-1440.png`, `W10-3-{ar,fr}-1440.png`, `W10-5-{ar,fr}-1440.png`, `W8-3-{ar,fr}-1440.png`.
+
+**None of those files reached this repository** — the executor's workspace had no git remote and no upload step is part of §6. Until they are supplied and committed with a SHA-256 check (the round-1 practice), these paths are *claimed locations*, not repository evidence, and the register must not be cited as if the images were present. `W4-5` cites no screenshot at all.
+
+### 10.5 Status kept deliberately — unchanged by this round
+
+`P1-09` `In Review / Pending` · `P1-10` `In Progress / Pending` · `P1-11`, `P1-15`, `P1-17`, `P1-19`, `P1-36`, `P1-38` unchanged · `P1-01`/`P1-35` `Deferred / Pending` · `P1-02`/`P1-34` `Blocked` · `P0-A01`/`P0-A04` `NOT_RUN` · Phase 1 `IN_PROGRESS` · Phases 2–5 locked.
+
+`P1-15` / `REQ-B03` now has its **first bilingual browser evidence** (W3 passed 7/7 in both locales, including the last-manager `409`), and it still is `IMPLEMENTED_NOT_VERIFIED`: the preview is not Staging, and `REQ-B03` requires post-merge plus manual bilingual acceptance in the real environment.
+
+### 10.6 What this round changes about the next round
+
+- `W1-5` and `W2-8` must be fixed before any further entry or `P1-09` claim; both are one-screen reproductions, so the re-check is cheap.
+- `W7-5` should be re-specified as "delete/replace if such a control exists" — the current wording asks for a control the product does not offer.
+- `W10-5`'s missing access-denial audit event is a **security-behaviour** observation, not cosmetics: a refused navigation currently leaves no trace.
+- The preview-parity gap (`W6-5`) still forbids any ADR-0018 denial claim from this environment.

@@ -1,9 +1,9 @@
-## Current implementation traceability checkpoint — PR #241 merged; Phase 1 acceptance round 2 recorded; REQ-B03 gains preview browser evidence; no capability leaves IMPLEMENTED_NOT_VERIFIED — 24 November 2026
+## Current implementation traceability checkpoint — PR #241 merged and the round-2 register pushed directly to `main` (27b687f); Phase 1 acceptance round 2 recorded; REQ-B03 gains preview browser evidence; no capability leaves IMPLEMENTED_NOT_VERIFIED — 24 November 2026
 
 
 
 
-- Current verified main SHA: `c9d6f19430cd89f8205dd1bac230ab18bd2f044d` (PR #241, suspension review queue operator UI), resolved live on 24 November 2026 with 0 open pull requests.
+- Current verified main SHA: `27b687fc9dc07667acb7d30970f2c2c721cc2dda` (direct documentation commit carrying the round-2 result register and its evidence), resolved live on 24 November 2026 with 0 open pull requests.
 - PR #235 added the queryable ADR-0018 suspension review queue on top of the merged marker and gate; exact-main push [CI 45277326925](https://github.com/younestech31/PROMO-GEST/actions/runs/45277326925) passed 4/4 and [CodeQL 45277326953](https://github.com/younestech31/PROMO-GEST/actions/runs/45277326953) passed 2/2 on the same SHA, and PR head `9f85eddedd55368241e64988048275700b3c7bab` passed [CI 45276458181](https://github.com/younestech31/PROMO-GEST/actions/runs/45276458181) 4/4 and [CodeQL 45276458182](https://github.com/younestech31/PROMO-GEST/actions/runs/45276458182) 2/2.
 - New enforcement: `scripts/validate-doc-baseline.py` plus the `Documentation baseline consistency` CI job require every canonical document to state the same `main` SHA, merge PR, and checkpoint date, and require a canonical-document change to move that baseline to the branch merge base; `scripts/test_validate_doc_baseline.py` holds 12 self-tests. This closes the drift that left nine documents naming PR #228 after PR #230 had merged.
 - `REQ-A10` / `P1-19` remain `IMPLEMENTED_NOT_VERIFIED` and `In Review / Pending` pending the delegated account-security UI, the IP/User-Agent privacy warning, and manual Arabic RTL / French LTR acceptance. `REQ-A09` / `P1-17` and `REQ-B03` / `P1-15` remain `IMPLEMENTED_NOT_VERIFIED` pending their own manual bilingual acceptance.

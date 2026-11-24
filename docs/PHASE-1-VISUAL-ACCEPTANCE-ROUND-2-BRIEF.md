@@ -316,124 +316,188 @@ Path: project → documents.
 
 ---
 
-## 10. Result register — executed
+## 10. Result register
 
-**State: `EXECUTED — RECORDED 24 November 2026`.** Ten work packages were run in the required order against the disposable Vite in-memory preview, Arabic `dir="rtl"` first and French `dir="ltr"` second, with a fresh in-memory server per locale and W8 last on an uninitialized store in each locale.
-
-**Verdict: 52 PASS, 11 FAIL, 1 NOT APPLICABLE, 3 non-scored observations — across 67 checks.** Two failures block a task (`W1-5`, `W2-8`). **No gate moves:** the preview is not Staging, not the ASP.NET Core API, not PostgreSQL 18, and every failing row keeps its task `Pending`.
+**State: `EXECUTED (DISPOSABLE VITE IN-MEMORY PREVIEW ONLY)` — 2026-11-24.** Executed in order `W9 → W1 → W2 → W3 → W4 → W5 → W6 → W7 → W10 → W8` (Arabic RTL first, then French LTR on a freshly restarted server; W8 ran last on a freshly restarted uninitialized server in each locale).
 
 | Field | Value |
 |---|---|
-| Run date | 24 November 2026 |
-| Environment | Vite in-memory contract preview, `environmentMode: "ViteDevContractPreview"`, `previewMode: true`; no `.NET`, no `psql`, no Cloud SQL, no Staging |
-| Startup command | `ASPNETCORE_URL="" SQL_HOST="" SQL_DB_NAME="" SQL_USER="" SQL_PASSWORD="" SQL_ADMIN_USER="" SQL_ADMIN_PASSWORD="" PROMOGEST_VITE_ONLY=1 ./node_modules/.bin/vite --config apps/local-web/vite.config.ts --port=5173` |
-| Workspace identity | **No SHA could be resolved** — the executor's filesystem snapshot (`/app/applet`) had no `.git`. Recorded as *unresolved*, not as a SHA |
-| Viewports | `1440×900`, `390×844`, plus `720×450` for the W9-6 200 % zoom check |
-| Server restarts | One per work package series and per locale; W8 on a fresh uninitialized server in each locale |
-| Post-run checks (executor side) | `scripts/validate-doc-baseline.py`, the applet compile, and `tsc -p apps/local-web/tsconfig.json --noEmit` passed after the register was written |
+| Run date | 2026-11-24 (`11:14–11:54 UTC`) |
+| Executor + environment | Automated Chromium (`playwright-cli --browser=chromium`) against **disposable Vite in-memory preview only** (`PROMOGEST_VITE_ONLY=1`, `http://127.0.0.1:5173`, `environmentMode: "ViteDevContractPreview"`, `previewMode: true`). Not Staging, not ASP.NET Core 10 API, not PostgreSQL 18, not production. |
+| Workspace identity | No `.git` directory present in `/app/applet` container workspace (pre-loaded workspace filesystem snapshot; no commit SHA resolvable). |
+| Startup commands & env | `ASPNETCORE_URL="" SQL_HOST="" SQL_DB_NAME="" SQL_USER="" SQL_PASSWORD="" SQL_ADMIN_USER="" SQL_ADMIN_PASSWORD="" PROMOGEST_VITE_ONLY=1 ./node_modules/.bin/vite --config apps/local-web/vite.config.ts --port=5173` (restarted cleanly before AR W8, before FR pass, and before FR W8). |
+| Viewports | `1440×900` (desktop), `390×844` (mobile), plus `720×450` (200% zoom at `1440×900` for `W9-6`). |
+| W9 shell | AR: **7 PASS / 1 FAIL** (`W9-7`) · FR: **7 PASS / 1 FAIL** (`W9-7`) |
+| W1 entry regression (round-1 defect 1) | AR: **5 PASS / 1 FAIL** (`W1-5` blocking) · FR: **5 PASS / 1 FAIL** (`W1-5` blocking) |
+| W2 `P1-09` users & roles | AR: **6 PASS / 3 FAIL** (`W2-5`, `W2-7`, `W2-8`) · FR: **6 PASS / 3 FAIL** (`W2-5`, `W2-7`, `W2-8`) |
+| W3 `P1-15` / `REQ-B03` project team | AR: **7 PASS / 0 FAIL** · FR: **7 PASS / 0 FAIL** |
+| W4 Module C structure | AR: **5 PASS / 1 FAIL** (`W4-5`) · FR: **5 PASS / 1 FAIL** (`W4-5`) |
+| W5 Module D customers | AR: **6 PASS / 1 FAIL** (`W5-3`) · FR: **6 PASS / 1 FAIL** (`W5-3`) |
+| W6 Module E reservations + queue regression | AR: **5 PASS / 0 FAIL / 1 OBS** (`W6-5`) · FR: **5 PASS / 0 FAIL / 1 OBS** (`W6-5`) |
+| W7 Module K documents | AR: **5 PASS / 0 FAIL / 1 N/A** (`W7-5`) · FR: **5 PASS / 0 FAIL / 1 N/A** (`W7-5`) |
+| W10 connectivity + audit | AR: **3 PASS / 2 FAIL** (`W10-3`, `W10-5`) **/ 1 OBS** (`W10-4`) · FR: **3 PASS / 2 FAIL** (`W10-3`, `W10-5`) **/ 1 OBS** (`W10-4`) |
+| W8 setup wizard | AR: **3 PASS / 2 FAIL** (`W8-2`, `W8-3`) **/ 1 OBS** (`W8-6`) · FR: **3 PASS / 2 FAIL** (`W8-2`, `W8-3`) **/ 1 OBS** (`W8-6`) |
+| Defects found | **10 distinct defect patterns** observed across both locales (`W1-5` blocking, `W9-7`, `W2-5`, `W2-7`, `W2-8`, `W4-5`, `W5-3`, `W10-3`, `W10-5`, `W8-2`/`W8-3` + `W8-4` FR locale flip note). See defect table below. |
+| Statuses kept | `P1-09` `In Review / Pending`, `P1-10` `In Progress / Pending`, `P1-11`/`P1-15`/`P1-17`/`P1-19`/`P1-36`/`P1-38` unchanged, `P1-01`/`P1-35` `Deferred / Pending`, `P1-02`/`P1-34` `Blocked`, `P0-A01`/`P0-A04` `NOT_RUN`, Phase 1 `IN_PROGRESS`, Phases 2–5 locked. |
 
-### 10.1 Per-package result
+### 10.1 Per-check result register (Arabic RTL & French LTR)
 
-| Package | Arabic (RTL) | French (LTR) | Failing / N/A / observation |
+#### W9 — Shell, bidi, layout and keyboard
+
+| Check | Path & control | Arabic (RTL) result & observation | French (LTR) result & observation |
 |---|---|---|---|
-| W9 — shell, bidi, layout, keyboard | 7 PASS / 1 FAIL | 7 PASS / 1 FAIL | `W9-7` FAIL |
-| W1 — entry regression | 5 PASS / 1 FAIL | 5 PASS / 1 FAIL | `W1-5` FAIL — **blocks the task** |
-| W2 — `P1-09` users and roles | 6 PASS / 3 FAIL | 6 PASS / 3 FAIL | `W2-5`, `W2-7` FAIL; `W2-8` FAIL — **blocks the task** |
-| W3 — `P1-15` / `REQ-B03` project team | 7 PASS | 7 PASS | — |
-| W4 — Module C structure | 5 PASS / 1 FAIL | 5 PASS / 1 FAIL | `W4-5` FAIL |
-| W5 — Module D parties and customers | 6 PASS / 1 FAIL | 6 PASS / 1 FAIL | `W5-3` FAIL |
-| W6 — Module E reservations and queue regression | 5 PASS | 5 PASS | `W6-5` observation only |
-| W7 — Module K documents | 5 PASS / 1 N/A | 5 PASS / 1 N/A | `W7-5` NOT APPLICABLE (no delete/replace UI exists) |
-| W10 — connectivity and audit | 3 PASS / 2 FAIL | 3 PASS / 2 FAIL | `W10-3`, `W10-5` FAIL; `W10-4` observation only |
-| W8 — first-run setup wizard | 3 PASS / 2 FAIL | 3 PASS / 2 FAIL | `W8-2`, `W8-3` FAIL; `W8-6` observation only |
+| `W9-1` | Entry & workspace → header language group (`العربية` / `Français`) | **PASS** — `lang="ar"`, `dir="rtl"` confirmed on entry and workspace. | **PASS** — `lang="fr"`, `dir="ltr"` confirmed on entry and workspace after clicking `Français`. |
+| `W9-2` | All 10 sidebar `<aside nav button>` screens (`1440×900`, `390×844`) | **PASS** — `scrollWidth === innerWidth` (`1440/1440`, `390/390`) on all 10 screens (see §10.2). | **PASS** — `scrollWidth === innerWidth` (`1440/1440`, `390/390`) on all 10 screens (see §10.2). |
+| `W9-3` | Wide tables across `Territorial`, `HR`, `Rapports`, `Users`, `Audit` at `390×844` | **PASS** — All wide tables (`565/272`, `428/356`, `430/272`, `794/356`, `755/356`) scroll inside `.overflow-x-auto`. | **PASS** — All wide tables (`368/356`, `509/272`, `514/356`, `557/272`, `936/356`, `767/356`) scroll inside `.overflow-x-auto`. |
+| `W9-4` | Bidi hygiene across workspace, modals, CRM, reservations, documents | **PASS** — `DEMO-16-001`, phone numbers, timestamps, `DZD`, SHA-256 hashes unclipped on workspace/CRM/reservations/docs. (Audit `التفاصيل` RTL bidi defect scored under `W10-5`.) | **PASS** — Codes, numbers, timestamps, `DZD`, and bilingual names render cleanly without stray marks. |
+| `W9-5` | `Tab` traversal: nav → language switcher → primary action | **PASS** — Reaches nav (`2px solid`), `تسجيل الخروج`, project switcher (`1px auto`), `العربية`/`Français` (`2px solid`), `عرض الملف` (`1px auto`). | **PASS** — Reaches nav (`2px solid`), `Déconnexion`, `Changer de projet` (`1px auto`), `العربية`/`Français` (`2px solid`), `Voir le profil` (`1px auto`). |
+| `W9-6` | Workspace at 200% zoom (`720×450` CSS px) | **PASS** — `720/720`, zero clipped or overlapping controls. | **PASS** — `720/720`, zero clipped or overlapping controls. |
+| `W9-7` | Sidebar active nav item styling (`aside nav button`) | **FAIL** — Active button (`مساحة المؤسسة`) uses color classes only (`bg-teal-800 text-white`): `ariaCurrent: null`, `borderWidth: 0px`, `fontWeight: 500`, `::before/::after: none`. Evidence: `docs/evidence/p1-round-2/W9-7-ar-1440.png`. | **FAIL** — Active button (`Espace Organisation`) uses color classes only (`bg-teal-800 text-white`): `ariaCurrent: null`, `borderLeftWidth: 0px`, `fontWeight: 500`, `::before/::after: none`. Evidence: `docs/evidence/p1-round-2/W9-7-fr-1440.png`. |
+| `W9-8` | Same-instant date rendering (`Audit` table first row) | **PASS** — Renders locale format `24‏/11‏/2026، 11:19 ص` (note: French uses 12h `AM` suffix). | **PASS** — Renders `24/11/2026 11:41 AM` (minor note: 12h `AM` suffix instead of 24h in `fr`). |
 
-### 10.2 Per-check register
+#### W1 — Entry regression (round-1 defect 1)
 
-Every row below is `AR / FR`; a row is PASS in both locales unless it appears in the failing lists above.
+| Check | Path & control | Arabic (RTL) result & observation | French (LTR) result & observation |
+|---|---|---|---|
+| `W1-1` | Cold load `http://127.0.0.1:5173/` → preview button | **PASS** — «الدخول إلى مساحة المعاينة» visible & enabled in `1,729 ms` without `visibilitychange` or 60 s wait. | **PASS** — After `Français` switch on entry, «Ouvrir l’espace de démonstration» visible & enabled (`53 ms` post-load; reloads `568–1,046 ms`). |
+| `W1-2` | Default dev `React.StrictMode` double-mount | **PASS** — Button renders cleanly; zero uncaught JS/page errors (only expected initial `401` on `/api/auth/me`). | **PASS** — Button renders cleanly; zero uncaught JS/page errors (only expected initial `401` on `/api/auth/me`). |
+| `W1-3` | 5 consecutive cache-disabled hard reloads (`Network.setCacheDisabled`) | **PASS** — Enabled all 5 times: `1,180 ms`, `920 ms`, `1,137 ms`, `986 ms`, `1,142 ms`. | **PASS** — Enabled all 5 times: `612 ms`, `1,046 ms`, `568 ms`, `647 ms`, `607 ms` (resets to `ar` on uninitialized reload; switched to `Français`). |
+| `W1-4` | `GET /health/ready` precedes clickable button | **PASS** — `previewMode: true`, `environmentMode: "ViteDevContractPreview"` observed before button clickable on cold load + all 5 reloads. | **PASS** — `previewMode: true`, `environmentMode: "ViteDevContractPreview"` observed before button clickable on all 5 reloads. |
+| `W1-5` | Click preview entry button on fresh uninitialized server | **FAIL (BLOCKING)** — `GET /api/auth/preview-session` returned `200`, **but** UI stayed stuck on setup wizard («تهيئة مؤسسة الترقية العقارية») until manual reload. Evidence: `docs/evidence/p1-round-2/W1-5-ar-1440.png`. | **FAIL (BLOCKING)** — `GET /api/auth/preview-session` returned `200`, **but** UI stayed stuck on setup wizard («Initialisation de l'entreprise immobilière») until manual reload. Evidence: `docs/evidence/p1-round-2/W1-5-fr-1440.png`. |
+| `W1-6` | Reload while signed in | **PASS** — Workspace restores directly (`المركز المحلي للمؤسسة`), `wizardVisible: false`. | **PASS** — Workspace restores directly without wizard flash (`wizardVisible: false`; language resets to `ar` per §9 `P1-17`). |
 
-| Check | Result | Note |
-|---|---|---|
-| W9-1 `lang`/`dir` flip | PASS / PASS | `ar`/`rtl` and `fr`/`ltr` |
-| W9-2 no page overflow (`scrollWidth === innerWidth`) | PASS / PASS | both viewports |
-| W9-3 table scrolling confined to container | PASS / PASS | |
-| W9-4 bidi hygiene on codes, dates, amounts, phones | PASS / PASS | the audit-log exception is `W10-5` |
-| W9-5 keyboard reachability and visible `:focus-visible` | PASS / PASS | ring measured |
-| W9-6 200 % zoom at `720×450` | PASS / PASS | no clipping |
-| W9-7 active nav distinguishable without colour alone | **FAIL / FAIL** | colour-only highlight |
-| W9-8 identical instant, locale-correct formatting | PASS / PASS | |
-| W1-1 preview entry appears without `visibilitychange` or the 60 s poll | PASS / PASS | round-1 defect (1) not reproduced |
-| W1-2 no console error under StrictMode double mount | PASS / PASS | |
-| W1-3 five consecutive hard reloads | PASS / PASS | button present every time |
-| W1-4 `/health/ready` reports `previewMode: true` | PASS / PASS | |
-| W1-5 **click on the preview entry signs in and lands on the workspace** | **FAIL / FAIL** | stuck on the wizard until a manual reload |
-| W1-6 reload while signed in restores the session | PASS / PASS | |
-| W2-1 screen title | PASS / PASS | |
-| W2-2 table headers | PASS / PASS | |
-| W2-3 create employee, required-field refusal | PASS / PASS | |
-| W2-4 temporary-password notice on creation | PASS / PASS | |
-| W2-5 «يتطلب تغيير كلمة المرور» badge on the new employee | **FAIL / FAIL** | badge absent for `karim.dir` / `nadia.com` |
-| W2-6 deactivate / reactivate | PASS / PASS | |
-| W2-7 System Administrator cannot be deactivated | **FAIL / FAIL** | label reads «مدير النظام» / «Administrateur Système», and no deactivate control is rendered, so the refusal cannot be reached from the UI |
-| W2-8 sign in as the new employee, forced password change, restricted navigation | **FAIL / FAIL** | no forced-change screen; direct `/admin/users` silently redirects to `/` with no in-language refusal |
-| W2-9 reset-password flow | PASS / PASS | |
-| W3-1 … W3-7 (access modal, member row, assign manager, demote with a second manager, last-manager refusal `409 PROJECT_LAST_MANAGER_REQUIRED`, non-silent refusal, audit entry) | PASS / PASS | **the only package with no defects**; the last-manager invariant was proven from outside |
-| W4-1 … W4-4, W4-6 (structure modal, buildings/floors/units, create chain, unit status + sales-workflow notice, RTL tables at 390) | PASS / PASS | |
-| W4-5 in-language validation on empty required fields | **FAIL / FAIL** | native HTML5 tooltip "Please fill out this field." in English |
-| W5-1, W5-2, W5-4, W5-5, W5-6, W5-7 (directory, create customer, duplicate refusal, detail, interaction timeline, customer language does not switch the operator UI) | PASS / PASS | |
-| W5-3 invalid phone refused | **FAIL / FAIL** | `123` returned `201 Created` and was saved |
-| W6-1 review queue still matches round 1 | PASS / PASS | amber panel, badge `2`, six columns |
-| W6-2 record one review | PASS / PASS | badge `2 → 1` |
-| W6-3 no side effects after review | PASS / PASS | hold `Active`, unit `Reserved`, project `Suspended` |
-| W6-4 cancel-hold flow | PASS / PASS | concurrency stamp carried |
-| W6-5 new hold on a suspended project | OBSERVATION | form stayed enabled, as §9 predicted; **not scored** |
-| W6-6 F/G/H/I/J still planned placeholders | PASS / PASS | |
-| W7-1, W7-2, W7-3, W7-4, W7-6 (upload, byte-identical download, >25 MiB refusal, unsupported extension, RTL tables) | PASS / PASS | |
-| W7-5 delete/replace | NOT APPLICABLE | no delete or replace UI exists — the check was mis-specified in this brief |
-| W10-1 offline action shows a localized banner | PASS / PASS | |
-| W10-2 back online, retry succeeds | PASS / PASS | |
-| W10-3 reload while offline | **FAIL / FAIL** | `net::ERR_INTERNET_DISCONNECTED` / `chrome-error://chromewebdata/` — no localized offline page |
-| W10-4 abort a logout | OBSERVATION | session stayed active, localized retry banners in both locales; does **not** close `P0-A04` |
-| W10-5 audit log content and bidi | **FAIL / FAIL** | مستوى/Sévérité values ("Info", "Security") and summary text ("Listed 4 customer(s) in project 'DEMO-16-001'.") stay English, producing RTL bidi inversion (`.'Listed 4 customer(s)…`); a direct `/admin/users` attempt produced **no** access-denial audit event |
-| W10-6 audit table at 390 | PASS / PASS | scrolling confined |
-| W8-1 fresh server opens the wizard | PASS / PASS | |
-| W8-2 wizard fully localized | **FAIL / FAIL** | password hint renders "chars 128–10" (AR) / "10–128 chars" (FR) |
-| W8-3 required-field validation in-language | **FAIL / FAIL** | native "Please fill out this field."; with `novalidate` or weak non-empty values the custom AR/FR errors do fire |
-| W8-4 initialize with fictional data, handoff to login | PASS / PASS | |
-| W8-5 resubmission refused, no second organization | PASS / PASS | |
-| W8-6 demo entry after manual initialization | OBSERVATION | button stayed clickable and rendered untranslated English (`Demo access is only available before a real organization is initialized in this preview server.`); does **not** close `P0-A01` |
+#### W2 — `P1-09`: employees, roles and single System Administrator (`REQ-A05`)
 
-### 10.3 Defects recorded — none fixed by this round
+| Check | Path & control | Arabic (RTL) result & observation | French (LTR) result & observation |
+|---|---|---|---|
+| `W2-1` | Sidebar → «حسابات الموظفين» / «Comptes Employés» | **PASS** — Title «إدارة حسابات الموظفين». | **PASS** — Title «Gestion des comptes employés». |
+| `W2-2` | Users table `thead th` | **PASS** — `["اسم المستخدم", "الاسم الكامل", "الأدوار الوظيفية", "الحالة", "آخر دخول", "الإجراءات"]`. | **PASS** — `["Identifiant", "Nom complet", "Rôles", "Statut", "Dernière connexion", "Actions"]`. |
+| `W2-3` | Create modal (`إضافة موظف جديد` / `Nouvel employé`) empty submit | **PASS** — Required `*` fields marked; empty submit refused with localized Arabic errors. | **PASS** — Empty submit refused with French errors (`"L'identifiant doit contenir au moins 3 caractères."`, `"Le nom complet est obligatoire."`, `"Adresse e-mail invalide."`, `"Le mot de passe exige au moins 10 caractères, une majuscule, une minuscule et un chiffre."`). |
+| `W2-4` | Temporary-password notice on creation | **PASS** — Shows exact «كلمة المرور التي تدخلها مؤقتة لمدة 24 ساعة…» notice. | **PASS** — Shows «Le mot de passe saisi est temporaire pendant 24 heures. L’employé doit le remplacer à sa première connexion avant tout accès aux données…». |
+| `W2-5` | New employee (`karim.dir` / `nadia.com`, roles `COMMERCIAL_MANAGER, PROJECT_DIRECTOR`) shows temp-password badge | **FAIL** — Row created and listed (`karim.dir`), **but** no «يتطلب تغيير كلمة المرور» badge appeared. Evidence: `docs/evidence/p1-round-2/W2-5-ar-1440.png`. | **FAIL** — Row created and listed (`nadia.com`), **but** no password-change-required badge appeared. Evidence: `docs/evidence/p1-round-2/W2-5-fr-1440.png`. |
+| `W2-6` | Deactivate / reactivate employee | **PASS** — `تعطيل` / `تفعيل` flipped status pill and logged `USER_DEACTIVATED` / `USER_ACTIVATED`. | **PASS** — `Désactiver` / `Activer` flipped status pill (`Actif` ↔ `Désactivé`) and logged audit events. |
+| `W2-7` | `SYSTEM_ADMIN` row & deactivation refusal | **FAIL** — `demo.admin` row displays «مدير النظام» (not «مدير النظام الوحيد») and omits the «تعطيل» button, so `CANNOT_DEACTIVATE_SYSTEM_ADMIN` UI refusal cannot be triggered. Evidence: `docs/evidence/p1-round-2/W2-5-ar-1440.png`. | **FAIL** — `demo.admin` row displays `"Administrateur Système"` (not `"Admin Système Unique"`) and omits `Désactiver` (`["Modifier rôles", "Réinitialiser mot de passe"]`), so `CANNOT_DEACTIVATE_SYSTEM_ADMIN` UI refusal cannot be triggered. Evidence: `docs/evidence/p1-round-2/W2-5-fr-1440.png`. |
+| `W2-8` | Sign in as new employee (`karim.dir` / `nadia.com`) + direct `/admin/users` visit | **FAIL** — (1) No forced password-change screen appeared after initial creation or password reset; (2) Sidebar hid admin sections, **but** direct URL `/admin/users` silently redirected to `/` with no in-language refusal notice. Evidence: `docs/evidence/p1-round-2/W2-8-ar-1440.png`. | **FAIL** — (1) No forced password-change screen appeared (`forcedPwScreen: 0`); (2) Sidebar hid admin sections, **but** direct URL `/admin/users` silently redirected to `/` with no in-language refusal notice. Evidence: `docs/evidence/p1-round-2/W2-8-fr-1440.png`. |
+| `W2-9` | Reset password (`تعيين كلمة مرور` / `Réinitialiser mot de passe`) | **PASS** — Modal repeats 24h temp-password notice and persists reset (`USER_PASSWORD_RESET` audited; forced-change gap tracked in `W2-8`). | **PASS** — Modal repeats 24h temp-password notice and persists `NadiaReset#2026` (`USER_PASSWORD_RESET` audited; forced-change gap tracked in `W2-8`). |
 
-| # | Check | Severity | Observed | Scope |
-|---|---|---|---|---|
-| D1 | `W1-5` | **Blocks the task** | Clicking «الدخول إلى مساحة المعاينة» / «Ouvrir l’espace de démonstration» returns `200` on `GET /api/auth/preview-session`, but the UI stays on «تهيئة مؤسسة الترقية العقارية» / «Initialisation de l'entreprise immobilière» until a manual reload | Preview entry; both locales; `1440×900` |
-| D2 | `W2-8` | **Blocks the task** | No forced password-change screen after creation or reset; a direct `/admin/users` visit silently redirects to `/` with no in-language refusal and no audit event | `P1-09` scope; both locales |
-| D3 | `W2-5` | Major | New employee shows no «يتطلب تغيير كلمة المرور» badge | `P1-09` scope |
-| D4 | `W2-7` | Major | System Administrator row reads «مدير النظام» / «Administrateur Système» instead of the "unique" wording, and renders no deactivate control — so `CANNOT_DEACTIVATE_SYSTEM_ADMIN` is unreachable from the UI | `P1-09` scope |
-| D5 | `W9-7` | Major | Active sidebar item is conveyed by colour alone (`bg-teal-800 text-white`, no `aria-current`, no border, no marker) | Shell, global |
-| D6 | `W5-3` | Major | Phone `123` accepted with `201 Created` in the CRM customer form | Module D |
-| D7 | `W10-3` | Major | Offline reload lands on the Chromium error page instead of a localized offline screen | Shell/offline |
-| D8 | `W10-5` | Major | Audit values and summaries are English-only, causing bidi inversion inside RTL; access-denial attempts are not audited | Technical admin + audit |
-| D9 | `W4-5`, `W8-3` | Minor | Native English HTML5 validation tooltips on empty required submits | Modules C and setup |
-| D10 | `W8-2` | Minor | Untranslated, reversed password-length hint ("chars 128–10") | Setup wizard |
+#### W3 — `P1-15` / `REQ-B03`: project team and last-ProjectManager refusal
 
-D1 replaces the round-1 defect (1) rather than confirming it: the button now **appears** correctly and was never found hidden, so the `pollHealth` race recorded in round 1 is not reproducible after `c1b10a9` — but entry is still blocked, one step later.
+| Check | Path & control | Arabic (RTL) result & observation | French (LTR) result & observation |
+|---|---|---|---|
+| `W3-1` | Projects → `DEMO-16-001` → «صلاحيات المشروع» / «Accès projet» | **PASS** — Title «إدارة صلاحيات الوصول للمشروع». | **PASS** — Title `"Gestion des accès au projet"`. |
+| `W3-2` | Member list fields & 4 capabilities | **PASS** — Displays full name, project role, and all 4 capability flags cleanly. | **PASS** — Displays `Nadia Benkhelifa (nadia.com)`, `Chef de Projet · Voir les finances / Gérer les ventes / Suivre les travaux / Gérer les documents locaux`. |
+| `W3-3` | Assign §3.2 employee (`karim.dir` / `nadia.com`) as `ProjectManager` + capabilities | **PASS** — Row appears immediately with `ProjectManager` and 4 capabilities (note: list updates live without a separate toast). | **PASS** — `nadia.com` appears immediately as `Chef de Projet` with all 4 capabilities. |
+| `W3-4` | Demote member while second `ProjectManager` (`amina.pm` / `youssef.pm`) exists | **PASS** — Second `ProjectManager` assigned, then demoted cleanly to `CommercialAgent` while first remained `ProjectManager`. | **PASS** — `youssef.pm` assigned as second `Chef de Projet`, then demoted cleanly to `Agent Commercial`. |
+| `W3-5` | Attempt to demote last remaining `ProjectManager` | **PASS** — Refused `409 Conflict` (`PROJECT_LAST_MANAGER_REQUIRED`), banner `"يجب أن يحتفظ المشروع بمدير مشروع واحد نشط على الأقل."`, unchanged after reload, `390×844` `390/390`. Evidence: `docs/evidence/p1-round-2/W3-5-ar-1440.png`. | **PASS** — Refused `409 Conflict` (`PROJECT_LAST_MANAGER_REQUIRED`), banner `"Le projet doit conserver au moins un chef de projet actif."`, `nadia.com` unchanged after reload, `390×844` `390/390`. Evidence: `docs/evidence/p1-round-2/W3-5-fr-1440.png`. |
+| `W3-6` | Refusal visibility | **PASS** — No success toast; red error banner rendered prominently at top of modal. | **PASS** — No success toast; red error banner rendered prominently at top of modal. |
+| `W3-7` | Audit trail (`سجل التدقيق الأمني` / `Journal d’Audit`) | **PASS** — `PROJECT_MEMBER_ASSIGNED` entries visible in audit table. | **PASS** — `PROJECT_MEMBER_ASSIGNED` entries (`nadia.com` & `youssef.pm`) visible in audit table. |
 
-### 10.4 Evidence ledger — **binaries not received**
+#### W4 — Module C: property structure
 
-The executor reports **25 screenshots** under `docs/evidence/p1-round-2/`, and cites these in the defect list: `W1-5-{ar,fr}-1440.png`, `W9-7-{ar,fr}-1440.png`, `W2-5-{ar,fr}-1440.png` (also cited for `W2-7`), `W2-8-{ar,fr}-1440.png`, `W5-3-{ar,fr}-1440.png`, `W10-3-{ar,fr}-1440.png`, `W10-5-{ar,fr}-1440.png`, `W8-3-{ar,fr}-1440.png`.
+| Check | Path & control | Arabic (RTL) result & observation | French (LTR) result & observation |
+|---|---|---|---|
+| `W4-1` | Projects → `DEMO-16-001` → «العمارات والوحدات» / «Bâtiments et unités» | **PASS** — Modal «الهيكل العقاري للمشروع» with Buildings / Floors / Units sections. | **PASS** — Modal `"Structure immobilière du projet"` with `Bâtiments` / `Étages` / `Unités immobilières`. |
+| `W4-2` | Existing buildings/floors/units render | **PASS** — `BLOC-A`..`BLOC-C` and units render unclipped. | **PASS** — `BLOC-A`..`BLOC-C` (`6 Étages · En construction` / `Planifié`) render unclipped. |
+| `W4-3` | Create Building → Floor → Unit (`BLOC-T` → `9` → `T-901`) | **PASS** — Each entity appeared immediately without manual refresh. | **PASS** — `BLOC-T · Bâtiment Test Est` → `9 · Étage 9 Test` → `T-901` each appeared immediately without refresh. |
+| `W4-4` | Unit status change & sales-workflow notice | **PASS** — «تحديث الحالة» changed `T-901` (`مخططة` → `مسحوبة`); notice «الحجز والبيع والتسليم تُدار عبر مسار البيع والعقارات…» remained visible. | **PASS** — `Mettre à jour le statut` changed `T-901` (`En construction` → `Retiré`); notice `"La réservation, la vente et la livraison seront gérées par le circuit commercial et contractuel, et non depuis la structure immobilière."` remained visible. |
+| `W4-5` | Empty required field validation (Building form) | **FAIL** — Relies on browser HTML5 `required` validation (`"Please fill out this field."` in English) instead of an in-language Arabic refusal. | **FAIL** — Relies on browser HTML5 `required` validation (`"Please fill out this field."` in English) instead of an in-language French refusal. |
+| `W4-6` | Mobile layout (`390×844`) | **PASS** — `390/390`, zero overlap or horizontal page overflow. | **PASS** — `390/390`, clean stacked cards, zero overflow. |
 
-**None of those files reached this repository** — the executor's workspace had no git remote and no upload step is part of §6. Until they are supplied and committed with a SHA-256 check (the round-1 practice), these paths are *claimed locations*, not repository evidence, and the register must not be cited as if the images were present. `W4-5` cites no screenshot at all.
+#### W5 — Module D: parties and project customers (CRM)
 
-### 10.5 Status kept deliberately — unchanged by this round
+| Check | Path & control | Arabic (RTL) result & observation | French (LTR) result & observation |
+|---|---|---|---|
+| `W5-1` | «دليل الأطراف» / «Répertoire Tiers» search | **PASS** — Directory loaded fictional parties; search filtered matches. | **PASS** — `"Répertoire central des tiers"` loaded; search input filtered cleanly. |
+| `W5-2` | Create customer («الزبائن والمهتمون» / «Clients & prospects» → `إضافة` / `Ajouter`) | **PASS** — Created `نور الدين لعروسي` (`0550776655`). | **PASS** — Created `Samir Benali` (`0550778899`). |
+| `W5-3` | Invalid phone `"123"` (`ياسين قاسمي` / `Karim Boudiaf`) | **FAIL** — Accepted and saved (`201 Created`, listed `ياسين قاسمي / 123`) instead of refusing with «أدخل رقم هاتف صحيحاً يحتوي على 7 إلى 15 رقماً.». Evidence: `docs/evidence/p1-round-2/W5-3-ar-1440.png`. | **FAIL** — Accepted and saved (`201 Created`, listed `Karim Boudiaf / 123`) instead of refusing with `"Saisissez un numéro de téléphone valide de 7 à 15 chiffres."`. Evidence: `docs/evidence/p1-round-2/W5-3-fr-1440.png`. |
+| `W5-4` | Duplicate customer in same project | **PASS** — Refused `409 Conflict` (`CUSTOMER_DUPLICATE`), `"يوجد زبون بالاسم ورقم الهاتف نفسيهما في هذا المشروع."`. | **PASS** — Refused `409 Conflict` (`CUSTOMER_DUPLICATE`), `"Un client portant le même nom et le même numéro existe déjà dans ce projet."`. |
+| `W5-5` | Customer detail view | **PASS** — Renders RTL (`نور الدين لعروسي · شخص طبيعي · مهتم / محتمل`); preferred language editable inside `تعديل البيانات`. | **PASS** — Renders LTR (`Samir Benali · Personne physique · Prospect`, `Téléphone : 0550778899`). |
+| `W5-6` | Add interaction/contact record | **PASS** — Added `مكالمة تعريفية`; rendered in timeline with localized timestamp `24‏/11‏/2026، 11:30 ص`. | **PASS** — Added `Appel de présentation`; rendered in `Historique des communications (1)` with `Appel · 24 nov. 2026, 11:50`. |
+| `W5-7` | Customer `preferredLanguage` independence + `390×844` | **PASS** — `preferredLanguage: 'fr'` kept operator UI `ar`/`rtl`; `390/390`. | **PASS** — `preferredLanguage: 'ar'` kept operator UI `fr`/`ltr`; `390/390`. |
 
-`P1-09` `In Review / Pending` · `P1-10` `In Progress / Pending` · `P1-11`, `P1-15`, `P1-17`, `P1-19`, `P1-36`, `P1-38` unchanged · `P1-01`/`P1-35` `Deferred / Pending` · `P1-02`/`P1-34` `Blocked` · `P0-A01`/`P0-A04` `NOT_RUN` · Phase 1 `IN_PROGRESS` · Phases 2–5 locked.
+#### W6 — Module E: reservations & round-1 queue regression (§3.1 seed)
 
-`P1-15` / `REQ-B03` now has its **first bilingual browser evidence** (W3 passed 7/7 in both locales, including the last-manager `409`), and it still is `IMPLEMENTED_NOT_VERIFIED`: the preview is not Staging, and `REQ-B03` requires post-merge plus manual bilingual acceptance in the real environment.
+| Check | Path & control | Arabic (RTL) result & observation | French (LTR) result & observation |
+|---|---|---|---|
+| `W6-1` | Projects → «الحجوزات» / «Réservations» | **PASS** — Amber panel «طابور مراجعة التعليق», badge `2`, 6 columns (`HOLD-DEMO-16-001-001`, `-002`). | **PASS** — Amber panel `"File de revue de suspension"`, badge `2`, 6 columns (`HOLD-DEMO-16-001-003`, `-004`). |
+| `W6-2` | Record one review (two-click confirm) | **PASS** — «تمت المراجعة» → «تأكيد تسجيل المراجعة» decremented badge `2 → 1`; register stamped `روجع في 24‏/11‏/2026، 11:32 ص`. | **PASS** — `Revue effectuée` → `Confirmer la revue` decremented badge `2 → 1`; register stamped `Revu le 24 nov. 2026, 11:51`. |
+| `W6-3` | No side effects after review | **PASS** — Reviewed hold remained `نشط`, unit remained `Reserved`, project remained `معلّق`. | **PASS** — Reviewed hold (`HOLD-DEMO-16-001-004`) remained `Active`, `A-00-02` remained `Reserved`, project remained `Suspendu`. |
+| `W6-4` | Cancel separate unreviewed hold (`HOLD-…-002` AR / `HOLD-…-003` FR) | **PASS** — Cancellation sent `expectedConcurrencyStamp` + required reason (`تأكيد الإلغاء`); unit `A-00-02` returned to `AvailableForSale`. | **PASS** — Sent `{"reason":"Annulation test round 2 suite à suspension","expectedConcurrencyStamp":"ebb5ae3b-b230-40bc-ad20-2f0fbd45c927"}` (`200 OK`); hold flipped to `Annulée`, `A-00-01` returned to `Disponible à la vente`; `390×844` `390/390`. |
+| `W6-5` | New hold form on `Suspended` project | **OBSERVATION ONLY (NOT SCORED)** — «إنشاء حجز» form remained enabled while project was `معلّق` (per §9, `dev-api-middleware.ts` does not enforce `PROJECT_NOT_COMMERCIALIZABLE`). | **OBSERVATION ONLY (NOT SCORED)** — `Créer une réservation` form remained enabled while project was `Suspendu`. |
+| `W6-6` | Project workspace → Modules F / G / H / I / J | **PASS** — All five render planned placeholders (`مخطط / قيد التطوير`) with no conflicting feature claims. | **PASS** — All five (`F. Contrats`, `G. Finances`, `H. Chantier`, `I. Achats`, `J. Comptabilité`) render `Planifié / En préparation`. |
 
-### 10.6 What this round changes about the next round
+#### W7 — Module K: documents
 
-- `W1-5` and `W2-8` must be fixed before any further entry or `P1-09` claim; both are one-screen reproductions, so the re-check is cheap.
-- `W7-5` should be re-specified as "delete/replace if such a control exists" — the current wording asks for a control the product does not offer.
-- `W10-5`'s missing access-denial audit event is a **security-behaviour** observation, not cosmetics: a refused navigation currently leaves no trace.
-- The preview-parity gap (`W6-5`) still forbids any ADR-0018 denial claim from this environment.
+| Check | Path & control | Arabic (RTL) result & observation | French (LTR) result & observation |
+|---|---|---|---|
+| `W7-1` | Projects → «وثائق المشروع» / «Documents» → upload `/tmp/test-small.pdf` | **PASS** — Listed `test-small.pdf`, `أخرى · 45 B`, uploader `مدير المعاينة التجريبية`, `24‏/11‏/2026، 11:33 ص`, `بصمة SHA-256`. | **PASS** — Listed `test-small.pdf`, `Autres · 45 B`, uploader `مدير المعاينة التجريبية`, `24 nov. 2026, 11:52`, `Empreinte SHA-256`. |
+| `W7-2` | Click «تنزيل» / «Télécharger» | **PASS** — `200 OK`, SHA-256 `5a838678058f6de375e8635b5f2fea47a4e5f07cb1a882a44b10f39abc6f34ff` byte-identical to `/tmp/test-small.pdf`. | **PASS** — `200 OK`, SHA-256 `5a838678058f6de375e8635b5f2fea47a4e5f07cb1a882a44b10f39abc6f34ff` byte-identical to `/tmp/test-small.pdf`. |
+| `W7-3` | Upload `/tmp/test-oversize.pdf` (`25.00 MB` > 25 MiB) | **PASS** — Refused `400`: `"حجم الملف يجب أن يكون أكبر من صفر ولا يتجاوز 25 ميغابايت."`, no partial row added (`2` rows unchanged). Evidence: `docs/evidence/p1-round-2/W7-3-ar-1440.png`. | **PASS** — Refused `400`: `"Le fichier doit être non vide et ne pas dépasser 25 Mo."`, no partial row added (`2` rows unchanged). Evidence: `docs/evidence/p1-round-2/W7-3-fr-1440.png`. |
+| `W7-4` | Upload `/tmp/test-blocked.exe` | **PASS** — Refused `400`: `"امتداد الملف غير مسموح به."`; UI states rule: `"PDF وصور ومستندات Office وTXT وCSV · الحد الأقصى 25 MB"`, no partial row. Evidence: `docs/evidence/p1-round-2/W7-4-ar-1440.png`. | **PASS** — Refused `400`: `"L’extension du fichier n’est pas autorisée."`; UI states rule: `"PDF, images, Office, TXT, CSV · 25 MB maximum"`, no partial row. Evidence: `docs/evidence/p1-round-2/W7-4-fr-1440.png`. |
+| `W7-5` | Delete or replace, if offered | **NOT APPLICABLE** — No delete or replace control is offered in the modal. | **NOT APPLICABLE** — No delete or replace control is offered in the modal. |
+| `W7-6` | Long filename (`dossier-technique-residence-el-manar-tranche-02-lotissement-nord-alger-est-v2.pdf`) at `1440×900` & `390×844` | **PASS** — Wraps cleanly with zero overlap/clipping (`1440/1440`, `390/390`, `modalSW: 390`). | **PASS** — Wraps cleanly with zero overlap/clipping (`1440/1440`, `390/390`, `modalSW: 390`). |
+
+#### W10 — Connectivity resilience and audit cross-check
+
+| Check | Path & control | Arabic (RTL) result & observation | French (LTR) result & observation |
+|---|---|---|---|
+| `W10-1` | Offline action (`setOffline(true)`) | **PASS** — Org profile offline save showed `"تعذّر إتمام العملية حالياً. يرجى المحاولة مجدداً."` with form inputs intact; Documents `تحديث القائمة` showed `"تعذر تحميل وثائق المشروع."` (note: visible doc list cleared to `(0)` while offline). Evidence: `docs/evidence/p1-round-2/W10-1-ar-1440.png`. | **PASS** — Documents `Actualiser` offline showed `"Impossible de charger les documents du projet."` (note: visible doc list cleared to `(0)` while offline; no server data loss). Evidence: `docs/evidence/p1-round-2/W10-1-fr-1440.png`. |
+| `W10-2` | Back online (`setOffline(false)`), retry without reload | **PASS** — Documents `تحديث القائمة` cleared the error banner and restored all `(3)` documents without reload. | **PASS** — Documents `Actualiser` cleared the error banner and restored all `(3)` documents without reload. |
+| `W10-3` | Reload while offline (`page.reload()` with `setOffline(true)`) | **FAIL** — Browser hit `net::ERR_INTERNET_DISCONNECTED` (`chrome-error://chromewebdata/`) and displayed a blank page instead of a localized offline message. Evidence: `docs/evidence/p1-round-2/W10-3-ar-1440.png`. | **FAIL** — Browser hit `net::ERR_INTERNET_DISCONNECTED` (`chrome-error://chromewebdata/`) and displayed a blank page instead of a localized offline message. Evidence: `docs/evidence/p1-round-2/W10-3-fr-1440.png`. |
+| `W10-4` | Abort logout (`POST /api/auth/logout` aborted) | **OBSERVATION ONLY (NOT SCORED)** — Session stayed active and displayed `"تعذّر تأكيد تسجيل الخروج من الخادم. بقيت الجلسة نشطة؛ تحقق من الاتصال ثم أعد المحاولة."` with `"إعادة المحاولة"`. | **OBSERVATION ONLY (NOT SCORED)** — Session stayed active and displayed `"Le serveur n’a pas confirmé la déconnexion. La session reste active ; vérifiez la connexion puis réessayez."` with `"Réessayer"`. |
+| `W10-5` | «سجل التدقيق الأمني» / «Journal d’Audit» localization & completeness | **FAIL** — Headers localized (`التاريخ والوقت`, `الفاعل`, `الحدث`, `المستوى`, `التفاصيل`, `المصدر`) and run actions recorded (`85` rows), **but** `المستوى` (`"Info"`, `"Security"`) and `التفاصيل` remain untranslated English with RTL bidi punctuation inversion (e.g. `.'Listed 4 customer(s) in project 'DEMO-16-001`), and direct `/admin/users` visit emitted no access-denial event. Evidence: `docs/evidence/p1-round-2/W10-5-ar-1440.png`. | **FAIL** — Headers localized (`Horodatage`, `Acteur`, `Événement`, `Sévérité`, `Résumé`, `Adresse IP`) and run actions recorded (`96` rows), **but** `Sévérité` (`"Info"`, `"Security"`) and `Résumé` (`"Uploaded document..."`) remain English, and direct `/admin/users` visit emitted no access-denial event. Evidence: `docs/evidence/p1-round-2/W10-5-fr-1440.png`. |
+| `W10-6` | Audit table at `390×844` | **PASS** — `390/390`, table (`tW: 931`, `scW: 356` AR; `tW: 944`, `scW: 356` FR) confined in `.overflow-x-auto`; severity badges legible. Evidence: `docs/evidence/p1-round-2/W10-6-ar-390.png`. | **PASS** — `390/390`, table (`tW: 944`, `scW: 356`) confined in `.overflow-x-auto`; severity badges legible. |
+
+#### W8 — First-run setup wizard (freshly restarted uninitialized server)
+
+| Check | Path & control | Arabic (RTL) result & observation | French (LTR) result & observation |
+|---|---|---|---|
+| `W8-1` | Fresh uninitialized server (`isInitialized: false`) → `http://127.0.0.1:5173/` | **PASS** — Renders first-run setup wizard (`تهيئة مؤسسة الترقية العقارية`), not workspace; `390/390` on `390×844`. | **PASS** — After `Français` switch, renders `"Initialisation de l'entreprise immobilière"`; `390/390` on `390×844`. |
+| `W8-2` | Full localization of wizard labels, hints & messages | **FAIL** — Password-strength hint renders untranslated English `"chars"` (`0-9 · ✓ a-z · A-Z · chars 128–10` in RTL) alongside untranslated `sysadmin`/`contact@entreprise.dz` placeholders. Evidence: `docs/evidence/p1-round-2/W8-3-ar-1440.png`. | **FAIL** — Password-strength hint renders untranslated English `"chars"` (`· 10–128 chars · A-Z · ✓ a-z · 0-9`). Evidence: `docs/evidence/p1-round-2/W8-3-fr-1440.png`. |
+| `W8-3` | Required-field & input validation | **FAIL** — Submitting with empty HTML5 `required` fields triggers English browser tooltip (`"Please fill out this field."`); custom JS validation (`"الاسم القانوني للمؤسسة مطلوب."`, `"كلمة المرور يجب أن تحتوي على 10 أحرف على الأقل..."`, `"تأكيد كلمة المرور غير مطابق."`) only surfaces when bypassing `required` (`novalidate`) or entering non-empty weak/mismatched values. Evidence: `docs/evidence/p1-round-2/W8-3-ar-1440.png`. | **FAIL** — Submitting with empty HTML5 `required` fields triggers English browser tooltip (`"Please fill out this field."`); custom JS validation (`"La raison sociale est obligatoire."`, `"Le mot de passe doit contenir au moins 10 caractères..."`, `"La confirmation du mot de passe ne correspond pas."`) only surfaces under `novalidate` or non-empty weak/mismatched values. Evidence: `docs/evidence/p1-round-2/W8-3-fr-1440.png`. |
+| `W8-4` | Initialize with fictional organization data | **PASS** — Submitted `شركة الهضاب للترقية العقارية ذ.م.م` (AR) / `SARL Les Hauts Plateaux Promotion` (FR) with fictional fiscal IDs; handed off to Login showing the exact org name (minor note: when FR form kept `Langue par défaut` at `"العربية"`, login handoff switched UI back to Arabic). | **PASS** — Handed off to Login displaying `"SARL Les Hauts Plateaux Promotion"` (switched UI to `ar` matching default `Langue par défaut` option `العربية`). |
+| `W8-5` | Resubmit setup (`/setup` navigation + `POST /api/setup/initialize`) | **PASS** — Navigating to `/setup` redirects to `/`; `POST /api/setup/initialize` with CSRF token returns `409` `{"code":"SETUP_ALREADY_INITIALIZED","message":"Installation has already been initialized."}` (note: API message is English). | **PASS** — Navigating to `/setup` redirects to `/`; `POST /api/setup/initialize` with CSRF token returns `409` `{"code":"SETUP_ALREADY_INITIALIZED","message":"Installation has already been initialized."}`. |
+| `W8-6` | Demo entry after manual initialization | **OBSERVATION ONLY (NOT SCORED)** — Demo button remains visible & clickable on Login screen; clicking it triggers `409 PREVIEW_DEMO_NOT_AVAILABLE` displaying untranslated English `"Demo access is only available before a real organization is initialized in this preview server."` in both AR and FR. | **OBSERVATION ONLY (NOT SCORED)** — Same behavior: demo button stays clickable and displays English `"Demo access is only available before a real organization is initialized in this preview server."`. |
+
+### 10.2 Console & measurement evidence (`W9-2`, `W9-5`, `W1-1..4`)
+
+- **`W9-2` (`scrollWidth / innerWidth` across all 10 top-level routes):**
+  - AR (`1440×900` / `390×844`): `مساحة المؤسسة` (`/` `1440/1440`, `390/390`), `دليل المشاريع` (`/projects` `1440/1440`, `390/390`), `دليل الأطراف` (`/organization/parties` `1440/1440`, `390/390`), `ملف المؤسسة` (`/organization/profile` `1440/1440`, `390/390`), `المرجع الإقليمي` (`/organization/territorial-reference` `1440/1440`, `390/390`), `سجل الموظفين (HR)` (`/organization/employees` `1440/1440`, `390/390`), `تقارير المحفظة` (`/reports` `1440/1440`, `390/390`), `حسابات الموظفين` (`/admin/users` `1440/1440`, `390/390`), `سجل التدقيق الأمني` (`/admin/audit` `1440/1440`, `390/390`), `التشخيص المحلي` (`/admin/diagnostics` `1440/1440`, `390/390`).
+  - FR (`1440×900` / `390×844`): `Espace Organisation` (`1440/1440`, `390/390`), `Annuaire des Projets` (`1440/1440`, `390/390`), `Répertoire Tiers` (`1440/1440`, `390/390`), `Profil Organisation` (`1440/1440`, `390/390`), `Référentiel Territorial` (`1440/1440`, `390/390`), `Employés (RH)` (`1440/1440`, `390/390`), `Rapports Portefeuille` (`1440/1440`, `390/390`), `Comptes Employés` (`1440/1440`, `390/390`), `Journal d’Audit` (`1440/1440`, `390/390`), `Diagnostics Serveur` (`1440/1440`, `390/390`).
+- **`W9-5` (`:focus-visible` via `Tab`):**
+  - AR: sidebar nav buttons `outlineStyle: "solid", outlineWidth: "2px"` → `تسجيل الخروج` (`solid`, `2px`) → project switcher (`auto`, `1px`) → `العربية`/`Français` (`solid`, `2px`) → `عرض الملف` (`auto`, `1px`).
+  - FR: sidebar nav buttons `outlineStyle: "solid", outlineWidth: "2px"` → `Changer le mot de passe` & `Déconnexion` (`solid`, `2px`) → `Changer de projet Ctrl+K` (`auto`, `1px`) → `العربية`/`Français` (`solid`, `2px`) → `Voir le profil` (`auto`, `1px`).
+- **`W1-1..4` (Cold load + 5 cache-disabled hard reloads + `/health/ready`):**
+  - AR: cold clickable `1,729 ms` (`lang: "ar"`, `dir: "rtl"`, `visibilityState: "visible"`); 5 cache-disabled reloads: `1,180 ms`, `920 ms`, `1,137 ms`, `986 ms`, `1,142 ms`; `/health/ready` returned `{"status":"Ready","databaseConnected":false,"isInitialized":false,"environmentMode":"ViteDevContractPreview","previewMode":true}` before button became clickable on cold load and all 5 reloads. Zero JS `pageerror`s; 2 expected `401` console entries per load from initial `/api/auth/me` check.
+  - FR: cold ready `53 ms` after initial navigation (`lang: "fr"` after switch, `dir: "ltr"`); 5 cache-disabled reloads: `612 ms`, `1,046 ms`, `568 ms`, `647 ms`, `607 ms`; all 5 reloads verified `/health/ready` `previewMode: true`, `environmentMode: "ViteDevContractPreview"`.
+
+### 10.3 Defects found (verbatim evidence)
+
+| Defect / Check | Locale(s) | Viewport | Verbatim string / element | Expected vs observed | Screenshot | Severity |
+|---|---|---|---|---|---|---|
+| `W1-5` | AR, FR | `1440×900` | Button «الدخول إلى مساحة المعاينة» / «Ouvrir l’espace de démonstration» on `FirstRunSetupWizard` | Expected landing on workspace with projects listed after clicking preview entry; observed `GET /api/auth/preview-session` returned `200`, **but** UI stayed stuck on setup wizard («تهيئة مؤسسة الترقية العقارية» / «Initialisation de l'entreprise immobilière») until manual reload (`setupState.isInitialized` not updated in client state). | `docs/evidence/p1-round-2/W1-5-ar-1440.png`, `docs/evidence/p1-round-2/W1-5-fr-1440.png` | **Blocks task** |
+| `W9-7` | AR, FR | `1440×900` | Active `<aside nav button>` (`مساحة المؤسسة` / `Espace Organisation`) | Expected active nav distinction without relying on color alone; observed `bg-teal-800 text-white` only (`ariaCurrent: null`, `borderWidth: 0px`, `fontWeight: 500`, `::before/::after: none`). | `docs/evidence/p1-round-2/W9-7-ar-1440.png`, `docs/evidence/p1-round-2/W9-7-fr-1440.png` | **Major** |
+| `W2-5` | AR, FR | `1440×900` | Employee rows `karim.dir` (AR) / `nadia.com` (FR) in Users table | Expected «يتطلب تغيير كلمة المرور» / equivalent badge on newly created account; observed no badge (`mustChangePasswordAtNextLogin` not active in preview). | `docs/evidence/p1-round-2/W2-5-ar-1440.png`, `docs/evidence/p1-round-2/W2-5-fr-1440.png` | **Major** |
+| `W2-7` | AR, FR | `1440×900` | `demo.admin` row in Users table | Expected «مدير النظام الوحيد» / `"Admin Système Unique"` and UI refusal `CANNOT_DEACTIVATE_SYSTEM_ADMIN`; observed row label «مدير النظام» / `"Administrateur Système"` and no `تعطيل` / `Désactiver` button to trigger UI refusal. | `docs/evidence/p1-round-2/W2-5-ar-1440.png`, `docs/evidence/p1-round-2/W2-5-fr-1440.png` | **Major** |
+| `W2-8` | AR, FR | `1440×900` | Login as `karim.dir` / `nadia.com` + direct `/admin/users` navigation | Expected forced password-change flow and in-language refusal alert on `/admin/users`; observed direct workspace login with no forced change (`forcedPwScreen: 0`), and `/admin/users` silently redirected to `/` with zero refusal message. | `docs/evidence/p1-round-2/W2-8-ar-1440.png`, `docs/evidence/p1-round-2/W2-8-fr-1440.png` | **Blocks task** |
+| `W4-5` | AR, FR | `1440×900` | Add Building form empty submit | Expected in-language refusal; observed browser HTML5 native `required` tooltip `"Please fill out this field."` in English. | — | **Minor** |
+| `W5-3` | AR, FR | `1440×900` | Customers CRM add form (`ياسين قاسمي` / `Karim Boudiaf`, phone `"123"`) | Expected refusal with «أدخل رقم هاتف صحيحاً يحتوي على 7 إلى 15 رقماً.» / `"Saisissez un numéro de téléphone valide de 7 à 15 chiffres."`; observed `201 Created` saved and rendered `"123"` in customer list. | `docs/evidence/p1-round-2/W5-3-ar-1440.png`, `docs/evidence/p1-round-2/W5-3-fr-1440.png` | **Major** |
+| `W10-3` | AR, FR | `1440×900` | Browser `page.reload()` while `setOffline(true)` | Expected clear localized offline message; observed `net::ERR_INTERNET_DISCONNECTED` (`chrome-error://chromewebdata/`) blank Chromium error screen. | `docs/evidence/p1-round-2/W10-3-ar-1440.png`, `docs/evidence/p1-round-2/W10-3-fr-1440.png` | **Major** |
+| `W10-5` | AR, FR | `1440×900` | Audit log cells (`المستوى` / `Sévérité`, `التفاصيل` / `Résumé`) | Expected fully localized columns and access-denial logging; observed severity (`"Info"`, `"Security"`) and summaries (`"Listed 4 customer(s) in project 'DEMO-16-001'."`) untranslated in English, RTL bidi inversion (`.'Listed 4 customer(s)...`), and no access-denial event on `/admin/users` visit. | `docs/evidence/p1-round-2/W10-5-ar-1440.png`, `docs/evidence/p1-round-2/W10-5-fr-1440.png` | **Major** |
+| `W8-2` / `W8-3` | AR, FR | `1440×900` | Setup wizard password hint & empty submit (`"chars 128–10"`, `"10–128 chars"`, `"Please fill out this field."`) | Expected full AR/FR localization and in-language empty validation; observed untranslated `"chars"` in password strength row and English HTML5 `"Please fill out this field."` on empty submit. | `docs/evidence/p1-round-2/W8-3-ar-1440.png`, `docs/evidence/p1-round-2/W8-3-fr-1440.png` | **Minor** |
+
+### 10.4 Observations only (not scored, per §5 / §9)
+
+- **`W6-5` (Observation only):** On `Suspended` project `DEMO-16-001`, the «إنشاء حجز» / «Créer une réservation» form controls remain enabled in the Vite preview (`dev-api-middleware.ts` does not enforce `PROJECT_NOT_COMMERCIALIZABLE`, per §9).
+- **`W10-4` (Observation only):** Aborting `POST /api/auth/logout` kept the active session intact and showed localized warning banners (`"تعذّر تأكيد تسجيل الخروج من الخادم. بقيت الجلسة نشطة؛ تحقق من الاتصال ثم أعد المحاولة."` + `"إعادة المحاولة"` in AR; `"Le serveur n’a pas confirmé la déconnexion. La session reste active ; vérifiez la connexion puis réessayez."` + `"Réessayer"` in FR). Does **not** close `P0-A04`.
+- **`W8-6` (Observation only):** After manual setup initialization (`W8-4`), the «الدخول إلى مساحة المعاينة» / «Ouvrir l’espace de démonstration» button remained visible and clickable on the login card and triggered `409 PREVIEW_DEMO_NOT_AVAILABLE` with untranslated English message `"Demo access is only available before a real organization is initialized in this preview server."`. Does **not** close `P0-A01`.
+- **Minor UI/W8-4 observations:** In `W7` (`وثائق المشروع` / `Documents`), Chromium's native `<input type="file">` displays `"No file chosen Choose File"` in English; in `W8-4` (FR), submitting the wizard while `Langue par défaut` stayed `"العربية"` flipped the handoff login screen back to Arabic. All §9 out-of-scope items (`P1-17`, `P1-19`, `P1-11`, `P1-36`, `P1-38`, `P1-01`, `P1-02`, `P1-34`, `P1-35`, real-API/Cloud SQL, negative Vite policy tests) were intentionally not tested or scored.
+
+### How the repository owner will record the result
+
+When the register comes back:
+
+1. This file's §10 is filled in from the returned table, row by row, with failures quoted verbatim — never summarised.
+2. `docs/P1-10-VISUAL-ACCEPTANCE-BRIEF.md` §10 gets a one-line cross-reference for the queue regression (W6-1..3) and for the round-1 defect closure (W1).
+3. `docs/CURRENT-STATE-BASELINE.md`, `docs/REQUIREMENT-TRACEABILITY.md` and the Notion task pages are updated **in a separate baseline re-point commit**, because their claim block must move to the merge base of that PR. Anything that failed keeps its status `Pending`.
+4. Any FAIL becomes a defect with an owner and is routed as its own task; it is not absorbed into a passing summary.

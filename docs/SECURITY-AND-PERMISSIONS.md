@@ -1,9 +1,9 @@
-## Current security checkpoint — PR #241 merged; Phase 1 acceptance round 2 recorded; a refused navigation leaves no audit trace (D8) — 24 November 2026
+## Current security checkpoint — PR #241 merged and the round-2 register pushed directly to `main` (27b687f); Phase 1 acceptance round 2 recorded; a refused navigation leaves no audit trace (D8) — 24 November 2026
 
 
 
 
-- Current verified main SHA: `c9d6f19430cd89f8205dd1bac230ab18bd2f044d` (PR #241, suspension review queue operator UI), resolved live on 24 November 2026 with 0 open pull requests.
+- Current verified main SHA: `27b687fc9dc07667acb7d30970f2c2c721cc2dda` (direct documentation commit carrying the round-2 result register and its evidence), resolved live on 24 November 2026 with 0 open pull requests.
 - Exact-main push [CI 45282162897](https://github.com/younestech31/PROMO-GEST/actions/runs/45282162897) passed 4/4 and [CodeQL 45282162988](https://github.com/younestech31/PROMO-GEST/actions/runs/45282162988) passed 2/2 on this SHA; PR head `5ca7483db5c117e0b677f5443ef81d93ce46dca5` passed CI 45281303388 4/4 and CodeQL 45281303420 2/2.
 - **Review queue UI is not a privilege boundary (merged in PR #237):** the Module E reservations screen only renders the review action for users who already hold the project-scoped `sales.reservations.manage` write gate, and the POST still carries the optimistic concurrency stamp; hiding or showing the control never replaces the server-side authorization, project-scope, and state checks, and the action changes no status, unit, expiry, or project state.
 - PR #235 added only two nullable review timestamps, one partial index, and one consistency constraint on `project_sales_reservations`; the review endpoint reuses the existing project-scoped write gate and writes an append-only `PROJECT_RESERVATION_REVIEW_COMPLETED` audit record. It changed no authentication, session, cookie, CSRF, authorization, rate-limit, or deployment behaviour. The added `Documentation baseline consistency` CI job runs with `contents: read`, reads documentation and the local git graph only, and holds no repository write permission.

@@ -234,12 +234,12 @@ export function getDeniedRouteNotice(route: AppRouteState, language: AppLanguage
   const isArabic = language === 'ar';
   if (route.kind === 'org' && route.section === 'parties') {
     return isArabic
-      ? 'ليس لديك صلاحية الاطلاع على دليل الأطراف المركزي (parties.directory.read). تم توجيهك إلى مساحة المؤسسة.'
-      : 'Vous ne disposez pas du droit de consultation du répertoire des tiers (parties.directory.read). Vous avez été redirigé vers l’espace organisation.';
+      ? 'ليس لديك صلاحية الاطلاع على دليل الأطراف المركزي (parties.directory.read). لم يُفتح هذا المحتوى، وطلبك لم يُنفَّذ. اختر «المساحة» للمتابعة.'
+      : 'Vous ne disposez pas du droit de consultation du répertoire des tiers (parties.directory.read). Ce contenu ne s’est pas ouvert et votre demande n’a pas été exécutée. Choisissez « Espace » pour continuer.';
   }
   return isArabic
-    ? 'ليس لديك صلاحية الوصول إلى هذه الشاشة الإدارية. تم توجيهك إلى مساحة المؤسسة.'
-    : 'Vous n’êtes pas autorisé à accéder à cet écran d’administration. Vous avez été redirigé vers l’espace organisation.';
+    ? 'ليس لديك صلاحية الوصول إلى هذه الشاشة الإدارية. لم يُفتح هذا المحتوى، وطلبك لم يُنفَّذ. اختر «المساحة» للمتابعة.'
+    : 'Vous n’êtes pas autorisé à accéder à cet écran d’administration. Ce contenu ne s’est pas ouvert et votre demande n’a pas été exécutée. Choisissez « Espace » pour continuer.';
 }
 
 /**

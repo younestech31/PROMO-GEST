@@ -335,8 +335,12 @@ export function UsersManagementView({ language, onDirtyChange }: UsersManagement
                             </span>
                           )}
                           {u.isSystemAdministrator && (
-                            <span title={t.users.sysAdminLabel} className="text-teal-800">
+                            <span
+                              className="inline-flex items-center gap-1 text-[11px] font-semibold text-teal-800"
+                              title={t.users.sysAdminLabel}
+                            >
                               <ShieldCheck className="w-4 h-4" aria-hidden="true" />
+                              <span>{t.users.sysAdminLabel}</span>
                             </span>
                           )}
                         </div>

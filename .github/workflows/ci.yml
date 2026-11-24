@@ -23,6 +23,10 @@ jobs:
         run: python3 scripts/test_validate_doc_baseline.py
       - name: Verify the documented baseline matches this branch
         run: python3 scripts/validate-doc-baseline.py --main-ref origin/main
+      - name: Test the repository hygiene guard
+        run: python3 scripts/test_check_repository_hygiene.py
+      - name: Verify tracked file modes and the lockfile match this branch
+        run: python3 scripts/check-repository-hygiene.py --main-ref origin/main
   frontend:
     name: Frontend install, checks, and static hosting
     runs-on: ubuntu-latest

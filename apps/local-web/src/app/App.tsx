@@ -115,17 +115,15 @@ export function AppContentRouter({
 }: AppContentRouterProps) {
   const routeAllowed = canAccessRoute(session.user, activeRoute);
 
-  useEffect(() => {
-    if (!routeAllowed) {
-      onNavigate(DEFAULT_APP_ROUTE);
-    }
-  }, [routeAllowed, onNavigate]);
-
-  // Do not mount protected route content even for the render preceding the redirect effect.
+  // The refusal stays on screen until the operator acknowledges it. Redirecting in an
+  // effect rendered the localized notice for a single frame, which read as a silent
+  // bounce back to the workspace (round-2 defect D2, check W2-8).
   if (!routeAllowed) {
     return (
       <ErrorBanner
         message={getDeniedRouteNotice(activeRoute, language)}
+        actionLabel={getTranslations(language).nav.overview}
+        onAction={() => onNavigate(DEFAULT_APP_ROUTE)}
       />
     );
   }
@@ -615,6 +613,14 @@ export function App() {
     setSession({
       ...demoSession,
       user: { ...demoSession.user, preferredLanguage: unauthenticatedLanguage },
+    });
+    // The first-run wizard is gated on setupState, not on the session, so the demo entry
+    // must mark the installation as initialized or the wizard stays on screen after a
+    // successful sign-in (round-2 defect D1, check W1-5).
+    setSetupState({
+      isInitialized: true,
+      requiresBootstrapToken: false,
+      organizationLegalName: demoSession.organization.legalName,
     });
     setSetupCompletedNotice(false);
     const authorizedProjects = await apiClient.listProjects();

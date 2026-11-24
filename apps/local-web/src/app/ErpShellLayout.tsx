@@ -123,12 +123,16 @@ export function ErpShellLayout({
     return showTechAdmin;
   });
 
+  // The active item must be distinguishable without relying on colour alone (round-2 W9-7):
+  // a light inline-start rule, a heavier weight, and `aria-current="page"` for assistive
+  // technology and for tests. The inactive variant keeps a transparent border so switching
+  // routes cannot shift the label by two pixels.
   const navButtonClass = (route: AppRouteState) => {
     const active = isSameRoute(activeRoute, route);
-    return `w-full flex items-center justify-between gap-2 px-3 py-2 rounded-md text-xs font-medium transition-colors text-start focus-visible:outline-2 focus-visible:outline-teal-400 ${
+    return `w-full flex items-center justify-between gap-2 px-3 py-2 rounded-md border-s-2 text-xs transition-colors text-start focus-visible:outline-2 focus-visible:outline-teal-400 ${
       active
-        ? 'bg-teal-800 text-white'
-        : 'text-slate-300 hover:bg-slate-800/80 hover:text-white'
+        ? 'bg-teal-800 font-semibold text-white border-teal-300'
+        : 'border-transparent font-medium text-slate-300 hover:bg-slate-800/80 hover:text-white'
     }`;
   };
 
@@ -175,6 +179,7 @@ export function ErpShellLayout({
                   type="button"
                   onClick={() => handleSelectRoute(route)}
                   className={navButtonClass(route)}
+                  aria-current={isSameRoute(activeRoute, route) ? 'page' : undefined}
                 >
                   <span className="flex items-center gap-2.5 min-w-0">
                     <Icon className="w-4 h-4 shrink-0" aria-hidden="true" />
@@ -219,6 +224,7 @@ export function ErpShellLayout({
                     type="button"
                     onClick={() => handleSelectRoute(route)}
                     className={navButtonClass(route)}
+                  aria-current={isSameRoute(activeRoute, route) ? 'page' : undefined}
                   >
                     <span className="flex items-center gap-2.5 min-w-0">
                       <Icon className="w-3.5 h-3.5 shrink-0" aria-hidden="true" />
@@ -252,6 +258,7 @@ export function ErpShellLayout({
                     type="button"
                     onClick={() => handleSelectRoute(route)}
                     className={navButtonClass(route)}
+                  aria-current={isSameRoute(activeRoute, route) ? 'page' : undefined}
                   >
                     <span className="flex items-center gap-2.5 min-w-0">
                       <Icon className="w-4 h-4 shrink-0" aria-hidden="true" />

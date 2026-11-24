@@ -1,6 +1,6 @@
 import { chromium } from 'playwright';
-import { mkdir } from 'fs/promises';
-import path from 'path';
+import { mkdir } from 'node:fs/promises';
+import path from 'node:path';
 
 const BASE = 'http://127.0.0.1:5173';
 const OUT = path.resolve('docs/evidence/manual-2026-11-24');

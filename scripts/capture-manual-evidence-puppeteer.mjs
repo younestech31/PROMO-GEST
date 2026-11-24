@@ -151,11 +151,11 @@ await shot('04-reservations-queue-ar-desktop.png');
 // take a few seconds to reflect the write).
 const created = await clickBtn(/إنشاء حجز/);
 if (created !== 'clicked') {
-  console.log('WARN: create-hold button was not clicked (status=' + created + ')');
+  console.log(`WARN: create-hold button was not clicked (status=${created})`);
 }
 try {
   await page.waitForFunction(
-    () => (document.body.innerText || '').includes('سجل الحجوزات (1)'),
+    () => (document.body.textContent || '').includes('سجل الحجوزات (1)'),
     { timeout: 12000 },
   );
   console.log('hold row appeared in history');

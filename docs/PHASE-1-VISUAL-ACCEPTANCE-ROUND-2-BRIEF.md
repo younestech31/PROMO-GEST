@@ -493,6 +493,20 @@ Path: project → documents.
 - **`W8-6` (Observation only):** After manual setup initialization (`W8-4`), the «الدخول إلى مساحة المعاينة» / «Ouvrir l’espace de démonstration» button remained visible and clickable on the login card and triggered `409 PREVIEW_DEMO_NOT_AVAILABLE` with untranslated English message `"Demo access is only available before a real organization is initialized in this preview server."`. Does **not** close `P0-A01`.
 - **Minor UI/W8-4 observations:** In `W7` (`وثائق المشروع` / `Documents`), Chromium's native `<input type="file">` displays `"No file chosen Choose File"` in English; in `W8-4` (FR), submitting the wizard while `Langue par défaut` stayed `"العربية"` flipped the handoff login screen back to Arabic. All §9 out-of-scope items (`P1-17`, `P1-19`, `P1-11`, `P1-36`, `P1-38`, `P1-01`, `P1-02`, `P1-34`, `P1-35`, real-API/Cloud SQL, negative Vite policy tests) were intentionally not tested or scored.
 
+### 10.5 Owner review of the returned register — code-level corrections (PR #243, no new execution)
+
+The register above is recorded as returned; its **52 PASS / 11 FAIL / 1 N-A / 3 observations** counts stand. Reading the source against three of its rows changes the *classification*, not the verdicts, and adds no new evidence:
+
+| Row | Round-2 verdict | Correction after reading the source | Status now |
+|---|---|---|---|
+| `W1-5` | FAIL, blocking | Confirmed defect, cause identified: `handlePreviewLogin` set the session but never `setupState`, and the wizard is gated on `setupState`. Fixed in code by marking the installation initialized from the preview session. | `FIXED_IN_CODE / NOT_RE-VERIFIED` — no browser run has re-executed the check |
+| `W2-5` | FAIL, major | Not a proven product defect: the Vite middleware hard-codes `mustChangePasswordAtNextLogin: false` (lines 511, 867, 1097), and the SPA already renders the badge (`mustChangePasswordBadge`) when the flag is true. The run could not have shown the badge. | **Preview-parity gap** — untested, must not be counted as a pass or as a product failure |
+| `W2-8` (forced password change) | FAIL, blocking | Same parity gap as `W2-5`: `ChangePasswordRequiredScreen` already gates on the flag; the preview never sets it. | **Preview-parity gap** — stays untested |
+| `W2-8` (`/admin/users` bounce) | FAIL, blocking | Real but narrower than reported: `canAccessRoute` already refused the screen and `getDeniedRouteNotice` already rendered, and an effect then navigated away in the same commit — the refusal lived one frame. Fixed: the refusal persists with an explicit «المساحة» / «Espace» action, and the AR/FR strings no longer claim a redirect. The **audit-record half stays open**. | Partially fixed in code / NOT re-verified; audit gap open |
+| `W2-7` | FAIL, major | Mis-specified: hiding `تعطيل` / `Désactiver` for the system administrator is deliberate, so `CANNOT_DEACTIVATE_SYSTEM_ADMIN` remains unreachable from the UI by design; the «مدير النظام الوحيد» wording existed only as the shield icon's `title`. The label is now rendered as visible text. | Reclassified as a label/affordance decision, not a functional defect |
+
+What this addendum does **not** do: it does not close a check, does not change a gate, and does not convert a code change into evidence. The next browser round must re-execute `W1-5`, `W2-5`, `W2-7` and `W2-8` in both locales, and the forced-password rows additionally need `dev-api-middleware.ts` to stop hard-coding the flag before they can be scored at all.
+
 ### How the repository owner will record the result
 
 When the register comes back:

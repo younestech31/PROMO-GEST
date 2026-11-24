@@ -254,7 +254,6 @@ export function AppContentRouter({
 export function App() {
   const [session, setSession] = useState<SessionResponse | null>(null);
   const [health, setHealth] = useState<HealthStatusResponse | null>(null);
-  const requestInFlight = useRef(false);
   const [setupState, setSetupState] = useState<{
     isInitialized: boolean;
     requiresBootstrapToken?: boolean;
@@ -288,18 +287,22 @@ export function App() {
   // Requests pause while the tab is hidden and never overlap.
   useEffect(() => {
     let mounted = true;
+    // Effect-local on purpose: a StrictMode mount that is discarded mid-flight must not leave a
+    // stale in-flight flag behind, because the replacement mount would then skip its first poll
+    // and the preview-access button would stay hidden until a visibilitychange or the 60 s tick.
+    let requestInFlight = false;
 
     const pollHealth = async () => {
-      if (document.visibilityState !== 'visible' || requestInFlight.current) return;
+      if (document.visibilityState !== 'visible' || requestInFlight) return;
 
-      requestInFlight.current = true;
+      requestInFlight = true;
       try {
         const result = await apiClient.healthReady();
         if (mounted) setHealth(result);
       } catch {
         if (mounted) setHealth(null);
       } finally {
-        requestInFlight.current = false;
+        requestInFlight = false;
       }
     };
 

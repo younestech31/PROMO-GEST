@@ -165,3 +165,43 @@ preview would therefore produce a misleading PASS. File it as a separate preview
 PASS/FAIL per checklist row for Arabic and French, screenshot paths, the SHA tested, any defect list, and
 the updated register rows. With that, `P1-10` verification can move off `Pending` honestly — and only
 then.
+
+---
+
+## 10. Result register — 24 November 2026
+
+**Verdict:** the suspension review queue passed **10/10 criteria in Arabic RTL and 10/10 in French LTR** on the
+disposable in-memory Vite preview. This is UI evidence only.
+
+| Field | Value |
+|---|---|
+| Date | 24 November 2026 |
+| Environment | Vite dev preview, `PROMOGEST_VITE_ONLY=1`, `http://127.0.0.1:5173`, Chromium |
+| Source under test | workspace aligned with PR #237 (`5498e2e9e9040afb83054c11c13964ae29164093`) plus this brief; the executor's workspace had no `.git`, so the SHA is reported by the executor and not re-resolved from a checkout |
+| Viewports | 1440×900 and 390×844 |
+| Seeding | `Commercialization` → two holds → `Suspended`; `reviewRequired=true` returned 2 rows; the audit log showed `PROJECT_RESERVATION_SUSPENSION_REVIEW_REQUIRED`, `PROJECT_RESERVATION_REVIEW_QUEUE_VIEWED`, `PROJECT_RESERVATION_REVIEW_COMPLETED` |
+| Criteria 1–5 — queue panel title and badge, not-an-approval notice, six columns, both rows, pre-review register state | PASS / PASS |
+| Criteria 6–8 — review button and inline confirmation, post-review state, absence of side effects | PASS / PASS |
+| Criterion 9 — bidirectional text hygiene for references, codes, dates and numbers | PASS / PASS |
+| Criterion 10 — layout and keyboard focus at both viewports (`docScrollWidth === innerWidth`, scrolling confined to the table container, visible `:focus-visible` ring) | PASS / PASS |
+| Evidence | `docs/evidence/p1-10/` — `p1-10-queue-ar-desktop.png`, `p1-10-queue-ar-mobile.png`, `p1-10-review-done-ar.png`, `p1-10-queue-fr-desktop.png`, `p1-10-queue-fr-mobile.png`, `p1-10-review-done-fr.png` |
+| Supporting unit test | `apps/local-web/src/utils/reservationReview.test.ts` 4/4 PASS |
+
+### Defects recorded, still open
+
+1. **Login preview button can stay hidden under `React.StrictMode`.** On a cold load of the dev preview the
+   «الدخول إلى مساحة المعاينة» / «Ouvrir l’espace de démonstration» button does not appear until a
+   `visibilitychange` event or the 60-second health poll, even though `/health/ready` already reports
+   `previewMode: true`. Root cause: `pollHealth` in `App.tsx` sets `requestInFlight.current = true` on the first
+   StrictMode mount; that mount is then discarded without clearing the flag, and the second mount returns early
+   at the `requestInFlight.current` guard while the first mount's result is dropped because `mounted` is false.
+   Scope: dev preview only; the production login path is unaffected. Not fixed here.
+2. **Preview parity gap (unchanged).** `dev-api-middleware.ts` does not enforce `PROJECT_NOT_COMMERCIALIZABLE`,
+   so a denial test in the preview would be misleading. Still a separate follow-up.
+
+### Status kept deliberately
+
+`P1-09` stays `In Review / Pending` (its own Staging/operator acceptance is still outstanding), `P1-10` stays
+`In Progress / Pending`, `P1-11` operational acceptance stays pending, Phase 1 stays `IN_PROGRESS`, and Phases 2–5
+stay locked. The passing run is Vite-preview bilingual UI evidence; it is not Staging, API or PostgreSQL 18
+evidence and it closes neither gate.

@@ -205,3 +205,14 @@ disposable in-memory Vite preview. This is UI evidence only.
 `In Progress / Pending`, `P1-11` operational acceptance stays pending, Phase 1 stays `IN_PROGRESS`, and Phases 2–5
 stay locked. The passing run is Vite-preview bilingual UI evidence; it is not Staging, API or PostgreSQL 18
 evidence and it closes neither gate.
+
+---
+
+## 11. Round-2 cross-reference — 24 November 2026
+
+The successor round is recorded in `docs/PHASE-1-VISUAL-ACCEPTANCE-ROUND-2-BRIEF.md` §10. Two things there concern this brief:
+
+1. **Defect (1) from §10 above is superseded.** The `pollHealth` `requestInFlight` race was fixed (`813bd48`, merged as `c1b10a9`) and the round-2 entry checks did not reproduce it: the preview entry appeared on every cold load and across five hard reloads without a `visibilitychange` event or the 60 s poll (`W1-1` … `W1-4`, `W1-6` PASS).
+2. **Entry is still blocked, one step later.** Round-2 defect `D1` (`W1-5`): clicking the entry returns `200` on `GET /api/auth/preview-session` while the UI stays on the first-run wizard until a manual reload — in both locales.
+
+The queue itself regressed cleanly: `W6-1` … `W6-3` repeated the round-1 result (amber panel and badge `2`, then `2 → 1` after a review, with hold `Active`, unit `Reserved`, project `Suspended`). `P1-10` stays `In Progress / Pending`, still gated by `P1-09`, and defect (2) from §10 above — the preview's missing `PROJECT_NOT_COMMERCIALIZABLE` parity — remains open and remains explicitly non-scorable (`W6-5`).

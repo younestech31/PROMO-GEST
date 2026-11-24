@@ -1,9 +1,9 @@
-## Current implementation traceability checkpoint — PR #237 merged; ADR-0018 suspension review queue and operator UI implemented — 23 November 2026
+## Current implementation traceability checkpoint — PR #241 merged and the round-2 register pushed directly to `main` (27b687f); Phase 1 acceptance round 2 recorded; REQ-B03 gains preview browser evidence; no capability leaves IMPLEMENTED_NOT_VERIFIED — 24 November 2026
 
 
 
 
-- Current verified main SHA: `5498e2e9e9040afb83054c11c13964ae29164093` (PR #237, suspension review queue operator UI), resolved live on 23 November 2026 with 0 open pull requests.
+- Current verified main SHA: `27b687fc9dc07667acb7d30970f2c2c721cc2dda` (direct documentation commit carrying the round-2 result register and its evidence), resolved live on 24 November 2026 with 0 open pull requests.
 - PR #235 added the queryable ADR-0018 suspension review queue on top of the merged marker and gate; exact-main push [CI 45277326925](https://github.com/younestech31/PROMO-GEST/actions/runs/45277326925) passed 4/4 and [CodeQL 45277326953](https://github.com/younestech31/PROMO-GEST/actions/runs/45277326953) passed 2/2 on the same SHA, and PR head `9f85eddedd55368241e64988048275700b3c7bab` passed [CI 45276458181](https://github.com/younestech31/PROMO-GEST/actions/runs/45276458181) 4/4 and [CodeQL 45276458182](https://github.com/younestech31/PROMO-GEST/actions/runs/45276458182) 2/2.
 - New enforcement: `scripts/validate-doc-baseline.py` plus the `Documentation baseline consistency` CI job require every canonical document to state the same `main` SHA, merge PR, and checkpoint date, and require a canonical-document change to move that baseline to the branch merge base; `scripts/test_validate_doc_baseline.py` holds 12 self-tests. This closes the drift that left nine documents naming PR #228 after PR #230 had merged.
 - `REQ-A10` / `P1-19` remain `IMPLEMENTED_NOT_VERIFIED` and `In Review / Pending` pending the delegated account-security UI, the IP/User-Agent privacy warning, and manual Arabic RTL / French LTR acceptance. `REQ-A09` / `P1-17` and `REQ-B03` / `P1-15` remain `IMPLEMENTED_NOT_VERIFIED` pending their own manual bilingual acceptance.
@@ -14,6 +14,10 @@
 - No product runtime, schema, migration, database, authorization, CSRF, deployment, UI, or branch-protection setting was changed; `main.protected=false` remains as previously observed and was not re-readable with the API token used here (HTTP 403).
 
 ---
+
+- **Round-2 preview browser evidence (24 November 2026, documentation only):** `docs/PHASE-1-VISUAL-ACCEPTANCE-ROUND-2-BRIEF.md` §10 records ten executed work packages on the disposable Vite in-memory preview (52 PASS, 11 FAIL, 1 NOT APPLICABLE, 3 observations). `REQ-B03` / `P1-15` gained its **first bilingual browser evidence**: `W3` passed 7/7 in Arabic RTL and 7/7 in French LTR, including a visible `409 PROJECT_LAST_MANAGER_REQUIRED` refusal and the audited member assignment. It stays `IMPLEMENTED_NOT_VERIFIED` because the run is not Staging and not the real API.
+- **`REQ-A05` / `P1-09` did not advance:** `W2` failed `W2-5` (no «يتطلب تغيير كلمة المرور» badge), `W2-7` (the System Administrator row is labelled «مدير النظام» with no deactivate control, so `CANNOT_DEACTIVATE_SYSTEM_ADMIN` is unreachable from the UI) and `W2-8` (no forced password change; a direct `/admin/users` visit redirects silently with no localized refusal and no audit event). Task stays `In Review / Pending`; its Staging `SYSTEM_ADMIN` run remains outstanding.
+- **`REQ-A09` / `P1-17` and `REQ-A10` / `P1-19` cannot be verified yet — this is an implementation gap, not an acceptance gap:** the SPA never calls `PUT /api/auth/preferred-language` (the shell's language switch only updates local state) and contains no `/api/auth/sessions` caller at all, so there is no screen or round-trip to accept. Both capabilities stay `IMPLEMENTED_NOT_VERIFIED`; no UI work is authorized by the acceptance round.
 
 ## Historical checkpoint — PR #234 merged; ADR-0018 suspension review marker implemented; ADR-0018 commercialization gate implemented on branch (superseded by PR #235) — 23 November 2026
 

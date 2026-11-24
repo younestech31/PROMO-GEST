@@ -1,9 +1,9 @@
-## Current security checkpoint — PR #237 merged; ADR-0018 suspension review queue and operator UI implemented — 23 November 2026
+## Current security checkpoint — PR #241 merged and the round-2 register pushed directly to `main` (27b687f); Phase 1 acceptance round 2 recorded; a refused navigation leaves no audit trace (D8) — 24 November 2026
 
 
 
 
-- Current verified main SHA: `5498e2e9e9040afb83054c11c13964ae29164093` (PR #237, suspension review queue operator UI), resolved live on 23 November 2026 with 0 open pull requests.
+- Current verified main SHA: `27b687fc9dc07667acb7d30970f2c2c721cc2dda` (direct documentation commit carrying the round-2 result register and its evidence), resolved live on 24 November 2026 with 0 open pull requests.
 - Exact-main push [CI 45282162897](https://github.com/younestech31/PROMO-GEST/actions/runs/45282162897) passed 4/4 and [CodeQL 45282162988](https://github.com/younestech31/PROMO-GEST/actions/runs/45282162988) passed 2/2 on this SHA; PR head `5ca7483db5c117e0b677f5443ef81d93ce46dca5` passed CI 45281303388 4/4 and CodeQL 45281303420 2/2.
 - **Review queue UI is not a privilege boundary (merged in PR #237):** the Module E reservations screen only renders the review action for users who already hold the project-scoped `sales.reservations.manage` write gate, and the POST still carries the optimistic concurrency stamp; hiding or showing the control never replaces the server-side authorization, project-scope, and state checks, and the action changes no status, unit, expiry, or project state.
 - PR #235 added only two nullable review timestamps, one partial index, and one consistency constraint on `project_sales_reservations`; the review endpoint reuses the existing project-scoped write gate and writes an append-only `PROJECT_RESERVATION_REVIEW_COMPLETED` audit record. It changed no authentication, session, cookie, CSRF, authorization, rate-limit, or deployment behaviour. The added `Documentation baseline consistency` CI job runs with `contents: read`, reads documentation and the local git graph only, and holds no repository write permission.
@@ -12,6 +12,9 @@
 - `main.protected=false` remains as previously observed; the token used here received HTTP 403 on the branch-protection endpoint, so it is not re-verified by this change, and no protection or ruleset setting was altered.
 
 ---
+
+- **Phase 1 acceptance round 2, security-relevant observations (24 November 2026, documentation only):** on the disposable Vite in-memory preview, a direct navigation to `/admin/users` by an employee without the management role **was blocked but left no access-denial audit event** (`W10-5`), and the user-management screen renders the System Administrator row without a deactivate control and with the label «مدير النظام» / «Administrateur Système» rather than the unique-administrator wording (`W2-7`), so `CANNOT_DEACTIVATE_SYSTEM_ADMIN` cannot be exercised from the UI. The audit log also renders severity and summary values in English inside the Arabic RTL view, producing bidi inversion (`W10-5`). These are recorded defects, not accepted behaviour; no permission, policy, CSRF or audit rule was changed by the round.
+- **What the round does not prove:** every authorization claim still rests on the server-side tests and the PostgreSQL 18 integration suites, not on this preview. `P1-09` stays `In Review / Pending`; `REQ-A09` / `P1-17` and `REQ-A10` / `P1-19` stay `IMPLEMENTED_NOT_VERIFIED` and are blocked by missing SPA wiring, not by missing acceptance.
 
 ## Historical checkpoint — PR #234 merged; ADR-0018 suspension review marker implemented; ADR-0018 commercialization gate implemented on branch on exact main SHA (superseded by PR #235) — 23 November 2026
 

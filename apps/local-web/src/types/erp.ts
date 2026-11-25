@@ -125,6 +125,16 @@ export interface UpdateOrganizationProfileRequest {
   expectedConcurrencyStamp: string;
 }
 
+export interface UserSessionDto {
+  id: string;
+  createdAtUtc: string;
+  lastSeenAtUtc: string;
+  expiresAtUtc: string;
+  ipAddress: string | null;
+  userAgent: string | null;
+  isCurrentSession: boolean;
+}
+
 export interface SessionResponse {
   user: AuthenticatedUser;
   organization: OrganizationSummary;

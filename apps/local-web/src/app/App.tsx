@@ -798,10 +798,10 @@ export function App() {
         <SessionsSecurityModal
           language={language}
           onClose={() => setSessionsOpen(false)}
+          hasUnsavedChanges={hasUnsavedChanges}
           onCurrentSessionRevoked={() => {
             setSessionsOpen(false);
-            setSession(null);
-            setProjects([]);
+            clearLocalSession();
             setSetupCompletedNotice(false);
           }}
         />

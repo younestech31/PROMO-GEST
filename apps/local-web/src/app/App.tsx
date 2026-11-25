@@ -22,7 +22,7 @@ import {
 import { useUnsavedGuard } from '../shared/hooks/useUnsavedGuard';
 import { getDocumentPresentation, isViteDevelopmentBuild, isVitePreviewRuntime } from '../shared/utils/appRuntime';
 import { ErpShellLayout } from './ErpShellLayout';
-import { ChangePasswordModal, ChangePasswordRequiredScreen, LoginScreen, authApi } from '../modules/auth';
+import { ChangePasswordModal, ChangePasswordRequiredScreen, LoginScreen, SessionsSecurityModal, authApi } from '../modules/auth';
 import { canManageOrganizationProfile } from '../core/permissions/permissionPolicy';
 import { ConfirmDialog, ErrorBanner } from '../shared/components/StateViews';
 import { ErrorBoundary } from '../shared/components/ErrorBoundary';
@@ -261,6 +261,7 @@ export function App() {
   const [setupCompletedNotice, setSetupCompletedNotice] = useState(false);
   const [passwordChangedNotice, setPasswordChangedNotice] = useState(false);
   const [changePasswordOpen, setChangePasswordOpen] = useState(false);
+  const [sessionsOpen, setSessionsOpen] = useState(false);
   const [loadingInitial, setLoadingInitial] = useState(true);
   const [projects, setProjects] = useState<ProjectDto[]>([]);
   const [activeRoute, setActiveRoute] = useState<AppRouteState>(() =>
@@ -752,6 +753,7 @@ export function App() {
       onOpenSwitcher={() => setSwitcherOpen(true)}
       onLanguageChange={handleLanguageChange}
       onChangePassword={() => setChangePasswordOpen(true)}
+      onOpenSessions={() => setSessionsOpen(true)}
       onLogout={requestLogout}
     >
       {languageSaving && (
@@ -791,6 +793,19 @@ export function App() {
           />
         </Suspense>
       </ErrorBoundary>
+
+      {sessionsOpen && (
+        <SessionsSecurityModal
+          language={language}
+          onClose={() => setSessionsOpen(false)}
+          onCurrentSessionRevoked={() => {
+            setSessionsOpen(false);
+            setSession(null);
+            setProjects([]);
+            setSetupCompletedNotice(false);
+          }}
+        />
+      )}
 
       {changePasswordOpen && (
         <ChangePasswordModal

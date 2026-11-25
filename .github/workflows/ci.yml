@@ -222,7 +222,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          for script in scripts/*.sh; do
+          for script in scripts/*.sh tests/manual/run-acceptance.sh; do
             bash -n "$script"
           done
           if grep -nF '\${' scripts/*.sh; then

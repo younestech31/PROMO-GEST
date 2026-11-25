@@ -610,7 +610,16 @@ export function App() {
         session.user.concurrencyStamp
       );
       setSession(updatedSession);
-    } catch {
+    } catch (error) {
+      // A 409 means another tab/session changed this account after it was loaded.
+      // Refresh the authoritative session instead of retrying with a stale stamp.
+      if (error instanceof ApiError && error.status === 409) {
+        try {
+          setSession(await apiClient.getSession());
+        } catch {
+          // Keep the current locale and show the same explicit save failure.
+        }
+      }
       setLanguageSaveFailed(true);
     } finally {
       languageUpdateInFlightRef.current = false;

@@ -190,8 +190,12 @@ PY
 
 save_screenshot() { # $1 evidence name, $2 prompt
   local p sha
-  ask_text "$2 (مسار الملف، أو Enter للتخطي):" p
-  if [[ -z $p ]]; then echo 'تخطيت اللقطة — سجّلها كأدلة مفقودة لاحقاً.'; return 0; fi
+  printf '%s ' "$2 (مسار الملف، أو Enter للتخطي):"
+  IFS= read -r p || die 'انتهى الإدخال أثناء سؤال لقطة الشاشة.'
+  if [[ -z $p ]]; then
+    echo 'تخطيت اللقطة الاختيارية — ستُسجّل الجلسة مع بيان غيابها.'
+    return 0
+  fi
   if [[ ! -s $p ]]; then warn "الملف غير موجود أو فارغ: $p — تم التخطي."; return 0; fi
   cp -- "$p" "$OUT/evidence/$1"
   sha=$(sha256sum "$OUT/evidence/$1" | cut -d' ' -f1)

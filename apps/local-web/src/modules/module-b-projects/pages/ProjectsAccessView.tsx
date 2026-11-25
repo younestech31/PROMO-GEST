@@ -49,7 +49,6 @@ const ProjectCustomerRegistryModal = lazy(() =>
 interface ProjectsAccessViewProps {
   currentUser: AuthenticatedUser;
   language: AppLanguage;
-  onProjectsChanged?: (projects: ProjectDto[]) => void;
   onOpenProjectWorkspace?: (projectId: string) => void;
   onDirtyChange?: (dirty: boolean) => void;
 }

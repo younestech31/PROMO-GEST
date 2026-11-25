@@ -1,3 +1,11 @@
+## Current implementation addendum — PR #255 / P1-49 — 25 November 2026
+
+- Re-audited against live main `c8d09c09fcaeb1a6474574066dba22b69b5701b5`. The project directory now has server-side API pagination, stable ordering, bounded page sizes, membership-scoped counts, and SQL-side search/status filtering. See [PR #255](https://github.com/younestech31/PROMO-GEST/pull/255).
+- Automated CI and CodeQL passed on exact main: [CI 45695770684](https://github.com/younestech31/PROMO-GEST/actions/runs/45695770684), [CodeQL 45695770751](https://github.com/younestech31/PROMO-GEST/actions/runs/45695770751).
+- P1-49 remains In Review / Pending and `IMPLEMENTED_NOT_VERIFIED` until the requested human Arabic RTL / French LTR browser acceptance is completed. This addendum is a source inventory, not a browser-acceptance claim.
+
+---
+
 # PROMO GEST — UI Implementation & Gap Matrix
 
 **Document role:** Source-audited inventory of the current React user interface, its API-backed actions, module ownership, and the gap between today's interface and the product interaction model. This is a current-state record, not a redesign specification or browser-acceptance certificate.  

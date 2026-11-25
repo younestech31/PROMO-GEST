@@ -711,10 +711,9 @@ export function App() {
         isPreviewMode={isPreviewMode}
         onPreviewLogin={handlePreviewLogin}
         onLoggedIn={(newSession) => {
-          setSession({
-            ...newSession,
-            user: { ...newSession.user, preferredLanguage: unauthenticatedLanguage },
-          });
+          // The authenticated session is authoritative: do not replace the persisted
+          // user preference with the login screen's unauthenticated display language.
+          setSession(newSession);
           setSetupCompletedNotice(false);
           setPasswordChangedNotice(false);
           if (newSession.user.mustChangePasswordAtNextLogin) {

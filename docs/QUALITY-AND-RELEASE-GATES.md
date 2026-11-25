@@ -1,4 +1,18 @@
-## Current operating checkpoint — PR #247 merged (`94fda20`); the eight manual-browser screenshots and both capture runners are merged, the Phase 0 suite is green, and every release gate is unchanged — 24 November 2026
+## Current operating checkpoint — PR #253 merged — 25 November 2026
+
+- **Verified live source:** GitHub `main` = `2396c26521e8f759709fd51c026a06dfeeebbe6c`, the squash merge of [PR #253](https://github.com/younestech31/PROMO-GEST/pull/253) implementing the P1-19 self-service sessions UI, merged on 25 November 2026.
+- **P1-19 implementation:** the signed-in account controls now expose a bilingual sessions screen with current-session identification, created/last-seen/expiry metadata, IP and User-Agent privacy notice, selective revocation, explicit current-session confirmation, and a warning when current work has unsaved changes. The client calls only the existing self-service endpoints; server ownership checks, CSRF, immutable audit, session concurrency, token secrecy, 12-hour lifetime, and revoke-all behavior are unchanged.
+- **PR-head automated verification:** CI [45678031926](https://github.com/younestech31/PROMO-GEST/actions/runs/45678031926) passed all 4/4 jobs. Frontend checks reported 111/111 tests passed, 0 failed; documentation baseline, Windows publish/PowerShell, and .NET 10/PostgreSQL 18 least-privilege, integration, browser automation, and restore-drill jobs passed. CodeQL [45678031947](https://github.com/younestech31/PROMO-GEST/actions/runs/45678031947) passed both C# and JavaScript/TypeScript analyses (2/2) on PR head `bc12f34e902aa6cebc5a7b3cd6b366270bf3dd19`.
+- **Post-merge verification:** exact-main CI [45678813837](https://github.com/younestech31/PROMO-GEST/actions/runs/45678813837) and CodeQL [45678813920](https://github.com/younestech31/PROMO-GEST/actions/runs/45678813920) were triggered on merge SHA `2396c26521e8f759709fd51c026a06dfeeebbe6c`; both were still pending at this checkpoint. Do not describe PR-head success as post-merge verification.
+- **Acceptance boundary:** P1-19 remains `In Review / Pending`; capability `IMPLEMENTED_NOT_VERIFIED`. Human browser acceptance remains outstanding for Arabic RTL / French LTR, desktop/mobile, keyboard/focus, listing and selective revocation, current-session logout, privacy notice, and unsaved-work warning. Automated browser CI is not human acceptance. P1-17 language preference and P1-20 project navigation also retain their separate manual acceptance requirements.
+- **Phase gates unchanged:** P0-A01 and P0-A04 still require developer-led manual acceptance on fresh disposable PostgreSQL 18 and real browser profiles; automated CI evidence does not close them. P1-09 remains `In Review / Pending` pending the authorized SYSTEM_ADMIN Staging run and evidence attachment. P1-10 remains `In Progress / Pending` and gated by P1-09. P1-01 and P1-35 remain `Deferred / Pending`; P1-02 and P1-34 remain `Blocked`. Phase 1 remains `IN_PROGRESS`; Phases 2–5 remain gated.
+- **Scope and non-goals:** PR #253 changed frontend/UI and API-client test/type wiring only. It did not change server authorization, API semantics, database schema/migrations, business data, production, Cloud SQL, credentials, session policy, or repository security settings. No production deployment was performed.
+
+---
+
+## Historical checkpoint — prior baseline snapshot (superseded 25 November 2026)
+
+### Historical snapshot — Current operating checkpoint — PR #247 merged (`94fda20`); the eight manual-browser screenshots and both capture runners are merged, the Phase 0 suite is green, and every release gate is unchanged — 24 November 2026
 
 
 

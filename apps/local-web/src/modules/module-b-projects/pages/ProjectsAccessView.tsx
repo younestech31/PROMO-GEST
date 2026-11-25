@@ -73,7 +73,6 @@ const PROJECT_STATUSES = [
 export function ProjectsAccessView({
   currentUser,
   language,
-  onProjectsChanged,
   onOpenProjectWorkspace,
   onDirtyChange,
 }: ProjectsAccessViewProps) {

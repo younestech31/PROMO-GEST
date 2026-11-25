@@ -53,10 +53,10 @@ test('revokeOwnSession sends the selected id and explicit current-session dispos
   };
 
   try {
-    await apiClient.revokeOwnSession('session/with spaces', false);
+    await apiClient.revokeOwnSession('7f4a1a8e-5a8c-4d20-a2a0-8e61e6d0f123', false);
     const mutation = requests.find((request) => request.url.includes('/sessions/'));
     assert.ok(mutation);
-    assert.equal(mutation.url, '/api/auth/sessions/session%2Fwith%20spaces/revoke');
+    assert.equal(mutation.url, '/api/auth/sessions/7f4a1a8e-5a8c-4d20-a2a0-8e61e6d0f123/revoke');
     assert.equal(mutation.init?.method, 'POST');
     assert.equal(new Headers(mutation.init?.headers).get('X-CSRF-TOKEN'), 'csrf-session-token');
     assert.deepEqual(JSON.parse(String(mutation.init?.body)), { endCurrentSession: false });

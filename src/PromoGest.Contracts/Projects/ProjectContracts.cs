@@ -34,6 +34,13 @@ public sealed record ProjectDto(
     Guid ConcurrencyStamp,
     IReadOnlyList<ProjectMemberDto> Members);
 
+public sealed record ProjectDirectoryPageDto(
+    IReadOnlyList<ProjectDto> Items,
+    int Page,
+    int PageSize,
+    int TotalCount,
+    int TotalPages);
+
 public sealed record CreateProjectRequest(
     string Code,
     string NameAr,

@@ -1,5 +1,6 @@
 import type {
   ApiErrorResponse,
+  AppLanguage,
   AdministrativeUnitsReferenceDto,
   PartyDirectoryItemDto,
   UpdatePartyIdentityRequest,
@@ -305,6 +306,12 @@ export const apiClient = {
   logout: () => requestJson<void>('/api/auth/logout', { method: 'POST' }),
 
   getSession: () => requestJson<SessionResponse>('/api/auth/me', { method: 'GET' }),
+
+  updatePreferredLanguage: (preferredLanguage: AppLanguage, expectedConcurrencyStamp: string) =>
+    requestJson<SessionResponse>('/api/auth/preferred-language', {
+      method: 'PUT',
+      body: JSON.stringify({ preferredLanguage, expectedConcurrencyStamp }),
+    }),
 
   changePassword: (payload: ChangePasswordRequest) =>
     requestJson<void>('/api/auth/change-password', {

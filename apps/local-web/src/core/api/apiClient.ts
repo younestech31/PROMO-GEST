@@ -40,6 +40,7 @@ import type {
   UpdateEmployeeRequest,
   UpdateProjectRequest,
   UserDto,
+  UserSessionDto,
 } from '../../types/erp';
 import {
   isStateChangingMethod,

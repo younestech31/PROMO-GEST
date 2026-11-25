@@ -64,12 +64,12 @@ test('updatePreferredLanguage uses the authenticated CSRF-protected endpoint and
     const updateRequest = requests[1];
     assert.ok(updateRequest);
     assert.equal(updateRequest.url, '/api/auth/preferred-language');
-    assert.equal(updateRequest.init?.method, 'PUT');
-    assert.equal(
-      (updateRequest.init?.headers as Record<string, string>)['X-CSRF-TOKEN'],
-      'csrf-token'
-    );
-    assert.deepEqual(JSON.parse(String(updateRequest.init?.body)), {
+    const updateInit = updateRequest.init;
+    assert.ok(updateInit);
+    assert.equal(updateInit.method, 'PUT');
+    const headers = new Headers(updateInit.headers);
+    assert.equal(headers.get('X-CSRF-TOKEN'), 'csrf-token');
+    assert.deepEqual(JSON.parse(String(updateInit.body)), {
       preferredLanguage: 'fr',
       expectedConcurrencyStamp: 'stamp-before-update',
     });

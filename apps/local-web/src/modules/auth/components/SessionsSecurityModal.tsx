@@ -8,6 +8,7 @@ import { Modal } from '@/shared/components/Modal';
 interface SessionsSecurityModalProps {
   language: AppLanguage;
   onClose: () => void;
+  hasUnsavedChanges: boolean;
   onCurrentSessionRevoked: () => void;
 }
 
@@ -23,6 +24,7 @@ function formatDate(value: string, language: AppLanguage): string {
 export function SessionsSecurityModal({
   language,
   onClose,
+  hasUnsavedChanges,
   onCurrentSessionRevoked,
 }: SessionsSecurityModalProps) {
   const isArabic = language === 'ar';
@@ -47,8 +49,8 @@ export function SessionsSecurityModal({
     revoke: isArabic ? 'إنهاء الجلسة' : 'Révoquer la session',
     revokeCurrent: isArabic ? 'تسجيل الخروج من هذا الجهاز' : 'Déconnecter cet appareil',
     confirmCurrent: isArabic
-      ? 'سيؤدي ذلك إلى تسجيل خروجك من هذا الجهاز. هل تريد المتابعة؟'
-      : 'Cette action vous déconnectera de cet appareil. Voulez-vous continuer ?',
+      ? `سيؤدي ذلك إلى تسجيل خروجك من هذا الجهاز.${hasUnsavedChanges ? ' وقد تفقد التغييرات غير المحفوظة في العمل الحالي.' : ''} هل تريد المتابعة؟`
+      : `Cette action vous déconnectera de cet appareil.${hasUnsavedChanges ? ' Les modifications non enregistrées du travail en cours peuvent être perdues.' : ''} Voulez-vous continuer ?`,
     confirm: isArabic ? 'تأكيد تسجيل الخروج' : 'Confirmer la déconnexion',
     cancel: isArabic ? 'إلغاء' : 'Annuler',
     empty: isArabic ? 'لا توجد جلسات نشطة أخرى.' : 'Aucune autre session active.',

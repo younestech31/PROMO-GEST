@@ -33,6 +33,7 @@ import type {
   InitializeInstallationResponse,
   LoginRequest,
   ProjectDto,
+  ProjectDirectoryPageDto,
   RoleDto,
   SessionResponse,
   SetupStatusResponse,
@@ -368,6 +369,18 @@ export const apiClient = {
     if (params?.status?.trim()) query.set('status', params.status.trim());
     const qs = query.toString();
     return requestJson<ProjectDto[]>(qs ? `/api/projects?${qs}` : '/api/projects', {
+      method: 'GET',
+      cache: 'no-store',
+    });
+  },
+
+  listProjectDirectoryPage: (params: { q?: string; status?: string; page: number; pageSize: number }) => {
+    const query = new URLSearchParams();
+    if (params.q?.trim()) query.set('q', params.q.trim());
+    if (params.status?.trim()) query.set('status', params.status.trim());
+    query.set('page', String(params.page));
+    query.set('pageSize', String(params.pageSize));
+    return requestJson<ProjectDirectoryPageDto>(`/api/projects/directory?${query.toString()}`, {
       method: 'GET',
       cache: 'no-store',
     });

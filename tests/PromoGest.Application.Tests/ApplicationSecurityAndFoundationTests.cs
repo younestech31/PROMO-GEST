@@ -197,6 +197,22 @@ public sealed class ApplicationSecurityAndFoundationTests
             => ListForUserWithMembersAsync(userId, null, null, ct);
         public Task<IReadOnlyList<Project>> ListForUserWithMembersAsync(Guid userId, string? query, ProjectStatus? status, CancellationToken ct = default)
             => Task.FromResult<IReadOnlyList<Project>>(FilterProjects(Projects.Where(p => p.Members.Any(m => m.UserId == userId)), query, status));
+        public Task<ProjectRepositoryPage> ListAllWithMembersPageAsync(string? query, ProjectStatus? status, int skip, int take, CancellationToken ct = default)
+        {
+            var filtered = FilterProjects(Projects, query, status)
+                .OrderByDescending(p => p.CreatedAtUtc)
+                .ThenBy(p => p.Id)
+                .ToList();
+            return Task.FromResult(new ProjectRepositoryPage(filtered.Skip(skip).Take(take).ToList(), filtered.Count));
+        }
+        public Task<ProjectRepositoryPage> ListForUserWithMembersPageAsync(Guid userId, string? query, ProjectStatus? status, int skip, int take, CancellationToken ct = default)
+        {
+            var filtered = FilterProjects(Projects.Where(p => p.Members.Any(m => m.UserId == userId)), query, status)
+                .OrderByDescending(p => p.CreatedAtUtc)
+                .ThenBy(p => p.Id)
+                .ToList();
+            return Task.FromResult(new ProjectRepositoryPage(filtered.Skip(skip).Take(take).ToList(), filtered.Count));
+        }
         private static IReadOnlyList<Project> FilterProjects(IEnumerable<Project> source, string? query, ProjectStatus? status)
         {
             if (status.HasValue)

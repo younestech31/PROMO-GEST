@@ -69,7 +69,7 @@ test('updatePreferredLanguage uses the authenticated CSRF-protected endpoint and
       (updateRequest.init?.headers as Record<string, string>)['X-CSRF-TOKEN'],
       'csrf-token'
     );
-    assert.deepEqual(JSON.parse(String(updateRequest.init?.body)),
+    assert.deepEqual(JSON.parse(String(updateRequest.init?.body)), {
       preferredLanguage: 'fr',
       expectedConcurrencyStamp: 'stamp-before-update',
     });

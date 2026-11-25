@@ -245,6 +245,68 @@ public sealed class EfProjectRepository : IProjectRepository
             .OrderByDescending(p => p.CreatedAtUtc)
             .ToListAsync(ct);
 
+    public async Task<ProjectRepositoryPage> ListAllWithMembersPageAsync(
+        string? query,
+        Domain.Enums.ProjectStatus? status,
+        int skip,
+        int take,
+        CancellationToken ct = default)
+    {
+        var totalCount = await ApplyProjectFilters(
+                _dbContext.Projects.AsNoTracking(),
+                query,
+                status)
+            .CountAsync(ct);
+
+        var items = await ApplyProjectFilters(
+                _dbContext.Projects
+                    .AsNoTracking()
+                    .Include(p => p.Members)
+                    .ThenInclude(m => m.User),
+                query,
+                status)
+            .OrderByDescending(p => p.CreatedAtUtc)
+            .ThenBy(p => p.Id)
+            .Skip(skip)
+            .Take(take)
+            .ToListAsync(ct);
+
+        return new ProjectRepositoryPage(items, totalCount);
+    }
+
+    public async Task<ProjectRepositoryPage> ListForUserWithMembersPageAsync(
+        Guid userId,
+        string? query,
+        Domain.Enums.ProjectStatus? status,
+        int skip,
+        int take,
+        CancellationToken ct = default)
+    {
+        var totalCount = await ApplyProjectFilters(
+                _dbContext.Projects
+                    .AsNoTracking()
+                    .Where(p => p.Members.Any(m => m.UserId == userId)),
+                query,
+                status)
+            .CountAsync(ct);
+
+        var items = await ApplyProjectFilters(
+                _dbContext.Projects
+                    .AsNoTracking()
+                    .Include(p => p.Members)
+                    .ThenInclude(m => m.User)
+                    .Where(p => p.Members.Any(m => m.UserId == userId)),
+                query,
+                status)
+            .OrderByDescending(p => p.CreatedAtUtc)
+            .ThenBy(p => p.Id)
+            .Skip(skip)
+            .Take(take)
+            .ToListAsync(ct);
+
+        return new ProjectRepositoryPage(items, totalCount);
+    }
+
     private static IQueryable<Project> ApplyProjectFilters(
         IQueryable<Project> baseQuery,
         string? query,

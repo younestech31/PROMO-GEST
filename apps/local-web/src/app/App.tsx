@@ -272,12 +272,15 @@ export function App() {
   const [navigationGuardOpen, setNavigationGuardOpen] = useState(false);
   const [savingNavigation, setSavingNavigation] = useState(false);
   const [logoutFailed, setLogoutFailed] = useState(false);
+  const [languageSaving, setLanguageSaving] = useState(false);
+  const [languageSaveFailed, setLanguageSaveFailed] = useState(false);
 
   const activeRouteRef = useRef(activeRoute);
   const dirtyRef = useRef(false);
   const saveActionRef = useRef<(() => Promise<boolean>) | null>(null);
   const discardActionRef = useRef<(() => void) | null>(null);
   const logoutInFlightRef = useRef(false);
+  const languageUpdateInFlightRef = useRef(false);
 
   useUnsavedGuard(hasUnsavedChanges);
 
@@ -590,15 +593,29 @@ export function App() {
     document.title = presentation.title;
   }, [language]);
 
-  const handleLanguageChange = (nextLanguage: AppLanguage) => {
+  const handleLanguageChange = async (nextLanguage: AppLanguage) => {
     if (!session) {
       setUnauthenticatedLanguage(nextLanguage);
       return;
     }
-    setSession({
-      ...session,
-      user: { ...session.user, preferredLanguage: nextLanguage },
-    });
+    if (nextLanguage === session.user.preferredLanguage || languageUpdateInFlightRef.current) return;
+
+    languageUpdateInFlightRef.current = true;
+    setLanguageSaving(true);
+    setLanguageSaveFailed(false);
+    try {
+      // Apply the new locale only after the API persists it using the session concurrency stamp.
+      const updatedSession = await apiClient.updatePreferredLanguage(
+        nextLanguage,
+        session.user.concurrencyStamp
+      );
+      setSession(updatedSession);
+    } catch {
+      setLanguageSaveFailed(true);
+    } finally {
+      languageUpdateInFlightRef.current = false;
+      setLanguageSaving(false);
+    }
   };
 
   const handlePreviewLogin = async () => {
@@ -729,6 +746,14 @@ export function App() {
       onChangePassword={() => setChangePasswordOpen(true)}
       onLogout={requestLogout}
     >
+      {languageSaving && (
+        <div role="status" aria-live="polite" className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-600">
+          {getTranslations(language).auth.languageSaving}
+        </div>
+      )}
+      {languageSaveFailed && (
+        <ErrorBanner message={getTranslations(language).auth.languageSaveFailed} />
+      )}
       {logoutFailed && (
         <ErrorBanner
           message={getTranslations(language).auth.logoutFailed}

@@ -197,6 +197,22 @@ public sealed class ApplicationSecurityAndFoundationTests
             => ListForUserWithMembersAsync(userId, null, null, ct);
         public Task<IReadOnlyList<Project>> ListForUserWithMembersAsync(Guid userId, string? query, ProjectStatus? status, CancellationToken ct = default)
             => Task.FromResult<IReadOnlyList<Project>>(FilterProjects(Projects.Where(p => p.Members.Any(m => m.UserId == userId)), query, status));
+        public Task<ProjectRepositoryPage> ListAllWithMembersPageAsync(string? query, ProjectStatus? status, int skip, int take, CancellationToken ct = default)
+        {
+            var filtered = FilterProjects(Projects, query, status)
+                .OrderByDescending(p => p.CreatedAtUtc)
+                .ThenBy(p => p.Id)
+                .ToList();
+            return Task.FromResult(new ProjectRepositoryPage(filtered.Skip(skip).Take(take).ToList(), filtered.Count));
+        }
+        public Task<ProjectRepositoryPage> ListForUserWithMembersPageAsync(Guid userId, string? query, ProjectStatus? status, int skip, int take, CancellationToken ct = default)
+        {
+            var filtered = FilterProjects(Projects.Where(p => p.Members.Any(m => m.UserId == userId)), query, status)
+                .OrderByDescending(p => p.CreatedAtUtc)
+                .ThenBy(p => p.Id)
+                .ToList();
+            return Task.FromResult(new ProjectRepositoryPage(filtered.Skip(skip).Take(take).ToList(), filtered.Count));
+        }
         private static IReadOnlyList<Project> FilterProjects(IEnumerable<Project> source, string? query, ProjectStatus? status)
         {
             if (status.HasValue)
@@ -2132,6 +2148,47 @@ public sealed class ApplicationSecurityAndFoundationTests
         var scopedQueryForAssigned = await projectSvc.ListAccessibleProjectsAsync(assignedUser.Id, meta, "59", null);
         Assert.Equal(alpha.Id, Assert.Single(scopedQueryForAssigned).Id);
         Assert.NotEqual(beta.Id, singleAdmin.Id);
+
+        // Directory pagination must count only projects visible to the actor and apply
+        // search/status filters before calculating totals.
+        var adminPageOne = await projectSvc.ListAccessibleProjectDirectoryAsync(
+            init.SystemAdminUserId, meta, null, null, page: 1, pageSize: 1);
+        var adminPageTwo = await projectSvc.ListAccessibleProjectDirectoryAsync(
+            init.SystemAdminUserId, meta, null, null, page: 2, pageSize: 1);
+        Assert.Equal(2, adminPageOne.TotalCount);
+        Assert.Equal(2, adminPageOne.TotalPages);
+        Assert.Equal(1, adminPageOne.Items.Count);
+        Assert.Equal(1, adminPageTwo.Items.Count);
+        Assert.NotEqual(adminPageOne.Items[0].Id, adminPageTwo.Items[0].Id);
+        Assert.Contains(adminPageOne.Items[0].Id, new[] { alpha.Id, beta.Id });
+        Assert.Contains(adminPageTwo.Items[0].Id, new[] { alpha.Id, beta.Id });
+
+        var scopedPage = await projectSvc.ListAccessibleProjectDirectoryAsync(
+            assignedUser.Id, meta, null, null, page: 1, pageSize: 100);
+        Assert.Equal(1, scopedPage.TotalCount);
+        Assert.Equal(1, scopedPage.TotalPages);
+        Assert.Equal(alpha.Id, Assert.Single(scopedPage.Items).Id);
+
+        var scopedSearchMiss = await projectSvc.ListAccessibleProjectDirectoryAsync(
+            assignedUser.Id, meta, "Hydra", null, page: 1, pageSize: 25);
+        Assert.Empty(scopedSearchMiss.Items);
+        Assert.Equal(0, scopedSearchMiss.TotalCount);
+        Assert.Equal(1, scopedSearchMiss.TotalPages);
+
+        var filteredAdminPage = await projectSvc.ListAccessibleProjectDirectoryAsync(
+            init.SystemAdminUserId, meta, "aflou", "Commercialization", page: 1, pageSize: 25);
+        Assert.Equal(1, filteredAdminPage.TotalCount);
+        Assert.Equal(alpha.Id, Assert.Single(filteredAdminPage.Items).Id);
+
+        await Assert.ThrowsAsync<DomainException>(() =>
+            projectSvc.ListAccessibleProjectDirectoryAsync(
+                init.SystemAdminUserId, meta, null, null, page: 0, pageSize: 25));
+        await Assert.ThrowsAsync<DomainException>(() =>
+            projectSvc.ListAccessibleProjectDirectoryAsync(
+                init.SystemAdminUserId, meta, null, null, page: 1, pageSize: 101));
+        await Assert.ThrowsAsync<DomainException>(() =>
+            projectSvc.ListAccessibleProjectDirectoryAsync(
+                init.SystemAdminUserId, meta, null, null, page: int.MaxValue, pageSize: 100));
     }
 
     [Fact]

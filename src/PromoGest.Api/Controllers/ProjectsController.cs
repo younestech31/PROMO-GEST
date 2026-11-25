@@ -29,6 +29,19 @@ public sealed class ProjectsController : ControllerBase
         return Ok(projects);
     }
 
+    [HttpGet("directory")]
+    public async Task<ActionResult<ProjectDirectoryPageDto>> ListDirectory(
+        [FromQuery] string? q = null,
+        [FromQuery] string? status = null,
+        [FromQuery] int page = 1,
+        [FromQuery] int pageSize = 25,
+        CancellationToken ct = default)
+    {
+        var result = await _projectService.ListAccessibleProjectDirectoryAsync(
+            GetActorUserId(), GetMetadata(), q, status, page, pageSize, ct);
+        return Ok(result);
+    }
+
     [HttpGet("{projectId:guid}")]
     public async Task<ActionResult<ProjectDto>> GetById(Guid projectId, CancellationToken ct)
     {

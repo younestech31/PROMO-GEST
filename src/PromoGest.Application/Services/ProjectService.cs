@@ -78,6 +78,70 @@ public sealed class ProjectService
             .ToList();
     }
 
+    public async Task<ProjectDirectoryPageDto> ListAccessibleProjectDirectoryAsync(
+        Guid actorUserId,
+        RequestMetadata metadata,
+        string? query,
+        string? status,
+        int page,
+        int pageSize,
+        CancellationToken ct = default)
+    {
+        var actor = await RequireActiveActorAsync(actorUserId, "ListProjectDirectory", metadata, ct);
+
+        if (page < 1 || pageSize is < 1 or > 100)
+            throw new DomainException(
+                "PROJECT_PAGINATION_INVALID",
+                "Project directory page must be positive and page size must be between 1 and 100.");
+
+        var offset = (long)(page - 1) * pageSize;
+        if (offset > int.MaxValue)
+            throw new DomainException(
+                "PROJECT_PAGINATION_INVALID",
+                "The requested project directory page is outside the supported range.");
+
+        ProjectStatus? parsedStatus = null;
+        if (!string.IsNullOrWhiteSpace(status))
+        {
+            if (!Enum.TryParse<ProjectStatus>(status.Trim(), ignoreCase: true, out var parsed) || !Enum.IsDefined(parsed))
+                throw new DomainException("PROJECT_STATUS_INVALID", "A valid project status is required.");
+            parsedStatus = parsed;
+        }
+
+        var normalizedQuery = string.IsNullOrWhiteSpace(query) ? null : query.Trim();
+        var result = actor.IsSystemAdministrator
+            ? await _projectRepository.ListAllWithMembersPageAsync(
+                normalizedQuery, parsedStatus, (int)offset, pageSize, ct)
+            : await _projectRepository.ListForUserWithMembersPageAsync(
+                actorUserId, normalizedQuery, parsedStatus, (int)offset, pageSize, ct);
+
+        var totalPages = Math.Max(1, (int)Math.Ceiling(result.TotalCount / (double)pageSize));
+        if (page > totalPages)
+        {
+            page = totalPages;
+            offset = (long)(page - 1) * pageSize;
+            result = actor.IsSystemAdministrator
+                ? await _projectRepository.ListAllWithMembersPageAsync(
+                    normalizedQuery, parsedStatus, (int)offset, pageSize, ct)
+                : await _projectRepository.ListForUserWithMembersPageAsync(
+                    actorUserId, normalizedQuery, parsedStatus, (int)offset, pageSize, ct);
+        }
+
+        await RecordFinancialViewsAsync(actor, result.Items, metadata, ct);
+
+        var structureCounts = await _projectRepository.GetStructureCountsByProjectIdsAsync(
+            result.Items.Select(project => project.Id).ToArray(), ct);
+
+        var items = result.Items
+            .Select(project => MapProject(
+                project,
+                structureCounts.GetValueOrDefault(project.Id),
+                HasFinancialPermission(project, actorUserId)))
+            .ToList();
+
+        return new ProjectDirectoryPageDto(items, page, pageSize, result.TotalCount, totalPages);
+    }
+
     public async Task<ProjectDto> GetProjectByIdAsync(
         Guid actorUserId,
         Guid projectId,

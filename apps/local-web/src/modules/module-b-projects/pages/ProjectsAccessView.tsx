@@ -49,7 +49,6 @@ const ProjectCustomerRegistryModal = lazy(() =>
 interface ProjectsAccessViewProps {
   currentUser: AuthenticatedUser;
   language: AppLanguage;
-  onProjectsChanged?: (projects: ProjectDto[]) => void;
   onOpenProjectWorkspace?: (projectId: string) => void;
   onDirtyChange?: (dirty: boolean) => void;
 }
@@ -73,7 +72,6 @@ const PROJECT_STATUSES = [
 export function ProjectsAccessView({
   currentUser,
   language,
-  onProjectsChanged,
   onOpenProjectWorkspace,
   onDirtyChange,
 }: ProjectsAccessViewProps) {
@@ -88,6 +86,11 @@ export function ProjectsAccessView({
   const [error, setError] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(25);
+  const [totalCount, setTotalCount] = useState(0);
+  const [totalPages, setTotalPages] = useState(1);
+  const [usersLoaded, setUsersLoaded] = useState(false);
 
   const [createOpen, setCreateOpen] = useState(false);
   const [editingProject, setEditingProject] = useState<ProjectDto | null>(null);
@@ -154,26 +157,36 @@ export function ProjectsAccessView({
     ? canUpdateProjectFinancialBudget(currentUser, editingProject)
     : !currentUser.isSystemAdministrator;
 
-  const loadData = async (filters?: { q?: string; status?: string }) => {
+  const loadData = async (filters?: {
+    q?: string;
+    status?: string;
+    page?: number;
+    pageSize?: number;
+  }) => {
     setLoading(true);
     setError(null);
     const activeQ = filters ? filters.q : searchQuery;
     const activeStatus = filters ? filters.status : statusFilter;
-    const hasFilter = Boolean(activeQ?.trim() || activeStatus?.trim());
-    try {
-      const projectList = await apiClient.listProjects(
-        hasFilter
-          ? { q: activeQ?.trim() || undefined, status: activeStatus?.trim() || undefined }
-          : undefined
-      );
-      setProjects(projectList);
-      if (!hasFilter) {
-        onProjectsChanged?.(projectList);
-      }
+    const activePage = filters?.page ?? page;
+    const activePageSize = filters?.pageSize ?? pageSize;
 
-      if (canManageUsers(currentUser)) {
+    try {
+      const result = await apiClient.listProjectDirectoryPage({
+        q: activeQ?.trim() || undefined,
+        status: activeStatus?.trim() || undefined,
+        page: activePage,
+        pageSize: activePageSize,
+      });
+      setProjects(result.items);
+      setPage(result.page);
+      setPageSize(result.pageSize);
+      setTotalCount(result.totalCount);
+      setTotalPages(Math.max(1, result.totalPages));
+
+      if (canManageUsers(currentUser) && !usersLoaded) {
         const userList = await apiClient.listUsers();
         setUsers(userList.filter((u) => !u.isSystemAdministrator && u.isActive));
+        setUsersLoaded(true);
       }
     } catch (err) {
       if (err instanceof ApiError) {
@@ -192,13 +205,13 @@ export function ProjectsAccessView({
 
   const handleFilterSubmit = (e: FormEvent) => {
     e.preventDefault();
-    void loadData({ q: searchQuery, status: statusFilter });
+    void loadData({ q: searchQuery, status: statusFilter, page: 1 });
   };
 
   const handleResetFilters = () => {
     setSearchQuery('');
     setStatusFilter('');
-    void loadData({ q: '', status: '' });
+    void loadData({ q: '', status: '', page: 1 });
   };
 
   const handleWilayaChange = (code: string) => {
@@ -245,19 +258,15 @@ export function ProjectsAccessView({
           plannedUnitsCount: canonicalForm.plannedUnitsCount,
           expectedConcurrencyStamp: editingProject.concurrencyStamp,
         };
-        const updated = await apiClient.updateProject(editingProject.id, payload);
-        const next = projects.map((project) => project.id === updated.id ? updated : project);
-        setProjects(next);
-        onProjectsChanged?.(next);
+        await apiClient.updateProject(editingProject.id, payload);
+        await loadData({ q: searchQuery, status: statusFilter, page });
       } else {
-        const created = await apiClient.createProject({
+        await apiClient.createProject({
           ...canonicalForm,
           estimatedBudgetDzd: canEditProjectBudget ? canonicalForm.estimatedBudgetDzd : 0,
           buildingPermitDate: canonicalForm.buildingPermitDate || null,
         });
-        const next = [created, ...projects];
-        setProjects(next);
-        onProjectsChanged?.(next);
+        await loadData({ q: searchQuery, status: statusFilter, page: 1 });
       }
 
       setCreateOpen(false);
@@ -332,10 +341,8 @@ export function ProjectsAccessView({
 
     try {
       const updated = await apiClient.assignProjectMember(accessProject.id, memberForm);
-      const next = projects.map((p) => (p.id === updated.id ? updated : p));
-      setProjects(next);
-      onProjectsChanged?.(next);
       setAccessProject(updated);
+      await loadData({ q: searchQuery, status: statusFilter, page });
     } catch (err) {
       if (err instanceof ApiError) {
         setModalError(translateApiError(err.code, err.message, language));
@@ -349,10 +356,8 @@ export function ProjectsAccessView({
     setModalError(null);
     try {
       const updated = await apiClient.removeProjectMember(projectId, userId);
-      const next = projects.map((p) => (p.id === updated.id ? updated : p));
-      setProjects(next);
-      onProjectsChanged?.(next);
       setAccessProject(updated);
+      await loadData({ q: searchQuery, status: statusFilter, page });
     } catch (err) {
       if (err instanceof ApiError) {
         setModalError(translateApiError(err.code, err.message, language));
@@ -447,7 +452,7 @@ export function ProjectsAccessView({
           onChange={(e) => {
             const nextStatus = e.target.value;
             setStatusFilter(nextStatus);
-            void loadData({ q: searchQuery, status: nextStatus });
+            void loadData({ q: searchQuery, status: nextStatus, page: 1 });
           }}
           className={`${inputBaseClass} md:w-56`}
         >
@@ -456,6 +461,24 @@ export function ProjectsAccessView({
             <option key={s.code} value={s.code}>{language === 'ar' ? s.ar : s.fr}</option>
           ))}
         </select>
+
+        <label className="flex items-center gap-2 text-xs text-slate-600 shrink-0">
+          <span>{language === 'ar' ? 'لكل صفحة' : 'Par page'}</span>
+          <select
+            aria-label={language === 'ar' ? 'عدد المشاريع في الصفحة' : 'Nombre de projets par page'}
+            value={pageSize}
+            disabled={loading}
+            onChange={(e) => void loadData({
+              q: searchQuery,
+              status: statusFilter,
+              page: 1,
+              pageSize: Number(e.target.value),
+            })}
+            className={`${inputBaseClass} w-20`}
+          >
+            {[25, 50, 100].map((size) => <option key={size} value={size}>{size}</option>)}
+          </select>
+        </label>
 
         <div className="flex items-center gap-2 shrink-0">
           <button
@@ -736,6 +759,37 @@ export function ProjectsAccessView({
           </>
         )}
       </div>
+
+      {totalCount > 0 && (
+        <div className="flex flex-col gap-3 rounded-lg border border-slate-200 bg-white px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
+          <p className="text-xs text-slate-600" aria-live="polite">
+            {language === 'ar'
+              ? `عرض ${(page - 1) * pageSize + 1}–${Math.min(page * pageSize, totalCount)} من ${totalCount} مشروع`
+              : `Affichage de ${(page - 1) * pageSize + 1}–${Math.min(page * pageSize, totalCount)} sur ${totalCount} projets`}
+          </p>
+          <nav aria-label={language === 'ar' ? 'صفحات دليل المشاريع' : 'Pagination du répertoire des projets'} className="flex items-center justify-end gap-2">
+            <button
+              type="button"
+              disabled={loading || page <= 1}
+              onClick={() => void loadData({ q: searchQuery, status: statusFilter, page: page - 1 })}
+              className="rounded-md border border-slate-200 px-3 py-2 text-xs font-medium text-slate-700 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40"
+            >
+              {language === 'ar' ? 'السابق' : 'Précédent'}
+            </button>
+            <span className="min-w-20 text-center text-xs font-medium text-slate-700" aria-current="page">
+              {language === 'ar' ? `صفحة ${page} من ${totalPages}` : `Page ${page} sur ${totalPages}`}
+            </span>
+            <button
+              type="button"
+              disabled={loading || page >= totalPages}
+              onClick={() => void loadData({ q: searchQuery, status: statusFilter, page: page + 1 })}
+              className="rounded-md border border-slate-200 px-3 py-2 text-xs font-medium text-slate-700 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40"
+            >
+              {language === 'ar' ? 'التالي' : 'Suivant'}
+            </button>
+          </nav>
+        </div>
+      )}
 
       {/* Create Project Modal */}
       <Modal

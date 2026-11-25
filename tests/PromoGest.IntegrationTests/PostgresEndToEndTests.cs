@@ -2280,6 +2280,26 @@ public sealed partial class PostgresEndToEndTests : IClassFixture<PostgreSql18In
             Assert.Contains(directorOwnedProjectList!, item => item.Id == directorOwnedProject.Id);
             Assert.DoesNotContain(directorOwnedProjectList!, item => item.Id == createdProject.Id);
 
+            // The new directory route must preserve the same server-enforced membership scope.
+            var ownedDirectoryPage = await directorClient.GetFromJsonAsync<ProjectDirectoryPageDto>(
+                "/api/projects/directory?page=1&pageSize=1");
+            Assert.NotNull(ownedDirectoryPage);
+            Assert.Equal(1, ownedDirectoryPage!.TotalCount);
+            Assert.Equal(1, ownedDirectoryPage.TotalPages);
+            Assert.Equal(directorOwnedProject.Id, Assert.Single(ownedDirectoryPage.Items).Id);
+
+            var unassignedDirectoryQuery = await directorClient.GetFromJsonAsync<ProjectDirectoryPageDto>(
+                "/api/projects/directory?q=PRJ-16-009&page=1&pageSize=25");
+            Assert.NotNull(unassignedDirectoryQuery);
+            Assert.Empty(unassignedDirectoryQuery!.Items);
+            Assert.Equal(0, unassignedDirectoryQuery.TotalCount);
+
+            var adminDirectoryQuery = await adminClient.GetFromJsonAsync<ProjectDirectoryPageDto>(
+                "/api/projects/directory?q=PRJ-16-009&page=1&pageSize=25");
+            Assert.NotNull(adminDirectoryQuery);
+            Assert.Equal(1, adminDirectoryQuery!.TotalCount);
+            Assert.Equal(createdProject.Id, Assert.Single(adminDirectoryQuery.Items).Id);
+
             var directorOwnUpdate = projectUpdate with
             {
                 NameAr = "إقامة مدير المشاريع - تحديث",
@@ -2307,6 +2327,27 @@ public sealed partial class PostgresEndToEndTests : IClassFixture<PostgreSql18In
             var projectAfterManagerAssignment = await directorProjectAssignment.Content.ReadFromJsonAsync<ProjectDto>();
             Assert.NotNull(projectAfterManagerAssignment);
             Assert.Null(projectAfterManagerAssignment!.EstimatedBudgetDzd);
+
+            // A membership grant immediately expands only this actor's directory scope;
+            // Count and page boundaries must reflect the same authorized result set.
+            var scopedFirstPage = await directorClient.GetFromJsonAsync<ProjectDirectoryPageDto>(
+                "/api/projects/directory?page=1&pageSize=1");
+            var scopedSecondPage = await directorClient.GetFromJsonAsync<ProjectDirectoryPageDto>(
+                "/api/projects/directory?page=2&pageSize=1");
+            Assert.NotNull(scopedFirstPage);
+            Assert.NotNull(scopedSecondPage);
+            Assert.Equal(2, scopedFirstPage!.TotalCount);
+            Assert.Equal(2, scopedFirstPage.TotalPages);
+            Assert.Equal(2, scopedSecondPage!.TotalCount);
+            Assert.Equal(2, scopedSecondPage.TotalPages);
+            var visiblePageIds = new[]
+            {
+                Assert.Single(scopedFirstPage.Items).Id,
+                Assert.Single(scopedSecondPage.Items).Id
+            };
+            Assert.NotEqual(visiblePageIds[0], visiblePageIds[1]);
+            Assert.Contains(createdProject.Id, visiblePageIds);
+            Assert.Contains(directorOwnedProject.Id, visiblePageIds);
 
             var managerFinancialDocumentsDenied = await directorClient.GetFromJsonAsync<List<ProjectDocumentDto>>(
                 $"/api/projects/{createdProject.Id}/documents");

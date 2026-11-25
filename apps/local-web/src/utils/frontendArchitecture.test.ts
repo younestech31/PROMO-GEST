@@ -322,6 +322,7 @@ test('organization profile edit visibility uses the canonical org.manage permiss
     isSystemAdministrator,
     isActive: true,
     preferredLanguage: 'ar',
+    concurrencyStamp: '00000000-0000-0000-0000-000000000001',
     roles: ['COMMERCIAL_MANAGER'],
     permissions,
     lastLoginAtUtc: null,

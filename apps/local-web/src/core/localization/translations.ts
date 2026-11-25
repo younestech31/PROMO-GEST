@@ -852,6 +852,10 @@ const API_ERROR_MESSAGES: Record<string, { ar: string; fr: string }> = {
     ar: 'حالة المشروع غير صالحة.',
     fr: 'Le statut du projet est invalide.',
   },
+  PROJECT_PAGINATION_INVALID: {
+    ar: 'معايير ترقيم صفحات دليل المشاريع غير صالحة. يجب أن يكون رقم الصفحة موجبًا وحجم الصفحة بين 1 و100.',
+    fr: 'Les paramètres de pagination du répertoire des projets sont invalides. Le numéro de page doit être positif et la taille comprise entre 1 et 100.',
+  },
   PROJECT_BUDGET_INVALID: {
     ar: 'الميزانية يجب أن تكون قيمة موجبة ضمن النطاق المسموح.',
     fr: 'Le budget doit être une valeur positive dans la plage autorisée.',

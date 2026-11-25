@@ -25,6 +25,7 @@ function makeUser(overrides: Partial<AuthenticatedUser> = {}): AuthenticatedUser
     isSystemAdministrator: false,
     isActive: true,
     preferredLanguage: 'ar',
+    concurrencyStamp: '00000000-0000-0000-0000-000000000001',
     roles: ['COMMERCIAL_MANAGER'],
     permissions: ['projects.read', 'customers.read'],
     lastLoginAtUtc: null,

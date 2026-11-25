@@ -40,6 +40,7 @@ import type {
   UpdateEmployeeRequest,
   UpdateProjectRequest,
   UserDto,
+  UserSessionDto,
 } from '../../types/erp';
 import {
   isStateChangingMethod,
@@ -306,6 +307,14 @@ export const apiClient = {
   logout: () => requestJson<void>('/api/auth/logout', { method: 'POST' }),
 
   getSession: () => requestJson<SessionResponse>('/api/auth/me', { method: 'GET' }),
+
+  listOwnSessions: () => requestJson<UserSessionDto[]>('/api/auth/sessions', { method: 'GET', cache: 'no-store' }),
+
+  revokeOwnSession: (sessionId: string, endCurrentSession: boolean) =>
+    requestJson<void>(`/api/auth/sessions/${encodeURIComponent(sessionId)}/revoke`, {
+      method: 'POST',
+      body: JSON.stringify({ endCurrentSession }),
+    }),
 
   updatePreferredLanguage: (preferredLanguage: AppLanguage, expectedConcurrencyStamp: string) =>
     requestJson<SessionResponse>('/api/auth/preferred-language', {

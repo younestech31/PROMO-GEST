@@ -1,3 +1,12 @@
+## Current implementation addendum — PR #256 / P1-50 — 25 November 2026
+
+- The canonical technical baseline is now synchronized to live main `acc551f2625b61b9210363760986ea9f5d869a3d` through documentation-only [PR #256](https://github.com/younestech31/PROMO-GEST/pull/256).
+- Exact-main CI [45703040542](https://github.com/younestech31/PROMO-GEST/actions/runs/45703040542) passed 4/4 jobs and CodeQL [45703040558](https://github.com/younestech31/PROMO-GEST/actions/runs/45703040558) passed 2/2 analyses on that SHA.
+- PR #256 did not change the UI implementation. The P1-49 project-directory pagination remains implemented with server-side authorization-scoped counts, bounded pagination, stable ordering, SQL-side filtering, and the legacy list contract preserved.
+- P1-49 remains In Review / Pending and `IMPLEMENTED_NOT_VERIFIED` until human Arabic RTL / French LTR acceptance. No visual acceptance is claimed.
+
+---
+
 ## Implementation status update — P1-49 — 25 November 2026
 
 The Project Directory pagination slice is implemented on main `c8d09c09fcaeb1a6474574066dba22b69b5701b5` through [PR #255](https://github.com/younestech31/PROMO-GEST/pull/255). It adds a dedicated paginated endpoint with membership-scoped counts, stable ordering, SQL-side search/status filtering and bilingual page controls while preserving the existing `GET /api/projects` contract for the compact switcher. Exact-main CI [45695770684](https://github.com/younestech31/PROMO-GEST/actions/runs/45695770684) and CodeQL [45695770751](https://github.com/younestech31/PROMO-GEST/actions/runs/45695770751) passed. Human Arabic RTL / French LTR acceptance remains pending; this implementation is not marked verified.

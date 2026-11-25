@@ -56,6 +56,8 @@ public interface IUserRepository
 
 public readonly record struct ProjectStructureCounts(int BuildingsCount, int UnitsCount);
 
+public sealed record ProjectRepositoryPage(IReadOnlyList<Project> Items, int TotalCount);
+
 public interface IProjectRepository
 {
     Task<Project?> GetByIdWithMembersAsync(Guid projectId, CancellationToken ct = default);
@@ -64,6 +66,8 @@ public interface IProjectRepository
     Task<IReadOnlyList<Project>> ListAllWithMembersAsync(string? query, ProjectStatus? status, CancellationToken ct = default);
     Task<IReadOnlyList<Project>> ListForUserWithMembersAsync(Guid userId, CancellationToken ct = default);
     Task<IReadOnlyList<Project>> ListForUserWithMembersAsync(Guid userId, string? query, ProjectStatus? status, CancellationToken ct = default);
+    Task<ProjectRepositoryPage> ListAllWithMembersPageAsync(string? query, ProjectStatus? status, int skip, int take, CancellationToken ct = default);
+    Task<ProjectRepositoryPage> ListForUserWithMembersPageAsync(Guid userId, string? query, ProjectStatus? status, int skip, int take, CancellationToken ct = default);
     Task<IReadOnlyDictionary<Guid, ProjectStructureCounts>> GetStructureCountsByProjectIdsAsync(IReadOnlyCollection<Guid> projectIds, CancellationToken ct = default);
     Task<ProjectMember?> GetMemberAsync(Guid projectId, Guid userId, CancellationToken ct = default);
     Task AddProjectAsync(Project project, CancellationToken ct = default);

@@ -222,6 +222,14 @@ export interface ProjectDto {
   members: ProjectMemberDto[];
 }
 
+export interface ProjectDirectoryPageDto {
+  items: ProjectDto[];
+  page: number;
+  pageSize: number;
+  totalCount: number;
+  totalPages: number;
+}
+
 export interface ProjectDocumentDto {
   id: string;
   originalFileName: string;

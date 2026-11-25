@@ -293,7 +293,10 @@ export function ErpShellLayout({
         </button>
         <button
           type="button"
-          onClick={onOpenSessions}
+          onClick={() => {
+            setMobileMenuOpen(false);
+            onOpenSessions();
+          }}
           className="mt-2 w-full inline-flex items-center justify-center gap-2 rounded-md border border-slate-700 bg-slate-800/80 px-3 py-1.5 text-xs font-medium text-slate-200 hover:bg-slate-800 hover:text-white transition-colors focus-visible:outline-2 focus-visible:outline-teal-400"
         >
           <ShieldCheck className="w-3.5 h-3.5 shrink-0" aria-hidden="true" />

@@ -161,6 +161,7 @@ test('Permission helpers enforce System Admin and project-level roles', () => {
     isSystemAdministrator: true,
     isActive: true,
     preferredLanguage: 'ar',
+    concurrencyStamp: '00000000-0000-0000-0000-000000000001',
     roles: ['SYSTEM_ADMIN'],
     permissions: [],
     lastLoginAtUtc: null,

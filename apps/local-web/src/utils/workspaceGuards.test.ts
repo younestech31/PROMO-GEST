@@ -24,6 +24,7 @@ function makeUser(overrides: Partial<AuthenticatedUser> = {}): AuthenticatedUser
     mustChangePasswordAtNextLogin: false,
     passwordChangeRequiredUntilUtc: null,
     ...overrides,
+    concurrencyStamp: overrides.concurrencyStamp ?? '00000000-0000-0000-0000-000000000001',
   };
 }
 

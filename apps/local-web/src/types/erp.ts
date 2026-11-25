@@ -79,6 +79,7 @@ export interface AuthenticatedUser {
   isSystemAdministrator: boolean;
   isActive: boolean;
   preferredLanguage: AppLanguage;
+  concurrencyStamp: string;
   roles: string[];
   permissions: string[];
   lastLoginAtUtc: string | null;

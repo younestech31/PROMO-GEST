@@ -77,6 +77,8 @@ export interface TranslationBundle {
     passwordTooLong: string;
     passwordMismatch: string;
     passwordChangeFailed: string;
+    languageSaving: string;
+    languageSaveFailed: string;
   };
   nav: {
     overview: string;
@@ -322,6 +324,8 @@ const AR: TranslationBundle = {
     passwordTooLong: 'كلمة المرور تتجاوز الحد الأقصى المسموح به.',
     passwordMismatch: 'تأكيد كلمة المرور الجديدة غير مطابق.',
     passwordChangeFailed: 'تعذر تغيير كلمة المرور.',
+    languageSaving: 'جارٍ حفظ تفضيل اللغة...',
+    languageSaveFailed: 'تعذر حفظ تفضيل اللغة. لم يتغير اختيارك المحفوظ؛ حاول مجدداً.',
   },
   nav: {
     overview: 'مساحة المؤسسة',
@@ -567,6 +571,8 @@ const FR: TranslationBundle = {
     passwordTooLong: 'Le mot de passe dépasse la longueur maximale autorisée.',
     passwordMismatch: 'La confirmation du nouveau mot de passe ne correspond pas.',
     passwordChangeFailed: 'Impossible de modifier le mot de passe.',
+    languageSaving: 'Enregistrement de la préférence linguistique...',
+    languageSaveFailed: 'Impossible d’enregistrer la préférence linguistique. Le choix enregistré reste inchangé ; réessayez.',
   },
   nav: {
     overview: 'Espace Organisation',

@@ -30,7 +30,7 @@ test('listOwnSessions reads only the authenticated self-service sessions endpoin
     assert.equal(requests.length, 1);
     assert.equal(requests[0]?.url, '/api/auth/sessions');
     assert.equal(requests[0]?.init?.method, 'GET');
-    assert.equal(new Headers(requests[0]?.init?.headers).get('credentials'), null);
+    assert.equal(requests[0]?.init?.credentials, 'include');
   } finally {
     globalThis.fetch = originalFetch;
   }

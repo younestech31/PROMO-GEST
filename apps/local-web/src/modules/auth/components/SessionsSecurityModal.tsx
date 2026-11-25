@@ -54,7 +54,6 @@ export function SessionsSecurityModal({
     loading: isArabic ? 'جارٍ تحميل الجلسات...' : 'Chargement des sessions...',
     retry: isArabic ? 'إعادة المحاولة' : 'Réessayer',
     close: isArabic ? 'إغلاق' : 'Fermer',
-    revoked: isArabic ? 'تم إنهاء الجلسة.' : 'Session révoquée.',
   };
 
   const loadSessions = useCallback(async () => {

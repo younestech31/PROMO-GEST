@@ -1044,6 +1044,7 @@ with sync_playwright() as pw:
                     P1_17=p17_1_17_evidence,
                     P1_19=p19_1_19_evidence,
                     P1_20=p20_1_20_evidence,
+                    P1_06=p06_evidence,
                     mode='automated real-browser; not manual acceptance')
     (out/'result.json').write_text(json.dumps(evidence, indent=2)+'\n')
     print(json.dumps(evidence))

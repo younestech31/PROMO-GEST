@@ -822,6 +822,9 @@ with sync_playwright() as pw:
     expect(p20_identity.locator('button').filter(has=page.locator('kbd'))).to_have_count(0)
     page.screenshot(path=out/'p1-20-single-project-navigation-chrome.png')
 
+    if device == 'mobile':
+        page.get_by_role('button', name='Close navigation menu', exact=True).click()
+
     # Pin state must update in the same render after each local preference write.
     p20_unpin_label = 'إلغاء التثبيت' if lang == 'ar' else 'Désépingler'
     p20_pin_button.click()
@@ -841,9 +844,6 @@ with sync_playwright() as pw:
     assert all(p20_project_id not in prefs.get('pinnedProjectIds', []) for prefs in p20_preferences_after_unpin), (
         'Unpin action did not remove the project id from persisted preferences'
     )
-
-    if device == 'mobile':
-        page.get_by_role('button', name='Close navigation menu', exact=True).click()
 
     # Opening the modal is a UI-only inspection. Search focus, authorized project presence,
     # Escape close, and restored focus are checked before the explicit selection regression below.

@@ -751,6 +751,133 @@ with sync_playwright() as pw:
         'Automated CI evidence only, not authorized manual Staging acceptance.'
     )
 
+
+    # P1-20: real-browser checks of the independent project-navigation chrome slice.
+    # This fixture uses a fresh synthetic project visible to SYSTEM_ADMIN. It does not
+    # select a different project from the switcher, and does not exercise dirty-form
+    # navigation or revoked-membership cleanup (those remain dependent on P1-06 manual evidence).
+    p20_project_code = f'QA-P1-20-{lang.upper()}-{device.upper()}'
+    p20_csrf_response = ctx.request.get('/api/auth/csrf')
+    assert p20_csrf_response.status == 200
+    p20_csrf_token = p20_csrf_response.headers.get('x-csrf-token')
+    assert p20_csrf_token
+    p20_project_create = ctx.request.post(
+        BASE + '/api/projects',
+        data={
+            'code': p20_project_code,
+            'nameAr': 'مشروع اختبار توحيد التنقل',
+            'nameFr': 'Projet QA navigation unifiée',
+            'wilayaCode': '16',
+            'wilayaName': 'الجزائر / Alger',
+            'municipality': 'Dely Ibrahim',
+            'address': 'QA fictitious address',
+            'landTitleReference': None,
+            'buildingPermitNumber': None,
+            'buildingPermitDate': None,
+            'status': 'Planning',
+            'estimatedBudgetDzd': 0,
+            'plannedBlocksCount': 1,
+            'plannedUnitsCount': 1,
+        },
+        headers={'X-CSRF-TOKEN': p20_csrf_token},
+    )
+    assert p20_project_create.status == 201, p20_project_create.text()
+    p20_project_id = p20_project_create.json()['id']
+    page.goto(BASE + f'/projects/{p20_project_id}/overview')
+
+    p20_identity_label = (
+        'شريط هوية المشروع النشط'
+        if lang == 'ar'
+        else 'Bandeau d’identité du projet actif'
+    )
+    p20_identity = page.locator(f'section[aria-label="{p20_identity_label}"]')
+    expect(p20_identity).to_be_visible()
+    expect(p20_identity).to_contain_text(p20_project_code)
+
+    # The persistent global header contains exactly one switcher entry point.
+    p20_switcher_button = page.locator('header button').filter(has=page.locator('kbd'))
+    expect(p20_switcher_button).to_have_count(1)
+    expect(p20_switcher_button).to_be_visible()
+
+    # The active-project section menu is a single sidebar navigation source,
+    # not a second horizontal tab strip. On mobile, inspect it inside the drawer.
+    if device == 'mobile':
+        page.get_by_role('button', name='Open menu', exact=True).click()
+    p20_sidebar = page.get_by_role('navigation', name='Main navigation', exact=True)
+    expect(p20_sidebar).to_have_count(1)
+    expect(p20_sidebar).to_be_visible()
+    p20_active_project_label = 'المشروع النشط' if lang == 'ar' else 'Projet actif'
+    expect(p20_sidebar.get_by_text(p20_active_project_label, exact=True)).to_be_visible()
+    p20_overview_label = 'ملخص المشروع' if lang == 'ar' else 'Synthèse projet'
+    expect(p20_sidebar.get_by_role('button', name=p20_overview_label, exact=True)).to_have_count(1)
+    expect(page.get_by_role('tablist')).to_have_count(0)
+    expect(page.get_by_role('tab')).to_have_count(0)
+
+    # Preserve identity actions (pin and directory) without reintroducing a switcher.
+    p20_pin_label = 'تثبيت' if lang == 'ar' else 'Épingler'
+    p20_directory_label = 'دليل المشاريع' if lang == 'ar' else 'Annuaire'
+    expect(p20_identity.get_by_role('button', name=p20_pin_label, exact=True)).to_have_count(1)
+    expect(p20_identity.get_by_role('button', name=p20_directory_label, exact=True)).to_have_count(1)
+    expect(p20_identity.locator('button').filter(has=page.locator('kbd'))).to_have_count(0)
+    page.screenshot(path=out/'p1-20-single-project-navigation-chrome.png')
+
+    if device == 'mobile':
+        page.get_by_role('button', name='Close menu', exact=True).click()
+
+    # Opening the modal is a UI-only inspection. Search focus, authorized project presence,
+    # Escape close, and restored focus are checked without selecting/changing a project.
+    p20_switcher_button.click()
+    p20_dialog_title = (
+        'مبدّل المشروع الصريح'
+        if lang == 'ar'
+        else 'Sélecteur explicite de projet'
+    )
+    p20_dialog = page.get_by_role('dialog')
+    expect(p20_dialog).to_be_visible()
+    expect(p20_dialog.get_by_role('heading', name=p20_dialog_title, exact=True)).to_be_visible()
+    p20_search = p20_dialog.get_by_role('searchbox')
+    expect(p20_search).to_be_focused()
+    expect(p20_dialog.get_by_text('المشاريع المصرح لك بها من الخادم فقط.' if lang == 'ar' else 'Seuls les projets autorisés par le serveur sont affichés ici.', exact=True)).to_be_visible()
+    expect(p20_dialog.get_by_text(p20_project_code, exact=True)).to_be_visible()
+    page.screenshot(path=out/'p1-20-single-project-switcher-modal.png')
+    p20_search.press('Escape')
+    expect(p20_dialog).to_have_count(0)
+    expect(p20_switcher_button).to_be_focused()
+    assert page.url.endswith(f'/projects/{p20_project_id}/overview')
+
+    # The identity strip's directory affordance remains a separate browse destination.
+    p20_identity.get_by_role('button', name=p20_directory_label, exact=True).click()
+    expect(page).to_have_url(BASE + '/projects')
+    p20_directory_title = (
+        'المشاريع العقارية والتحكم في الوصول'
+        if lang == 'ar'
+        else "Projets immobiliers & Contrôle d'accès"
+    )
+    expect(page.get_by_role('heading', name=p20_directory_title, exact=True)).to_be_visible()
+    expect(page.locator('header button').filter(has=page.locator('kbd'))).to_have_count(1)
+    page.screenshot(path=out/'p1-20-project-directory-destination.png')
+
+    # The global switcher remains available in the organization/project-directory workspace too.
+    page.locator('header button').filter(has=page.locator('kbd')).click()
+    p20_directory_dialog = page.get_by_role('dialog')
+    expect(p20_directory_dialog.get_by_text(p20_project_code, exact=True)).to_be_visible()
+    p20_browse_label = 'تصفح دليل المشاريع' if lang == 'ar' else 'Parcourir l’annuaire'
+    p20_directory_dialog.get_by_role('button', name=p20_browse_label, exact=True).click()
+    expect(p20_directory_dialog).to_have_count(0)
+    expect(page).to_have_url(BASE + '/projects')
+
+    p20_1_20_evidence = (
+        'Real ASP.NET Core + PostgreSQL 18 Chrome browser structural checks in AR/FR × desktop/mobile: '
+        'exactly one global header switcher; one Main navigation source with one project overview entry; '
+        'no tablist/tab role or duplicate horizontal section tabs; project identity strip retained Pin and '
+        'Project Directory actions without a duplicate switcher; switcher modal showed the synthetic '
+        'authorized project, focused the searchbox, closed with Escape and restored focus; the identity '
+        'directory action navigated to /projects; the header switcher remained available there and its '
+        'directory action closed without selecting a project. Project selection, dirty-form navigation, '
+        'revoked-membership cleanup and end-to-end authorization outcomes were deliberately not exercised; '
+        'those remain provisional/dependent on P1-06 manual evidence. Automated CI evidence only.'
+    )
+
     p17_fresh_context.close()
     employee_ctx.close()
     replay_ctx.close()

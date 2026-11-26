@@ -639,7 +639,7 @@ with sync_playwright() as pw:
                     A05=a05_evidence,
                     P1_09=p1_09_evidence,
                     P1_15=p1_15_evidence,
-                    P1_17=p1_1_17_evidence,
+                    P1_17=p17_1_17_evidence,
                     mode='automated real-browser; not manual acceptance')
     (out/'result.json').write_text(json.dumps(evidence, indent=2)+'\n')
     print(json.dumps(evidence))

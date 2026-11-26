@@ -1,9 +1,11 @@
-## Current implementation addendum — PR #256 / P1-50 — 25 November 2026
+## Current implementation addendum — PR #258 / P1-09 real-browser automation — 26 November 2026
 
-- The canonical technical baseline is now synchronized to live main `acc551f2625b61b9210363760986ea9f5d869a3d` through documentation-only [PR #256](https://github.com/younestech31/PROMO-GEST/pull/256).
-- Exact-main CI [45703040542](https://github.com/younestech31/PROMO-GEST/actions/runs/45703040542) passed 4/4 jobs and CodeQL [45703040558](https://github.com/younestech31/PROMO-GEST/actions/runs/45703040558) passed 2/2 analyses on that SHA.
-- PR #256 did not change the UI implementation. The P1-49 project-directory pagination remains implemented with server-side authorization-scoped counts, bounded pagination, stable ordering, SQL-side filtering, and the legacy list contract preserved.
-- P1-49 remains In Review / Pending and `IMPLEMENTED_NOT_VERIFIED` until human Arabic RTL / French LTR acceptance. No visual acceptance is claimed.
+- Current live main: `a7560ec71519ad1252406874ef7a0910a246ce6d`, merged PR #258.
+- The existing real ASP.NET Core + PostgreSQL 18 Playwright suite now covers the organization profile in four Chrome profiles (Arabic RTL/French LTR × desktop/mobile): SYSTEM_ADMIN edit/save; non-admin without `org.manage` read-only and API 403; temporary `org.manage` grant only in the fresh CI disposable database; fresh non-admin login, edit/save and API persistence.
+- PR-head CI [45774500389](https://github.com/younestech31/PROMO-GEST/actions/runs/45774500389) 4/4 and CodeQL [45774500333](https://github.com/younestech31/PROMO-GEST/actions/runs/45774500333) 2/2; exact-main CI [45775053024](https://github.com/younestech31/PROMO-GEST/actions/runs/45775053024) 4/4 and CodeQL [45775052955](https://github.com/younestech31/PROMO-GEST/actions/runs/45775052955) 2/2. Domain 78/78, Application 24/24, PG18 integration 50/50, restore drill 8/8.
+- This is automated acceptance evidence only. P1-09 stays In Review/Pending and `IMPLEMENTED_NOT_VERIFIED` until human SYSTEM_ADMIN/Staging verification is recorded. P1-10 remains dependent. No UI or authorization runtime behavior was changed in PR #258.
+
+---
 
 ---
 

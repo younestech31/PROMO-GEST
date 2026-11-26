@@ -607,6 +607,150 @@ with sync_playwright() as pw:
         'SYSTEM_ADMIN preference unchanged. Automated CI evidence only, not manual Staging acceptance.'
     )
 
+
+    # P1-19: exercise the real bilingual sessions-security modal and revoke flow.
+    # Use the fresh employee session as the current device, and create a second
+    # independent login with a distinct synthetic User-Agent for deterministic UI targeting.
+    p19_language = p17_other_language
+    p19_is_arabic = p19_language == 'ar'
+    p19_direction = 'rtl' if p19_is_arabic else 'ltr'
+    p19_secondary_user_agent = f'PROMOGEST-P1-19-QA-{lang}-{device}'
+    p19_secondary_context = browser.new_context(
+        base_url=BASE,
+        viewport=viewport,
+        user_agent=p19_secondary_user_agent,
+    )
+    p19_secondary_page = p19_secondary_context.new_page()
+    p19_secondary_page.goto(BASE)
+    expect(p19_secondary_page.locator('#login-username')).to_be_visible()
+    p19_secondary_page.locator('#login-username').fill(employee_username)
+    p19_secondary_page.locator('#login-password').fill(personal_password)
+    with p19_secondary_page.expect_response('**/api/auth/login') as p19_secondary_login:
+        p19_secondary_page.locator('button[type=submit]').click()
+    assert p19_secondary_login.value.status == 200
+    assert p19_secondary_login.value.json()['user']['preferredLanguage'] == p19_language
+    expect(p19_secondary_page.locator('html')).to_have_attribute('lang', p19_language)
+    expect(p19_secondary_page.locator('html')).to_have_attribute('dir', p19_direction)
+
+    p19_sessions_before = p17_context.request.get('/api/auth/sessions')
+    assert p19_sessions_before.status == 200, p19_sessions_before.text()
+    p19_session_rows = p19_sessions_before.json()
+    p19_current = [item for item in p19_session_rows if item['isCurrentSession']]
+    p19_secondary = [
+        item for item in p19_session_rows
+        if item['userAgent'] == p19_secondary_user_agent
+    ]
+    assert len(p19_current) == 1
+    assert len(p19_secondary) == 1
+    p19_current_id = p19_current[0]['id']
+    p19_secondary_id = p19_secondary[0]['id']
+    assert p19_current_id != p19_secondary_id
+    p19_session_json = p19_sessions_before.text.lower()
+    assert 'tokenhash' not in p19_session_json
+    assert 'securitystamp' not in p19_session_json
+    assert 'opaquetoken' not in p19_session_json
+
+    if device == 'mobile':
+        p17_page.get_by_role('button', name='Open menu', exact=True).click()
+    p19_open_sessions = 'الجلسات النشطة' if p19_is_arabic else 'Sessions actives'
+    p19_title = p19_open_sessions
+    p17_page.get_by_role('button', name=p19_open_sessions, exact=True).click()
+    expect(p17_page.get_by_role('heading', name=p19_title, exact=True)).to_be_visible()
+    expect(p17_page.locator('html')).to_have_attribute('lang', p19_language)
+    expect(p17_page.locator('html')).to_have_attribute('dir', p19_direction)
+
+    p19_privacy_prefix = (
+        'تنبيه الخصوصية'
+        if p19_is_arabic
+        else 'Confidentialité'
+    )
+    p19_privacy_note = p17_page.get_by_role('note')
+    expect(p19_privacy_note).to_be_visible()
+    expect(p19_privacy_note).to_contain_text(p19_privacy_prefix)
+
+    p19_secondary_row = p17_page.locator('li').filter(has_text=p19_secondary_user_agent)
+    expect(p19_secondary_row).to_have_count(1)
+    p19_secondary_revoke_label = (
+        'إنهاء الجلسة'
+        if p19_is_arabic
+        else 'Révoquer la session'
+    )
+    p19_revoke_response_url = f'/api/auth/sessions/{p19_secondary_id}/revoke'
+    with p17_page.expect_response(
+        lambda response: response.request.method == 'POST'
+        and response.url.endswith(p19_revoke_response_url)
+    ) as p19_secondary_revoke:
+        p19_secondary_row.get_by_role(
+            'button',
+            name=p19_secondary_revoke_label,
+            exact=True,
+        ).click()
+    assert p19_secondary_revoke.value.status == 204, p19_secondary_revoke.value.text()
+    expect(p19_secondary_row).to_have_count(0)
+    assert p19_secondary_context.request.get('/api/auth/me').status == 401
+    p19_sessions_after = p17_context.request.get('/api/auth/sessions')
+    assert p19_sessions_after.status == 200
+    p19_remaining = p19_sessions_after.json()
+    assert not any(item['id'] == p19_secondary_id for item in p19_remaining)
+    assert any(item['id'] == p19_current_id and item['isCurrentSession'] for item in p19_remaining)
+    assert p17_context.request.get('/api/auth/me').status == 200
+    p17_page.screenshot(path=out/'p1-19-other-session-revoked.png')
+
+    # Ending the current device is a separate, explicitly confirmed action.
+    p19_current_label = 'هذا الجهاز' if p19_is_arabic else 'Cet appareil'
+    p19_current_revoke_label = (
+        'تسجيل الخروج من هذا الجهاز'
+        if p19_is_arabic
+        else 'Déconnecter cet appareil'
+    )
+    p19_current_row = p17_page.locator('li').filter(has_text=p19_current_label)
+    expect(p19_current_row).to_have_count(1)
+    p19_revoke_requests = []
+    p17_page.on(
+        'request',
+        lambda request: p19_revoke_requests.append(request)
+        if request.method == 'POST' and request.url.endswith('/revoke')
+        else None,
+    )
+    p19_current_row.get_by_role(
+        'button',
+        name=p19_current_revoke_label,
+        exact=True,
+    ).click()
+    p19_confirmation = (
+        'سيؤدي ذلك إلى تسجيل خروجك من هذا الجهاز. هل تريد المتابعة؟'
+        if p19_is_arabic
+        else 'Cette action vous déconnectera de cet appareil. Voulez-vous continuer ?'
+    )
+    expect(p17_page.get_by_text(p19_confirmation, exact=True)).to_be_visible()
+    p17_page.screenshot(path=out/'p1-19-current-session-confirmation.png')
+    assert not p19_revoke_requests, 'Current session must not be revoked before explicit confirmation'
+    p19_cancel = 'إلغاء' if p19_is_arabic else 'Annuler'
+    p17_page.get_by_role('button', name=p19_cancel, exact=True).click()
+    expect(p17_page.get_by_text(p19_confirmation, exact=True)).to_have_count(0)
+    assert p17_context.request.get('/api/auth/me').status == 200
+
+    p19_confirm = 'تأكيد تسجيل الخروج' if p19_is_arabic else 'Confirmer la déconnexion'
+    with p17_page.expect_response(
+        lambda response: response.request.method == 'POST'
+        and response.url.endswith(f'/api/auth/sessions/{p19_current_id}/revoke')
+    ) as p19_current_revoke:
+        p17_page.get_by_role('button', name=p19_current_revoke_label, exact=True).click()
+        p17_page.get_by_role('button', name=p19_confirm, exact=True).click()
+    assert p19_current_revoke.value.status == 204
+    expect(p17_page.locator('#login-username')).to_be_visible()
+    assert p17_context.request.get('/api/auth/me').status == 401
+    assert p19_secondary_context.request.get('/api/auth/me').status == 401
+    p19_secondary_context.close()
+    p19_1_19_evidence = (
+        'Real ASP.NET Core + PostgreSQL 18 browser flow in AR/FR and desktop/mobile: self-session inventory '\
+        'returned current and separate device sessions without token/hash/SecurityStamp fields; privacy warning '\
+        'was visible; revoking the selected other device returned 204 and invalidated its cookie while the '\
+        'current session remained active; current-device logout required an explicit confirmation, cancel '\
+        'preserved the session, and confirmed revocation returned 204 then /api/auth/me returned 401. '\
+        'Automated CI evidence only, not authorized manual Staging acceptance.'
+    )
+
     p17_fresh_context.close()
     employee_ctx.close()
     replay_ctx.close()

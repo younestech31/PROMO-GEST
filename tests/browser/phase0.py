@@ -405,6 +405,13 @@ with sync_playwright() as pw:
         assert sum(entry['eventType'] == 'PROJECT_MEMBER_REVOKED' for entry in p15_project_audit) == 0
         page.screenshot(path=out/'p1-15-last-manager-downgrade-refused.png')
 
+        # Close the access modal before the shared Phase 0 logout checks below.
+        # The close (X) button uses the localized users.cancel aria-label.
+        cancel_label = 'إلغاء' if lang == 'ar' else 'Annuler'
+        page.get_by_role('button', name=cancel_label, exact=True).first.click()
+        expect(page.get_by_role('heading', name=access_modal_title)).to_have_count(0)
+
+
         p1_15_evidence = (
             'Desktop AR/FR real SPA: sole ProjectManager removal returned 409 PROJECT_LAST_MANAGER_REQUIRED '
             'with bilingual visible alert; assigning that same user to CommercialAgent also returned 409 '

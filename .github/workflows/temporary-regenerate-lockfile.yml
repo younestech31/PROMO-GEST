@@ -1,0 +1,37 @@
+name: Temporary npm lockfile regeneration
+
+on:
+  push:
+    branches:
+      - fix/dependency-lockfile-sync-2026-11-26
+
+permissions:
+  contents: write
+
+jobs:
+  regenerate-lockfile:
+    name: Regenerate package-lock.json from package.json
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: true
+      - uses: actions/setup-node@v7
+        with:
+          node-version: "22"
+      - name: Use the verified npm version
+        run: npm install --global npm@11.19.1
+      - name: Regenerate the lockfile
+        run: npm install --package-lock-only --ignore-scripts --no-audit --no-fund
+      - name: Commit the generated lockfile
+        run: |
+          set -euo pipefail
+          if git diff --quiet -- package-lock.json; then
+            echo "package-lock.json is already synchronized"
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add package-lock.json
+          git commit -m "fix(deps): synchronize npm lockfile with package manifest"
+          git push origin HEAD

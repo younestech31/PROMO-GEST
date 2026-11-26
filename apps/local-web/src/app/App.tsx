@@ -22,6 +22,7 @@ import {
   togglePinnedProjectId,
 } from '../shared/utils/navigationPreferences';
 import { useUnsavedGuard } from '../shared/hooks/useUnsavedGuard';
+import { readAppHistoryIndex, withAppHistoryIndex } from './browserHistory';
 import { getDocumentPresentation, isViteDevelopmentBuild, isVitePreviewRuntime } from '../shared/utils/appRuntime';
 import { ErpShellLayout } from './ErpShellLayout';
 import { ChangePasswordModal, ChangePasswordRequiredScreen, LoginScreen, SessionsSecurityModal, authApi } from '../modules/auth';
@@ -81,7 +82,13 @@ function WorkspaceFallback({ language }: { language: AppLanguage }) {
 }
 
 type PendingNavigation =
-  | { kind: 'route'; route: AppRouteState; fromHistory?: boolean }
+  | {
+      kind: 'route';
+      route: AppRouteState;
+      fromHistory?: boolean;
+      historyTargetIndex?: number;
+      historyCurrentIndex?: number;
+    }
   | { kind: 'logout' };
 
 interface AppContentRouterProps {
@@ -278,6 +285,8 @@ export function App() {
   const [languageSaveFailed, setLanguageSaveFailed] = useState(false);
 
   const activeRouteRef = useRef(activeRoute);
+  const historyIndexRef = useRef(0);
+  const pendingHistoryRestoreRef = useRef<Extract<PendingNavigation, { kind: 'route' }> | null>(null);
   const dirtyRef = useRef(false);
   const saveActionRef = useRef<(() => Promise<boolean>) | null>(null);
   const discardActionRef = useRef<(() => void) | null>(null);
@@ -433,7 +442,7 @@ export function App() {
       setNavigationGuardOpen(false);
       commitRoute(DEFAULT_APP_ROUTE);
       if (typeof window !== 'undefined') {
-        window.history.replaceState(null, '', buildAppPath(DEFAULT_APP_ROUTE));
+        window.history.replaceState(window.history.state, '', buildAppPath(DEFAULT_APP_ROUTE));
       }
     }
   }, [commitRoute, session?.user.id]);
@@ -454,10 +463,12 @@ export function App() {
       setPendingNavigation(null);
 
       if (pending.kind === 'route') {
-        if (pending.fromHistory) {
-          // The original popstate target is still one entry behind the restored URL.
-          // Move back to it now that the draft was saved and the guard is cleared.
-          window.history.back();
+        if (
+          pending.fromHistory &&
+          pending.historyTargetIndex !== undefined &&
+          pending.historyCurrentIndex !== undefined
+        ) {
+          window.history.go(pending.historyTargetIndex - pending.historyCurrentIndex);
         } else {
           commitRoute(pending.route);
         }
@@ -480,8 +491,12 @@ export function App() {
     setPendingNavigation(null);
 
     if (pending.kind === 'route') {
-      if (pending.fromHistory) {
-        window.history.back();
+      if (
+        pending.fromHistory &&
+        pending.historyTargetIndex !== undefined &&
+        pending.historyCurrentIndex !== undefined
+      ) {
+        window.history.go(pending.historyTargetIndex - pending.historyCurrentIndex);
       } else {
         commitRoute(pending.route);
       }
@@ -548,19 +563,54 @@ export function App() {
   }, []);
 
   useEffect(() => {
-    const handlePopState = () => {
+    const existingIndex = readAppHistoryIndex(window.history.state);
+    const initialIndex = existingIndex ?? 0;
+    historyIndexRef.current = initialIndex;
+    if (existingIndex === null) {
+      window.history.replaceState(
+        withAppHistoryIndex(window.history.state, initialIndex),
+        '',
+        window.location.href
+      );
+    }
+
+    const handlePopState = (event: PopStateEvent) => {
       const requestedRoute = parseAppLocation(window.location.pathname);
       const currentRoute = activeRouteRef.current;
+      const currentHistoryIndex = historyIndexRef.current;
+      const eventHistoryIndex = readAppHistoryIndex(event.state);
 
-      if (shouldBlockNavigation(dirtyRef.current, currentRoute, requestedRoute)) {
-        // popstate has already moved the browser history cursor; restore the current URL
-        // while the user decides whether to save, discard, or stay.
-        window.history.pushState(null, '', buildAppPath(currentRoute));
-        setPendingNavigation({ kind: 'route', route: requestedRoute, fromHistory: true });
+      // A blocked Back/Forward first restores the cursor to the current entry with
+      // history.go(). Only after that restoration event do we expose the decision dialog.
+      if (pendingHistoryRestoreRef.current) {
+        const pending = pendingHistoryRestoreRef.current;
+        historyIndexRef.current = eventHistoryIndex ?? pending.historyCurrentIndex ?? currentHistoryIndex;
+        pendingHistoryRestoreRef.current = null;
+        setPendingNavigation(pending);
         setNavigationGuardOpen(true);
         return;
       }
 
+      const targetHistoryIndex = eventHistoryIndex ?? currentHistoryIndex - 1;
+      if (shouldBlockNavigation(dirtyRef.current, currentRoute, requestedRoute)) {
+        // Keep the browser's forward/back stack intact. Pushing the current URL here
+        // would truncate forward entries when the user chooses Stay.
+        if (targetHistoryIndex < 0) return;
+        const pending: Extract<PendingNavigation, { kind: 'route' }> = {
+          kind: 'route',
+          route: requestedRoute,
+          fromHistory: true,
+          historyTargetIndex: targetHistoryIndex,
+          historyCurrentIndex: currentHistoryIndex,
+        };
+        pendingHistoryRestoreRef.current = pending;
+        window.history.go(currentHistoryIndex - targetHistoryIndex);
+        return;
+      }
+
+      historyIndexRef.current = eventHistoryIndex ?? (
+        targetHistoryIndex >= 0 ? targetHistoryIndex : currentHistoryIndex
+      );
       commitRoute(requestedRoute);
     };
 
@@ -571,7 +621,13 @@ export function App() {
   useEffect(() => {
     const expectedPath = buildAppPath(activeRoute);
     if (window.location.pathname !== expectedPath) {
-      window.history.pushState(null, '', expectedPath);
+      const nextHistoryIndex = historyIndexRef.current + 1;
+      historyIndexRef.current = nextHistoryIndex;
+      window.history.pushState(
+        withAppHistoryIndex(window.history.state, nextHistoryIndex),
+        '',
+        expectedPath
+      );
     }
   }, [activeRoute]);
 

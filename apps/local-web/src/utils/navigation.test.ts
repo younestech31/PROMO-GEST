@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
+import { readAppHistoryIndex, withAppHistoryIndex } from '../app/browserHistory';
 import {
   emptyProjectPreferences as emptyStoredProjectPreferences,
   recordRecentProjectId as recordStoredRecentProjectId,
@@ -113,4 +114,18 @@ test('stored project navigation preferences update recents and pin state immutab
   preferences = toggleStoredPinnedProjectId(preferences, 'project-1');
   assert.deepEqual(preferences.pinnedProjectIds, []);
   assert.deepEqual(preferences.recentProjectIds, ['project-1', 'project-2']);
+});
+
+
+test('app history state preserves entry metadata and validates its index', () => {
+  const state = withAppHistoryIndex({ source: 'app-router' }, 3);
+  assert.deepEqual(state, {
+    source: 'app-router',
+    __promoGestHistoryIndex: 3,
+  });
+  assert.equal(readAppHistoryIndex(state), 3);
+  assert.equal(readAppHistoryIndex(null), null);
+  assert.equal(readAppHistoryIndex({ __promoGestHistoryIndex: -1 }), null);
+  assert.equal(readAppHistoryIndex({ __promoGestHistoryIndex: 1.5 }), null);
+  assert.equal(readAppHistoryIndex({ __promoGestHistoryIndex: '2' }), null);
 });

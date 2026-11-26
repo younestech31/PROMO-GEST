@@ -388,6 +388,25 @@ with sync_playwright() as pw:
         assert response.status == 200, response.text()
         return response.json()
 
+    # Keep a second, explicitly non-financial ProjectManager in the disposable fixture.
+    # This preserves the domain invariant that the last ProjectManager cannot be demoted.
+    admin_me_for_project = ctx.request.get(BASE + '/api/auth/me')
+    assert admin_me_for_project.status == 200
+    admin_user_id = admin_me_for_project.json()['user']['id']
+    admin_project_membership = ctx.request.put(
+        BASE + f'/api/projects/{project_id}/members',
+        data={
+            'userId': admin_user_id,
+            'roleInProject': 'ProjectManager',
+            'canViewFinancials': False,
+            'canManageSales': False,
+            'canManageConstruction': False,
+            'canManageDocuments': False,
+        },
+        headers={'X-CSRF-TOKEN': admin_csrf_token},
+    )
+    assert admin_project_membership.status == 200, admin_project_membership.text()
+
     # ProjectManager alone is not enough: no CanViewFinancials means no read or write.
     assign_financial_membership('ProjectManager', False)
     manager_without_financials = employee_ctx.request.get(BASE + f'/api/projects/{project_id}')

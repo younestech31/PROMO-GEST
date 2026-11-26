@@ -488,19 +488,21 @@ with sync_playwright() as pw:
     expect(p17_fresh_page.locator('html')).to_have_attribute('lang', p17_other_language)
     expect(p17_fresh_page.locator('html')).to_have_attribute('dir', p17_direction)
     p17_fresh_page.screenshot(path=out/'p1-17-fresh-login-preference.png')
-    p17_fresh_context.close()
+    p17_page = p17_fresh_page
+    p17_context = p17_fresh_context
+    p17_language_switcher = p17_page.get_by_role('group', name='Language switcher')
 
     # Switch back to the original preference before exercising failure paths.
-    with employee_page.expect_response(
+    with p17_page.expect_response(
         lambda response: response.request.method == 'PUT'
         and response.url.endswith('/api/auth/preferred-language')
     ) as p17_restore_original:
         p17_language_switcher.get_by_role('button', name=p17_original_button, exact=True).click()
     assert p17_restore_original.value.status == 200, p17_restore_original.value.text()
     assert p17_restore_original.value.json()['user']['preferredLanguage'] == lang
-    expect(employee_page.locator('html')).to_have_attribute('lang', lang)
-    expect(employee_page.locator('html')).to_have_attribute('dir', direction)
-    p17_original_session = employee_ctx.request.get('/api/auth/me').json()
+    expect(p17_page.locator('html')).to_have_attribute('lang', lang)
+    expect(p17_page.locator('html')).to_have_attribute('dir', direction)
+    p17_original_session = p17_context.request.get('/api/auth/me').json()
     assert p17_original_session['user']['preferredLanguage'] == lang
 
     # A network failure must not apply the requested locale or imply persistence.
@@ -509,29 +511,29 @@ with sync_playwright() as pw:
         if lang == 'ar'
         else 'Impossible d’enregistrer la préférence linguistique. Le choix enregistré reste inchangé ; réessayez.'
     )
-    employee_page.route(
+    p17_page.route(
         '**/api/auth/preferred-language',
         lambda route: route.abort('internetdisconnected'),
     )
     p17_language_switcher.get_by_role('button', name=p17_other_button, exact=True).click()
-    expect(employee_page.get_by_role('alert')).to_contain_text(p17_failure_text)
-    expect(employee_page.locator('html')).to_have_attribute('lang', lang)
-    expect(employee_page.locator('html')).to_have_attribute('dir', direction)
-    p17_after_network_failure = employee_ctx.request.get('/api/auth/me')
+    expect(p17_page.get_by_role('alert')).to_contain_text(p17_failure_text)
+    expect(p17_page.locator('html')).to_have_attribute('lang', lang)
+    expect(p17_page.locator('html')).to_have_attribute('dir', direction)
+    p17_after_network_failure = p17_context.request.get('/api/auth/me')
     assert p17_after_network_failure.status == 200
     assert p17_after_network_failure.json()['user']['preferredLanguage'] == lang
     assert p17_after_network_failure.json()['organization']['defaultLanguage'] == p17_organization_default
-    employee_page.screenshot(path=out/'p1-17-network-failure-keeps-old-locale.png')
-    employee_page.unroute('**/api/auth/preferred-language')
+    p17_page.screenshot(path=out/'p1-17-network-failure-keeps-old-locale.png')
+    p17_page.unroute('**/api/auth/preferred-language')
 
     # Change the persisted value behind the open tab. Its stale session stamp must
     # receive 409, refresh /api/auth/me, apply the server value, and show an error.
-    p17_external_csrf = employee_ctx.request.get('/api/auth/csrf')
+    p17_external_csrf = p17_context.request.get('/api/auth/csrf')
     assert p17_external_csrf.status == 200
     p17_external_token = p17_external_csrf.headers.get('x-csrf-token')
     assert p17_external_token
-    p17_external_current = employee_ctx.request.get('/api/auth/me').json()
-    p17_external_change = employee_ctx.request.put(
+    p17_external_current = p17_context.request.get('/api/auth/me').json()
+    p17_external_change = p17_context.request.put(
         '/api/auth/preferred-language',
         data={
             'preferredLanguage': p17_other_language,
@@ -547,7 +549,7 @@ with sync_playwright() as pw:
         if p17_other_language == 'ar'
         else 'Impossible d’enregistrer la préférence linguistique. Le choix enregistré reste inchangé ; réessayez.'
     )
-    with employee_page.expect_response(
+    with p17_page.expect_response(
         lambda response: response.request.method == 'PUT'
         and response.url.endswith('/api/auth/preferred-language')
     ) as p17_stale_save:
@@ -555,19 +557,19 @@ with sync_playwright() as pw:
     assert p17_stale_save.value.status == 409
     assert p17_stale_save.value.json()['code'] == 'USER_CONCURRENCY_CONFLICT'
     # App.tsx refreshes the authoritative session on 409 instead of retrying with a stale stamp.
-    expect(employee_page.locator('html')).to_have_attribute('lang', p17_other_language)
-    expect(employee_page.locator('html')).to_have_attribute('dir', p17_direction)
-    expect(employee_page.get_by_role('alert')).to_contain_text(p17_conflict_text)
-    p17_after_conflict = employee_ctx.request.get('/api/auth/me')
+    expect(p17_page.locator('html')).to_have_attribute('lang', p17_other_language)
+    expect(p17_page.locator('html')).to_have_attribute('dir', p17_direction)
+    expect(p17_page.get_by_role('alert')).to_contain_text(p17_conflict_text)
+    p17_after_conflict = p17_context.request.get('/api/auth/me')
     assert p17_after_conflict.status == 200
     assert p17_after_conflict.json()['user']['preferredLanguage'] == p17_other_language
     assert p17_after_conflict.json()['organization']['defaultLanguage'] == p17_organization_default
-    employee_page.screenshot(path=out/'p1-17-stale-concurrency-refresh.png')
+    p17_page.screenshot(path=out/'p1-17-stale-concurrency-refresh.png')
 
     # A non-admin cannot change another user's profile/preference through user management.
     # The self-service endpoint has no target-user parameter; user-management remains
     # separately protected by users.manage and must not modify the SYSTEM_ADMIN account.
-    p17_cross_user_attempt = employee_ctx.request.put(
+    p17_cross_user_attempt = p17_context.request.put(
         f"/api/users/{p17_admin_user['id']}",
         data={
             'fullName': p17_admin_user['fullName'],
@@ -602,6 +604,7 @@ with sync_playwright() as pw:
         'SYSTEM_ADMIN preference unchanged. Automated CI evidence only, not manual Staging acceptance.'
     )
 
+    p17_fresh_context.close()
     employee_ctx.close()
     replay_ctx.close()
     if device == 'mobile':

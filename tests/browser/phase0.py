@@ -298,6 +298,131 @@ with sync_playwright() as pw:
     editor_page.screenshot(path=out/'p1-09-non-admin-org-manage-edit-save.png')
     editor_ctx.close()
 
+    # P1-15: real SPA refusal paths for removing/demoting the last ProjectManager.
+    # Existing PostgreSQL 18 integration tests cover concurrent request races; this browser
+    # slice covers the bilingual operator feedback and prevents a false-success UI state.
+    if device == 'desktop':
+        p15_project_code = f'QA-P1-15-{lang.upper()}-{device.upper()}'
+        p15_project_response = ctx.request.post(
+            BASE + '/api/projects',
+            data={
+                'code': p15_project_code,
+                'nameAr': 'مشروع اختبار حماية آخر مدير',
+                'nameFr': 'Projet QA dernier chef de projet',
+                'wilayaCode': '16',
+                'wilayaName': 'الجزائر / Alger',
+                'municipality': 'Dely Ibrahim',
+                'address': 'QA fictitious address',
+                'landTitleReference': None,
+                'buildingPermitNumber': None,
+                'buildingPermitDate': None,
+                'status': 'Planning',
+                'estimatedBudgetDzd': 0,
+                'plannedBlocksCount': 1,
+                'plannedUnitsCount': 1,
+            },
+            headers={'X-CSRF-TOKEN': admin_csrf_token},
+        )
+        assert p15_project_response.status == 201, p15_project_response.text()
+        p15_project_id = p15_project_response.json()['id']
+
+        # SystemAdmin creates the only membership; no automatic second manager is added.
+        p15_initial_assignment = ctx.request.put(
+            BASE + f'/api/projects/{p15_project_id}/members',
+            data={
+                'userId': employee_record['id'],
+                'roleInProject': 'ProjectManager',
+                'canViewFinancials': False,
+                'canManageSales': False,
+                'canManageConstruction': False,
+                'canManageDocuments': False,
+            },
+            headers={'X-CSRF-TOKEN': admin_csrf_token},
+        )
+        assert p15_initial_assignment.status == 200, p15_initial_assignment.text()
+        p15_last_manager_error = (
+            'يجب أن يحتفظ المشروع بمدير مشروع واحد نشط على الأقل.'
+            if lang == 'ar'
+            else 'Le projet doit conserver au moins un chef de projet actif.'
+        )
+        manage_access_label = 'صلاحيات المشروع' if lang == 'ar' else 'Accès projet'
+        access_modal_title = (
+            'إدارة صلاحيات الوصول للمشروع'
+            if lang == 'ar'
+            else 'Gestion des accès au projet'
+        )
+        remove_member_label = 'سحب الصلاحية' if lang == 'ar' else 'Révoquer'
+        assign_member_label = 'منح الصلاحية' if lang == 'ar' else "Attribuer l'accès"
+
+        page.goto(BASE + '/projects')
+        p15_row = page.get_by_role('row').filter(has_text=p15_project_code)
+        expect(p15_row).to_have_count(1)
+        p15_row.get_by_role('button', name=manage_access_label, exact=True).click()
+        expect(page.get_by_role('heading', name=access_modal_title)).to_be_visible()
+        expect(page.locator('#pm-user')).to_be_visible()
+        expect(page.locator('#pm-role')).to_be_visible()
+
+        # Attempting to remove the only ProjectManager is refused by the real API.
+        with page.expect_response(
+            lambda response: response.request.method == 'DELETE'
+            and response.url.endswith(
+                f'/api/projects/{p15_project_id}/members/{employee_record["id"]}'
+            )
+        ) as p15_remove_attempt:
+            page.get_by_role('button', name=remove_member_label, exact=True).click()
+        assert p15_remove_attempt.value.status == 409
+        assert p15_remove_attempt.value.json()['code'] == 'PROJECT_LAST_MANAGER_REQUIRED'
+        expect(page.get_by_role('alert')).to_contain_text(p15_last_manager_error)
+        page.screenshot(path=out/'p1-15-last-manager-remove-refused.png')
+
+        # Re-assigning that same member to a non-manager role is also refused.
+        page.locator('#pm-user').select_option(employee_record['id'])
+        page.locator('#pm-role').select_option('CommercialAgent')
+        p15_membership_form = page.locator('form').filter(has=page.locator('#pm-user'))
+        with page.expect_response(
+            lambda response: response.request.method == 'PUT'
+            and response.url.endswith(f'/api/projects/{p15_project_id}/members')
+        ) as p15_demotion_attempt:
+            p15_membership_form.get_by_role('button', name=assign_member_label, exact=True).click()
+        assert p15_demotion_attempt.value.status == 409
+        assert p15_demotion_attempt.value.json()['code'] == 'PROJECT_LAST_MANAGER_REQUIRED'
+        expect(page.get_by_role('alert')).to_contain_text(p15_last_manager_error)
+
+        # The project still has one ProjectManager; no false revocation/assignment audit was committed.
+        p15_after_attempts = ctx.request.get(BASE + f'/api/projects/{p15_project_id}')
+        assert p15_after_attempts.status == 200
+        p15_members = p15_after_attempts.json()['members']
+        assert len(p15_members) == 1
+        assert p15_members[0]['userId'] == employee_record['id']
+        assert p15_members[0]['roleInProject'] == 'ProjectManager'
+        p15_audit_response = ctx.request.get(BASE + '/api/audit?limit=100')
+        assert p15_audit_response.status == 200
+        p15_project_audit = [
+            entry for entry in p15_audit_response.json()
+            if entry['targetEntityId'] == p15_project_id
+        ]
+        assert sum(entry['eventType'] == 'PROJECT_MEMBER_ASSIGNED' for entry in p15_project_audit) == 1
+        assert sum(entry['eventType'] == 'PROJECT_MEMBER_REVOKED' for entry in p15_project_audit) == 0
+        page.screenshot(path=out/'p1-15-last-manager-downgrade-refused.png')
+
+        # Close the access modal before the shared Phase 0 logout checks below.
+        # The close (X) button uses the localized users.cancel aria-label.
+        cancel_label = 'إلغاء' if lang == 'ar' else 'Annuler'
+        page.get_by_role('button', name=cancel_label, exact=True).first.click()
+        expect(page.get_by_role('heading', name=access_modal_title)).to_have_count(0)
+
+
+        p1_15_evidence = (
+            'Desktop AR/FR real SPA: sole ProjectManager removal returned 409 PROJECT_LAST_MANAGER_REQUIRED '
+            'with bilingual visible alert; assigning that same user to CommercialAgent also returned 409 '
+            'with visible alert; API reload retained the sole ProjectManager; audit retained exactly one '
+            'initial PROJECT_MEMBER_ASSIGNED and no PROJECT_MEMBER_REVOKED. Existing PG18 integration tests '
+            'separately cover concurrent demotion/removal races, one winner/one 409 and atomic audit. '
+            'Automated real-browser evidence only, not manual staging acceptance.'
+        )
+    else:
+        p1_15_evidence = 'Not exercised on mobile: current project-directory mobile cards do not expose Manage Access. No mobile acceptance is claimed.'
+
     p1_09_evidence = (
         'SYSTEM_ADMIN browser edit/save 200; non-admin without org.manage read-only and API 403 '
         'FORBIDDEN_ORGANIZATION_MANAGE; isolated CI-only org.manage grant; fresh non-admin session '
@@ -338,6 +463,7 @@ with sync_playwright() as pw:
                     A04='unconfirmed logout retained session; retry 204; current and prior session 401; protected route returned to login',
                     A05=a05_evidence,
                     P1_09=p1_09_evidence,
+                    P1_15=p1_15_evidence,
                     mode='automated real-browser; not manual acceptance')
     (out/'result.json').write_text(json.dumps(evidence, indent=2)+'\n')
     print(json.dumps(evidence))

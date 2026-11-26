@@ -816,16 +816,37 @@ with sync_playwright() as pw:
     # Preserve identity actions (pin and directory) without reintroducing a switcher.
     p20_pin_label = 'تثبيت' if lang == 'ar' else 'Épingler'
     p20_directory_label = 'دليل المشاريع' if lang == 'ar' else 'Annuaire'
-    expect(p20_identity.get_by_role('button', name=p20_pin_label, exact=True)).to_have_count(1)
+    p20_pin_button = p20_identity.get_by_role('button', name=p20_pin_label, exact=True)
+    expect(p20_pin_button).to_have_count(1)
     expect(p20_identity.get_by_role('button', name=p20_directory_label, exact=True)).to_have_count(1)
     expect(p20_identity.locator('button').filter(has=page.locator('kbd'))).to_have_count(0)
     page.screenshot(path=out/'p1-20-single-project-navigation-chrome.png')
+
+    # Pin state must update in the same render after each local preference write.
+    p20_unpin_label = 'إلغاء التثبيت' if lang == 'ar' else 'Désépingler'
+    p20_pin_button.click()
+    p20_unpin_button = p20_identity.get_by_role('button', name=p20_unpin_label, exact=True)
+    expect(p20_unpin_button).to_be_visible()
+    p20_preferences_after_pin = page.evaluate("""() => Object.keys(localStorage)
+      .filter((key) => key.startsWith('promogest.navPrefs.v1.'))
+      .map((key) => JSON.parse(localStorage.getItem(key) || '{}'))""")
+    assert any(p20_project_id in prefs.get('pinnedProjectIds', []) for prefs in p20_preferences_after_pin), (
+        'Pin action did not persist the project id'
+    )
+    p20_unpin_button.click()
+    expect(p20_identity.get_by_role('button', name=p20_pin_label, exact=True)).to_be_visible()
+    p20_preferences_after_unpin = page.evaluate("""() => Object.keys(localStorage)
+      .filter((key) => key.startsWith('promogest.navPrefs.v1.'))
+      .map((key) => JSON.parse(localStorage.getItem(key) || '{}'))""")
+    assert all(p20_project_id not in prefs.get('pinnedProjectIds', []) for prefs in p20_preferences_after_unpin), (
+        'Unpin action did not remove the project id from persisted preferences'
+    )
 
     if device == 'mobile':
         page.get_by_role('button', name='Close navigation menu', exact=True).click()
 
     # Opening the modal is a UI-only inspection. Search focus, authorized project presence,
-    # Escape close, and restored focus are checked without selecting/changing a project.
+    # Escape close, and restored focus are checked before the explicit selection regression below.
     p20_switcher_button.click()
     p20_dialog_title = (
         'مبدّل المشروع الصريح'
@@ -844,6 +865,16 @@ with sync_playwright() as pw:
     expect(p20_dialog).to_have_count(0)
     expect(p20_switcher_button).to_be_focused()
     assert page.url.endswith(f'/projects/{p20_project_id}/overview')
+
+    # The initial deep-link verification has already recorded this project; clear only
+    # the recent list so the subsequent directory selection proves its own persistence path.
+    page.evaluate("""() => Object.keys(localStorage)
+      .filter((key) => key.startsWith('promogest.navPrefs.v1.'))
+      .forEach((key) => {
+        const prefs = JSON.parse(localStorage.getItem(key) || '{}');
+        prefs.recentProjectIds = [];
+        localStorage.setItem(key, JSON.stringify(prefs));
+      })""")
 
     # The identity strip's directory affordance remains a separate browse destination.
     p20_identity.get_by_role('button', name=p20_directory_label, exact=True).click()
@@ -866,15 +897,31 @@ with sync_playwright() as pw:
     expect(p20_directory_dialog).to_have_count(0)
     expect(page).to_have_url(BASE + '/projects')
 
+    # Selecting an authorized project from the directory must persist it as recent.
+    page.locator('header button').filter(has=page.locator('kbd')).click()
+    p20_select_dialog = page.get_by_role('dialog')
+    p20_project_row = p20_select_dialog.get_by_role('button').filter(has_text=p20_project_code)
+    expect(p20_project_row).to_be_visible()
+    p20_project_row.click()
+    expect(p20_select_dialog).to_have_count(0)
+    expect(page).to_have_url(BASE + f'/projects/{p20_project_id}/overview')
+    expect(p20_identity).to_contain_text(p20_project_code)
+    p20_saved_preferences = page.evaluate("""() => Object.keys(localStorage)
+      .filter((key) => key.startsWith('promogest.navPrefs.v1.'))
+      .map((key) => JSON.parse(localStorage.getItem(key) || '{}'))""")
+    assert any(p20_project_id in prefs.get('recentProjectIds', []) for prefs in p20_saved_preferences), (
+        'Selecting a project did not persist it in recentProjectIds'
+    )
+
     p20_1_20_evidence = (
         'Real ASP.NET Core + PostgreSQL 18 Chrome browser structural checks in AR/FR × desktop/mobile: '
         'exactly one global header switcher; one Main navigation source with one project overview entry; '
         'no tablist/tab role or duplicate horizontal section tabs; project identity strip retained Pin and '
         'Project Directory actions without a duplicate switcher; switcher modal showed the synthetic '
-        'authorized project, focused the searchbox, closed with Escape and restored focus; the identity '
-        'directory action navigated to /projects; the header switcher remained available there and its '
-        'directory action closed without selecting a project. Project selection, dirty-form navigation, '
-        'revoked-membership cleanup and end-to-end authorization outcomes were deliberately not exercised; '
+        'authorized project, focused the searchbox, closed with Escape and restored focus; pin/unpin '
+        'updated immediately; selecting the authorized project from the directory persisted its id in '
+        'recentProjectIds. Dirty-form navigation, revoked-membership cleanup and end-to-end authorization '
+        'outcomes were deliberately not exercised; '
         'those remain provisional/dependent on P1-06 manual evidence. Automated CI evidence only.'
     )
 

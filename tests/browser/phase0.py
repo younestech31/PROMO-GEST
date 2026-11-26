@@ -645,7 +645,7 @@ with sync_playwright() as pw:
     p19_current_id = p19_current[0]['id']
     p19_secondary_id = p19_secondary[0]['id']
     assert p19_current_id != p19_secondary_id
-    p19_session_json = p19_sessions_before.text.lower()
+    p19_session_json = p19_sessions_before.text().lower()
     assert 'tokenhash' not in p19_session_json
     assert 'securitystamp' not in p19_session_json
     assert 'opaquetoken' not in p19_session_json

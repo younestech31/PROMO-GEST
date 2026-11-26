@@ -959,7 +959,7 @@ with sync_playwright() as pw:
     expect(p06_dialog).to_be_visible()
     expect(p06_page).to_have_url(BASE + '/organization/profile')
     expect(p06_page.locator('#organization-legalName')).to_have_value(p06_forward_draft)
-    p06_dialog.get_by_role('button', name=p06_stay_label, exact=True).click()
+    p06_dialog.get_by_role('button', name=p06_stay_label, exact=True).last.click()
     expect(p06_dialog).to_have_count(0)
     expect(p06_page).to_have_url(BASE + '/organization/profile')
     p06_page.go_forward()

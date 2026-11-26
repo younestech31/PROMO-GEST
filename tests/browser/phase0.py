@@ -430,6 +430,184 @@ with sync_playwright() as pw:
     )
 
     a05_evidence = 'temporary session sanitized; deep-link reload served SPA; business API 403 PASSWORD_CHANGE_REQUIRED; rotation 204; old cookie replay 401; personal password login 200'
+    # P1-17: persist the authenticated user's own language preference through the real SPA.
+    # P1-09 opened a second login for this same user; successful login rotates User.ConcurrencyStamp.
+    # Reload once so the starting tab receives the authoritative current stamp before the happy path.
+    employee_page.reload()
+    expect(employee_page.locator('html')).to_have_attribute('lang', lang)
+    p17_admin_before = ctx.request.get('/api/auth/me')
+    assert p17_admin_before.status == 200
+    p17_admin_session_before = p17_admin_before.json()
+    p17_admin_user = p17_admin_session_before['user']
+    p17_organization_default = p17_admin_session_before['organization']['defaultLanguage']
+    p17_admin_preference = p17_admin_user['preferredLanguage']
+    p17_employee_before = employee_ctx.request.get('/api/auth/me')
+    assert p17_employee_before.status == 200
+    p17_employee_session_before = p17_employee_before.json()
+    assert p17_employee_session_before['user']['preferredLanguage'] == lang
+    assert p17_employee_session_before['organization']['defaultLanguage'] == p17_organization_default
+
+    p17_other_language = 'fr' if lang == 'ar' else 'ar'
+    p17_other_button = 'Français' if p17_other_language == 'fr' else 'العربية'
+    p17_original_button = 'Français' if lang == 'fr' else 'العربية'
+    p17_direction = 'ltr' if p17_other_language == 'fr' else 'rtl'
+    p17_language_switcher = employee_page.get_by_role('group', name='Language switcher')
+
+    with employee_page.expect_response(
+        lambda response: response.request.method == 'PUT'
+        and response.url.endswith('/api/auth/preferred-language')
+    ) as p17_first_save:
+        p17_language_switcher.get_by_role('button', name=p17_other_button, exact=True).click()
+    assert p17_first_save.value.status == 200, p17_first_save.value.text()
+    p17_saved_session = p17_first_save.value.json()
+    assert p17_saved_session['user']['preferredLanguage'] == p17_other_language
+    assert p17_saved_session['organization']['defaultLanguage'] == p17_organization_default
+    expect(employee_page.locator('html')).to_have_attribute('lang', p17_other_language)
+    expect(employee_page.locator('html')).to_have_attribute('dir', p17_direction)
+    p17_after_save = employee_ctx.request.get('/api/auth/me')
+    assert p17_after_save.status == 200
+    assert p17_after_save.json()['user']['preferredLanguage'] == p17_other_language
+    assert p17_after_save.json()['organization']['defaultLanguage'] == p17_organization_default
+    employee_page.screenshot(path=out/'p1-17-preference-saved.png')
+
+    # Reload must reconstruct the shell locale from SessionResponse, not browser-only state.
+    employee_page.reload()
+    expect(employee_page.locator('html')).to_have_attribute('lang', p17_other_language)
+    expect(employee_page.locator('html')).to_have_attribute('dir', p17_direction)
+
+    # A completely new browser context has no prior cookies or storage; fresh login
+    # must return the saved preference and the shell must apply it.
+    p17_fresh_context = browser.new_context(base_url=BASE, viewport=viewport)
+    p17_fresh_page = p17_fresh_context.new_page()
+    p17_fresh_page.goto(BASE)
+    expect(p17_fresh_page.locator('#login-username')).to_be_visible()
+    p17_fresh_page.locator('#login-username').fill(employee_username)
+    p17_fresh_page.locator('#login-password').fill(personal_password)
+    with p17_fresh_page.expect_response('**/api/auth/login') as p17_fresh_login:
+        p17_fresh_page.locator('button[type=submit]').click()
+    assert p17_fresh_login.value.status == 200
+    assert p17_fresh_login.value.json()['user']['preferredLanguage'] == p17_other_language
+    assert p17_fresh_login.value.json()['organization']['defaultLanguage'] == p17_organization_default
+    expect(p17_fresh_page.locator('html')).to_have_attribute('lang', p17_other_language)
+    expect(p17_fresh_page.locator('html')).to_have_attribute('dir', p17_direction)
+    p17_fresh_page.screenshot(path=out/'p1-17-fresh-login-preference.png')
+    p17_page = p17_fresh_page
+    p17_context = p17_fresh_context
+    p17_language_switcher = p17_page.get_by_role('group', name='Language switcher')
+
+    # Switch back to the original preference before exercising failure paths.
+    with p17_page.expect_response(
+        lambda response: response.request.method == 'PUT'
+        and response.url.endswith('/api/auth/preferred-language')
+    ) as p17_restore_original:
+        p17_language_switcher.get_by_role('button', name=p17_original_button, exact=True).click()
+    assert p17_restore_original.value.status == 200, p17_restore_original.value.text()
+    assert p17_restore_original.value.json()['user']['preferredLanguage'] == lang
+    expect(p17_page.locator('html')).to_have_attribute('lang', lang)
+    expect(p17_page.locator('html')).to_have_attribute('dir', direction)
+    p17_original_session = p17_context.request.get('/api/auth/me').json()
+    assert p17_original_session['user']['preferredLanguage'] == lang
+
+    # A network failure must not apply the requested locale or imply persistence.
+    p17_failure_text = (
+        'تعذر حفظ تفضيل اللغة. لم يتغير اختيارك المحفوظ؛ حاول مجدداً.'
+        if lang == 'ar'
+        else 'Impossible d’enregistrer la préférence linguistique. Le choix enregistré reste inchangé ; réessayez.'
+    )
+    p17_page.route(
+        '**/api/auth/preferred-language',
+        lambda route: route.abort('internetdisconnected'),
+    )
+    p17_language_switcher.get_by_role('button', name=p17_other_button, exact=True).click()
+    expect(p17_page.get_by_role('alert')).to_contain_text(p17_failure_text)
+    expect(p17_page.locator('html')).to_have_attribute('lang', lang)
+    expect(p17_page.locator('html')).to_have_attribute('dir', direction)
+    p17_after_network_failure = p17_context.request.get('/api/auth/me')
+    assert p17_after_network_failure.status == 200
+    assert p17_after_network_failure.json()['user']['preferredLanguage'] == lang
+    assert p17_after_network_failure.json()['organization']['defaultLanguage'] == p17_organization_default
+    p17_page.screenshot(path=out/'p1-17-network-failure-keeps-old-locale.png')
+    p17_page.unroute('**/api/auth/preferred-language')
+
+    # Change the persisted value behind the open tab. Its stale session stamp must
+    # receive 409, refresh /api/auth/me, apply the server value, and show an error.
+    p17_external_csrf = p17_context.request.get('/api/auth/csrf')
+    assert p17_external_csrf.status == 200
+    p17_external_token = p17_external_csrf.headers.get('x-csrf-token')
+    assert p17_external_token
+    p17_external_current = p17_context.request.get('/api/auth/me').json()
+    p17_external_change = p17_context.request.put(
+        '/api/auth/preferred-language',
+        data={
+            'preferredLanguage': p17_other_language,
+            'expectedConcurrencyStamp': p17_external_current['user']['concurrencyStamp'],
+        },
+        headers={'X-CSRF-TOKEN': p17_external_token},
+    )
+    assert p17_external_change.status == 200, p17_external_change.text()
+    assert p17_external_change.json()['user']['preferredLanguage'] == p17_other_language
+    assert p17_external_change.json()['organization']['defaultLanguage'] == p17_organization_default
+    p17_conflict_text = (
+        'تعذر حفظ تفضيل اللغة. لم يتغير اختيارك المحفوظ؛ حاول مجدداً.'
+        if p17_other_language == 'ar'
+        else 'Impossible d’enregistrer la préférence linguistique. Le choix enregistré reste inchangé ; réessayez.'
+    )
+    with p17_page.expect_response(
+        lambda response: response.request.method == 'PUT'
+        and response.url.endswith('/api/auth/preferred-language')
+    ) as p17_stale_save:
+        p17_language_switcher.get_by_role('button', name=p17_other_button, exact=True).click()
+    assert p17_stale_save.value.status == 409
+    assert p17_stale_save.value.json()['code'] == 'USER_CONCURRENCY_CONFLICT'
+    # App.tsx refreshes the authoritative session on 409 instead of retrying with a stale stamp.
+    expect(p17_page.locator('html')).to_have_attribute('lang', p17_other_language)
+    expect(p17_page.locator('html')).to_have_attribute('dir', p17_direction)
+    expect(p17_page.get_by_role('alert')).to_contain_text(p17_conflict_text)
+    p17_after_conflict = p17_context.request.get('/api/auth/me')
+    assert p17_after_conflict.status == 200
+    assert p17_after_conflict.json()['user']['preferredLanguage'] == p17_other_language
+    assert p17_after_conflict.json()['organization']['defaultLanguage'] == p17_organization_default
+    p17_page.screenshot(path=out/'p1-17-stale-concurrency-refresh.png')
+
+    # A non-admin cannot change another user's profile/preference through user management.
+    # The self-service endpoint has no target-user parameter; user-management remains
+    # separately protected by users.manage and must not modify the SYSTEM_ADMIN account.
+    p17_cross_user_attempt = p17_context.request.put(
+        f"/api/users/{p17_admin_user['id']}",
+        data={
+            'fullName': p17_admin_user['fullName'],
+            'email': p17_admin_user['email'],
+            'phone': p17_admin_user.get('phone'),
+            'preferredLanguage': p17_other_language,
+            'roleCodes': p17_admin_user['roles'],
+        },
+        headers={'X-CSRF-TOKEN': p17_external_token},
+    )
+    assert p17_cross_user_attempt.status == 403, p17_cross_user_attempt.text()
+    assert p17_cross_user_attempt.json()['code'] == 'FORBIDDEN_USER_MANAGEMENT'
+    p17_admin_after_cross_user_attempt = ctx.request.get('/api/auth/me')
+    assert p17_admin_after_cross_user_attempt.status == 200
+    assert p17_admin_after_cross_user_attempt.json()['user']['preferredLanguage'] == p17_admin_preference
+    assert p17_admin_after_cross_user_attempt.json()['organization']['defaultLanguage'] == p17_organization_default
+    assert p17_admin_preference == lang
+    assert p17_after_conflict.json()['user']['id'] == employee_record['id']
+    p17_own_audit = ctx.request.get('/api/audit?limit=100')
+    assert p17_own_audit.status == 200
+    assert any(
+        entry['eventType'] == 'ACCESS_DENIED'
+        and entry['actorUserId'] == employee_record['id']
+        for entry in p17_own_audit.json()
+    )
+    p17_1_17_evidence = (
+        'Real ASP.NET Core + PostgreSQL 18 SPA browser checks in AR/FR and desktop/mobile: own language PUT 200; '
+        'persisted value confirmed from /api/auth/me; reload and fresh browser login retained preference; '
+        'Organization.DefaultLanguage remained unchanged; failed network request kept previous locale and showed '
+        'localized failure; stale session stamp returned 409 USER_CONCURRENCY_CONFLICT then shell refreshed '
+        '/api/auth/me; cross-user profile/preference update returned 403 FORBIDDEN_USER_MANAGEMENT and left '
+        'SYSTEM_ADMIN preference unchanged. Automated CI evidence only, not manual Staging acceptance.'
+    )
+
+    p17_fresh_context.close()
     employee_ctx.close()
     replay_ctx.close()
     if device == 'mobile':
@@ -464,6 +642,7 @@ with sync_playwright() as pw:
                     A05=a05_evidence,
                     P1_09=p1_09_evidence,
                     P1_15=p1_15_evidence,
+                    P1_17=p17_1_17_evidence,
                     mode='automated real-browser; not manual acceptance')
     (out/'result.json').write_text(json.dumps(evidence, indent=2)+'\n')
     print(json.dumps(evidence))

@@ -23,6 +23,26 @@ def counts():
     return subprocess.check_output(['psql', '-XAtqc', sql], text=True).strip()
 
 
+def organization_update_payload(organization, legal_name):
+    return {
+        'legalName': legal_name,
+        'tradeName': organization.get('tradeName'),
+        'legalForm': organization['legalForm'],
+        'nif': organization.get('nif'),
+        'nis': organization.get('nis'),
+        'tradeRegisterNumber': organization.get('tradeRegisterNumber'),
+        'taxArticleNumber': organization.get('taxArticleNumber'),
+        'shareCapitalDzd': organization.get('shareCapitalDzd'),
+        'wilayaCode': organization['wilayaCode'],
+        'wilayaName': organization['wilayaName'],
+        'address': organization['address'],
+        'phone': organization.get('phone'),
+        'email': organization.get('email'),
+        'defaultLanguage': organization['defaultLanguage'],
+        'expectedConcurrencyStamp': organization['concurrencyStamp'],
+    }
+
+
 with sync_playwright() as pw:
     browser = pw.chromium.launch(channel='chrome')
     ctx = browser.new_context(base_url=BASE, viewport=viewport)
@@ -168,6 +188,122 @@ with sync_playwright() as pw:
     expect(employee_page.locator('#login-username')).to_have_count(0)
     assert not employee_errors, 'Temporary-password browser flow reported an uncaught application error'
 
+    # P1-09: exercise the real ASP.NET Core API and SPA on this isolated PG18 profile.
+    profile_url = BASE + '/organization/profile'
+    profile_title = 'ملف المؤسسة المحلي' if lang == 'ar' else "Identité de l'organisation"
+    edit_button = 'تعديل ملف المؤسسة' if lang == 'ar' else 'Modifier le profil de l’organisation'
+    save_button = 'حفظ التغييرات' if lang == 'ar' else 'Enregistrer les modifications'
+    save_success = 'تم حفظ بيانات المؤسسة بنجاح.' if lang == 'ar' else "Les informations de l’organisation ont été enregistrées."
+    read_only_notice = (
+        'ليس لديك صلاحية تعديل بيانات المؤسسة. يمكنك الاطلاع عليها فقط.'
+        if lang == 'ar'
+        else 'Vous ne disposez pas de l’autorisation de modifier le profil de l’organisation.'
+    )
+
+    # SYSTEM_ADMIN retains the existing edit/save path.
+    page.goto(profile_url)
+    expect(page.get_by_role('heading', name=profile_title)).to_be_visible()
+    expect(page.get_by_role('button', name=edit_button, exact=True)).to_be_visible()
+    admin_org = ctx.request.get('/api/auth/me').json()['organization']
+    admin_legal_name = f'QA SYSTEM_ADMIN {lang} Organization'
+    page.get_by_role('button', name=edit_button, exact=True).click()
+    page.locator('#organization-legalName').fill(admin_legal_name)
+    with page.expect_response('**/api/organization') as admin_profile_update:
+        page.get_by_role('button', name=save_button, exact=True).click()
+    assert admin_profile_update.value.status == 200
+    expect(page.get_by_role('status')).to_contain_text(save_success)
+    expect(page.get_by_text(admin_legal_name, exact=True)).to_be_visible()
+    page.screenshot(path=out/'p1-09-system-admin-edit-save.png')
+
+    # A normal commercial user starts without org.manage and must remain read-only.
+    assert permanent_session['user']['isSystemAdministrator'] is False
+    assert 'org.read' in permanent_session['user']['permissions']
+    assert 'org.manage' not in permanent_session['user']['permissions']
+    employee_page.goto(profile_url)
+    expect(employee_page.get_by_role('heading', name=profile_title)).to_be_visible()
+    expect(employee_page.get_by_role('button', name=edit_button, exact=True)).to_have_count(0)
+    expect(employee_page.get_by_text(read_only_notice, exact=True)).to_be_visible()
+    employee_page.screenshot(path=out/'p1-09-read-only.png')
+
+    csrf_response = employee_ctx.request.get('/api/auth/csrf')
+    assert csrf_response.status == 200
+    csrf_token = csrf_response.headers.get('x-csrf-token')
+    assert csrf_token
+    admin_org = ctx.request.get('/api/auth/me').json()['organization']
+    denied_update = employee_ctx.request.put(
+        BASE + '/api/organization',
+        data=organization_update_payload(admin_org, 'QA forbidden non-admin update'),
+        headers={'X-CSRF-TOKEN': csrf_token},
+    )
+    assert denied_update.status == 403, denied_update.text()
+    assert denied_update.json()['code'] == 'FORBIDDEN_ORGANIZATION_MANAGE'
+
+    # Test-only permission grant in this newly created CI database. No seeded/production role is changed.
+    assert os.environ.get('GITHUB_ACTIONS') == 'true'
+    assert os.environ['PGDATABASE'] == f'p0_{lang}_{device}'
+    owner_env = os.environ.copy()
+    owner_env.update({'PGUSER': 'promogest_owner', 'PGPASSWORD': 'owner_pass'})
+    has_existing_test_grant = subprocess.check_output(
+        [
+            'psql', '-XAtqc',
+            "SELECT count(*) FROM role_permissions rp "
+            "JOIN roles r ON r.id=rp.role_id "
+            "JOIN permissions p ON p.id=rp.permission_id "
+            "WHERE r.code='COMMERCIAL_MANAGER' AND p.code='org.manage'",
+        ],
+        env=owner_env,
+        text=True,
+    ).strip()
+    assert has_existing_test_grant == '0', 'CI fixture unexpectedly started with a COMMERCIAL_MANAGER org.manage grant'
+    subprocess.run(
+        [
+            'psql', '-X', '-v', 'ON_ERROR_STOP=1', '-c',
+            "INSERT INTO role_permissions (role_id, permission_id) "
+            "SELECT r.id, p.id FROM roles r CROSS JOIN permissions p "
+            "WHERE r.code='COMMERCIAL_MANAGER' AND p.code='org.manage' "
+            "ON CONFLICT (role_id, permission_id) DO NOTHING",
+        ],
+        env=owner_env,
+        check=True,
+        text=True,
+        capture_output=True,
+    )
+
+    # A fresh login must resolve org.manage; the old read-only session is not reused.
+    editor_ctx = browser.new_context(base_url=BASE, viewport=viewport)
+    editor_page = editor_ctx.new_page()
+    editor_page.goto(profile_url)
+    expect(editor_page.locator('#login-username')).to_be_visible()
+    editor_page.locator('#login-username').fill(employee_username)
+    editor_page.locator('#login-password').fill(personal_password)
+    with editor_page.expect_response('**/api/auth/login') as editor_login:
+        editor_page.locator('button[type=submit]').click()
+    assert editor_login.value.status == 200
+    editor_session = editor_login.value.json()
+    assert editor_session['user']['isSystemAdministrator'] is False
+    assert 'org.manage' in editor_session['user']['permissions']
+    assert 'organization.manage' not in editor_session['user']['permissions']
+    editor_page.goto(profile_url)
+    expect(editor_page.get_by_role('heading', name=profile_title)).to_be_visible()
+    expect(editor_page.get_by_role('button', name=edit_button, exact=True)).to_be_visible()
+    editor_legal_name = f'QA non-admin org.manage {lang}'
+    editor_page.get_by_role('button', name=edit_button, exact=True).click()
+    editor_page.locator('#organization-legalName').fill(editor_legal_name)
+    with editor_page.expect_response('**/api/organization') as editor_profile_update:
+        editor_page.get_by_role('button', name=save_button, exact=True).click()
+    assert editor_profile_update.value.status == 200
+    expect(editor_page.get_by_role('status')).to_contain_text(save_success)
+    persisted_org = editor_ctx.request.get('/api/auth/me').json()['organization']
+    assert persisted_org['legalName'] == editor_legal_name
+    editor_page.screenshot(path=out/'p1-09-non-admin-org-manage-edit-save.png')
+    editor_ctx.close()
+
+    p1_09_evidence = (
+        'SYSTEM_ADMIN browser edit/save 200; non-admin without org.manage read-only and API 403 '
+        'FORBIDDEN_ORGANIZATION_MANAGE; isolated CI-only org.manage grant; fresh non-admin session '
+        'edit/save 200 with API persistence; screenshots cover AR/FR desktop/mobile'
+    )
+
     a05_evidence = 'temporary session sanitized; deep-link reload served SPA; business API 403 PASSWORD_CHANGE_REQUIRED; rotation 204; old cookie replay 401; personal password login 200'
     employee_ctx.close()
     replay_ctx.close()
@@ -201,6 +337,7 @@ with sync_playwright() as pw:
                     A01='201; anonymous login handoff; duplicate 409; counts org/user/admin-role 1/1/1; explicit login 200',
                     A04='unconfirmed logout retained session; retry 204; current and prior session 401; protected route returned to login',
                     A05=a05_evidence,
+                    P1_09=p1_09_evidence,
                     mode='automated real-browser; not manual acceptance')
     (out/'result.json').write_text(json.dumps(evidence, indent=2)+'\n')
     print(json.dumps(evidence))

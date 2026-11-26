@@ -212,7 +212,7 @@ with sync_playwright() as pw:
         page.get_by_role('button', name=save_button, exact=True).click()
     assert admin_profile_update.value.status == 200
     expect(page.get_by_role('status')).to_contain_text(save_success)
-    expect(page.get_by_text(admin_legal_name, exact=True)).to_be_visible()
+    expect(page.get_by_role('main').get_by_text(admin_legal_name, exact=True)).to_be_visible()
     page.screenshot(path=out/'p1-09-system-admin-edit-save.png')
 
     # A normal commercial user starts without org.manage and must remain read-only.

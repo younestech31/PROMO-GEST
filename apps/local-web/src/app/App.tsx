@@ -17,7 +17,9 @@ import {
 } from './routeRegistry';
 import {
   loadProjectNavigationPreferences,
+  recordRecentProjectId,
   saveProjectNavigationPreferences,
+  togglePinnedProjectId,
 } from '../shared/utils/navigationPreferences';
 import { useUnsavedGuard } from '../shared/hooks/useUnsavedGuard';
 import { getDocumentPresentation, isViteDevelopmentBuild, isVitePreviewRuntime } from '../shared/utils/appRuntime';
@@ -113,6 +115,7 @@ export function AppContentRouter({
   saveActionRef,
   discardActionRef,
 }: AppContentRouterProps) {
+  const [, refreshNavigationPreferences] = useState(0);
   const routeAllowed = canAccessRoute(session.user, activeRoute);
 
   // The refusal stays on screen until the operator acknowledges it. Redirecting in an
@@ -212,13 +215,11 @@ export function AppContentRouter({
           )}
           onTogglePin={(projectId) => {
             const preferences = loadProjectNavigationPreferences(session.user.id);
-            const isPinned = preferences.pinnedProjectIds.includes(projectId);
-            saveProjectNavigationPreferences(session.user.id, {
-              ...preferences,
-              pinnedProjectIds: isPinned
-                ? preferences.pinnedProjectIds.filter((id) => id !== projectId)
-                : [projectId, ...preferences.pinnedProjectIds],
-            });
+            saveProjectNavigationPreferences(
+              session.user.id,
+              togglePinnedProjectId(preferences, projectId)
+            );
+            refreshNavigationPreferences((revision) => revision + 1);
           }}
           onNavigateSection={(section) =>
             onNavigate({ kind: 'project', projectId: activeRoute.projectId, section })
@@ -399,12 +400,18 @@ export function App() {
   }, [performLogout]);
 
   const handleProjectVerified = useCallback((project: ProjectDto) => {
+    const userId = session?.user.id;
+    if (userId) {
+      const preferences = loadProjectNavigationPreferences(userId);
+      saveProjectNavigationPreferences(userId, recordRecentProjectId(preferences, project.id));
+    }
+
     setProjects((current) => {
       const existingIndex = current.findIndex((item) => item.id === project.id);
       if (existingIndex < 0) return [...current, project];
       return current.map((item) => item.id === project.id ? project : item);
     });
-  }, []);
+  }, [session?.user.id]);
 
   const handleProjectVerificationFailed = useCallback((projectId: string) => {
     const userId = session?.user.id;
@@ -554,13 +561,12 @@ export function App() {
         return;
       }
 
-      activeRouteRef.current = requestedRoute;
-      setActiveRoute(requestedRoute);
+      commitRoute(requestedRoute);
     };
 
     window.addEventListener('popstate', handlePopState);
     return () => window.removeEventListener('popstate', handlePopState);
-  }, []);
+  }, [commitRoute]);
 
   useEffect(() => {
     const expectedPath = buildAppPath(activeRoute);

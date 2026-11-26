@@ -1,6 +1,11 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import {
+  emptyProjectPreferences as emptyStoredProjectPreferences,
+  recordRecentProjectId as recordStoredRecentProjectId,
+  togglePinnedProjectId as toggleStoredPinnedProjectId,
+} from '../shared/utils/navigationPreferences';
+import {
   buildAppPath,
   emptyProjectPreferences,
   filterAuthorizedPreferenceIds,
@@ -93,4 +98,19 @@ test('recent and pinned preferences stay bounded and never expose unauthorized p
     filterAuthorizedPreferenceIds(prefs.recentProjectIds, authorized).map((p) => p.id),
     ['p6', 'p2']
   );
+});
+
+
+test('stored project navigation preferences update recents and pin state immutably', () => {
+  let preferences = emptyStoredProjectPreferences();
+  preferences = recordStoredRecentProjectId(preferences, 'project-1');
+  preferences = recordStoredRecentProjectId(preferences, 'project-2');
+  preferences = recordStoredRecentProjectId(preferences, 'project-1');
+  assert.deepEqual(preferences.recentProjectIds, ['project-1', 'project-2']);
+
+  preferences = toggleStoredPinnedProjectId(preferences, 'project-1');
+  assert.deepEqual(preferences.pinnedProjectIds, ['project-1']);
+  preferences = toggleStoredPinnedProjectId(preferences, 'project-1');
+  assert.deepEqual(preferences.pinnedProjectIds, []);
+  assert.deepEqual(preferences.recentProjectIds, ['project-1', 'project-2']);
 });

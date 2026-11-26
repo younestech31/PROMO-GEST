@@ -925,6 +925,87 @@ with sync_playwright() as pw:
         'those remain provisional/dependent on P1-06 manual evidence. Automated CI evidence only.'
     )
 
+    # P1-06: Back/Forward must preserve the history stack while a real form is dirty.
+    p06_original_org = ctx.request.get('/api/auth/me').json()['organization']
+    p06_original_legal_name = p06_original_org['legalName']
+    p06_page = ctx.new_page()
+    p06_page.goto(BASE)
+    p06_navigation = p06_page.get_by_role('navigation', name='Main navigation')
+    p06_profile_label = 'ملف المؤسسة' if lang == 'ar' else 'Profil Organisation'
+    p06_projects_label = 'دليل المشاريع' if lang == 'ar' else 'Annuaire des Projets'
+    p06_edit_label = 'تعديل ملف المؤسسة' if lang == 'ar' else 'Modifier le profil de l’organisation'
+    p06_stay_label = 'البقاء هنا' if lang == 'ar' else 'Rester ici'
+    p06_discard_label = 'تجاهل التغييرات والمتابعة' if lang == 'ar' else 'Abandonner et continuer'
+    p06_save_label = 'حفظ والمتابعة' if lang == 'ar' else 'Enregistrer et continuer'
+    if device == 'mobile':
+        p06_page.get_by_role('button', name='Open menu', exact=True).click()
+    p06_navigation.get_by_role('button', name=p06_profile_label, exact=True).click()
+    expect(p06_page).to_have_url(BASE + '/organization/profile')
+    if device == 'mobile':
+        p06_page.get_by_role('button', name='Open menu', exact=True).click()
+    p06_navigation.get_by_role('button', name=p06_projects_label, exact=True).click()
+    expect(p06_page).to_have_url(BASE + '/projects')
+
+    # Build a forward entry, return to the profile cleanly, then dirty it.
+    p06_page.go_back()
+    expect(p06_page).to_have_url(BASE + '/organization/profile')
+    p06_page.get_by_role('button', name=p06_edit_label, exact=True).click()
+    p06_forward_draft = f'{p06_original_legal_name} - P1-06 Forward {lang.upper()} {device.upper()}'
+    p06_page.locator('#organization-legalName').fill(p06_forward_draft)
+
+    # First Forward is blocked; Stay must keep the draft AND preserve the forward entry.
+    p06_page.go_forward()
+    p06_dialog = p06_page.get_by_role('dialog')
+    expect(p06_dialog).to_be_visible()
+    expect(p06_page).to_have_url(BASE + '/organization/profile')
+    expect(p06_page.locator('#organization-legalName')).to_have_value(p06_forward_draft)
+    p06_dialog.get_by_role('button', name=p06_stay_label, exact=True).click()
+    expect(p06_dialog).to_have_count(0)
+    expect(p06_page).to_have_url(BASE + '/organization/profile')
+    p06_page.go_forward()
+    expect(p06_dialog).to_be_visible()
+    p06_dialog.get_by_role('button', name=p06_discard_label, exact=True).click()
+    expect(p06_page).to_have_url(BASE + '/projects')
+    assert ctx.request.get('/api/auth/me').json()['organization']['legalName'] == p06_original_legal_name, (
+        'Discarding a dirty Forward navigation persisted the organization draft'
+    )
+
+    # Back is guarded independently; Save & Continue must commit the draft before moving back.
+    p06_page.go_back()
+    expect(p06_page).to_have_url(BASE + '/organization/profile')
+    p06_page.get_by_role('button', name=p06_edit_label, exact=True).click()
+    p06_back_save_draft = f'{p06_original_legal_name} - P1-06 Back Save {lang.upper()} {device.upper()}'
+    p06_page.locator('#organization-legalName').fill(p06_back_save_draft)
+    p06_page.go_back()
+    expect(p06_dialog).to_be_visible()
+    expect(p06_page).to_have_url(BASE + '/organization/profile')
+    p06_dialog.get_by_role('button', name=p06_save_label, exact=True).click()
+    expect(p06_page).to_have_url(BASE + '/')
+    assert ctx.request.get('/api/auth/me').json()['organization']['legalName'] == p06_back_save_draft, (
+        'Save & Continue did not persist the dirty Back-navigation draft'
+    )
+
+    # Restore the disposable CI organization fixture for subsequent checks.
+    p06_restore_csrf = ctx.request.get('/api/auth/csrf')
+    assert p06_restore_csrf.status == 200
+    p06_restore_token = p06_restore_csrf.headers.get('x-csrf-token')
+    assert p06_restore_token
+    p06_current_org = ctx.request.get('/api/auth/me').json()['organization']
+    p06_restore = ctx.request.put(
+        BASE + '/api/organization',
+        data=organization_update_payload(p06_current_org, p06_original_legal_name),
+        headers={'X-CSRF-TOKEN': p06_restore_token},
+    )
+    assert p06_restore.status == 200, p06_restore.text()
+    p06_page.screenshot(path=out/'p1-06-browser-history-guard.png')
+    p06_page.close()
+    p06_evidence = (
+        'Real ASP.NET Core + PostgreSQL 18 browser flow in AR/FR desktop/mobile: dirty Forward navigation '
+        'restored the current route without truncating the forward entry; Stay preserved the draft and a '
+        'second Forward remained guardable; Discard navigated without persisting; dirty Back navigation '
+        'offered Save & Continue and persisted before returning to the prior route. Automated CI evidence only.'
+    )
+
     p17_fresh_context.close()
     employee_ctx.close()
     replay_ctx.close()

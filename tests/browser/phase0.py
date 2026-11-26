@@ -43,6 +43,25 @@ def organization_update_payload(organization, legal_name):
     }
 
 
+def project_update_payload(project, estimated_budget_dzd, name_ar=None):
+    return {
+        'nameAr': name_ar or project['nameAr'],
+        'nameFr': project['nameFr'],
+        'wilayaCode': project['wilayaCode'],
+        'wilayaName': project['wilayaName'],
+        'municipality': project['municipality'],
+        'address': project.get('address'),
+        'landTitleReference': project.get('landTitleReference'),
+        'buildingPermitNumber': project.get('buildingPermitNumber'),
+        'buildingPermitDate': project.get('buildingPermitDate'),
+        'status': project['status'],
+        'estimatedBudgetDzd': estimated_budget_dzd,
+        'plannedBlocksCount': project['plannedBlocksCount'],
+        'plannedUnitsCount': project['plannedUnitsCount'],
+        'expectedConcurrencyStamp': project['concurrencyStamp'],
+    }
+
+
 with sync_playwright() as pw:
     browser = pw.chromium.launch(channel='chrome')
     ctx = browser.new_context(base_url=BASE, viewport=viewport)
@@ -298,6 +317,215 @@ with sync_playwright() as pw:
     editor_page.screenshot(path=out/'p1-09-non-admin-org-manage-edit-save.png')
     editor_ctx.close()
 
+    # P1-05 / D-014: verify the project-budget policy against the real API + SPA.
+    # All data lives in this fresh p0_<language>_<device> PostgreSQL database.
+    assert 'projects.manage' in permanent_session['user']['permissions']
+    assert permanent_session['user']['isSystemAdministrator'] is False
+    project_code = f'QA-P1-05-{lang.upper()}-{device.upper()}'
+    project_create = {
+        'code': project_code,
+        'nameAr': 'مشروع اختبار حجب الميزانية',
+        'nameFr': 'Projet QA confidentialité budget',
+        'wilayaCode': '16',
+        'wilayaName': 'الجزائر / Alger',
+        'municipality': 'Dely Ibrahim',
+        'address': 'QA fictitious address',
+        'landTitleReference': None,
+        'buildingPermitNumber': None,
+        'buildingPermitDate': None,
+        'status': 'Planning',
+        'estimatedBudgetDzd': 0,
+        'plannedBlocksCount': 1,
+        'plannedUnitsCount': 1,
+    }
+    denied_project_create = ctx.request.post(
+        BASE + '/api/projects',
+        data={**project_create, 'code': project_code + '-DENIED', 'estimatedBudgetDzd': 1},
+        headers={'X-CSRF-TOKEN': admin_csrf_token},
+    )
+    assert denied_project_create.status == 403, denied_project_create.text()
+    assert denied_project_create.json()['code'] == 'PROJECT_FINANCIAL_ACCESS_DENIED'
+
+    created_project_response = ctx.request.post(
+        BASE + '/api/projects',
+        data=project_create,
+        headers={'X-CSRF-TOKEN': admin_csrf_token},
+    )
+    assert created_project_response.status == 201, created_project_response.text()
+    created_project = created_project_response.json()
+    project_id = created_project['id']
+    assert created_project['estimatedBudgetDzd'] is None
+
+    # SYSTEM_ADMIN is not a financial member: API and summary stay redacted.
+    admin_project = ctx.request.get(BASE + '/api/projects/' + project_id)
+    assert admin_project.status == 200
+    assert admin_project.json()['estimatedBudgetDzd'] is None
+    page.goto(BASE + '/projects')
+    project_heading = 'المشاريع العقارية والتحكم في الوصول' if lang == 'ar' else "Projets immobiliers & Contrôle d'accès"
+    expect(page.get_by_role('heading', name=project_heading)).to_be_visible()
+    admin_row = page.get_by_role('row').filter(has_text=project_code)
+    expect(admin_row).to_have_count(1)
+    assert admin_row.locator('td').nth(4).inner_text().strip() == '—'
+    edit_label = 'تعديل البيانات' if lang == 'ar' else 'Modifier'
+    admin_row.get_by_role('button', name=edit_label, exact=True).click()
+    expect(page.locator('#prj-budget')).to_have_count(0)
+    page.screenshot(path=out/'p1-05-system-admin-budget-redacted.png')
+    page.goto(BASE + '/projects')
+
+    def assign_financial_membership(role_in_project, can_view_financials):
+        response = ctx.request.put(
+            BASE + f'/api/projects/{project_id}/members',
+            data={
+                'userId': employee_record['id'],
+                'roleInProject': role_in_project,
+                'canViewFinancials': can_view_financials,
+                'canManageSales': False,
+                'canManageConstruction': False,
+                'canManageDocuments': False,
+            },
+            headers={'X-CSRF-TOKEN': admin_csrf_token},
+        )
+        assert response.status == 200, response.text()
+        return response.json()
+
+    # ProjectManager alone is not enough: no CanViewFinancials means no read or write.
+    assign_financial_membership('ProjectManager', False)
+    manager_without_financials = employee_ctx.request.get(BASE + f'/api/projects/{project_id}')
+    assert manager_without_financials.status == 200
+    assert manager_without_financials.json()['estimatedBudgetDzd'] is None
+    denied_budget_update = employee_ctx.request.put(
+        BASE + f'/api/projects/{project_id}',
+        data=project_update_payload(manager_without_financials.json(), 50_000_000),
+        headers={'X-CSRF-TOKEN': csrf_token},
+    )
+    assert denied_budget_update.status == 403, denied_budget_update.text()
+    assert denied_budget_update.json()['code'] == 'PROJECT_FINANCIAL_ACCESS_DENIED'
+    denied_budget_audit = ctx.request.get(BASE + '/api/audit?limit=100')
+    assert denied_budget_audit.status == 200
+    assert any(
+        entry['eventType'] == 'ACCESS_DENIED'
+        and entry['actorUserId'] == employee_record['id']
+        and entry['targetEntityId'] == project_id
+        for entry in denied_budget_audit.json()
+    )
+    employee_page.goto(BASE + '/projects')
+    manager_row = employee_page.get_by_role('row').filter(has_text=project_code)
+    expect(manager_row).to_have_count(1)
+    assert manager_row.locator('td').nth(4).inner_text().strip() == '—'
+    manager_row.get_by_role('button', name=edit_label, exact=True).click()
+    expect(employee_page.locator('#prj-budget')).to_have_count(0)
+    employee_page.screenshot(path=out/'p1-05-project-manager-without-financials.png')
+    employee_page.goto(BASE + '/projects')
+
+    # A financial member who is not ProjectManager can read, but never edit the budget.
+    assign_financial_membership('FinanceController', True)
+    financial_reader = employee_ctx.request.get(BASE + f'/api/projects/{project_id}')
+    assert financial_reader.status == 200
+    assert financial_reader.json()['estimatedBudgetDzd'] is None
+    employee_page.goto(BASE + '/projects')
+    finance_row = employee_page.get_by_role('row').filter(has_text=project_code)
+    expect(finance_row).to_have_count(1)
+    expect(finance_row.get_by_role('button', name=edit_label, exact=True)).to_have_count(0)
+    employee_page.screenshot(path=out/'p1-05-financial-reader-no-editor.png')
+
+    # Grant both required capabilities, then create a synthetic budget through the real API.
+    assign_financial_membership('ProjectManager', True)
+    authorized_project = employee_ctx.request.get(BASE + f'/api/projects/{project_id}')
+    assert authorized_project.status == 200
+    assert authorized_project.json()['estimatedBudgetDzd'] is None
+    authorized_budget_update = employee_ctx.request.put(
+        BASE + f'/api/projects/{project_id}',
+        data=project_update_payload(authorized_project.json(), 50_000_000),
+        headers={'X-CSRF-TOKEN': csrf_token},
+    )
+    assert authorized_budget_update.status == 200, authorized_budget_update.text()
+    persisted_project = employee_ctx.request.get(BASE + f'/api/projects/{project_id}')
+    assert persisted_project.status == 200
+    assert persisted_project.json()['estimatedBudgetDzd'] == 50_000_000
+
+    # A non-financial SYSTEM_ADMIN update sends null and must preserve the persisted budget.
+    admin_project_before_null = ctx.request.get(BASE + f'/api/projects/{project_id}')
+    assert admin_project_before_null.status == 200
+    assert admin_project_before_null.json()['estimatedBudgetDzd'] is None
+    admin_null_update = ctx.request.put(
+        BASE + f'/api/projects/{project_id}',
+        data=project_update_payload(
+            admin_project_before_null.json(),
+            None,
+            name_ar='مشروع QA بعد تعديل البيانات العامة',
+        ),
+        headers={'X-CSRF-TOKEN': admin_csrf_token},
+    )
+    assert admin_null_update.status == 200, admin_null_update.text()
+    assert admin_null_update.json()['estimatedBudgetDzd'] is None
+    preserved_budget = employee_ctx.request.get(BASE + f'/api/projects/{project_id}')
+    assert preserved_budget.status == 200
+    assert preserved_budget.json()['estimatedBudgetDzd'] == 50_000_000
+
+    # FinanceController keeps visibility but has no ProjectManager edit action.
+    assign_financial_membership('FinanceController', True)
+    employee_page.goto(BASE + '/projects')
+    finance_row = employee_page.get_by_role('row').filter(has_text=project_code)
+    expect(finance_row).to_have_count(1)
+    assert finance_row.locator('td').nth(4).inner_text().strip() != '—'
+    expect(finance_row.get_by_role('button', name=edit_label, exact=True)).to_have_count(0)
+    employee_page.screenshot(path=out/'p1-05-financial-reader-budget-visible.png')
+
+    # ProjectManager + CanViewFinancials may edit through the real UI.
+    assign_financial_membership('ProjectManager', True)
+    employee_page.goto(BASE + '/projects')
+    authorized_row = employee_page.get_by_role('row').filter(has_text=project_code)
+    expect(authorized_row).to_have_count(1)
+    expect(authorized_row.get_by_role('button', name=edit_label, exact=True)).to_be_visible()
+    authorized_row.get_by_role('button', name=edit_label, exact=True).click()
+    budget_input = employee_page.locator('#prj-budget')
+    expect(budget_input).to_be_visible()
+    expect(budget_input).to_have_value('50000000')
+    employee_page.screenshot(path=out/'p1-05-project-manager-financial-editor.png')
+    budget_form = employee_page.locator('form').filter(has=budget_input)
+    budget_input.fill('51000000')
+    with employee_page.expect_response(
+        lambda response: response.request.method == 'PUT'
+        and response.url.endswith('/api/projects/' + project_id)
+    ) as ui_budget_save:
+        budget_form.locator('button[type="submit"]').click()
+    assert ui_budget_save.value.status == 200, ui_budget_save.value.text()
+    updated_by_ui = employee_ctx.request.get(BASE + f'/api/projects/{project_id}')
+    assert updated_by_ui.status == 200
+    assert updated_by_ui.json()['estimatedBudgetDzd'] == 51_000_000
+    employee_page.screenshot(path=out/'p1-05-project-manager-budget-saved.png')
+
+    # A SYSTEM_ADMIN may update general master data but still sees no financial value.
+    admin_after_save = ctx.request.get(BASE + f'/api/projects/{project_id}')
+    assert admin_after_save.status == 200
+    assert admin_after_save.json()['estimatedBudgetDzd'] is None
+    page.goto(BASE + '/projects')
+    admin_row = page.get_by_role('row').filter(has_text=project_code)
+    expect(admin_row).to_have_count(1)
+    assert admin_row.locator('td').nth(4).inner_text().strip() == '—'
+    admin_row.get_by_role('button', name=edit_label, exact=True).click()
+    expect(page.locator('#prj-budget')).to_have_count(0)
+    page.screenshot(path=out/'p1-05-system-admin-budget-remains-redacted.png')
+
+    # Revoke the non-admin member after leaving the ProjectManager role; the user loses scope.
+    assign_financial_membership('FinanceController', True)
+    remove_membership = ctx.request.delete(
+        BASE + f'/api/projects/{project_id}/members/' + employee_record['id'],
+        headers={'X-CSRF-TOKEN': admin_csrf_token},
+    )
+    assert remove_membership.status == 200, remove_membership.text()
+    assert employee_ctx.request.get(BASE + f'/api/projects/{project_id}').status == 403
+    employee_page.goto(BASE + '/projects')
+    expect(employee_page.get_by_role('row').filter(has_text=project_code)).to_have_count(0)
+
+    p1_05_evidence = (
+        'SYSTEM_ADMIN create with numeric budget denied 403; SYSTEM_ADMIN no-member budget redacted in API/UI; '
+        'ProjectManager without CanViewFinancials read redacted, numeric update 403 and ACCESS_DENIED audited; '
+        'FinanceController with CanViewFinancials reads budget but has no editor; ProjectManager+CanViewFinancials '
+        'saves through UI/API; admin null general update preserves persisted budget; membership revocation removes '
+        'directory/API access; AR/FR desktop/mobile. Automated CI only, not Staging/manual acceptance.'
+    )
+
     p1_09_evidence = (
         'SYSTEM_ADMIN browser edit/save 200; non-admin without org.manage read-only and API 403 '
         'FORBIDDEN_ORGANIZATION_MANAGE; isolated CI-only org.manage grant; fresh non-admin session '
@@ -338,6 +566,7 @@ with sync_playwright() as pw:
                     A04='unconfirmed logout retained session; retry 204; current and prior session 401; protected route returned to login',
                     A05=a05_evidence,
                     P1_09=p1_09_evidence,
+                    P1_05=p1_05_evidence,
                     mode='automated real-browser; not manual acceptance')
     (out/'result.json').write_text(json.dumps(evidence, indent=2)+'\n')
     print(json.dumps(evidence))

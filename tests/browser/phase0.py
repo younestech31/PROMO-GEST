@@ -431,7 +431,10 @@ with sync_playwright() as pw:
 
     a05_evidence = 'temporary session sanitized; deep-link reload served SPA; business API 403 PASSWORD_CHANGE_REQUIRED; rotation 204; old cookie replay 401; personal password login 200'
     # P1-17: persist the authenticated user's own language preference through the real SPA.
-    # The API response, reload, and a fresh independent login must all agree.
+    # P1-09 opened a second login for this same user; successful login rotates User.ConcurrencyStamp.
+    # Reload once so the starting tab receives the authoritative current stamp before the happy path.
+    employee_page.reload()
+    expect(employee_page.locator('html')).to_have_attribute('lang', lang)
     p17_admin_before = ctx.request.get('/api/auth/me')
     assert p17_admin_before.status == 200
     p17_admin_session_before = p17_admin_before.json()

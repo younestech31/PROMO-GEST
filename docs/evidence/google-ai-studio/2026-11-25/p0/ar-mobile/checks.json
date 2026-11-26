@@ -1,0 +1,87 @@
+{
+  "profile": "ar-mobile",
+  "lang": "ar",
+  "device": "mobile",
+  "viewport": {
+    "width": 390,
+    "height": 844
+  },
+  "setupAttrs": {
+    "lang": "ar",
+    "dir": "rtl",
+    "scrollWidth": 390,
+    "innerWidth": 390
+  },
+  "setupStatus": 201,
+  "handoffCheck": {
+    "lang": "ar",
+    "dir": "rtl",
+    "scrollWidth": 390,
+    "innerWidth": 390,
+    "statusText": "\u0627\u0643\u062a\u0645\u0644\u062a \u062a\u0647\u064a\u0626\u0629 \u0627\u0644\u0645\u0624\u0633\u0633\u0629 \u0648\u0625\u0646\u0634\u0627\u0621 \u062d\u0633\u0627\u0628 \u0645\u062f\u064a\u0631 \u0627\u0644\u0646\u0638\u0627\u0645. \u0633\u062c\u0651\u0644 \u0627\u0644\u062f\u062e\u0648\u0644 \u0627\u0644\u0622\u0646 \u0628\u0628\u064a\u0627\u0646\u0627\u062a \u0627\u0644\u062d\u0633\u0627\u0628 \u0627\u0644\u0630\u064a \u0623\u0646\u0634\u0623\u062a\u0647."
+  },
+  "anonMe": 401,
+  "dupStatus": 409,
+  "dupCode": "SETUP_ALREADY_INITIALIZED",
+  "loginStatus": 200,
+  "storageCheck": {
+    "localStorageKeys": [],
+    "sessionStorageKeys": [],
+    "scrollWidth": 390,
+    "innerWidth": 390,
+    "lang": "ar",
+    "dir": "rtl"
+  },
+  "preLogoutMeStatus": 200,
+  "noCsrfLogoutStatus": 403,
+  "stillAliveAfterNoCsrf": 200,
+  "empTempSanitized": true,
+  "forcedAttrs": {
+    "lang": "ar",
+    "dir": "rtl",
+    "scrollWidth": 390,
+    "innerWidth": 390
+  },
+  "blockedProjects": {
+    "status": 403,
+    "body": {
+      "code": "PASSWORD_CHANGE_REQUIRED",
+      "message": "Change the temporary password before accessing organization or project data.",
+      "validationErrors": null
+    }
+  },
+  "pwChangeStatus": 204,
+  "afterChangeMe": 401,
+  "oldEmpCookieMe": 401,
+  "empPermStatus": 200,
+  "stillAuthMeDuringAbort": 200,
+  "retryLogoutStatus": 204,
+  "postLogoutMe": 401,
+  "preClientPostLogoutMe": 401,
+  "postLogoutAttrs": {
+    "lang": "ar",
+    "dir": "rtl",
+    "scrollWidth": 390,
+    "innerWidth": 390
+  },
+  "pageErrors": [],
+  "empErrors": [],
+  "db": {
+    "preCounts": "0|0|0",
+    "postCounts": "1|2|1",
+    "auditEvents": {
+      "AUTH_LOGIN_SUCCESS": 3,
+      "AUTH_LOGOUT": 1,
+      "SETUP_INITIALIZED": 1,
+      "USER_CREATED": 1,
+      "USER_PASSWORD_CHANGED": 1
+    }
+  },
+  "healthReadyPreSetup": {
+    "status": "Ready",
+    "databaseConnected": true,
+    "isInitialized": false,
+    "timestampUtc": "2026-11-25T15:52:05.7952795+00:00",
+    "environmentMode": "Development"
+  }
+}

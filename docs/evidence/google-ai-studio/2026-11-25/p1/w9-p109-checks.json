@@ -1,0 +1,615 @@
+{
+  "w9": {
+    "ar": {
+      "navStats": [
+        {
+          "text": "مساحة المؤسسة",
+          "ariaCurrent": "page",
+          "borderLeftWidth": "0px",
+          "borderRightWidth": "2px",
+          "borderInlineStartWidth": "2px",
+          "borderInlineStartColor": "oklch(0.855 0.138 181.071)",
+          "fontWeight": "600",
+          "bg": "oklch(0.437 0.078 188.216)"
+        },
+        {
+          "text": "دليل المشاريع",
+          "ariaCurrent": null,
+          "borderLeftWidth": "0px",
+          "borderRightWidth": "2px",
+          "borderInlineStartWidth": "2px",
+          "borderInlineStartColor": "rgba(0, 0, 0, 0)",
+          "fontWeight": "500",
+          "bg": "rgba(0, 0, 0, 0)"
+        },
+        {
+          "text": "دليل الأطراف",
+          "ariaCurrent": null,
+          "borderLeftWidth": "0px",
+          "borderRightWidth": "2px",
+          "borderInlineStartWidth": "2px",
+          "borderInlineStartColor": "rgba(0, 0, 0, 0)",
+          "fontWeight": "500",
+          "bg": "rgba(0, 0, 0, 0)"
+        }
+      ],
+      "desktopRoutes": [
+        {
+          "label": "مساحة المؤسسة",
+          "url": "/",
+          "sw": 1440,
+          "iw": 1440,
+          "lang": "ar",
+          "dir": "rtl"
+        },
+        {
+          "label": "دليل المشاريع",
+          "url": "/projects",
+          "sw": 1440,
+          "iw": 1440,
+          "lang": "ar",
+          "dir": "rtl"
+        },
+        {
+          "label": "دليل الأطراف",
+          "url": "/organization/parties",
+          "sw": 1440,
+          "iw": 1440,
+          "lang": "ar",
+          "dir": "rtl"
+        },
+        {
+          "label": "ملف المؤسسة",
+          "url": "/organization/profile",
+          "sw": 1440,
+          "iw": 1440,
+          "lang": "ar",
+          "dir": "rtl"
+        },
+        {
+          "label": "المرجع الإقليمي",
+          "url": "/organization/territorial-reference",
+          "sw": 1440,
+          "iw": 1440,
+          "lang": "ar",
+          "dir": "rtl"
+        },
+        {
+          "label": "سجل الموظفين (HR)\nمخطط",
+          "url": "/organization/employees",
+          "sw": 1440,
+          "iw": 1440,
+          "lang": "ar",
+          "dir": "rtl"
+        },
+        {
+          "label": "تقارير المحفظة",
+          "url": "/reports",
+          "sw": 1440,
+          "iw": 1440,
+          "lang": "ar",
+          "dir": "rtl"
+        },
+        {
+          "label": "حسابات الموظفين",
+          "url": "/admin/users",
+          "sw": 1440,
+          "iw": 1440,
+          "lang": "ar",
+          "dir": "rtl"
+        },
+        {
+          "label": "سجل التدقيق الأمني",
+          "url": "/admin/audit",
+          "sw": 1440,
+          "iw": 1440,
+          "lang": "ar",
+          "dir": "rtl"
+        },
+        {
+          "label": "التشخيص المحلي",
+          "url": "/admin/diagnostics",
+          "sw": 1440,
+          "iw": 1440,
+          "lang": "ar",
+          "dir": "rtl"
+        }
+      ],
+      "tabStops": [
+        {
+          "tag": "BUTTON",
+          "text": "مساحة المؤسسة",
+          "outlineStyle": "none",
+          "outlineWidth": "3px"
+        },
+        {
+          "tag": "BUTTON",
+          "text": "دليل المشاريع",
+          "outlineStyle": "solid",
+          "outlineWidth": "2px"
+        },
+        {
+          "tag": "BUTTON",
+          "text": "دليل الأطراف",
+          "outlineStyle": "solid",
+          "outlineWidth": "2px"
+        },
+        {
+          "tag": "BUTTON",
+          "text": "ملف المؤسسة",
+          "outlineStyle": "solid",
+          "outlineWidth": "2px"
+        },
+        {
+          "tag": "BUTTON",
+          "text": "المرجع الإقليمي",
+          "outlineStyle": "solid",
+          "outlineWidth": "2px"
+        },
+        {
+          "tag": "BUTTON",
+          "text": "سجل الموظفين (HR)مخطط",
+          "outlineStyle": "solid",
+          "outlineWidth": "2px"
+        }
+      ],
+      "zoom200": {
+        "sw": 720,
+        "iw": 720
+      },
+      "mobileRoutes": [
+        {
+          "label": "مساحة المؤسسة",
+          "url": "/",
+          "sw": 390,
+          "iw": 390,
+          "tables": []
+        },
+        {
+          "label": "دليل المشاريع",
+          "url": "/projects",
+          "sw": 390,
+          "iw": 390,
+          "tables": []
+        },
+        {
+          "label": "دليل الأطراف",
+          "url": "/organization/parties",
+          "sw": 390,
+          "iw": 390,
+          "tables": []
+        },
+        {
+          "label": "ملف المؤسسة",
+          "url": "/organization/profile",
+          "sw": 390,
+          "iw": 390,
+          "tables": []
+        },
+        {
+          "label": "المرجع الإقليمي",
+          "url": "/organization/territorial-reference",
+          "sw": 390,
+          "iw": 390,
+          "tables": [
+            {
+              "tW": 356,
+              "parentW": 356,
+              "parentOverflowX": "auto"
+            }
+          ]
+        },
+        {
+          "label": "سجل الموظفين (HR)\nمخطط",
+          "url": "/organization/employees",
+          "sw": 390,
+          "iw": 390,
+          "tables": [
+            {
+              "tW": 565,
+              "parentW": 272,
+              "parentOverflowX": "auto"
+            }
+          ]
+        },
+        {
+          "label": "تقارير المحفظة",
+          "url": "/reports",
+          "sw": 390,
+          "iw": 390,
+          "tables": [
+            {
+              "tW": 430,
+              "parentW": 272,
+              "parentOverflowX": "auto"
+            }
+          ]
+        },
+        {
+          "label": "حسابات الموظفين",
+          "url": "/admin/users",
+          "sw": 390,
+          "iw": 390,
+          "tables": [
+            {
+              "tW": 976,
+              "parentW": 356,
+              "parentOverflowX": "auto"
+            }
+          ]
+        },
+        {
+          "label": "سجل التدقيق الأمني",
+          "url": "/admin/audit",
+          "sw": 390,
+          "iw": 390,
+          "tables": [
+            {
+              "tW": 837,
+              "parentW": 356,
+              "parentOverflowX": "auto"
+            }
+          ]
+        },
+        {
+          "label": "التشخيص المحلي",
+          "url": "/admin/diagnostics",
+          "sw": 390,
+          "iw": 390,
+          "tables": []
+        }
+      ]
+    },
+    "fr": {
+      "navStats": [
+        {
+          "text": "Espace Organisation",
+          "ariaCurrent": "page",
+          "borderLeftWidth": "2px",
+          "borderRightWidth": "0px",
+          "borderInlineStartWidth": "2px",
+          "borderInlineStartColor": "oklch(0.855 0.138 181.071)",
+          "fontWeight": "600",
+          "bg": "oklch(0.437 0.078 188.216)"
+        },
+        {
+          "text": "Annuaire des Projets",
+          "ariaCurrent": null,
+          "borderLeftWidth": "2px",
+          "borderRightWidth": "0px",
+          "borderInlineStartWidth": "2px",
+          "borderInlineStartColor": "rgba(0, 0, 0, 0)",
+          "fontWeight": "500",
+          "bg": "rgba(0, 0, 0, 0)"
+        },
+        {
+          "text": "Répertoire Tiers",
+          "ariaCurrent": null,
+          "borderLeftWidth": "2px",
+          "borderRightWidth": "0px",
+          "borderInlineStartWidth": "2px",
+          "borderInlineStartColor": "rgba(0, 0, 0, 0)",
+          "fontWeight": "500",
+          "bg": "rgba(0, 0, 0, 0)"
+        }
+      ],
+      "desktopRoutes": [
+        {
+          "label": "Espace Organisation",
+          "url": "/",
+          "sw": 1440,
+          "iw": 1440,
+          "lang": "fr",
+          "dir": "ltr"
+        },
+        {
+          "label": "Annuaire des Projets",
+          "url": "/projects",
+          "sw": 1440,
+          "iw": 1440,
+          "lang": "fr",
+          "dir": "ltr"
+        },
+        {
+          "label": "Répertoire Tiers",
+          "url": "/organization/parties",
+          "sw": 1440,
+          "iw": 1440,
+          "lang": "fr",
+          "dir": "ltr"
+        },
+        {
+          "label": "Profil Organisation",
+          "url": "/organization/profile",
+          "sw": 1440,
+          "iw": 1440,
+          "lang": "fr",
+          "dir": "ltr"
+        },
+        {
+          "label": "Référentiel Territorial",
+          "url": "/organization/territorial-reference",
+          "sw": 1440,
+          "iw": 1440,
+          "lang": "fr",
+          "dir": "ltr"
+        },
+        {
+          "label": "Employés (RH)\nPlanifié",
+          "url": "/organization/employees",
+          "sw": 1440,
+          "iw": 1440,
+          "lang": "fr",
+          "dir": "ltr"
+        },
+        {
+          "label": "Rapports Portefeuille",
+          "url": "/reports",
+          "sw": 1440,
+          "iw": 1440,
+          "lang": "fr",
+          "dir": "ltr"
+        },
+        {
+          "label": "Comptes Employés",
+          "url": "/admin/users",
+          "sw": 1440,
+          "iw": 1440,
+          "lang": "fr",
+          "dir": "ltr"
+        },
+        {
+          "label": "Journal d’Audit",
+          "url": "/admin/audit",
+          "sw": 1440,
+          "iw": 1440,
+          "lang": "fr",
+          "dir": "ltr"
+        },
+        {
+          "label": "Diagnostics Serveur",
+          "url": "/admin/diagnostics",
+          "sw": 1440,
+          "iw": 1440,
+          "lang": "fr",
+          "dir": "ltr"
+        }
+      ],
+      "tabStops": [
+        {
+          "tag": "BUTTON",
+          "text": "Espace Organisation",
+          "outlineStyle": "none",
+          "outlineWidth": "3px"
+        },
+        {
+          "tag": "BUTTON",
+          "text": "Annuaire des Projets",
+          "outlineStyle": "solid",
+          "outlineWidth": "2px"
+        },
+        {
+          "tag": "BUTTON",
+          "text": "Répertoire Tiers",
+          "outlineStyle": "solid",
+          "outlineWidth": "2px"
+        },
+        {
+          "tag": "BUTTON",
+          "text": "Profil Organisation",
+          "outlineStyle": "solid",
+          "outlineWidth": "2px"
+        },
+        {
+          "tag": "BUTTON",
+          "text": "Référentiel Territorial",
+          "outlineStyle": "solid",
+          "outlineWidth": "2px"
+        },
+        {
+          "tag": "BUTTON",
+          "text": "Employés (RH)Planifié",
+          "outlineStyle": "solid",
+          "outlineWidth": "2px"
+        }
+      ],
+      "zoom200": {
+        "sw": 720,
+        "iw": 720
+      },
+      "mobileRoutes": [
+        {
+          "label": "Espace Organisation",
+          "url": "/",
+          "sw": 390,
+          "iw": 390,
+          "tables": []
+        },
+        {
+          "label": "Annuaire des Projets",
+          "url": "/projects",
+          "sw": 390,
+          "iw": 390,
+          "tables": []
+        },
+        {
+          "label": "Répertoire Tiers",
+          "url": "/organization/parties",
+          "sw": 390,
+          "iw": 390,
+          "tables": []
+        },
+        {
+          "label": "Profil Organisation",
+          "url": "/organization/profile",
+          "sw": 390,
+          "iw": 390,
+          "tables": []
+        },
+        {
+          "label": "Référentiel Territorial",
+          "url": "/organization/territorial-reference",
+          "sw": 390,
+          "iw": 390,
+          "tables": [
+            {
+              "tW": 368,
+              "parentW": 356,
+              "parentOverflowX": "auto"
+            }
+          ]
+        },
+        {
+          "label": "Employés (RH)\nPlanifié",
+          "url": "/organization/employees",
+          "sw": 390,
+          "iw": 390,
+          "tables": [
+            {
+              "tW": 509,
+              "parentW": 272,
+              "parentOverflowX": "auto"
+            }
+          ]
+        },
+        {
+          "label": "Rapports Portefeuille",
+          "url": "/reports",
+          "sw": 390,
+          "iw": 390,
+          "tables": [
+            {
+              "tW": 557,
+              "parentW": 272,
+              "parentOverflowX": "auto"
+            }
+          ]
+        },
+        {
+          "label": "Comptes Employés",
+          "url": "/admin/users",
+          "sw": 390,
+          "iw": 390,
+          "tables": [
+            {
+              "tW": 1171,
+              "parentW": 356,
+              "parentOverflowX": "auto"
+            }
+          ]
+        },
+        {
+          "label": "Journal d’Audit",
+          "url": "/admin/audit",
+          "sw": 390,
+          "iw": 390,
+          "tables": [
+            {
+              "tW": 847,
+              "parentW": 356,
+              "parentOverflowX": "auto"
+            }
+          ]
+        },
+        {
+          "label": "Diagnostics Serveur",
+          "url": "/admin/diagnostics",
+          "sw": 390,
+          "iw": 390,
+          "tables": []
+        }
+      ]
+    }
+  },
+  "p109": {
+    "admin": {
+      "saveOrgArStatus": 200,
+      "persistedOrgAr": true,
+      "saveOrgFrStatus": 200,
+      "persistedOrgFr": true,
+      "staleOrgStatus": 400,
+      "staleOrgBody": {
+        "type": "https://tools.ietf.org/html/rfc9110#section-15.5.1",
+        "title": "One or more validation errors occurred.",
+        "status": 400,
+        "errors": {
+          "Address": [
+            "The Address field is required."
+          ],
+          "LegalForm": [
+            "The LegalForm field is required."
+          ],
+          "LegalName": [
+            "The LegalName field is required."
+          ],
+          "WilayaCode": [
+            "The WilayaCode field is required."
+          ],
+          "WilayaName": [
+            "The WilayaName field is required."
+          ],
+          "DefaultLanguage": [
+            "The DefaultLanguage field is required."
+          ]
+        },
+        "traceId": "00-67b6a8fb9f5a6b422897fcb6cc9ae803-36db63cbc4489784-00"
+      },
+      "usersHeadersAr": [
+        "اسم المستخدم",
+        "الاسم الكامل",
+        "الأدوار الوظيفية",
+        "الحالة",
+        "آخر دخول",
+        "الإجراءات"
+      ],
+      "adminRowTextAr": "qaadmin\nمدير النظام الوحيد\n\t\nQA System Admin\nqaadmin@example.invalid\n\tمدير النظام\tنشط\t25‏/11‏/2026، 04:07 م\t\nتعديل الأدوار\nتعيين كلمة مرور",
+      "adminDeactivateCountAr": 0,
+      "noticeAr": true,
+      "emptyModalHasMsgAr": true,
+      "createUiStatus": 201,
+      "newEmpRowAr": "qa.ui1172\nيتطلب تغيير كلمة المرور\n\t\nموظف واجهة الاختبار\nqa.ui1172@example.invalid\n\tمسؤول المبيعات والتسويق\tنشط\tغير مسجل\t\nتعديل الأدوار\nتعيين كلمة مرور\nتعطيل",
+      "afterDeactAr": "qa.ui1172\nيتطلب تغيير كلمة المرور\n\t\nموظف واجهة الاختبار\nqa.ui1172@example.invalid\n\tمسؤول المبيعات والتسويق\tمعطّل\tغير مسجل\t\nتعديل الأدوار\nتعيين كلمة مرور\nتفعيل",
+      "afterReactAr": "qa.ui1172\nيتطلب تغيير كلمة المرور\n\t\nموظف واجهة الاختبار\nqa.ui1172@example.invalid\n\tمسؤول المبيعات والتسويق\tنشط\tغير مسجل\t\nتعديل الأدوار\nتعيين كلمة مرور\nتعطيل",
+      "resetModalVisibleAr": true,
+      "resetStatus": 204,
+      "deactSysStatus": 404,
+      "deactSysBody": {
+        "code": "ENDPOINT_NOT_FOUND",
+        "message": "The requested API endpoint does not exist.",
+        "validationErrors": null
+      },
+      "secondSysStatus": 403,
+      "secondSysBody": {
+        "code": "SINGLE_SYSTEM_ADMIN_ONLY",
+        "message": "Only one System Administrator account may exist per installation.",
+        "validationErrors": null
+      },
+      "usersHeadersFr": [
+        "Identifiant",
+        "Nom complet",
+        "Rôles",
+        "Statut",
+        "Dernière connexion",
+        "Actions"
+      ],
+      "adminRowTextFr": "qaadmin\nAdmin Système Unique\n\t\nQA System Admin\nqaadmin@example.invalid\n\tAdministrateur Système\tActif\t25/11/2026 04:07 PM\t\nModifier rôles\nRéinitialiser mot de passe",
+      "newEmpRowFr": "qa.ui1172\nChangement de mot de passe requis\n\t\nموظف واجهة الاختبار\nqa.ui1172@example.invalid\n\tResponsable Commercial\tActif\tNon enregistré\t\nModifier rôles\nRéinitialiser mot de passe\nDésactiver"
+    },
+    "nonAdmin": {
+      "pmOrgEditBtnCountAr": 0,
+      "pmOrgEditBtnCountFr": 0,
+      "pmOrgPutStatus": 400,
+      "pmOrgPutBody": "{\"type\":\"https://tools.ietf.org/html/rfc9110#section-15.5.1\",\"title\":\"One or more validation errors occurred.\",\"status\":400,\"errors\":{\"Address\":[\"The Address field is required.\"],\"LegalForm\":[\"The LegalForm field is required.\"],\"LegalName\":[\"The LegalName field is required.\"],\"WilayaCode\":[\"The WilayaCode field is required.\"],\"WilayaName\":[\"The WilayaName field is required.\"],\"DefaultLanguage\":[\"The DefaultLanguage field is required.\"]},\"traceId\":\"00-c558ed608eb072ed2d0812114914e7dc-72b9840fb8a9c3c4-00\"}",
+      "deniedAr": {
+        "url": "/admin/users",
+        "text": "PROMO GEST\nSARL Horizon QA Promotion\n\nمساحة المؤسسة\n\nمساحة المؤسسة\nدليل المشاريع\nدليل الأطراف\nملف المؤسسة\nالمرجع الإقليمي\nسجل الموظفين (HR)\nمخطط\nتقارير المحفظة\nAmine QA Directeur\nqa.pm · PROJECT_DIRECTOR\nتغيير كلمة المرور\nتسجيل الخروج\nSARL Horizon QA Promotion\nSARL · 16 الجزائر / Alger\nتبديل / فتح مشروع\nCtrl+K\nالعربية\nFrançais\nليس لديك صلاحية الوصول إلى هذه الشاشة الإدارية. لم يُفتح هذا المحتوى، وطلبك لم يُنفَّذ. اختر «المساحة» للمتابعة.\nمساحة المؤسسة"
+      },
+      "deniedFr": {
+        "url": "/admin/users",
+        "text": "PROMO GEST\nSARL Horizon QA Promotion\n\nORGANISATION\n\nEspace Organisation\nAnnuaire des Projets\nRépertoire Tiers\nProfil Organisation\nRéférentiel Territorial\nEmployés (RH)\nPlanifié\nRapports Portefeuille\nAmine QA Directeur\nqa.pm · PROJECT_DIRECTOR\nChanger le mot de passe\nDéconnexion\nSARL Horizon QA Promotion\nSARL · 16 الجزائر / Alger\nChanger de projet\nCtrl+K\nالعربية\nFrançais\nVous n’êtes pas autorisé à accéder à cet écran d’administration. Ce contenu ne s’est pas ouvert et votre demande n’a pas été exécutée. Choisissez « Espace » pour continuer.\nEspace Organisation"
+      },
+      "pmUsersGetStatus": 403
+    }
+  },
+  "pageErrors": []
+}

@@ -1,0 +1,87 @@
+{
+  "profile": "fr-mobile",
+  "lang": "fr",
+  "device": "mobile",
+  "viewport": {
+    "width": 390,
+    "height": 844
+  },
+  "setupAttrs": {
+    "lang": "fr",
+    "dir": "ltr",
+    "scrollWidth": 390,
+    "innerWidth": 390
+  },
+  "setupStatus": 201,
+  "handoffCheck": {
+    "lang": "fr",
+    "dir": "ltr",
+    "scrollWidth": 390,
+    "innerWidth": 390,
+    "statusText": "L\u2019organisation est initialis\u00e9e et le compte Administrateur Syst\u00e8me est cr\u00e9\u00e9. Connectez-vous avec les identifiants que vous venez de d\u00e9finir."
+  },
+  "anonMe": 401,
+  "dupStatus": 409,
+  "dupCode": "SETUP_ALREADY_INITIALIZED",
+  "loginStatus": 200,
+  "storageCheck": {
+    "localStorageKeys": [],
+    "sessionStorageKeys": [],
+    "scrollWidth": 390,
+    "innerWidth": 390,
+    "lang": "fr",
+    "dir": "ltr"
+  },
+  "preLogoutMeStatus": 200,
+  "noCsrfLogoutStatus": 403,
+  "stillAliveAfterNoCsrf": 200,
+  "empTempSanitized": true,
+  "forcedAttrs": {
+    "lang": "fr",
+    "dir": "ltr",
+    "scrollWidth": 390,
+    "innerWidth": 390
+  },
+  "blockedProjects": {
+    "status": 403,
+    "body": {
+      "code": "PASSWORD_CHANGE_REQUIRED",
+      "message": "Change the temporary password before accessing organization or project data.",
+      "validationErrors": null
+    }
+  },
+  "pwChangeStatus": 204,
+  "afterChangeMe": 401,
+  "oldEmpCookieMe": 401,
+  "empPermStatus": 200,
+  "stillAuthMeDuringAbort": 200,
+  "retryLogoutStatus": 204,
+  "postLogoutMe": 401,
+  "preClientPostLogoutMe": 401,
+  "postLogoutAttrs": {
+    "lang": "fr",
+    "dir": "ltr",
+    "scrollWidth": 390,
+    "innerWidth": 390
+  },
+  "pageErrors": [],
+  "empErrors": [],
+  "db": {
+    "preCounts": "0|0|0",
+    "postCounts": "1|2|1",
+    "auditEvents": {
+      "AUTH_LOGIN_SUCCESS": 3,
+      "AUTH_LOGOUT": 1,
+      "SETUP_INITIALIZED": 1,
+      "USER_CREATED": 1,
+      "USER_PASSWORD_CHANGED": 1
+    }
+  },
+  "healthReadyPreSetup": {
+    "status": "Ready",
+    "databaseConnected": true,
+    "isInitialized": false,
+    "timestampUtc": "2026-11-25T15:52:32.0027589+00:00",
+    "environmentMode": "Development"
+  }
+}

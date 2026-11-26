@@ -1,0 +1,42 @@
+{
+  "arHint": {
+    "lang": "ar",
+    "dir": "rtl",
+    "scrollWidth": 1440,
+    "innerWidth": 1440,
+    "pwHintText": "\u0627\u0633\u0645 \u0645\u0633\u062a\u062e\u062f\u0645 \u0645\u062f\u064a\u0631 \u0627\u0644\u0646\u0638\u0627\u0645 *\n\u0627\u0644\u0627\u0633\u0645 \u0627\u0644\u0643\u0627\u0645\u0644 \u0644\u0645\u062f\u064a\u0631 \u0627\u0644\u0646\u0638\u0627\u0645 *\n\u0627\u0644\u0628\u0631\u064a\u062f \u0627\u0644\u0625\u0644\u0643\u062a\u0631\u0648\u0646\u064a \u0644\u0645\u062f\u064a\u0631 \u0627\u0644\u0646\u0638\u0627\u0645 *\n\u0631\u0642\u0645 \u0627\u0644\u0647\u0627\u062a\u0641\n\u0643\u0644\u0645\u0629 \u0627\u0644\u0645\u0631\u0648\u0631 *\n\n\u0645\u0646 10 \u0625\u0644\u0649 128 \u062d\u0631\u0641\u0627\u064b \u062a\u0634\u0645\u0644 \u062d\u0631\u0641\u0627\u064b \u0643\u0628\u064a\u0631\u0627\u064b \u0648\u0635\u063a\u064a\u0631\u0627\u064b \u0648\u0631\u0642\u0645\u0627\u064b.\n\n\u062a\u0623\u0643\u064a\u062f \u0643\u0644\u0645\u0629 \u0627\u0644\u0645\u0631\u0648\u0631 *",
+    "legalValidationMsg": "Please fill out this field.",
+    "hasNativeRequired": true,
+    "adminUserPlaceholder": "sysadmin"
+  },
+  "frHint": {
+    "lang": "fr",
+    "dir": "ltr",
+    "scrollWidth": 1440,
+    "innerWidth": 1440,
+    "pwHintText": "Identifiant administrateur *\nNom complet *\nE-mail administrateur *\nT\u00e9l\u00e9phone\nMot de passe *\n\nDe 10 \u00e0 128 caract\u00e8res incluant majuscule, minuscule et chiffre.\n\nConfirmer le mot de passe *",
+    "legalValidationMsg": "Please fill out this field.",
+    "hasNativeRequired": true,
+    "adminUserPlaceholder": "sysadmin"
+  },
+  "frMob": {
+    "sw": 390,
+    "iw": 390
+  },
+  "arMob": {
+    "sw": 390,
+    "iw": 390
+  },
+  "setupStatus": 201,
+  "handoffOrgVisible": true,
+  "dupStatus": 409,
+  "dupCode": "SETUP_ALREADY_INITIALIZED",
+  "createdActors": {
+    "qa.pm": "72945a2e-b0b2-46ed-ae88-988486069c4f",
+    "qa.sales": "4ca2c8e9-cb03-40cb-98d1-fbfc67349be1",
+    "qa.site": "5f3c3645-8f4a-42cf-9b7f-ca113611b2df",
+    "qa.viewer": "4bea24bc-3536-42e0-9ac3-eee77116c352",
+    "qa.nonmember": "fc5fdd7a-feb2-4701-8bb8-2040da76f080"
+  },
+  "adminAuthMeStatus": 200
+}

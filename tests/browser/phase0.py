@@ -440,10 +440,11 @@ with sync_playwright() as pw:
     assign_financial_membership('FinanceController', True)
     financial_reader = employee_ctx.request.get(BASE + f'/api/projects/{project_id}')
     assert financial_reader.status == 200
-    assert financial_reader.json()['estimatedBudgetDzd'] is None
+    assert financial_reader.json()['estimatedBudgetDzd'] is not None
     employee_page.goto(BASE + '/projects')
     finance_row = employee_page.get_by_role('row').filter(has_text=project_code)
     expect(finance_row).to_have_count(1)
+    assert finance_row.locator('td').nth(4).inner_text().strip() != '—'
     expect(finance_row.get_by_role('button', name=edit_label, exact=True)).to_have_count(0)
     employee_page.screenshot(path=out/'p1-05-financial-reader-no-editor.png')
 

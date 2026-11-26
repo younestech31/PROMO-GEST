@@ -822,7 +822,7 @@ with sync_playwright() as pw:
     page.screenshot(path=out/'p1-20-single-project-navigation-chrome.png')
 
     if device == 'mobile':
-        page.get_by_role('button', name='Close menu', exact=True).click()
+        page.get_by_role('button', name='Close navigation menu', exact=True).click()
 
     # Opening the modal is a UI-only inspection. Search focus, authorized project presence,
     # Escape close, and restored focus are checked without selecting/changing a project.

@@ -121,7 +121,7 @@ with sync_playwright() as pw:
             'phone': None,
             'password': temporary_password,
             'preferredLanguage': lang,
-            'roleCodes': ['COMMERCIAL_MANAGER'],
+            'roleCodes': ['COMMERCIAL_MANAGER', 'PROJECT_DIRECTOR'],
         },
         headers={'X-CSRF-TOKEN': admin_csrf_token},
     )

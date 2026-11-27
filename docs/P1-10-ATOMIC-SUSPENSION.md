@@ -111,10 +111,15 @@ project-update and transition-review audit counts are asserted separately.
   is now an explicit rule in DEVELOPMENT-WORKFLOW.md.
 - The local sandbox has no .NET SDK/PostgreSQL service; no local .NET pass is
   claimed. Execution/compilation evidence must come from the exact CI source.
-- The evidence/documentation follow-up has its own final PR-head checks; it does
-  not inherit the runtime source's identity. Final-head and exact post-merge checks
-  must be verified independently before acceptance/closure. P1-10 remains Pending;
-  #280 is not closed by this report.
+- Final documentation head `945d37def4d411d224020ac658bfc2b77e684cac`:
+  CI46052651890 **PASS 4/4**, CodeQL46052651800 **PASS 2/2**.
+  PR #281 merged at `f2571170ee210616f8b59d165def95ddffd92d3f`;
+  exact-main CI46053642662 **PASS 4/4**, CodeQL46053642723 **PASS 2/2**.
+  [Archived exact identities](evidence/p1-10-atomic-2026-11-27/closure-checks.json).
+  These independent results supersede the earlier pending checkpoint.
+- Explicit [seven-criterion acceptance](P1-10-BROWSER-ACCEPTANCE.md) is now **PASS**;
+  P1-10 Done / Verified and technical #280 resolved. This is not institution-local
+  P1-11 acceptance, Phase 1 closure or authorization to start Phase 2.
 
 ## Screenshots and evidence boundaries
 

@@ -31,10 +31,10 @@ A targeted search for later acts amending the 22 June 1985 territorial-register 
 |---|---|---|---|
 | 77/2026 | 4 Nov 2026 | Wilaya and commune contribution rates to the local solidarity/guarantee fund | Finance, not commune identity or register code |
 | 78/2026 | 10 Nov 2026 | No register amendment identified in reviewed index | No new register delta |
-| 79/2026 | 15 Nov 2026 | Protected-sector / special-zone geography and judicial-section arrangements | Distinct overlays / judicial organization, not commune register |
+| 79/2026 | 15 Nov 2026 | Decrees 26-354 (Casbah safeguarded-sector operation) and 26-355 (In Guezzam commercial free zone); Justice Ministry order establishes a section within Dréan tribunal jurisdiction, seated at Besbès and competent for Besbès, Zerizer and Asfour | Protected areas, special zones and judicial service catchment are distinct layers, not a commune register update |
 | 80/2026 | 18 Nov 2026 | Decree 26-358 concerning tourist-expansion zones | Tourism-zone overlay; not commune/Wilaya membership |
-| 81/2026 | 22 Nov 2026 | Classification of a national security cynotechnic centre | No commune-register delta identified |
-| 82/2026 | 25 Nov 2026 | Decrees 26-370 and 26-371 concerning territorial jurisdiction of judicial bodies | Judicial jurisdiction, not the administrative commune register |
+| 81/2026 | 22 Nov 2026 | Interior Ministry order classifies the National Security cynotechnic centre; Education Ministry order updates directorate organization and names several new Wilayas | Administrative/service-organization references only; no commune identity, boundary or code change identified |
+| 82/2026 | 25 Nov 2026 | Decrees 26-370 and 26-371 concern judicial territorial jurisdiction; Decree 26-380 creates a psychopedagogical centre in Achaacha, Wilaya of Mostaganem | Judicial jurisdictions and a facility location are separate overlays; neither is a commune register amendment |
 
 Official issue PDFs:
 - [JO77/2026](https://www.joradp.dz/FTP/JO-FRANCAIS/2026/F2026077.pdf)

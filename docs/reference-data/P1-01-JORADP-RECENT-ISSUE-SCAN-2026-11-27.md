@@ -1,4 +1,4 @@
-# P1-01 — JORADP recent-issue scan and Afernou bilingual source verification
+# P1-01 — JORADP source review: Afernou, Ouargla seat/boundary chronology and recent-issue scan
 
 **Audit date:** 27 November 2026  
 **Repository base:** `562d6340fd10a55d4124d287e082a91709222bf5` (`main` at branch creation)  
@@ -6,7 +6,7 @@
 
 ## 1. Purpose and scope
 
-This pass closes one explicit Arabic-source review gap in the territorial-change assertion ledger and checks the latest available November 2026 Official Journal issues for a later amendment to the 1985 territorial-register order.
+This pass closes Arabic page-image review gaps for Afernou (1992) and Oued El Meraâ (2006), distinguishes the 2005 Hassi-Messaoud chief-lieu seat relocation from the 2006 locality-parent transfer, and checks the latest available November 2026 Official Journal issues for a later amendment to the 1985 territorial-register order.
 
 It does not re-transcribe the national register, approve candidate commune names/codes, decide temporal validity, change application code or schema, or import operational reference data.
 
@@ -23,7 +23,34 @@ The page images in both editions were visually inspected. The Arabic locality la
 
 The CSV row `DECR-92-412-AFERNOU` was updated with the Arabic verbatim label, both page-image review states and explicit page locators in its notes. The `valid_from`, code and practitioner-review fields remain blank/pending.
 
-## 3. Recent Official Journal scan — issues 77 to 82
+
+## 3. Ouargla — distinguish the 2005 chief-lieu seat location from the 2006 locality-parent transfer
+
+The official Arabic and French editions show two related but legally distinct events at Oued El Meraâ. They must remain separate in P1-01.
+
+### A. Decree 05-127 / JO29/2005, Article 6 — administrative-seat relocation
+
+Executive Decree 05-127 of 24 April 2005, published in JO29/2005, declares Hassi-Messaoud a major-risk zone. Article 6 transfers the seat of the chief-lieu of Hassi-Messaoud to the place called Oued El Meraâ, located inside the territory of Hassi Ben Abdallah.
+
+Both official page images were inspected:
+- French edition, printed p.13 / PDF zero-based index 12: [F2005029.pdf](https://www.joradp.dz/FTP/jo-francais/2005/F2005029.pdf).
+- Arabic edition, printed p.16 / PDF zero-based index 15: [A2005029.PDF](https://www.joradp.dz/FTP/jo-arabe/2005/A2005029.PDF).
+
+Arabic wording identifies the seat of Hassi Messaoud and the destination as **وادي المرعى**, located within the territory of Hassi Ben Abdallah. The instrument changes the location of the commune chief-lieu seat; it does not itself transfer Oued El Meraâ's territorial parent to Hassi Messaoud or state a four-digit commune register code.
+
+### B. Decree 06-256 / JO49/2006, Article 1 — locality-parent transfer
+
+Executive Decree 06-256 of 30 July 2006, published in JO49/2006 on 2 August 2006, later modifies the territorial composition of Hassi Messaoud and Hassi Ben Abdellah. Article 1 states that the locality Oued El Meraâ, previously attached to Hassi Ben Abdellah, is integrated into the territory of Hassi Messaoud.
+
+Both official page images were inspected:
+- French edition, printed p.4 / PDF zero-based index 3: [F2006049.pdf](https://www.joradp.dz/FTP/jo-francais/2006/F2006049.pdf).
+- Arabic edition, printed p.4 / PDF zero-based index 3: [A2006049.pdf](https://www.joradp.dz/FTP/jo-arabe/2006/A2006049.pdf).
+
+The Arabic source locality label is **وادي المرعى**. The existing French PDF byte hash remains recorded in the territorial-change CSV; no Arabic PDF byte hash was captured in this pass.
+
+**Interpretation boundary:** the 2005 act establishes the new chief-lieu seat location while that place is inside Hassi Ben Abdallah; the 2006 act establishes the later locality-parent transfer into Hassi Messaoud. Neither page authorizes the audit to infer a four-digit Decree 85-20 code, a legally adjudicated valid_from date, or a separate operational-service handover date. Both CSV assertions retain blank code/valid-time fields and pending practitioner review.
+
+## 4. Recent Official Journal scan — issues 77 to 82
 
 A targeted search for later acts amending the 22 June 1985 territorial-register order, together with review of the identified issue indexes/relevant text, found no such amendment in issues 77–82. Those issues cover 4–25 November 2026.
 
@@ -46,7 +73,7 @@ Official issue PDFs:
 
 **Negative-search qualification:** this is a bounded search based on index/search results and relevant text, not a page-by-page legal review of every item in every issue, not an exhaustive search of all JORADP archives, and not proof that no separately issued/unindexed act exists. The result should be rechecked before a future release or on receipt of a new instrument.
 
-## 4. Source-handling and architecture rules
+## 5. Source-handling and architecture rules
 
 1. The latest located territorial-register amendment remains the 5 May 2026 interministerial order published in JO58/2026; it amends the 1985 register and is not a self-contained re-publication of all 1,541 communes.
 2. Law 26-06 / JO25/2026 supplies the 69-Wilaya / 1,541-commune statutory total and changed legal composition; it must be read with the 1985 register and intervening instruments.
@@ -54,9 +81,9 @@ Official issue PDFs:
 4. Tourism zones, protected areas, special zones, finance, and judicial jurisdiction must be modelled as distinct geographic/administrative concepts, not silently conflated with commune identity, territorial parentage, or register code.
 5. Olostep is a discovery/extraction aid only. The evidence source is the official JORADP instrument and its printed page; OCR/Markdown output cannot override the original page image.
 
-## 5. Outstanding work and safety boundary
+## 6. Outstanding work and safety boundary
 
-- Arabic visual review for Decree 06-256 / JO49/2006 remains open.
+- The 2005 and 2006 Arabic/French page images were checked, but PDF-byte SHA-256 values for the inspected 2005 editions and the Arabic 2006 edition were not captured. This is a binary-provenance gap, not an outstanding page-image review.
 - Full bilingual annex reconciliation for Decree 21-128 / JO26/2021 and the 2 June 1984 chief-lieu seat order remains open.
 - All 1,541 master-ledger practitioner sign-offs remain `PENDING`; W30-R007 remains `NEEDS_EVIDENCE`; no commune data is imported; `communesCount = 0` and `PendingOfficialVerification` remain unchanged.
 - No production database, Cloud SQL, application runtime, API contract, schema, migration, or deployed environment was changed.

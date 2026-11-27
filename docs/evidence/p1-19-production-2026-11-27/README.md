@@ -39,3 +39,14 @@ material are absent from exported JSON. Screenshot IP/User-Agent fields are synt
 fixture metadata. curl validates the disposable CA; Chrome ignores that local CA's
 trust error only. No workstation certificate rollout, Windows-service installation,
 production deployment or institution/operator sign-off is inferred.
+
+
+## Final closure verification (not image recapture)
+
+PR #285 merged as `42f8831fa33e28dde9031eef14b6c1a0efe8b6c1` at21:30:45Z.
+Final head1b1af8c CI46069417557 PASS5/5 + CodeQL46069417572 PASS2/2;
+independent exact-main CI46070780952 PASS5/5 + CodeQL46070780950 PASS2/2.
+[`closure-checks.json`](closure-checks.json) archives those four workflows with
+job/step identities and outcomes; [`preservation-checks.json`](preservation-checks.json)
+retains the original0fd301a regression runs. These do not replace original image
+provenance, add omitted screenshots or claim local execution.

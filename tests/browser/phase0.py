@@ -931,6 +931,8 @@ with sync_playwright() as pw:
     p06_original_org = ctx.request.get('/api/auth/me').json()['organization']
     p06_original_legal_name = p06_original_org['legalName']
     p06_page = ctx.new_page()
+    p06_errors = []
+    p06_page.on('pageerror', lambda _: p06_errors.append(True))
     p06_page.goto(BASE)
     p06_navigation = p06_page.get_by_role('navigation', name='Main navigation')
     p06_profile_label = 'ملف المؤسسة' if lang == 'ar' else 'Profil Organisation'
@@ -981,7 +983,36 @@ with sync_playwright() as pw:
     p06_page.go_back()
     expect(p06_dialog).to_be_visible()
     expect(p06_page).to_have_url(BASE + '/organization/profile')
-    p06_dialog.get_by_role('button', name=p06_save_label, exact=True).click()
+    # Disconnect ONLY this page's organization PUT, not the API fixture.
+    # Failed Save & Continue must preserve the draft, history cursor and pending action.
+    p06_page.route(
+        '**/api/organization',
+        lambda route: route.abort('internetdisconnected')
+        if route.request.method == 'PUT' else route.continue_(),
+    )
+    try:
+        with p06_page.expect_request_failed(
+            lambda request: request.method == 'PUT' and request.url == BASE + '/api/organization'
+        ):
+            p06_dialog.get_by_role('button', name=p06_save_label, exact=True).click()
+        expect(p06_page.get_by_role('alert')).to_be_visible()
+        expect(p06_dialog).to_be_visible()
+        expect(p06_dialog.get_by_role('button', name=p06_save_label, exact=True)).to_be_enabled()
+        expect(p06_page).to_have_url(BASE + '/organization/profile')
+        expect(p06_page.locator('#organization-legalName')).to_have_value(p06_back_save_draft)
+        assert ctx.request.get('/api/auth/me').json()['organization']['legalName'] == p06_original_legal_name, (
+            'Failed Save & Continue changed persisted organization data'
+        )
+        p06_page.screenshot(path=out/'p1-06-save-failure-guard.png')
+    finally:
+        p06_page.unroute('**/api/organization')
+
+    # Retry the same pending Back action against the real API; save before navigating.
+    with p06_page.expect_response(
+        lambda response: response.request.method == 'PUT' and response.url == BASE + '/api/organization'
+    ) as p06_retry:
+        p06_dialog.get_by_role('button', name=p06_save_label, exact=True).click()
+    assert p06_retry.value.status == 200
     expect(p06_page).to_have_url(BASE + '/')
     assert ctx.request.get('/api/auth/me').json()['organization']['legalName'] == p06_back_save_draft, (
         'Save & Continue did not persist the dirty Back-navigation draft'
@@ -1000,12 +1031,16 @@ with sync_playwright() as pw:
     )
     assert p06_restore.status == 200, p06_restore.text()
     p06_page.screenshot(path=out/'p1-06-browser-history-guard.png')
+    assert not p06_errors, 'P1-06 browser reported an uncaught application error'
     p06_page.close()
     p06_evidence = (
         'Real ASP.NET Core + PostgreSQL 18 browser flow in AR/FR desktop/mobile: dirty Forward navigation '
         'restored the current route without truncating the forward entry; Stay preserved the draft and a '
         'second Forward remained guardable; Discard navigated without persisting; dirty Back navigation '
-        'offered Save & Continue and persisted before returning to the prior route. Automated CI evidence only.'
+        'offered Save & Continue; an injected page-only PUT disconnection preserved the route, draft, '
+        'pending dialog and unchanged API state; retry returned 200 and persisted before returning to '
+        'the prior route. No uncaught page errors. Network failure is deliberately injected, not a '
+        'claim of infrastructure outage. Automated CI evidence only.'
     )
 
     p05_evidence = run_project_budget(browser, ctx, BASE, lang, device, viewport, out)

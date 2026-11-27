@@ -400,3 +400,15 @@ test('all modal dialogs delegate aria dialog semantics to shared/components/Moda
     `dialogs must use shared/components/Modal.tsx instead of raw role="dialog": ${offenders.join(', ')}`,
   );
 });
+
+
+test('project access uses the same permission gate and open handler on mobile cards and desktop rows', () => {
+  const source = fs.readFileSync(path.join(modulesRoot, 'module-b-projects/pages/ProjectsAccessView.tsx'), 'utf8');
+  const mobile = source.slice(source.indexOf('<article'), source.indexOf('</article>'));
+  const desktop = source.slice(source.indexOf('<tbody'), source.indexOf('</tbody>'));
+  for (const layout of [mobile, desktop]) {
+    assert.match(layout, /canManageProjectAccess\(currentUser, p\)/);
+    assert.match(layout, /onClick=\{\(\) => openProjectAccess\(p\)\}/);
+    assert.match(layout, /t\.projects\.manageAccess/);
+  }
+});

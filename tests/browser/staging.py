@@ -13,6 +13,7 @@ from project_budget import mutation, run_project_budget
 from organization_permissions import run_organization_permissions
 from session_security import prepare_sessions, run_session_security
 from language_preferences import prepare_language, verify_language
+from project_team import run_project_team
 
 BASE = 'https://staging.promogest.test:8443'
 CONTENT = b'PROMO GEST synthetic staging document. No personal or business data.\n'
@@ -204,6 +205,7 @@ def run(lang, device, phase):
                 browser, ctx, BASE, lang, device, viewport, out, fixture='staging')
             checks['production_budget_authorization_matrix'] = True
             run_organization_permissions(browser, ctx, BASE, lang, device, viewport, out)
+            run_project_team(browser, ctx, BASE, lang, device, viewport, out)
             run_session_security(browser, ctx, BASE, lang, device, viewport, private, out)
             if device == 'mobile':
                 page.get_by_role('button', name='Open menu', exact=True).click()
@@ -230,7 +232,7 @@ if __name__ == '__main__':
         # Static locations only: exception messages/call logs may include filled form secrets.
         for frame in traceback.extract_tb(error.__traceback__):
             filename = Path(frame.filename).name
-            if filename in ('staging.py', 'organization_permissions.py', 'session_security.py', 'language_preferences.py'):
+            if filename in ('staging.py', 'organization_permissions.py', 'session_security.py', 'language_preferences.py', 'project_team.py'):
                 print(f'::error file=tests/browser/{filename},line={frame.lineno}::'
                       f'Staging {type(error).__name__} in {frame.name}', flush=True)
         sys.exit(1)

@@ -333,6 +333,14 @@ export function ProjectsAccessView({
     setCreateOpen(true);
   };
 
+  const openProjectAccess = (project: ProjectDto) => {
+    setAccessProject(project);
+    setModalError(null);
+    if (users.length > 0 && !memberForm.userId) {
+      setMemberForm((form) => ({ ...form, userId: users[0].id }));
+    }
+  };
+
   const handleAssignMember = async (e: FormEvent) => {
     e.preventDefault();
     if (!accessProject || !memberForm.userId) return;
@@ -615,6 +623,16 @@ export function ProjectsAccessView({
                         <span>{language === 'ar' ? 'وثائق المشروع' : 'Documents'}</span>
                       </button>
                     )}
+                    {canManageProjectAccess(currentUser, p) && (
+                      <button
+                        type="button"
+                        onClick={() => openProjectAccess(p)}
+                        className="inline-flex items-center gap-1.5 rounded border border-slate-200 px-2.5 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-100 whitespace-nowrap"
+                      >
+                        <KeyRound className="w-3.5 h-3.5" aria-hidden="true" />
+                        <span>{t.projects.manageAccess}</span>
+                      </button>
+                    )}
                   </div>
                 </article>
               ))}
@@ -743,13 +761,7 @@ export function ProjectsAccessView({
                           {canManageProjectAccess(currentUser, p) && (
                           <button
                             type="button"
-                            onClick={() => {
-                              setAccessProject(p);
-                              setModalError(null);
-                              if (users.length > 0 && !memberForm.userId) {
-                                setMemberForm((mf) => ({ ...mf, userId: users[0].id }));
-                              }
-                            }}
+                            onClick={() => openProjectAccess(p)}
                             className="inline-flex items-center gap-1.5 rounded border border-slate-200 px-2.5 py-1 text-xs font-medium text-slate-700 hover:bg-slate-100 whitespace-nowrap"
                           >
                             <KeyRound className="w-3.5 h-3.5" aria-hidden="true" />

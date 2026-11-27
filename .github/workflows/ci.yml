@@ -30,10 +30,12 @@ jobs:
           python3 tests/browser/test_session_security.py
           python3 tests/browser/test_language_preferences.py
           python3 tests/browser/test_project_team.py
+          python3 tests/browser/test_commercialization_review.py
       - name: Test staging evidence completeness, privacy and import integrity
         run: |
           python3 scripts/test_export_staging_evidence.py
           python3 scripts/test_import_staging_evidence.py
+          python3 scripts/test_export_commercialization_evidence.py
       - name: Test the repository hygiene guard
         run: python3 scripts/test_check_repository_hygiene.py
       - name: Verify tracked file modes and the lockfile match this branch
@@ -259,8 +261,30 @@ jobs:
         run: |
           python3 -m venv "$RUNNER_TEMP/p0-python"
           source "$RUNNER_TEMP/p0-python/bin/activate"
-          pip install playwright==1.56.0
+          pip install playwright==1.56.0 pillow==12.0.0
+          python3 scripts/test_export_commercialization_evidence.py
           bash tests/browser/run-phase0.sh
+      # Separate prefix and mode: these are Development SPA screenshots, not HTTPS acceptance.
+      - name: Export P1-10 Arabic desktop review image
+        env:
+          P1_10_SOURCE_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+        run: '"$RUNNER_TEMP/p0-python/bin/python" scripts/export-commercialization-evidence.py "$RUNNER_TEMP/phase0-evidence" --record ar-desktop'
+      - name: Export P1-10 Arabic mobile review image
+        env:
+          P1_10_SOURCE_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+        run: '"$RUNNER_TEMP/p0-python/bin/python" scripts/export-commercialization-evidence.py "$RUNNER_TEMP/phase0-evidence" --record ar-mobile'
+      - name: Export P1-10 French desktop review image
+        env:
+          P1_10_SOURCE_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+        run: '"$RUNNER_TEMP/p0-python/bin/python" scripts/export-commercialization-evidence.py "$RUNNER_TEMP/phase0-evidence" --record fr-desktop'
+      - name: Export P1-10 French mobile review image
+        env:
+          P1_10_SOURCE_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+        run: '"$RUNNER_TEMP/p0-python/bin/python" scripts/export-commercialization-evidence.py "$RUNNER_TEMP/phase0-evidence" --record fr-mobile'
+      - name: Export P1-10 separate Development evidence manifest
+        env:
+          P1_10_SOURCE_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+        run: '"$RUNNER_TEMP/p0-python/bin/python" scripts/export-commercialization-evidence.py "$RUNNER_TEMP/phase0-evidence" --record manifest'
       - name: Publish sanitized browser evidence (not manual acceptance)
         uses: actions/upload-artifact@v7
         with:
@@ -273,7 +297,6 @@ jobs:
           STAGING_SOURCE_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
         run: |
           source "$RUNNER_TEMP/p0-python/bin/activate"
-          pip install pillow==12.0.0
           bash tests/browser/run-staging.sh
       # Runner check annotations allow ten notices per step. Each record is bounded
       # to ten <=3000-character chunks; keep publication in distinct read-only steps.

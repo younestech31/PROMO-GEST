@@ -1,3 +1,20 @@
+## Current scope clarification — 27 November 2026
+
+The audited 22 November snapshot below is historical, not a claim that PR #186 is
+still the last runtime change. ADR-0018 commercialization/review runtime was merged
+in PR #233/#234/#235 and UI #237. `ProjectStatus.Commercialization` alone permits
+marketing/new internal holds; Planning, UnderConstruction, Delivered, Suspended
+and undefined/future statuses deny by default. Suspension queues active holds for
+documentary review; completion never cancels, releases, changes expiry or lifts
+suspension. CRM Customer is not a contract/payment/accounting event. No new schema
+is introduced by this acceptance slice. [Current P1-10 scope and tests](P1-10-BROWSER-ACCEPTANCE.md).
+P1-09 is Done / Verified (27 November); P1-10 remains In Progress / Pending.
+P1-15 is already Done / Verified; P1-01 Deferred / Pending and P1-02 Blocked remain
+gates. The historical task-state statements below are superseded by the current
+[roadmap reconciliation](ROADMAP-RECONCILIATION-2026-11-27.ar.md), not new policy.
+
+---
+
 ## Verified repository snapshot — 22 November 2026 (audited before this documentation-only PR)
 
 - **Audited source snapshot:** GitHub `main` was independently resolved at `5e361160cc29ce30947e3e7bea790f940a5c06a7` before this documentation-only synchronization. This SHA anchors the evidence below; it is not a promise that `main` remains at this SHA after this PR. Always resolve the live branch ref before starting work, merging, or reporting current repository state.
@@ -156,7 +173,7 @@ The approved ADR-0018 rule is now expressed as a pure Domain policy and called b
 - **Error contract:** `409 Conflict` with the stable code `PROJECT_NOT_COMMERCIALIZABLE`, matching the existing `ConflictDomainException` mapping used for `RESERVATION_UNIT_UNAVAILABLE` and `RESERVATION_CUSTOMER_ARCHIVED`-class state rejections.
 - **Audit:** every refusal writes one append-only `PROJECT_RESERVATION_DENIED` audit record (`TargetEntityType = Project`, metadata: reason code, project status, unit id, customer id) and persists it before the exception is raised, so a refused attempt is always traceable.
 - **Suspension is not cancellation:** moving a project to `Suspended` blocks new holds only. Existing `Active` reservations keep their unit, their expiry, and their CRM link; nothing is auto-cancelled, expired, or released by this guard.
-- **Durable review marker (implemented):** every real transition into `Suspended` writes one append-only audit record `PROJECT_RESERVATION_SUSPENSION_REVIEW_REQUIRED` (`TargetEntityType = Project`, severity `Security`) from `ProjectService.UpdateAsync`, with metadata `previousStatus`, `projectStatus`, `activeReservationCount`, `activeReservationIds`, and `reviewRequiredAtUtc`. In the same transaction it stamps `review_required_at_utc` on every hold of the project that is still `Active`. Saving a project that is already suspended does not duplicate the marker, leaving suspension does not create one, and no reservation, unit, or customer state changes.
+- **Durable review marker (implemented):** every real transition into `Suspended` writes one append-only audit record `PROJECT_RESERVATION_SUSPENSION_REVIEW_REQUIRED` (`TargetEntityType = Project`, severity `Security`) from `ProjectService.UpdateAsync`, with metadata `previousStatus`, `projectStatus`, `activeReservationCount`, `activeReservationIds`, and `reviewRequiredAtUtc`. It then stamps `review_required_at_utc` on the active holds returned by the repository. **Acceptance correction (27 November, [#280](https://github.com/younestech31/PROMO-GEST/issues/280)):** source inspection shows two separate saves: project/status audit first, review markers/audit second. No spanning transaction or shared serialization boundary with hold creation has been established. The earlier same-transaction claim was incorrect; failure rollback and status-change-versus-create races require deterministic PG18 proof and a targeted repair before P1-10 closure. Saving a project that is already suspended does not duplicate the marker, leaving suspension does not create one, and no reservation, unit, or customer state changes.
 - **Review queue (implemented):** `ProjectSalesReservation` owns `ReviewRequiredAtUtc` and `ReviewCompletedAtUtc` with the pure behaviours `RequestSuspensionReview(nowUtc)` (idempotent per hold, active holds only) and `CompleteSuspensionReview(nowUtc)` (once per request, never before the request). The queue is derived, not stored: `GET /api/projects/{projectId}/reservations?reviewRequired=true` returns only holds whose request is set and whose completion is still null, backed by the partial index `ix_project_sales_reservations_review_pending`. `POST /api/projects/{projectId}/reservations/{reservationId}/review` records the completion and one append-only `PROJECT_RESERVATION_REVIEW_COMPLETED` audit record naming the reviewer.
 - **Operator surface:** the Module E reservations screen renders the queue from the server-filtered endpoint, re-applies the same predicate client-side, shows the request timestamp, and states in Arabic and French that recording a review is not an approval, a cancellation, a release, or a lift of the suspension. The action is hidden without the project write permission, but the server remains the only authority; the local Vite preview middleware mirrors the filter and the review endpoint without touching real data.
 - **Reviewing is not approving:** completing a review leaves the hold `Active` on the same unit with the same expiry, leaves the project `Suspended`, and keeps new reservations blocked. Approval, cancellation, expiry, and unit release remain separate explicit operations; `ck_project_sales_reservations_review` only guarantees that a completion cannot exist without a request or precede it.

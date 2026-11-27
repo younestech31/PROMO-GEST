@@ -8,6 +8,7 @@ from pathlib import Path
 
 from playwright.sync_api import expect, sync_playwright
 from project_budget import run_project_budget
+from commercialization_review import run_commercialization_review
 
 BASE = 'http://127.0.0.1:5173'
 lang, device = sys.argv[1:]
@@ -1008,6 +1009,7 @@ with sync_playwright() as pw:
     )
 
     p05_evidence = run_project_budget(browser, ctx, BASE, lang, device, viewport, out)
+    p10_evidence = run_commercialization_review(ctx, BASE, lang, device, out)
 
     p17_fresh_context.close()
     employee_ctx.close()
@@ -1049,6 +1051,7 @@ with sync_playwright() as pw:
                     P1_20=p20_1_20_evidence,
                     P1_06=p06_evidence,
                     P1_05=p05_evidence,
+                    P1_10=p10_evidence,
                     mode='automated real-browser; not manual acceptance')
     (out/'result.json').write_text(json.dumps(evidence, indent=2)+'\n')
     print(json.dumps(evidence))

@@ -1,7 +1,9 @@
 # P1-09 — Production HTTPS organization permission acceptance
 
 Date: 27 November 2026. Status: **isolated Production HTTPS technical acceptance PASS**;
-PR #273 remains under review, institution-local/operator acceptance is not asserted.
+PR #273 is merged (`49add144088a418422da72e9728d7157102fd46a`).
+**Task acceptance: Done / Verified in Notion, 27 November 2026.**
+Institution-local deployment/operator approval is not asserted.
 
 ## Scope and correction
 
@@ -76,14 +78,32 @@ reporting names only static source locations and exception classes.
 - PR #271 exact-main postmerge CodeQL [45992729724](https://github.com/younestech31/PROMO-GEST/actions/runs/45992729724): **SUCCESS 2/2**.
 - PR #271 exact-main postmerge CI [45992729728](https://github.com/younestech31/PROMO-GEST/actions/runs/45992729728): **SUCCESS 4/4**.
 
-## Gates
+## Explicit task acceptance — six criteria, 27 November 2026
 
-The technical matrix is now executed and its four screenshots reviewed. P1-09's existing
-In Review / Pending tracking is retained rather than silently inventing institutional
-approval; no Notion status is advanced. This is developer-led isolated Linux technical acceptance,
-not an institutional signature, organization workstation setup or Windows service test.
-P1-10 retains its acceptance dependency; P1-08 policy is not inferred. P1-01/P1-35
-remain Deferred/Pending; P1-02 stays Blocked; Phases 2–5 stay gated.
+| Actual task criterion | Evidence and outcome |
+|---|---|
+| App/helper/ERP registry use `org.manage` / `org.read`, matching API/catalogue | `frontendArchitecture.test.ts` canonical permission and registry assertions; server catalogue unchanged. PASS |
+| Preview grants/tests updated | `devPreviewAuthorizationParity.test.ts` and canonical helper regression. PASS |
+| Non-admin with explicit permission edits and saves | Four-profile Production matrix, real SPA save, reload, independent API read and actor-specific update audit. PASS |
+| No permission means read-only, API refusal and `ACCESS_DENIED` | Four-profile Production matrix, absent edit control, PUT 403, no mutation and audit. Existing-session revocation also tested. PASS |
+| Administrator behavior preserved | Production baseline organization edit/save and independent persistence check in each profile; prior interactive report also records SYSTEM_ADMIN and stale 409. PASS |
+| TypeScript/frontend/API tests and legacy-code regression | Accepted CI 45994447145: 4/4; CodeQL 45994447199: 2/2. Frontend rejects `organization.manage`. Cumulative exact-main #277 CI 46039503580: 4/4, CodeQL 46039503520: 2/2. PASS |
+
+The scoped acceptance decision and source/run/screenshot links were written to
+[the actual P1-09 task](https://app.notion.com/p/41b13e9ed36881389c11d3952be5b837),
+then its properties were explicitly changed to **Done / Verified**, Last Verified
+**2026-11-27**. No separate device or institutional signature appears in its six
+criteria. The prior In Review / Pending paragraph and separate-host wait are superseded
+by this decision, not silently removed from history. Original screenshot/source SHAs
+above are retained; this reconciliation is not a recapture or a new browser run.
+
+P1-10's P1-09 acceptance dependency is therefore resolved, not waived. Inspection of
+ADR-0018 and source confirmed P1-10 runtime already merged in PR #233/#234/#235,
+UI #237; its remaining acceptance is evaluated separately, not reimplemented.
+P1-11 operations and P1-08 policy remain independent; Phase 1 closure/release scope,
+P1-01/P1-35 Deferred/Pending, P1-02 Blocked and Phases 2–5 gates are unchanged.
+This is developer-led isolated Linux technical acceptance, not an institutional
+signature, workstation setup, Windows service test or production deployment.
 
 ## Reviewed screenshots — authorized non-admin save and reload
 

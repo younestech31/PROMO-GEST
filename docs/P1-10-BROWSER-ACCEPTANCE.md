@@ -109,8 +109,18 @@ proof; those require executed assertions.
   Eight original P1-10 PNGs/results in [artifact 15221942165](https://github.com/younestech31/PROMO-GEST/actions/runs/46044806419/artifacts/15221942165).
   These are pre-completion images; completion/denials/audits are executed assertions,
   not claims inferred from the wrong screenshot state.
-- This evidence import/documentation follow-up has its own PR-head checks; source/tested
-  identities above are retained unchanged rather than relabeled as the documentation head.
+- Evidence-import head `c111543`: CI 46046014070 exposed a test-scope regression:
+  `test_all_archived_suites_remain_valid` tried to validate the new Development archive
+  with the deliberately Production-only importer. The Production importer remains
+  unchanged and must reject this archive. The archive test now explicitly asserts that
+  rejection; an independent Development archive test validates all 28 literal-true
+  verdicts, source/run/tested identity, exact profile/schema/path sets and four image
+  hashes. Unknown archive types still fail closed. Local Production importer **14/14**,
+  staging exporter **19/19**, Development exporter/archive **7/7 with Pillow PASS**
+  (stdlib-only runner: 6 passed, one image-encoder test skipped until Pillow is installed).
+- The corrected follow-up has its own PR-head checks; source/tested identities above
+  are retained unchanged rather than relabeled as the documentation head. Failed or
+  pending overall CI runs are not acceptance evidence.
 
 P1-10 remains Pending until its evidence has been reconciled against all seven task
 criteria. No institutional signature, new policy decision or operational acceptance

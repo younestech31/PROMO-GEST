@@ -87,7 +87,16 @@ class StagingImportTests(unittest.TestCase):
         for path in paths:
             with self.subTest(path=path):
                 manifest = json.loads(path.read_text())
-                module.validate_manifest(manifest, manifest['profiles'][0]['sourceHead'])
+                if path.parent.name.startswith('p1-10-realstack-'):
+                    # This archive is intentionally Development, not Production HTTPS.
+                    # Its own exporter tests validate its schema, verdicts and image hashes.
+                    self.assertEqual(manifest['mode'],
+                                     'P1-10 disposable Development real SPA and PostgreSQL 18; not Production HTTPS')
+                    with self.assertRaisesRegex(ValueError, 'schema or suite'):
+                        module.validate_manifest(manifest, manifest['profiles'][0]['sourceHead'])
+                else:
+                    # Unknown/new archives still fail closed rather than silently skipping.
+                    module.validate_manifest(manifest, manifest['profiles'][0]['sourceHead'])
 
     def test_rejects_missing_failed_or_non_boolean_language_checks(self):
         root = Path(__file__).resolve().parents[1] / 'docs/evidence/p1-17-production-2026-11-27/manifest.json'

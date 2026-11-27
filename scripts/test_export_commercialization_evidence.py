@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 import contextlib
+import hashlib
 import importlib.util
 import io
 import json
@@ -87,6 +88,40 @@ class CommercializationExportTests(unittest.TestCase):
         self.assertEqual(len(manifest['images']), 4)
         self.assertEqual(manifest['mode'], export.MODE)
         self.assertIn('PG-P1-10-manifest:', output.getvalue())
+
+    def test_archived_development_evidence_verdicts_identity_and_image_integrity(self):
+        root = Path(__file__).resolve().parents[1] / 'docs/evidence'
+        paths = sorted(root.glob('p1-10-realstack-*/manifest.json'))
+        self.assertGreaterEqual(len(paths), 1)
+        for path in paths:
+            with self.subTest(path=path):
+                manifest = json.loads(path.read_text())
+                provenance = json.loads(path.with_name('provenance.json').read_text())
+                self.assertEqual(set(manifest), {'mode', 'profiles', 'images'})
+                self.assertEqual(manifest['mode'], export.MODE)
+                self.assertEqual(len(manifest['profiles']), 4)
+                self.assertEqual({r['profile'] for r in manifest['profiles']}, set(export.PROFILES))
+                self.assertEqual(len({r['testedCheckout'] for r in manifest['profiles']}), 1)
+                for result in manifest['profiles']:
+                    self.assertEqual(set(result), {'profile', 'sourceHead', 'testedCheckout', 'run',
+                                                   'checks', 'browser', 'viewport'})
+                    self.assertEqual(result['sourceHead'], provenance['sourceHead'])
+                    self.assertEqual(result['run'], str(provenance['runId']))
+                    self.assertRegex(result['sourceHead'], r'^[0-9a-f]{40}$')
+                    self.assertRegex(result['testedCheckout'], r'^[0-9a-f]{40}$')
+                    self.assertEqual(set(result['checks']), set(export.CHECKS))
+                    self.assertTrue(all(value is True for value in result['checks'].values()))
+                    self.assertEqual(result['viewport'], {'width': 390, 'height': 844}
+                                     if result['profile'].endswith('mobile') else {'width': 1440, 'height': 900})
+                self.assertEqual(len(manifest['images']), 4)
+                self.assertEqual({i['profile'] for i in manifest['images']}, set(export.PROFILES))
+                for image in manifest['images']:
+                    self.assertEqual(set(image), {'profile', 'file', 'sha256'})
+                    self.assertEqual(image['file'], image['profile'] + '/review.jpg')
+                    data = export.safe_file(path.parent, image['profile'], 'review.jpg').read_bytes()
+                    self.assertLess(len(data), 20000)
+                    self.assertTrue(data.startswith(b'\xff\xd8\xff'))
+                    self.assertEqual(hashlib.sha256(data).hexdigest(), image['sha256'])
 
     def test_export_rejects_non_ci_before_io(self):
         with patch.dict('os.environ', {}, clear=True):

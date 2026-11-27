@@ -1,6 +1,6 @@
 # ADR 0011 — Project Estimated Budget Requires Explicit Financial Capability
 
-- **Status:** Accepted; implementation in Phase 1 review branch, not yet merged or verified
+- **Status:** Accepted; implementation merged through PR #80; automated application/PostgreSQL/preview coverage exists. P1-05 manual Arabic/French Staging acceptance remains pending. The four-profile browser scenario and its verification record are tracked in [P1-05 browser acceptance](../P1-05-BUDGET-BROWSER-ACCEPTANCE.md).
 - **Date:** 17 November 2026
 - **Decision owners:** PROMO GEST Product Owner and engineering
 - **Scope:** project summary/list/detail, project create/update contracts, project member responses, React project directory, and Vite-only development preview

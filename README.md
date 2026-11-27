@@ -93,6 +93,19 @@ Running the root Vite development server without `ASPNETCORE_URL` uses an **in-m
 
 For a database-backed development session, use the documented Cloud SQL development connection script and inspect its logs and health response. Cloud SQL is optional development infrastructure only; it is not the local-first production architecture. Do not run migrations against an existing preview database unless a separate backup and explicit operational approval are in place.
 
+## Isolated Production HTTPS staging rehearsal
+
+The Linux CI job also runs a separate four-profile Arabic/French desktop/mobile rehearsal
+of the published application in **Production** mode behind Caddy HTTPS, using fresh
+PostgreSQL 18 databases and encrypted persistent Data Protection keys. It checks first-run
+setup, secure cookies, CSRF, organization/document persistence across an API restart,
+P1-05 financial visibility/write boundaries, and logout/replay denial.
+
+See the [Arabic execution report and screenshots](docs/STAGING-ACCEPTANCE-2026-11-27.ar.md)
+for actual run outcomes, tested source revisions and limitations. The scripts refuse
+arbitrary targets; they are not deployment commands. This isolated rehearsal does not
+replace organization-local installation, certificate-trust distribution or operator/legal acceptance.
+
 ## Delivery rules
 
 - Work on isolated feature branches and reviewed pull requests; do not push directly to `main`.

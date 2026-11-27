@@ -23,6 +23,12 @@ jobs:
         run: python3 scripts/test_validate_doc_baseline.py
       - name: Verify the documented baseline matches this branch
         run: python3 scripts/validate-doc-baseline.py --main-ref origin/main
+      - name: Test disposable browser budget fixture helpers and safety guard
+        run: python3 tests/browser/test_project_budget.py
+      - name: Test staging evidence completeness, privacy and import integrity
+        run: |
+          python3 scripts/test_export_staging_evidence.py
+          python3 scripts/test_import_staging_evidence.py
       - name: Test the repository hygiene guard
         run: python3 scripts/test_check_repository_hygiene.py
       - name: Verify tracked file modes and the lockfile match this branch
@@ -256,6 +262,33 @@ jobs:
           name: phase0-browser-evidence
           path: ${{ runner.temp }}/phase0-evidence/
           if-no-files-found: error
+          retention-days: 30
+      - name: Rehearse isolated Production HTTPS staging and restart (four profiles)
+        env:
+          STAGING_SOURCE_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+        run: |
+          source "$RUNNER_TEMP/p0-python/bin/activate"
+          pip install pillow==12.0.0
+          bash tests/browser/run-staging.sh
+      # Runner check annotations allow ten notices per step. Each record is bounded
+      # to ten <=3000-character chunks; keep publication in distinct read-only steps.
+      - name: Export Arabic desktop staging review image
+        run: '"$RUNNER_TEMP/p0-python/bin/python" scripts/export-staging-evidence.py "$RUNNER_TEMP/staging-evidence" --record ar-desktop'
+      - name: Export Arabic mobile staging review image
+        run: '"$RUNNER_TEMP/p0-python/bin/python" scripts/export-staging-evidence.py "$RUNNER_TEMP/staging-evidence" --record ar-mobile'
+      - name: Export French desktop staging review image
+        run: '"$RUNNER_TEMP/p0-python/bin/python" scripts/export-staging-evidence.py "$RUNNER_TEMP/staging-evidence" --record fr-desktop'
+      - name: Export French mobile staging review image
+        run: '"$RUNNER_TEMP/p0-python/bin/python" scripts/export-staging-evidence.py "$RUNNER_TEMP/staging-evidence" --record fr-mobile'
+      - name: Export complete staging manifest
+        run: '"$RUNNER_TEMP/p0-python/bin/python" scripts/export-staging-evidence.py "$RUNNER_TEMP/staging-evidence" --record manifest'
+      - name: Publish sanitized Production HTTPS staging evidence
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: staging-https-evidence
+          path: ${{ runner.temp }}/staging-evidence/
+          if-no-files-found: warn
           retention-days: 30
       - name: Apply migrations and seed roles as migration owner
         env:

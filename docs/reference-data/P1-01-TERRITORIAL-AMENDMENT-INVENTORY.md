@@ -210,9 +210,9 @@ The ten new-Wilaya headings in the French annex are: 49 Timimoun; 50 Bordj Badji
 ### Evidence reviewed on 27 November 2026
 
 - **French official JORADP edition:** [F2021026.pdf](https://www.joradp.dz/FTP/jo-francais/2021/F2021026.pdf). The decree and Annex pages 5–16 were visually inspected. The annex continues through the late new-Wilaya headings on printed pages 15–16.
-- **Arabic edition facsimile:** the Arabic pages 5–17 were visually inspected in a page-for-page issue facsimile hosted by Kanonix: [Arabic JO26/2021 facsimile PDF](https://kanonix.app/journals/fac71292-3d61-4b81-8da4-b8965d7ede81/pdf?download=1). This is a mirror/facsimile, not a direct download from the JORADP Arabic host. The JORADP Arabic binary was not retrievable in this pass; the historical repository inventory lists an older SHA-256 for A2021026.pdf, but that hash was not recalculated or compared to the mirror bytes in this audit.
+- **Arabic official JORADP edition:** [A2021026.pdf](https://www.joradp.dz/FTP/jo-arabe/2021/A2021026.pdf). The original official Arabic PDF was opened from the JORADP-hosted archive and its annex pages 5–17 were visually inspected on 27 November 2026. The final page (printed p.17) includes the headings for Wilayas 56 Djanet, 57 El Meghaier and 58 El Meniaâ. The repository already holds a historical SHA-256 value for A2021026.pdf (`50f8d7e861004e5f3f72eda872ffab0d38ff40244227907e0e891cb0fbac19d2`); it was not recalculated from downloaded bytes in this pass, so treat it as an existing provenance record, not a newly verified checksum.
 
-**Evidence boundary:** page-image review of the Arabic mirror supports a preliminary bilingual page-layout/content cross-check, not a fresh verification of the Arabic JORADP PDF binary. No complete row-by-row bilingual annex transcription, checksum comparison, or practitioner adjudication is claimed. Do not infer four-digit commune register codes, commune seats, legal effective dates, or parent assignments from headings alone. Preserve the sans changement passages as verbatim change/no-change assertions, not as a licence to infer missing rows.
+**Evidence boundary:** both language editions have now had the relevant page images visually inspected from JORADP-hosted PDFs (French pp.5–16; Arabic pp.5–17). No complete row-by-row bilingual annex transcription, fresh PDF-byte checksum comparison, or practitioner adjudication is claimed. Do not infer four-digit commune register codes, commune seats, legal effective dates, or parent assignments from Wilaya headings alone. Preserve the sans changement passages as verbatim change/no-change assertions, not as a licence to infer missing rows.
 
 ### Relationship to JO79/2021
 
@@ -233,7 +233,7 @@ The 8 February 1986 register amendment (JO11/1986, printed p.280) cites an order
 
 ### Open gates after this pass
 
-- Retrieve and byte-verify the original Arabic JORADP binary for JO26/2021; compare it with the page-facsimile mirror before upgrading the evidence status.
+- Recalculate SHA-256 directly from both official PDF binaries and compare to the historical hashes recorded in the inventory; complete Decree 21-128's French/Arabic annex transcription and reconciliation row by row.
 - Transcribe and reconcile Decree 21-128's French/Arabic annex row by row, preserving locality/commune/territorial-parent semantics and every sans changement block.
 - Retrieve and inspect the Arabic JO41/1984 seat annex; complete the French/Arabic seat transcription and locate the cited 13 May 1985 amending order.
 - Reconcile the 975 residual source-lineage candidates against all applicable instruments. This does not mean that 975 original JO44/1985 commune rows remain unextracted.

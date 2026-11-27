@@ -112,7 +112,9 @@ def run_commercialization_review(admin_ctx, base, lang, device, out):
         expect(page.locator('html')).to_have_attribute('dir', 'rtl' if lang == 'ar' else 'ltr')
         create = page.get_by_role('button', name='إنشاء حجز' if lang == 'ar' else 'Créer une réservation', exact=True)
         expect(create).to_be_enabled()
-        page.get_by_label('الوحدة المتاحة *' if lang == 'ar' else 'Unité disponible *', exact=True).select_option(payload['propertyUnitId'])
+        # This wrapping label includes dynamic option text; exact text matching also
+        # compares those option labels. Match the unique field caption as a substring.
+        page.get_by_label('الوحدة المتاحة *' if lang == 'ar' else 'Unité disponible *').select_option(payload['propertyUnitId'])
         with page.expect_response(lambda r: r.url.endswith('/reservations') and r.request.method == 'POST') as created:
             create.click()
         assert created.value.status == 201

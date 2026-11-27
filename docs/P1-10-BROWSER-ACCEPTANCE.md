@@ -73,6 +73,13 @@ proof; those require executed assertions.
 - Python compile: **PASS**, helper and integrated runner.
 - Baseline validator tests **12/12 PASS**, hygiene tests **12/12 PASS**;
   nine canonical documents agree on main `484871f99aa62dfb65904ad7ec4100c0a9ac1a29`.
+- Local frontend **118/118 PASS**, TypeScript **PASS**.
+- First PR #279 run [CI 46043064035](https://github.com/younestech31/PROMO-GEST/actions/runs/46043064035)
+  failed in the first AR desktop profile at unit-field selection: an exact wrapping-label
+  match did not account for dynamic option text. Corrected to the unique field-caption
+  substring; no runtime change. This failed run is **not** acceptance evidence.
+  Its CodeQL 46043064081 passed 2/2; other CI jobs passed.
+- PR #278 exact-main CI 46042410429 **4/4 PASS**, CodeQL 46042410441 **2/2 PASS**.
 - New real-stack browser matrix / screenshots: **PENDING CI execution**. No new
   screenshot or 28/28 PASS is claimed before the job actually succeeds.
 

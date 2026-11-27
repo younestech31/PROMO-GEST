@@ -124,8 +124,10 @@ def run_project_team(browser, admin_ctx, base, lang, device, viewport, out):
         # Small modal viewport can scroll the error offscreen after form submission.
         alert = page.get_by_role('alert')
         alert.scroll_into_view_if_needed()
+        heading = page.get_by_role('heading', name=title, exact=True)
+        heading.scroll_into_view_if_needed()
         expect(alert).to_be_in_viewport()
-        expect(page.get_by_role('heading', name=title, exact=True)).to_be_in_viewport()
+        expect(heading).to_be_in_viewport()
         page.screenshot(path=out / filename)
 
     try:

@@ -2,6 +2,30 @@
 
 Date: 27 November 2026. Policy: [ADR-0011](ADR/0011-project-estimated-budget-requires-financial-capability.md).
 
+## Accepted closure — 27 November 2026
+
+**Budget P1-05: Done / Verified in live Notion.** All seven technical criteria
+below were reconciled after final PR #283 head `2a58c5c17feb03d947f85154cf6d9329d26adf50`
+CI [46063031424](https://github.com/younestech31/PROMO-GEST/actions/runs/46063031424)
+PASS5/5 and CodeQL [46063031421](https://github.com/younestech31/PROMO-GEST/actions/runs/46063031421)
+PASS2/2; all eight listed checks SUCCESS. PR #283 squash-merged at20:44:50Z as
+`1e636e0d0a045b5af2da570fea82ceb6628b5dd6`. Independent exact-main
+CI [46065714805](https://github.com/younestech31/PROMO-GEST/actions/runs/46065714805)
+PASS5/5 and CodeQL [46065714950](https://github.com/younestech31/PROMO-GEST/actions/runs/46065714950)
+PASS2/2, including full unfiltered PG18, Development browser, Production HTTPS
+restart, restore and dedicated export. [Machine-readable identities](evidence/p1-05-export-2026-11-27/closure-checks.json).
+
+The four screenshots retain **sourceb86760f / testedd22d20 / run46061768797**:
+not final-head/main recaptures, concurrency proof or full-page mobile views. The
+criterion6 distinction between generic simultaneous project edits with persisted
+zero and separate nonzero/null authorization assertions remains unchanged.
+Technical acceptance is delegated to the agent; no invented separate-device or
+institutional-signature requirement. Distinct phase-closure P1-05 remains
+Blocked / Not Started; Phase1 IN_PROGRESS and Phases2–5 gated. Institutional,
+legal, accounting, municipality and release approvals stay independent.
+Historical pending statements below describe their recorded checkpoints and are
+superseded only by this evidence-based closure.
+
 ## Scope
 
 `tests/browser/project_budget.py`, called by `phase0.py`, exercises the shipped React SPA
@@ -179,7 +203,7 @@ Production HTTPS/restart, dedicated image export and restore passed. Strict impo
 now succeeded: four images/profiles, exact source/run/tested identity and hashes;
 all four visually opened and independently rehashed. [Permanent evidence/provenance](evidence/p1-05-production-2026-11-27/README.md).
 
-### Seven-criterion technical assessment, pending final PR/main reconciliation
+### Seven-criterion technical assessment (final/main verified above)
 
 Criteria1–5 are supported by ProjectDto/ProjectService and existing Application,
 PG18 and four-profile Production budget matrix. Revoked manager null-update
@@ -202,9 +226,9 @@ Criterion7: security policy unchanged; navigation wording corrected below; basel
 and traceability link this exact evidence. G1 Domain, G3 authorization/scope,
 G5 stale/race, G6 audit, G7 realPG18, G8 frontend/realbrowser and G9 full regression
 passed in the exact-source CI. Machine-readable check identities include all5jobs.
-The new documentation head still needs independent CI/final PR/main reconciliation
-before promoting the task. **Notion remains In Review / Pending**, not blocked on
-an invented device or institution-local signature. No Phase1 closure/later-phase unlock.
+The final documentation head and exact merged main were independently verified
+as recorded at the top; **Notion budget is Done / Verified**. No invented device
+or institution-local signature gate; no Phase1 closure/later-phase unlock.
 
 ### Reviewed screenshots — exact source above
 

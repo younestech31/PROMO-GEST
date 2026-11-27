@@ -127,3 +127,65 @@ These views illustrate the deliberately switched and persisted preference. The o
 fixture language is restored afterward through the real SPA and independently read
 from the primary session. API denials, failure handling and audit are supported by
 the executed checks, not inferred from the images.
+
+## Six-criterion reconciliation and focused coverage — 27 November
+
+Live Notion criteria, dependencies and risk were reread before this slice. The
+tracker still says In Review / Pending; the older statement that AR/FR browser
+acceptance has never run is superseded by the executed Production matrix above.
+No separate institutional device/signature is a technical gate for this preference.
+
+| Criterion | Concrete evidence / current result |
+|---|---|
+| Authenticated self-service, no unauthorized other-user change | `AuthController.UpdatePreferredLanguage` takes the actor exclusively from claims; request contract contains only language and stamp. New PG18 test `PreferredLanguageEndpoint_BindsActorDespiteInjectedTarget_AndDeniesCrossUserAdministration` injects a foreign user ID, rejects a foreign stamp with409, denies unauthorized `/api/users/{id}` update with403 and checks that a valid self stamp changes only the actor. **Source CI PASS**. |
+| ar/fr validation, audit, concurrency | Existing Domain validation and PG18 `PreferredLanguageEndpoint_PersistsSelfPreferenceAndProtectsSessionAndOrganizationState` / `PreferredLanguageEndpoint_ConcurrentUpdatesWithSameSessionStamp_CommitOneChangeAndOneAudit`; new Application service validation theory and actor/audit/stale checks **source CI PASS**. |
+| SPA waits for success or clearly reports failed persistence | Existing real Production network-failure/409 matrix and App.tsx error banner. No success inferred from screenshots alone. |
+| Reload / fresh login read persisted SessionResponse preference | Existing eight-check Production matrix in each profile, including fresh login and API restart. |
+| API/Application/PG18/UI coverage, self/foreign/invalid/network cases | Existing browser/API/PG18 coverage plus new direct Application tests and explicit persisted foreign-user isolation case above. New coverage executed successfully in source CI46066093865; final documentation/main verification remains pending. |
+| Organization.DefaultLanguage unchanged | Existing Production and PG18 assertions plus new service and foreign-user endpoint assertions. |
+
+The self-service JSON contract has **no target user**: an injected JSON field is
+ignored and never authorizes a foreign update; the separate administrative endpoint
+rejects this unprivileged actor with403 `FORBIDDEN_USER_MANAGEMENT`. Do not claim
+the self endpoint returns403 merely because an unknown `userId` was supplied.
+The new PG18 scenario creates two synthetic unprivileged employees in its own
+disposable database; it changes no shipped grants or account policy.
+
+Local frontend118/118, TypeScript, language helper3/3 and baseline12/12 PASS.
+No local .NET/PG18 runtime exists. **New C# tests NOT RUN locally / source CI PASS**, and P1-17 stays In Review / Pending. Existing screenshots retain their
+34304e9/testedfb627e2/run46002815426 identity and were not recaptured or relabeled.
+
+
+### Existing-image review repeated for scope reconciliation
+
+All four stored language JPEG hashes were independently rechecked against the
+manifest and all four images reopened on27November: initially Arabic fixtures
+show saved French LTR; initially French fixtures show saved Arabic RTL. Desktop
+views show organization default AR/FR unchanged; mobile images are top viewports
+and do not visually expose the entire organization profile. No image alone proves
+identity isolation, persistence, failed writes or audit. Existing executed browser
+assertions and new API/Application/PG18 checks provide those distinct proofs.
+
+
+### Executed source verification — explicit self-identity boundary
+
+Source `5346d9dd99b218e50b69476d2977e86493e23f45`:
+[CI46066093865](https://github.com/younestech31/PROMO-GEST/actions/runs/46066093865)
+**PASS5/5** and [CodeQL46066093864](https://github.com/younestech31/PROMO-GEST/actions/runs/46066093864)
+**PASS2/2**, completed success on that exact source; all eight listed checks SUCCESS.
+Build with warnings as errors, unfiltered Domain/Application/PostgreSQL18 suites,
+four-profile Development browser, Production HTTPS/restart, full restore drill and
+dedicated Production evidence export all passed. [Job/step identities](evidence/p1-17-production-2026-11-27/scope-checks.json).
+
+This executes the new Application Fact + three invalid-language Theory rows and
+new PG18 endpoint Fact: foreign stamp409; unauthorized administrative target403;
+valid self stamp plus injected foreign `userId` changes only actor; foreign
+language/stamp and organization default unchanged; exact actor-target success
+audit and access-denial audit retained. Source inspection is no longer the sole
+proof for the non-targetable self endpoint.
+
+All six technical criteria now have executed evidence. **P1-17 remains In Review /
+Pending until this documentation head and the eventual exact merged main receive
+independent verification**. Do not inherit source CI onto a later head. No local
+C# run, new screenshot capture, runtime change or institution-specific approval is
+claimed. Four original images were rehashed/reopened, preserving provenance.

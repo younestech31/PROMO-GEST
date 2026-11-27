@@ -6,6 +6,8 @@ using Microsoft.EntityFrameworkCore.Diagnostics;
 using Microsoft.Extensions.DependencyInjection;
 using PromoGest.Contracts.Auth;
 using PromoGest.Contracts.Common;
+using PromoGest.Contracts.Users;
+using PromoGest.Infrastructure.Security;
 using PromoGest.Domain.Entities;
 using PromoGest.Infrastructure.Persistence;
 using Xunit;
@@ -103,6 +105,72 @@ public sealed partial class PostgresEndToEndTests
                 entry.EventType == "USER_PREFERRED_LANGUAGE_UPDATED" &&
                 entry.TargetEntityType == "User" &&
                 entry.TargetEntityId == persistedAdmin.Id.ToString()));
+    }
+
+    [Fact]
+    public async Task PreferredLanguageEndpoint_BindsActorDespiteInjectedTarget_AndDeniesCrossUserAdministration()
+    {
+        var connection = await _fixture.CreateIsolatedDatabaseConnectionStringAsync();
+        await using var factory = CreateFactory(connection,
+            Path.Combine(Path.GetTempPath(), $"promogest_language_scope_{Guid.NewGuid():N}"));
+        using var client = factory.CreateClient(new WebApplicationFactoryClientOptions { HandleCookies = true });
+        await AttachCsrfTokenAsync(client);
+        using var initialize = await client.PostAsJsonAsync("/api/setup/initialize", ValidInitRequest());
+        Assert.Equal(HttpStatusCode.Created, initialize.StatusCode);
+        Guid actorId;
+        Guid foreignId;
+        Guid foreignStamp;
+        string organizationLanguage;
+        using (var scope = factory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+            var hasher = new Pbkdf2PasswordHasher();
+            var actor = User.CreateEmployee("language.actor", "Language Actor", "actor@example.test", null,
+                hasher.HashPassword("LanguageActor#2026"), "ar", DateTimeOffset.UtcNow);
+            var foreign = User.CreateEmployee("language.foreign", "Language Foreign", "foreign@example.test", null,
+                hasher.HashPassword("LanguageForeign#2026"), "ar", DateTimeOffset.UtcNow);
+            db.Users.AddRange(actor, foreign);
+            await db.SaveChangesAsync();
+            actorId = actor.Id;
+            foreignId = foreign.Id;
+            foreignStamp = foreign.ConcurrencyStamp;
+            organizationLanguage = (await db.OrganizationSettings.SingleAsync()).DefaultLanguage;
+        }
+        await AttachCsrfTokenAsync(client);
+        using var login = await client.PostAsJsonAsync("/api/auth/login",
+            new LoginRequest("language.actor", "LanguageActor#2026"));
+        Assert.Equal(HttpStatusCode.OK, login.StatusCode);
+        await AttachCsrfTokenAsync(client);
+        var before = await client.GetFromJsonAsync<SessionResponse>("/api/auth/me");
+        Assert.NotNull(before);
+
+        using var wrongStamp = await client.PutAsJsonAsync("/api/auth/preferred-language",
+            new { preferredLanguage = "fr", expectedConcurrencyStamp = foreignStamp, userId = foreignId });
+        Assert.Equal(HttpStatusCode.Conflict, wrongStamp.StatusCode);
+        Assert.Equal("USER_CONCURRENCY_CONFLICT", (await wrongStamp.Content.ReadFromJsonAsync<ApiErrorResponse>())!.Code);
+        using var denied = await client.PutAsJsonAsync($"/api/users/{foreignId}",
+            new UpdateEmployeeRequest("Language Foreign", "foreign@example.test", null, "fr", Array.Empty<string>()));
+        Assert.Equal(HttpStatusCode.Forbidden, denied.StatusCode);
+        Assert.Equal("FORBIDDEN_USER_MANAGEMENT", (await denied.Content.ReadFromJsonAsync<ApiErrorResponse>())!.Code);
+        // The self-service contract has no target. An injected JSON target must never select another user.
+        using var self = await client.PutAsJsonAsync("/api/auth/preferred-language",
+            new { preferredLanguage = "fr", expectedConcurrencyStamp = before!.User.ConcurrencyStamp, userId = foreignId });
+        Assert.Equal(HttpStatusCode.OK, self.StatusCode);
+        var updated = await self.Content.ReadFromJsonAsync<SessionResponse>();
+        Assert.Equal(actorId, updated!.User.Id);
+        Assert.Equal("fr", updated.User.PreferredLanguage);
+        Assert.Equal(organizationLanguage, updated.Organization.DefaultLanguage);
+        using var verification = factory.Services.CreateScope();
+        var persisted = verification.ServiceProvider.GetRequiredService<AppDbContext>();
+        var untouched = await persisted.Users.SingleAsync(user => user.Id == foreignId);
+        Assert.Equal("ar", untouched.PreferredLanguage);
+        Assert.Equal(foreignStamp, untouched.ConcurrencyStamp);
+        Assert.Equal(organizationLanguage, (await persisted.OrganizationSettings.SingleAsync()).DefaultLanguage);
+        var audit = Assert.Single(await persisted.AuditLogs.Where(entry =>
+            entry.EventType == "USER_PREFERRED_LANGUAGE_UPDATED").ToListAsync());
+        Assert.Equal(actorId, audit.ActorUserId);
+        Assert.Equal(actorId.ToString(), audit.TargetEntityId);
+        Assert.True(await persisted.AuditLogs.AnyAsync(entry => entry.EventType == "ACCESS_DENIED" && entry.ActorUserId == actorId));
     }
 
     [Fact]

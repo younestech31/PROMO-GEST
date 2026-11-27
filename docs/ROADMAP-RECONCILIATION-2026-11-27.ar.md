@@ -90,8 +90,8 @@ P1-10 بالترتيب، مع إبقاء CLOSURE وبوابات البيانات
 - رأس PR النهائي `585562d`: [CI 46037272329](https://github.com/younestech31/PROMO-GEST/actions/runs/46037272329)
   PASS 4/4 و[CodeQL 46037272487](https://github.com/younestech31/PROMO-GEST/actions/runs/46037272487) PASS 2/2.
 - تحقق main الدقيق: [CI 46039503580](https://github.com/younestech31/PROMO-GEST/actions/runs/46039503580)
-  قيد التنفيذ عند إعداد المراجعة؛
-  [CodeQL 46039503520](https://github.com/younestech31/PROMO-GEST/actions/runs/46039503520) PASS 2/2 على SHA نفسه؛ لا يُفترض نجاح CI قبل اكتماله.
+  **PASS 4/4**؛
+  [CodeQL 46039503520](https://github.com/younestech31/PROMO-GEST/actions/runs/46039503520) **PASS 2/2** على SHA نفسه؛ كلاهما مكتمل بنجاح.
 - فحص ملفات P0: 16 PNG بابعادها المطلوبة، وبصمات SHA-256؛ مراجعة بصرية لأربع عينات؛
   علاقة التزام الأدلة بأبيه متحققة. لا صور مولدة ولا تغيير لبكسلات الأدلة.
 - اختبارات اتساق الوثائق **12/12 PASS**، واختبارات حارس نظافة المستودع **12/12 PASS**؛
@@ -103,3 +103,12 @@ P1-10 بالترتيب، مع إبقاء CLOSURE وبوابات البيانات
 تصحيح وثائق وفهرسة أدلة موجودة وتحديث مرجع التشغيل في Notion فقط؛ لا تغيير API أو
 صلاحيات أو schema/migration أو بيانات تشغيل أو نشر أو إعدادات حماية GitHub.
 احتُفظ بنقاط التحقق التاريخية، لكن نقطة المطابقة الحالية هي المرجع عند التعارض.
+
+## 6. مزامنة Notion المنفذة
+
+أُضيفت نقطة مطابقة حالية إلى [خارطة التشغيل](https://app.notion.com/p/41a13e9ed3688127a157dceb9a0b655f)،
+وإدخال إلى [Session Handoff](https://app.notion.com/p/42313e9ed368811fa15ddbbf079e39d5)،
+وتوضيح لهوية [مهمة إغلاق Phase 1](https://app.notion.com/p/41a13e9ed36881eeb7dbf82fe3ef3863).
+تتضمن الروابط إلى [PR #278](https://github.com/younestech31/PROMO-GEST/pull/278)
+والحالات التي قُرئت وحدود الأدلة والخطوة التالية؛ لم تُعدّل حالات المهام ولا أرقامها.
+نجاح main أعلاه مستقل عن اختبارات PR #278 على رأسه الجديد؛ لا يُدّعى اكتمالها هنا.

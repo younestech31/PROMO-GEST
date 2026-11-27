@@ -127,3 +127,31 @@ These views illustrate the deliberately switched and persisted preference. The o
 fixture language is restored afterward through the real SPA and independently read
 from the primary session. API denials, failure handling and audit are supported by
 the executed checks, not inferred from the images.
+
+## Six-criterion reconciliation and focused coverage — 27 November
+
+Live Notion criteria, dependencies and risk were reread before this slice. The
+tracker still says In Review / Pending; the older statement that AR/FR browser
+acceptance has never run is superseded by the executed Production matrix above.
+No separate institutional device/signature is a technical gate for this preference.
+
+| Criterion | Concrete evidence / current result |
+|---|---|
+| Authenticated self-service, no unauthorized other-user change | `AuthController.UpdatePreferredLanguage` takes the actor exclusively from claims; request contract contains only language and stamp. New PG18 test `PreferredLanguageEndpoint_BindsActorDespiteInjectedTarget_AndDeniesCrossUserAdministration` injects a foreign user ID, rejects a foreign stamp with409, denies unauthorized `/api/users/{id}` update with403 and checks that a valid self stamp changes only the actor. **New test CI pending**. |
+| ar/fr validation, audit, concurrency | Existing Domain validation and PG18 `PreferredLanguageEndpoint_PersistsSelfPreferenceAndProtectsSessionAndOrganizationState` / `PreferredLanguageEndpoint_ConcurrentUpdatesWithSameSessionStamp_CommitOneChangeAndOneAudit`; new Application service validation theory and actor/audit/stale checks **CI pending**. |
+| SPA waits for success or clearly reports failed persistence | Existing real Production network-failure/409 matrix and App.tsx error banner. No success inferred from screenshots alone. |
+| Reload / fresh login read persisted SessionResponse preference | Existing eight-check Production matrix in each profile, including fresh login and API restart. |
+| API/Application/PG18/UI coverage, self/foreign/invalid/network cases | Existing browser/API/PG18 coverage plus new direct Application tests and explicit persisted foreign-user isolation case above. New coverage is not accepted before actual CI. |
+| Organization.DefaultLanguage unchanged | Existing Production and PG18 assertions plus new service and foreign-user endpoint assertions. |
+
+The self-service JSON contract has **no target user**: an injected JSON field is
+ignored and never authorizes a foreign update; the separate administrative endpoint
+rejects this unprivileged actor with403 `FORBIDDEN_USER_MANAGEMENT`. Do not claim
+the self endpoint returns403 merely because an unknown `userId` was supplied.
+The new PG18 scenario creates two synthetic unprivileged employees in its own
+disposable database; it changes no shipped grants or account policy.
+
+Local frontend118/118, TypeScript, language helper3/3 and baseline12/12 PASS.
+No local .NET/PG18 runtime exists. **New C# tests remain NOT RUN locally / CI
+pending**, and P1-17 stays In Review / Pending. Existing screenshots retain their
+34304e9/testedfb627e2/run46002815426 identity and were not recaptured or relabeled.

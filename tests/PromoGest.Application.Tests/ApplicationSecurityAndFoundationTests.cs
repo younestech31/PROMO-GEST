@@ -1448,6 +1448,81 @@ public sealed class ApplicationSecurityAndFoundationTests
     }
 
     [Fact]
+    public async Task PreferredLanguage_ServiceUpdatesOnlyActor_AndRejectsForeignStampAndUnauthorizedAdministration()
+    {
+        var store = new InMemoryStore();
+        var clock = new FakeClock();
+        var hasher = new Pbkdf2PasswordHasher();
+        var metadata = new RequestMetadata("127.0.0.1", "language-scope-test");
+        var setup = new SetupService(store, hasher, store, clock);
+        await setup.InitializeAsync(ValidInitRequest(), metadata);
+        var auth = new AuthService(store, store, hasher, new CryptoSessionTokenGenerator(), store, clock);
+        var users = new UserManagementService(store, store, hasher, store, clock);
+        var actor = User.CreateEmployee("language.actor", "Language Actor", "actor@example.test", null,
+            "test-only-hash", "ar", clock.UtcNow);
+        var foreign = User.CreateEmployee("language.foreign", "Language Foreign", "foreign@example.test", null,
+            "test-only-hash", "ar", clock.UtcNow);
+        store.Users.AddRange(new[] { actor, foreign });
+        var actorStamp = actor.ConcurrencyStamp;
+        var foreignStamp = foreign.ConcurrencyStamp;
+        var securityStamp = actor.SecurityStamp;
+        var organizationLanguage = store.Org!.DefaultLanguage;
+
+        var wrongStamp = await Assert.ThrowsAsync<ConflictDomainException>(() =>
+            auth.UpdatePreferredLanguageAsync(actor.Id,
+                new UpdatePreferredLanguageRequest("fr", foreignStamp), metadata));
+        Assert.Equal("USER_CONCURRENCY_CONFLICT", wrongStamp.Code);
+        Assert.Equal(actorStamp, actor.ConcurrencyStamp);
+        var denied = await Assert.ThrowsAsync<ForbiddenDomainException>(() =>
+            users.UpdateEmployeeAsync(actor.Id, foreign.Id,
+                new UpdateEmployeeRequest(foreign.FullName, foreign.Email, null, "fr", Array.Empty<string>()), metadata));
+        Assert.Equal("FORBIDDEN_USER_MANAGEMENT", denied.Code);
+        Assert.Contains(store.AuditLogs, entry => entry.EventType == "ACCESS_DENIED" && entry.ActorUserId == actor.Id);
+
+        var updated = await auth.UpdatePreferredLanguageAsync(actor.Id,
+            new UpdatePreferredLanguageRequest("fr", actorStamp), metadata);
+        Assert.Equal(actor.Id, updated.User.Id);
+        Assert.Equal("fr", updated.User.PreferredLanguage);
+        Assert.NotEqual(actorStamp, updated.User.ConcurrencyStamp);
+        Assert.Equal(securityStamp, actor.SecurityStamp);
+        Assert.Equal("ar", foreign.PreferredLanguage);
+        Assert.Equal(foreignStamp, foreign.ConcurrencyStamp);
+        Assert.Equal(organizationLanguage, store.Org.DefaultLanguage);
+        var audit = Assert.Single(store.AuditLogs, entry => entry.EventType == "USER_PREFERRED_LANGUAGE_UPDATED");
+        Assert.Equal(actor.Id, audit.ActorUserId);
+        Assert.Equal(actor.Id.ToString(), audit.TargetEntityId);
+
+        var stale = await Assert.ThrowsAsync<ConflictDomainException>(() =>
+            auth.UpdatePreferredLanguageAsync(actor.Id,
+                new UpdatePreferredLanguageRequest("ar", actorStamp), metadata));
+        Assert.Equal("USER_CONCURRENCY_CONFLICT", stale.Code);
+        Assert.Equal("fr", actor.PreferredLanguage);
+    }
+
+    [Theory]
+    [InlineData("en")]
+    [InlineData("")]
+    [InlineData("de")]
+    public async Task PreferredLanguage_ServiceRejectsUnsupportedValuesWithoutSuccessAudit(string language)
+    {
+        var store = new InMemoryStore();
+        var clock = new FakeClock();
+        var hasher = new Pbkdf2PasswordHasher();
+        var metadata = new RequestMetadata("127.0.0.1", "language-validation-test");
+        var setup = new SetupService(store, hasher, store, clock);
+        var initialized = await setup.InitializeAsync(ValidInitRequest(), metadata);
+        var actor = store.Users.Single(user => user.Id == initialized.SystemAdminUserId);
+        var stamp = actor.ConcurrencyStamp;
+        var auth = new AuthService(store, store, hasher, new CryptoSessionTokenGenerator(), store, clock);
+        var error = await Assert.ThrowsAsync<DomainException>(() => auth.UpdatePreferredLanguageAsync(actor.Id,
+            new UpdatePreferredLanguageRequest(language, stamp), metadata));
+        Assert.Equal("USER_PREFERRED_LANGUAGE_INVALID", error.Code);
+        Assert.Equal("ar", actor.PreferredLanguage);
+        Assert.Equal(stamp, actor.ConcurrencyStamp);
+        Assert.DoesNotContain(store.AuditLogs, entry => entry.EventType == "USER_PREFERRED_LANGUAGE_UPDATED");
+    }
+
+    [Fact]
     public async Task Authentication_ReturnsGenericErrorAcrossUnknownWrongInactiveAndLockedAccounts()
     {
         var store = new InMemoryStore();

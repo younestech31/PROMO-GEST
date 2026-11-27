@@ -143,11 +143,11 @@ added to that historical report or inferred from screenshots.
 | Criterion | Evidence and bounded follow-up |
 |---|---|
 | Own sessions only, public timestamps/IP/User-Agent, no secrets | Existing `SessionManagement_ListOwnActiveSessionsWithoutSecrets_AndRevokeSelectedSession`, owner-bound repository and exact public-schema Production checks. Original inventory/privacy screenshots contain only synthetic metadata. |
-| Owner-bound revocation / IDOR denial / audit | Existing `SessionManagement_RejectsForeignExpiredAndAlreadyRevokedSessionIds` returns404 `SESSION_NOT_FOUND` for all three, not403. New assertions verify foreign row remains unrevoked, expired row remains untouched, old revoked row stays revoked, caller still works, and no false success audit. **New assertions CI pending**. |
+| Owner-bound revocation / IDOR denial / audit | Existing `SessionManagement_RejectsForeignExpiredAndAlreadyRevokedSessionIds` returns404 `SESSION_NOT_FOUND` for all three, not403. New assertions verify foreign row remains unrevoked, expired row remains untouched, old revoked row stays revoked, caller still works, and no false success audit. **New assertions source CI PASS**. |
 | Selective revoke / current-session choice | Existing PG18 list/selective/current-confirmation tests and eight-check four-profile Production matrix: current session retained, explicit confirmation409, confirm204/logout, cancel sends no request; independent retained-cookie replay401. |
 | PG18 foreign / expired / revoked / replay / concurrent revoke | Existing tests above and `SessionManagement_ConcurrentRevocationCommitsOneUpdateAndOneAudit`: same target race one204 + one409 `CONCURRENCY_CONFLICT`, exactly one success audit, target replay401. This is same-account concurrency, not foreign-owner browser acceptance. |
 | AR RTL / FR LTR privacy and confirmation | Existing32/32 Production results plus four corrected images below; mobile images show the scrolled confirmation, not the privacy note above it. Inventory screenshot and DOM checks prove the notice separately. |
-| Reset/deactivation still revoke all | Existing lifecycle/reset and deactivation integration tests; new two-case `SessionManagement_ResetOrDeactivationRevokesAllEmployeeSessionsWithoutRevokingAdministrator` explicitly logs in twice, snapshots original cookies in memory, resets/deactivates via administrator API, checks both persisted rows revoked/security stamp rotated/exact actor-target audit/unaffected admin, replays original cookies401, and reactivation cannot revive old cookies. **New theory CI pending**. |
+| Reset/deactivation still revoke all | Existing lifecycle/reset and deactivation integration tests; new two-case `SessionManagement_ResetOrDeactivationRevokesAllEmployeeSessionsWithoutRevokingAdministrator` explicitly logs in twice, snapshots original cookies in memory, resets/deactivates via administrator API, checks both persisted rows revoked/security stamp rotated/exact actor-target audit/unaffected admin, replays original cookies401, and reactivation cannot revive old cookies. **New theory source CI PASS**. |
 
 The new preservation theory uses one isolated disposable PG18 database per case.
 Two ordinary employee sessions and an administrator are real API logins; cookies
@@ -155,7 +155,33 @@ are kept only in test memory and never logged/uploaded. Synthetic accounts are
 prepared directly in that disposable database without shipped-grant changes.
 No new session lifetime, idle policy, sliding expiry, runtime change or admin-wide
 session inventory is introduced. No local .NET/PostgreSQL runtime exists, so
-**new C# cases remain NOT RUN locally / CI pending**. P1-19 stays In Review /
-Pending until executed/full/final-main evidence is reconciled. P1-17 merged but
-independent main checks are still pending at this checkpoint; institutional,
+**new C# cases NOT RUN locally / source CI PASS**. P1-19 stays In Review /
+Pending until executed/full/final-main evidence is reconciled. P1-17 merged and independent main checks passed, with live Notion Done / Verified; institutional,
 legal/accounting/municipality/release and phase gates remain independent.
+
+
+### Executed source verification and repeated image review
+
+Exact source `0fd301ab6f0b9b53fc9bd5f075a61d5fe2d8cd57`:
+[CI46068409865](https://github.com/younestech31/PROMO-GEST/actions/runs/46068409865)
+**PASS5/5**, [CodeQL46068409882](https://github.com/younestech31/PROMO-GEST/actions/runs/46068409882)
+**PASS2/2**. Build, unfiltered Domain/Application/PG18, four-profile Development
+browser, Production HTTPS/restart, restore drill and dedicated export all PASS.
+The two revoke-all Theory cases and strengthened foreign/expired/revoked denial
+assertions executed successfully in that full PG18 suite. Existing deterministic
+concurrent-revoke (one204/one409/oneaudit) and cookie replay cases also remain green.
+[Machine-readable job/critical-step evidence](evidence/p1-19-production-2026-11-27/preservation-checks.json).
+
+All four corrected original JPEG hashes were rechecked against the manifest and
+all four images reopened: AR RTL/FR LTR desktop shows privacy/inventory/confirmation;
+mobile shows confirmation after scrolling, not the privacy notice above it. These
+remain source2433962/tested4fa168d/run45999710383, not new-source captures or proof
+of PG18 races/revoke-all. No UI change requires recapture. First below-viewport
+mobile captures and original encryption-guard failure remain historical failures,
+not accepted evidence.
+
+Local frontend118/118, TypeScript, session-helper5/5 and baseline12/12 PASS;
+hygiene/secrets/diff checks clean. No local C# execution claimed. All six technical
+criteria now have executed evidence. **P1-19 remains In Review / Pending until
+this documentation head and eventual exact merged main are independently checked**.
+No invented institution-local device/signature gate and no release approval implied.

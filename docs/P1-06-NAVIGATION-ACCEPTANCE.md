@@ -24,10 +24,19 @@ organization-profile Back navigation, not a duplicate router implementation:
 6. Restore the original synthetic organization fixture and assert zero uncaught
    errors on this test's page. Existing Forward Stay/Discard assertions remain.
 
-**Execution state:** authored; Python syntax, local frontend118/118 and TypeScript PASS; new browser regression awaits
-its own CI execution. No local browser/.NET/PostgreSQL execution is claimed, and
-no new screenshot is yet imported or visually accepted. The artifact screenshot
-is intended to illustrate the retained confirmation, not prove API persistence.
+**Execution state:** source7bc08db [CI46071842100](https://github.com/younestech31/PROMO-GEST/actions/runs/46071842100)
+**FAIL** in the four-profile Development browser step; Production/restore/export
+were not reached. Docs/frontend/Windows PASS; [CodeQL46071842057](https://github.com/younestech31/PROMO-GEST/actions/runs/46071842057)
+PASS2/2. The authored test called nonexistent Python `Page.expect_request_failed`.
+Confirmed against the Playwright Python API; replaced with supported
+`Page.expect_event('requestfailed', predicate=...)`. Scoped sanitized source/type
+annotations now diagnose failures without request/cookie/draft values. Full logs
+could not be retrieved through this sandbox's network allowlist; the exact runtime
+traceback is not claimed. The API-contract defect is independently demonstrable.
+The corrected source awaits its own full CI. Python syntax, local frontend118/118
+and TypeScript PASS; no local browser/.NET/PostgreSQL execution is claimed.
+No new screenshot is yet imported or visually accepted. The intended artifact
+screenshot illustrates the retained confirmation, not API persistence.
 
 ## Nine-criterion evidence inventory (not promotion)
 

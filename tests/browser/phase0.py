@@ -4,6 +4,7 @@ import os
 import secrets
 import subprocess
 import sys
+import traceback
 from pathlib import Path
 
 from playwright.sync_api import expect, sync_playwright
@@ -991,8 +992,9 @@ with sync_playwright() as pw:
         if route.request.method == 'PUT' else route.continue_(),
     )
     try:
-        with p06_page.expect_request_failed(
-            lambda request: request.method == 'PUT' and request.url == BASE + '/api/organization'
+        with p06_page.expect_event(
+            'requestfailed',
+            predicate=lambda request: request.method == 'PUT' and request.url == BASE + '/api/organization',
         ):
             p06_dialog.get_by_role('button', name=p06_save_label, exact=True).click()
         expect(p06_page.get_by_role('alert')).to_be_visible()
@@ -1004,6 +1006,13 @@ with sync_playwright() as pw:
             'Failed Save & Continue changed persisted organization data'
         )
         p06_page.screenshot(path=out/'p1-06-save-failure-guard.png')
+    except Exception as error:
+        # Static source locations/type only: no request payload, cookie, draft or error text.
+        for frame in traceback.extract_tb(error.__traceback__):
+            if frame.filename.endswith('/phase0.py'):
+                print(f'::error file=tests/browser/phase0.py,line={frame.lineno}::'
+                      f'P1-06 {lang}/{device}: {type(error).__name__}', flush=True)
+        raise
     finally:
         p06_page.unroute('**/api/organization')
 

@@ -37,6 +37,41 @@ P1-11 operational acceptance and later-phase/release-scope gates remain separate
   contract, receipt, installment, accounting entry or legal/financial approval.
   This test adds none of those operations and does not open Phase 2.
 
+## Seven-criterion reconciliation — 27 November
+
+Read against the live Notion P1-10 Acceptance Criteria, not an invented device or
+institutional-signature requirement. Evidence below is scoped; **overall acceptance
+is NOT PASS**. P1-09 is resolved; the remaining blocker is technical.
+
+| # | Actual criterion | Evidence / decision |
+|---|---|---|
+| 1 | Approved owner decision: only explicitly eligible projects may market/create internal holds | ADR-0018, approved 23 November; Domain allow-list and server-side create guard implement the decision. Policy confirmed; concurrent enforcement is limited by #280. |
+| 2 | Suspension blocks new holds, queues active holds; no automatic cancellation or legal/financial change | Sequential API/PG18 and 28 browser assertions demonstrate denial, queued hold, documentary completion, retained Active/Reserved/expiry/Suspended. **Not fully accepted:** two-save failure window and concurrent creation are unresolved (#280). |
+| 3 | Customer means CRM only; no contract, collection or accounting entry from Customer/internal hold | ADR-0018 and DOMAIN-MODEL preserve separation; inspected reservation/review services have no contract/treasury/accounting operation. Four reviewed bilingual queue notices reinforce this; screenshots alone are not accounting proof. No legal approval is inferred. |
+| 4 | Actual enum/status matrix; deny unknown/unapproved states by default | Matrix above, `ProjectCommercializationPolicyTests` (all defined denied states, undefined values, single allowed member). Policy/matrix supported. |
+| 5 | Domain/Application and all relevant API paths, not UI-only | `ProjectCommercializationPolicy`, `ProjectSalesReservationService.CreateAsync`, API reservation controller delegation; persisted queue/review handlers retain permission and project scoping. Server enforcement exists; concurrency guarantee remains open under #280. |
+| 6 | Domain/Application + PG18 states/transitions/suspension/active holds/rejection/concurrency/project isolation | Domain review/policy tests and PG18 end-to-end assertions exist; same-unit create race and stale review conflicts are covered. **Incomplete:** no deterministic suspension-versus-create ordering or rollback test spans the project save and review save. Existing permission denials must not be substituted for targeted cross-project reservation/review regression. Audit the latter while implementing #280. |
+| 7 | DOMAIN-MODEL / MASTER-ROADMAP / traceability + PR/CI/evidence | PR #279 contains browser suite/export tests, bound manifest/provenance and four reviewed JPEGs. This report, DOMAIN-MODEL, ADR-0018, roadmap and traceability explicitly retain #280 rather than claiming full acceptance. |
+
+### Technical blocker #280 — source inspection, not a reproduced incident
+
+`ProjectService.UpdateProjectAsync` saves project/status audit **before** querying
+active holds and saving review markers/audit. Repository saves use individual
+`DbContext.SaveChangesAsync`; no spanning transaction/shared create serialization
+boundary was found on these paths. A failure between saves could leave a suspended
+project without complete review metadata. A concurrent create that already read
+Commercialization is not proven to serialize against suspension. These are
+source-inspection findings, **not** claims that failure injection or a production
+race has already been executed.
+
+[#280](https://github.com/younestech31/PROMO-GEST/issues/280) requires deterministic
+PG18 failure-injection and barrier/interceptor interleaving tests, followed by a
+narrow atomicity/serialization repair and full regression. Do not reimplement the
+existing policy/queue/UI, weaken authorization, cancel holds or release units.
+The old “same suspension transaction” statements in DOMAIN-MODEL and ADR-0018
+have been corrected. The 28 sequential browser verdicts and reviewed images remain
+valid within their original scope; none is deterministic race or rollback proof.
+
 ## New four-profile real-browser regression
 
 `tests/browser/commercialization_review.py` is called by `phase0.py` after the

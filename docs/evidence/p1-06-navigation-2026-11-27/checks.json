@@ -1,6 +1,6 @@
 {
   "schema": "promogest.p1-06-navigation-checks.v1",
-  "scope": "Bounded P1-06 failed-save/retry, real revocation cache/preferences cleanup, and dirty settings internal/project/logout/native-dismiss regressions; not full acceptance or screenshot visual review",
+  "scope": "Bounded P1-06 failed-save/retry, real revocation/cache/preferences, dirty settings and C/D/E/K embedded draft guard/native navigation regressions; not full acceptance or screenshot visual review",
   "records": [
     {
       "runId": 46071842100,
@@ -3448,6 +3448,2577 @@
         },
         {
           "jobId": 140770693399,
+          "name": "Analyze javascript-typescript",
+          "conclusion": "success",
+          "criticalSteps": [
+            {
+              "name": "Set up job",
+              "conclusion": "success"
+            },
+            {
+              "name": "Run actions/checkout@v7",
+              "conclusion": "success"
+            },
+            {
+              "name": "Run github/codeql-action/init@v4",
+              "conclusion": "success"
+            },
+            {
+              "name": "Run github/codeql-action/analyze@v4",
+              "conclusion": "success"
+            },
+            {
+              "name": "Post Run github/codeql-action/analyze@v4",
+              "conclusion": "success"
+            },
+            {
+              "name": "Post Run github/codeql-action/init@v4",
+              "conclusion": "success"
+            },
+            {
+              "name": "Post Run actions/checkout@v7",
+              "conclusion": "success"
+            },
+            {
+              "name": "Complete job",
+              "conclusion": "success"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "runId": 46079034309,
+      "url": "https://github.com/younestech31/PROMO-GEST/actions/runs/46079034309",
+      "headSha": "cf6436893f388be10e94c1e7db7c15d41f13a2bd",
+      "conclusion": "success",
+      "jobs": [
+        {
+          "jobId": 140773437627,
+          "name": "Frontend install, checks, and static hosting",
+          "conclusion": "success",
+          "criticalSteps": [
+            {
+              "name": "Set up job",
+              "conclusion": "success"
+            },
+            {
+              "name": "Run actions/checkout@v7",
+              "conclusion": "success"
+            },
+            {
+              "name": "Scan tracked files for committed credentials",
+              "conclusion": "success"
+            },
+            {
+              "name": "Validate documented security settings against the shipped defaults",
+              "conclusion": "success"
+            },
+            {
+              "name": "Validate complete JO44/1985 source extracts",
+              "conclusion": "success"
+            },
+            {
+              "name": "Validate P1-01 candidate crosswalk structure (not legal approval)",
+              "conclusion": "success"
+            },
+            {
+              "name": "Validate P1-01 master reconciliation ledger (structural checks; not legal approval)",
+              "conclusion": "success"
+            },
+            {
+              "name": "Check paired W41 image readings and historical collision controls",
+              "conclusion": "success"
+            },
+            {
+              "name": "Validate JO44 Arabic page-image map (page mapping only; not row transcription or legal approval)",
+              "conclusion": "success"
+            },
+            {
+              "name": "Validate P1-01 bilingual supplements for Q110 and post-1985 naming acts (not legal approval)",
+              "conclusion": "success"
+            },
+            {
+              "name": "Validate second candidate archive JO58 108-row code lineage (not legal approval)",
+              "conclusion": "success"
+            },
+            {
+              "name": "Validate bounded JO61 Annex II new-Wilaya extraction (not legal approval)",
+              "conclusion": "success"
+            },
+            {
+              "name": "Validate JO61 legacy Wilaya group index 01-58 (secondary source only)",
+              "conclusion": "success"
+            },
+            {
+              "name": "Validate selected Arabic legacy JO61 aggregate cross-checks (secondary only)",
+              "conclusion": "success"
+            },
+            {
+              "name": "Verify reproducible practitioner review queue (not a seed)",
+              "conclusion": "success"
+            },
+            {
+              "name": "Validate independent commune decision book (no sign-off)",
+              "conclusion": "success"
+            },
+            {
+              "name": "Build and test offline commune review database (not a production seed)",
+              "conclusion": "success"
+            },
+            {
+              "name": "Publish commune review snapshot",
+              "conclusion": "success"
+            },
+            {
+              "name": "Run actions/setup-node@v7",
+              "conclusion": "success"
+            },
+            {
+              "name": "Install locked dependencies",
+              "conclusion": "success"
+            },
+            {
+              "name": "Audit production dependencies for known vulnerabilities",
+              "conclusion": "success"
+            },
+            {
+              "name": "TypeScript strict check",
+              "conclusion": "success"
+            },
+            {
+              "name": "Lint the SPA with the debt ratchet",
+              "conclusion": "success"
+            },
+            {
+              "name": "Frontend unit tests",
+              "conclusion": "success"
+            },
+            {
+              "name": "Build frontend",
+              "conclusion": "success"
+            },
+            {
+              "name": "Enforce entry bundle budget",
+              "conclusion": "success"
+            },
+            {
+              "name": "Verify frontend production output",
+              "conclusion": "success"
+            },
+            {
+              "name": "Build frontend into ASP.NET Core wwwroot",
+              "conclusion": "success"
+            },
+            {
+              "name": "Verify ASP.NET Core static hosting output",
+              "conclusion": "success"
+            },
+            {
+              "name": "Upload verified production SPA assets",
+              "conclusion": "success"
+            },
+            {
+              "name": "Post Run actions/setup-node@v7",
+              "conclusion": "success"
+            },
+            {
+              "name": "Post Run actions/checkout@v7",
+              "conclusion": "success"
+            },
+            {
+              "name": "Complete job",
+              "conclusion": "success"
+            }
+          ]
+        },
+        {
+          "jobId": 140773437826,
+          "name": "Documentation baseline consistency",
+          "conclusion": "success",
+          "criticalSteps": [
+            {
+              "name": "Set up job",
+              "conclusion": "success"
+            },
+            {
+              "name": "Run actions/checkout@v7",
+              "conclusion": "success"
+            },
+            {
+              "name": "Make the main ref available for the merge-base check",
+              "conclusion": "success"
+            },
+            {
+              "name": "Test the baseline validator",
+              "conclusion": "success"
+            },
+            {
+              "name": "Verify the documented baseline matches this branch",
+              "conclusion": "success"
+            },
+            {
+              "name": "Test disposable browser budget fixture helpers and safety guard",
+              "conclusion": "success"
+            },
+            {
+              "name": "Test staging evidence completeness, privacy and import integrity",
+              "conclusion": "success"
+            },
+            {
+              "name": "Test the repository hygiene guard",
+              "conclusion": "success"
+            },
+            {
+              "name": "Verify tracked file modes and the lockfile match this branch",
+              "conclusion": "success"
+            },
+            {
+              "name": "Post Run actions/checkout@v7",
+              "conclusion": "success"
+            },
+            {
+              "name": "Complete job",
+              "conclusion": "success"
+            }
+          ]
+        },
+        {
+          "jobId": 140773614808,
+          "name": "Windows publish and PowerShell validation",
+          "conclusion": "success",
+          "criticalSteps": [
+            {
+              "name": "Set up job",
+              "conclusion": "success"
+            },
+            {
+              "name": "Run actions/checkout@v7",
+              "conclusion": "success"
+            },
+            {
+              "name": "Run actions/download-artifact@v8",
+              "conclusion": "success"
+            },
+            {
+              "name": "Run actions/setup-dotnet@v6",
+              "conclusion": "success"
+            },
+            {
+              "name": "Restore solution",
+              "conclusion": "success"
+            },
+            {
+              "name": "Build solution",
+              "conclusion": "success"
+            },
+            {
+              "name": "Verify Windows machine-scoped Data Protection key-ring recovery",
+              "conclusion": "success"
+            },
+            {
+              "name": "Publish Windows x64 application",
+              "conclusion": "success"
+            },
+            {
+              "name": "Validate PowerShell scripts",
+              "conclusion": "success"
+            },
+            {
+              "name": "Verify Windows backup freshness and Task Scheduler contracts",
+              "conclusion": "success"
+            },
+            {
+              "name": "Verify Windows encrypted-backup and restore contract",
+              "conclusion": "success"
+            },
+            {
+              "name": "Post Run actions/setup-dotnet@v6",
+              "conclusion": "success"
+            },
+            {
+              "name": "Post Run actions/checkout@v7",
+              "conclusion": "success"
+            },
+            {
+              "name": "Complete job",
+              "conclusion": "success"
+            }
+          ]
+        },
+        {
+          "jobId": 140773614811,
+          "name": ".NET 10 and PostgreSQL 18 least-privilege tests",
+          "conclusion": "success",
+          "criticalSteps": [
+            {
+              "name": "Set up job",
+              "conclusion": "success"
+            },
+            {
+              "name": "Initialize containers",
+              "conclusion": "success"
+            },
+            {
+              "name": "Run actions/checkout@v7",
+              "conclusion": "success"
+            },
+            {
+              "name": "Run actions/download-artifact@v8",
+              "conclusion": "success"
+            },
+            {
+              "name": "Run actions/setup-dotnet@v6",
+              "conclusion": "success"
+            },
+            {
+              "name": "Restore solution",
+              "conclusion": "success"
+            },
+            {
+              "name": "Report vulnerable NuGet packages",
+              "conclusion": "success"
+            },
+            {
+              "name": "Build solution with warnings as errors",
+              "conclusion": "success"
+            },
+            {
+              "name": "Publish Linux runtime artifact",
+              "conclusion": "success"
+            },
+            {
+              "name": "Verify Linux published executable",
+              "conclusion": "success"
+            },
+            {
+              "name": "Package and smoke-test the isolated manual acceptance kit",
+              "conclusion": "success"
+            },
+            {
+              "name": "Publish manual operator kit (not a production release)",
+              "conclusion": "success"
+            },
+            {
+              "name": "Verify backup freshness monitoring contract",
+              "conclusion": "success"
+            },
+            {
+              "name": "Validate Linux shell scripts",
+              "conclusion": "success"
+            },
+            {
+              "name": "Domain tests",
+              "conclusion": "success"
+            },
+            {
+              "name": "Application tests",
+              "conclusion": "success"
+            },
+            {
+              "name": "Provision PostgreSQL identities and initial database",
+              "conclusion": "success"
+            },
+            {
+              "name": "Apply migrations and seed roles as migration owner",
+              "conclusion": "success"
+            },
+            {
+              "name": "Run integration tests with separate database identities",
+              "conclusion": "success"
+            },
+            {
+              "name": "Run Phase 0 real-browser setup and logout checks (four disposable profiles)",
+              "conclusion": "success"
+            },
+            {
+              "name": "Export P1-10 Arabic desktop review image",
+              "conclusion": "success"
+            },
+            {
+              "name": "Export P1-10 Arabic mobile review image",
+              "conclusion": "success"
+            },
+            {
+              "name": "Export P1-10 French desktop review image",
+              "conclusion": "success"
+            },
+            {
+              "name": "Export P1-10 French mobile review image",
+              "conclusion": "success"
+            },
+            {
+              "name": "Export P1-10 separate Development evidence manifest",
+              "conclusion": "success"
+            },
+            {
+              "name": "Publish sanitized browser evidence (not manual acceptance)",
+              "conclusion": "success"
+            },
+            {
+              "name": "Rehearse isolated Production HTTPS staging and restart (four profiles)",
+              "conclusion": "success"
+            },
+            {
+              "name": "Publish sanitized Production HTTPS staging evidence",
+              "conclusion": "success"
+            },
+            {
+              "name": "Run full database, storage, and Data Protection restore drill",
+              "conclusion": "success"
+            },
+            {
+              "name": "Post Run actions/setup-dotnet@v6",
+              "conclusion": "success"
+            },
+            {
+              "name": "Post Run actions/checkout@v7",
+              "conclusion": "success"
+            },
+            {
+              "name": "Stop containers",
+              "conclusion": "success"
+            },
+            {
+              "name": "Complete job",
+              "conclusion": "success"
+            }
+          ]
+        },
+        {
+          "jobId": 140775783204,
+          "name": "Production HTTPS evidence export",
+          "conclusion": "success",
+          "criticalSteps": [
+            {
+              "name": "Set up job",
+              "conclusion": "success"
+            },
+            {
+              "name": "Run actions/checkout@v7",
+              "conclusion": "success"
+            },
+            {
+              "name": "Run actions/download-artifact@v8",
+              "conclusion": "success"
+            },
+            {
+              "name": "Install bounded evidence encoder",
+              "conclusion": "success"
+            },
+            {
+              "name": "Export Arabic desktop staging review image",
+              "conclusion": "success"
+            },
+            {
+              "name": "Export Arabic mobile staging review image",
+              "conclusion": "success"
+            },
+            {
+              "name": "Export French desktop staging review image",
+              "conclusion": "success"
+            },
+            {
+              "name": "Export French mobile staging review image",
+              "conclusion": "success"
+            },
+            {
+              "name": "Export complete staging manifest",
+              "conclusion": "success"
+            },
+            {
+              "name": "Post Run actions/checkout@v7",
+              "conclusion": "success"
+            },
+            {
+              "name": "Complete job",
+              "conclusion": "success"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "runId": 46079034339,
+      "url": "https://github.com/younestech31/PROMO-GEST/actions/runs/46079034339",
+      "headSha": "cf6436893f388be10e94c1e7db7c15d41f13a2bd",
+      "conclusion": "success",
+      "jobs": [
+        {
+          "jobId": 140773437671,
+          "name": "Analyze javascript-typescript",
+          "conclusion": "success",
+          "criticalSteps": [
+            {
+              "name": "Set up job",
+              "conclusion": "success"
+            },
+            {
+              "name": "Run actions/checkout@v7",
+              "conclusion": "success"
+            },
+            {
+              "name": "Run github/codeql-action/init@v4",
+              "conclusion": "success"
+            },
+            {
+              "name": "Run github/codeql-action/analyze@v4",
+              "conclusion": "success"
+            },
+            {
+              "name": "Post Run github/codeql-action/analyze@v4",
+              "conclusion": "success"
+            },
+            {
+              "name": "Post Run github/codeql-action/init@v4",
+              "conclusion": "success"
+            },
+            {
+              "name": "Post Run actions/checkout@v7",
+              "conclusion": "success"
+            },
+            {
+              "name": "Complete job",
+              "conclusion": "success"
+            }
+          ]
+        },
+        {
+          "jobId": 140773437936,
+          "name": "Analyze csharp",
+          "conclusion": "success",
+          "criticalSteps": [
+            {
+              "name": "Set up job",
+              "conclusion": "success"
+            },
+            {
+              "name": "Run actions/checkout@v7",
+              "conclusion": "success"
+            },
+            {
+              "name": "Run github/codeql-action/init@v4",
+              "conclusion": "success"
+            },
+            {
+              "name": "Run github/codeql-action/autobuild@v4",
+              "conclusion": "success"
+            },
+            {
+              "name": "Run github/codeql-action/analyze@v4",
+              "conclusion": "success"
+            },
+            {
+              "name": "Post Run github/codeql-action/analyze@v4",
+              "conclusion": "success"
+            },
+            {
+              "name": "Post Run github/codeql-action/init@v4",
+              "conclusion": "success"
+            },
+            {
+              "name": "Post Run actions/checkout@v7",
+              "conclusion": "success"
+            },
+            {
+              "name": "Complete job",
+              "conclusion": "success"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "runId": 46080260786,
+      "url": "https://github.com/younestech31/PROMO-GEST/actions/runs/46080260786",
+      "headSha": "c3826ddffe9e588724c1e809d3d225d6f2a0c9ed",
+      "conclusion": "success",
+      "jobs": [
+        {
+          "jobId": 140777343603,
+          "name": "Documentation baseline consistency",
+          "conclusion": "success",
+          "criticalSteps": [
+            {
+              "name": "Set up job",
+              "conclusion": "success"
+            },
+            {
+              "name": "Run actions/checkout@v7",
+              "conclusion": "success"
+            },
+            {
+              "name": "Make the main ref available for the merge-base check",
+              "conclusion": "success"
+            },
+            {
+              "name": "Test the baseline validator",
+              "conclusion": "success"
+            },
+            {
+              "name": "Verify the documented baseline matches this branch",
+              "conclusion": "success"
+            },
+            {
+              "name": "Test disposable browser budget fixture helpers and safety guard",
+              "conclusion": "success"
+            },
+            {
+              "name": "Test staging evidence completeness, privacy and import integrity",
+              "conclusion": "success"
+            },
+            {
+              "name": "Test the repository hygiene guard",
+              "conclusion": "success"
+            },
+            {
+              "name": "Verify tracked file modes and the lockfile match this branch",
+              "conclusion": "success"
+            },
+            {
+              "name": "Post Run actions/checkout@v7",
+              "conclusion": "success"
+            },
+            {
+              "name": "Complete job",
+              "conclusion": "success"
+            }
+          ]
+        },
+        {
+          "jobId": 140777343880,
+          "name": "Frontend install, checks, and static hosting",
+          "conclusion": "success",
+          "criticalSteps": [
+            {
+              "name": "Set up job",
+              "conclusion": "success"
+            },
+            {
+              "name": "Run actions/checkout@v7",
+              "conclusion": "success"
+            },
+            {
+              "name": "Scan tracked files for committed credentials",
+              "conclusion": "success"
+            },
+            {
+              "name": "Validate documented security settings against the shipped defaults",
+              "conclusion": "success"
+            },
+            {
+              "name": "Validate complete JO44/1985 source extracts",
+              "conclusion": "success"
+            },
+            {
+              "name": "Validate P1-01 candidate crosswalk structure (not legal approval)",
+              "conclusion": "success"
+            },
+            {
+              "name": "Validate P1-01 master reconciliation ledger (structural checks; not legal approval)",
+              "conclusion": "success"
+            },
+            {
+              "name": "Check paired W41 image readings and historical collision controls",
+              "conclusion": "success"
+            },
+            {
+              "name": "Validate JO44 Arabic page-image map (page mapping only; not row transcription or legal approval)",
+              "conclusion": "success"
+            },
+            {
+              "name": "Validate P1-01 bilingual supplements for Q110 and post-1985 naming acts (not legal approval)",
+              "conclusion": "success"
+            },
+            {
+              "name": "Validate second candidate archive JO58 108-row code lineage (not legal approval)",
+              "conclusion": "success"
+            },
+            {
+              "name": "Validate bounded JO61 Annex II new-Wilaya extraction (not legal approval)",
+              "conclusion": "success"
+            },
+            {
+              "name": "Validate JO61 legacy Wilaya group index 01-58 (secondary source only)",
+              "conclusion": "success"
+            },
+            {
+              "name": "Validate selected Arabic legacy JO61 aggregate cross-checks (secondary only)",
+              "conclusion": "success"
+            },
+            {
+              "name": "Verify reproducible practitioner review queue (not a seed)",
+              "conclusion": "success"
+            },
+            {
+              "name": "Validate independent commune decision book (no sign-off)",
+              "conclusion": "success"
+            },
+            {
+              "name": "Build and test offline commune review database (not a production seed)",
+              "conclusion": "success"
+            },
+            {
+              "name": "Publish commune review snapshot",
+              "conclusion": "success"
+            },
+            {
+              "name": "Run actions/setup-node@v7",
+              "conclusion": "success"
+            },
+            {
+              "name": "Install locked dependencies",
+              "conclusion": "success"
+            },
+            {
+              "name": "Audit production dependencies for known vulnerabilities",
+              "conclusion": "success"
+            },
+            {
+              "name": "TypeScript strict check",
+              "conclusion": "success"
+            },
+            {
+              "name": "Lint the SPA with the debt ratchet",
+              "conclusion": "success"
+            },
+            {
+              "name": "Frontend unit tests",
+              "conclusion": "success"
+            },
+            {
+              "name": "Build frontend",
+              "conclusion": "success"
+            },
+            {
+              "name": "Enforce entry bundle budget",
+              "conclusion": "success"
+            },
+            {
+              "name": "Verify frontend production output",
+              "conclusion": "success"
+            },
+            {
+              "name": "Build frontend into ASP.NET Core wwwroot",
+              "conclusion": "success"
+            },
+            {
+              "name": "Verify ASP.NET Core static hosting output",
+              "conclusion": "success"
+            },
+            {
+              "name": "Upload verified production SPA assets",
+              "conclusion": "success"
+            },
+            {
+              "name": "Post Run actions/setup-node@v7",
+              "conclusion": "success"
+            },
+            {
+              "name": "Post Run actions/checkout@v7",
+              "conclusion": "success"
+            },
+            {
+              "name": "Complete job",
+              "conclusion": "success"
+            }
+          ]
+        },
+        {
+          "jobId": 140777556544,
+          "name": ".NET 10 and PostgreSQL 18 least-privilege tests",
+          "conclusion": "success",
+          "criticalSteps": [
+            {
+              "name": "Set up job",
+              "conclusion": "success"
+            },
+            {
+              "name": "Initialize containers",
+              "conclusion": "success"
+            },
+            {
+              "name": "Run actions/checkout@v7",
+              "conclusion": "success"
+            },
+            {
+              "name": "Run actions/download-artifact@v8",
+              "conclusion": "success"
+            },
+            {
+              "name": "Run actions/setup-dotnet@v6",
+              "conclusion": "success"
+            },
+            {
+              "name": "Restore solution",
+              "conclusion": "success"
+            },
+            {
+              "name": "Report vulnerable NuGet packages",
+              "conclusion": "success"
+            },
+            {
+              "name": "Build solution with warnings as errors",
+              "conclusion": "success"
+            },
+            {
+              "name": "Publish Linux runtime artifact",
+              "conclusion": "success"
+            },
+            {
+              "name": "Verify Linux published executable",
+              "conclusion": "success"
+            },
+            {
+              "name": "Package and smoke-test the isolated manual acceptance kit",
+              "conclusion": "success"
+            },
+            {
+              "name": "Publish manual operator kit (not a production release)",
+              "conclusion": "success"
+            },
+            {
+              "name": "Verify backup freshness monitoring contract",
+              "conclusion": "success"
+            },
+            {
+              "name": "Validate Linux shell scripts",
+              "conclusion": "success"
+            },
+            {
+              "name": "Domain tests",
+              "conclusion": "success"
+            },
+            {
+              "name": "Application tests",
+              "conclusion": "success"
+            },
+            {
+              "name": "Provision PostgreSQL identities and initial database",
+              "conclusion": "success"
+            },
+            {
+              "name": "Apply migrations and seed roles as migration owner",
+              "conclusion": "success"
+            },
+            {
+              "name": "Run integration tests with separate database identities",
+              "conclusion": "success"
+            },
+            {
+              "name": "Run Phase 0 real-browser setup and logout checks (four disposable profiles)",
+              "conclusion": "success"
+            },
+            {
+              "name": "Export P1-10 Arabic desktop review image",
+              "conclusion": "success"
+            },
+            {
+              "name": "Export P1-10 Arabic mobile review image",
+              "conclusion": "success"
+            },
+            {
+              "name": "Export P1-10 French desktop review image",
+              "conclusion": "success"
+            },
+            {
+              "name": "Export P1-10 French mobile review image",
+              "conclusion": "success"
+            },
+            {
+              "name": "Export P1-10 separate Development evidence manifest",
+              "conclusion": "success"
+            },
+            {
+              "name": "Publish sanitized browser evidence (not manual acceptance)",
+              "conclusion": "success"
+            },
+            {
+              "name": "Rehearse isolated Production HTTPS staging and restart (four profiles)",
+              "conclusion": "success"
+            },
+            {
+              "name": "Publish sanitized Production HTTPS staging evidence",
+              "conclusion": "success"
+            },
+            {
+              "name": "Run full database, storage, and Data Protection restore drill",
+              "conclusion": "success"
+            },
+            {
+              "name": "Post Run actions/setup-dotnet@v6",
+              "conclusion": "success"
+            },
+            {
+              "name": "Post Run actions/checkout@v7",
+              "conclusion": "success"
+            },
+            {
+              "name": "Stop containers",
+              "conclusion": "success"
+            },
+            {
+              "name": "Complete job",
+              "conclusion": "success"
+            }
+          ]
+        },
+        {
+          "jobId": 140777556594,
+          "name": "Windows publish and PowerShell validation",
+          "conclusion": "success",
+          "criticalSteps": [
+            {
+              "name": "Set up job",
+              "conclusion": "success"
+            },
+            {
+              "name": "Run actions/checkout@v7",
+              "conclusion": "success"
+            },
+            {
+              "name": "Run actions/download-artifact@v8",
+              "conclusion": "success"
+            },
+            {
+              "name": "Run actions/setup-dotnet@v6",
+              "conclusion": "success"
+            },
+            {
+              "name": "Restore solution",
+              "conclusion": "success"
+            },
+            {
+              "name": "Build solution",
+              "conclusion": "success"
+            },
+            {
+              "name": "Verify Windows machine-scoped Data Protection key-ring recovery",
+              "conclusion": "success"
+            },
+            {
+              "name": "Publish Windows x64 application",
+              "conclusion": "success"
+            },
+            {
+              "name": "Validate PowerShell scripts",
+              "conclusion": "success"
+            },
+            {
+              "name": "Verify Windows backup freshness and Task Scheduler contracts",
+              "conclusion": "success"
+            },
+            {
+              "name": "Verify Windows encrypted-backup and restore contract",
+              "conclusion": "success"
+            },
+            {
+              "name": "Post Run actions/setup-dotnet@v6",
+              "conclusion": "success"
+            },
+            {
+              "name": "Post Run actions/checkout@v7",
+              "conclusion": "success"
+            },
+            {
+              "name": "Complete job",
+              "conclusion": "success"
+            }
+          ]
+        },
+        {
+          "jobId": 140779852196,
+          "name": "Production HTTPS evidence export",
+          "conclusion": "success",
+          "criticalSteps": [
+            {
+              "name": "Set up job",
+              "conclusion": "success"
+            },
+            {
+              "name": "Run actions/checkout@v7",
+              "conclusion": "success"
+            },
+            {
+              "name": "Run actions/download-artifact@v8",
+              "conclusion": "success"
+            },
+            {
+              "name": "Install bounded evidence encoder",
+              "conclusion": "success"
+            },
+            {
+              "name": "Export Arabic desktop staging review image",
+              "conclusion": "success"
+            },
+            {
+              "name": "Export Arabic mobile staging review image",
+              "conclusion": "success"
+            },
+            {
+              "name": "Export French desktop staging review image",
+              "conclusion": "success"
+            },
+            {
+              "name": "Export French mobile staging review image",
+              "conclusion": "success"
+            },
+            {
+              "name": "Export complete staging manifest",
+              "conclusion": "success"
+            },
+            {
+              "name": "Post Run actions/checkout@v7",
+              "conclusion": "success"
+            },
+            {
+              "name": "Complete job",
+              "conclusion": "success"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "runId": 46080260781,
+      "url": "https://github.com/younestech31/PROMO-GEST/actions/runs/46080260781",
+      "headSha": "c3826ddffe9e588724c1e809d3d225d6f2a0c9ed",
+      "conclusion": "success",
+      "jobs": [
+        {
+          "jobId": 140777343438,
+          "name": "Analyze csharp",
+          "conclusion": "success",
+          "criticalSteps": [
+            {
+              "name": "Set up job",
+              "conclusion": "success"
+            },
+            {
+              "name": "Run actions/checkout@v7",
+              "conclusion": "success"
+            },
+            {
+              "name": "Run github/codeql-action/init@v4",
+              "conclusion": "success"
+            },
+            {
+              "name": "Run github/codeql-action/autobuild@v4",
+              "conclusion": "success"
+            },
+            {
+              "name": "Run github/codeql-action/analyze@v4",
+              "conclusion": "success"
+            },
+            {
+              "name": "Post Run github/codeql-action/analyze@v4",
+              "conclusion": "success"
+            },
+            {
+              "name": "Post Run github/codeql-action/init@v4",
+              "conclusion": "success"
+            },
+            {
+              "name": "Post Run actions/checkout@v7",
+              "conclusion": "success"
+            },
+            {
+              "name": "Complete job",
+              "conclusion": "success"
+            }
+          ]
+        },
+        {
+          "jobId": 140777343866,
+          "name": "Analyze javascript-typescript",
+          "conclusion": "success",
+          "criticalSteps": [
+            {
+              "name": "Set up job",
+              "conclusion": "success"
+            },
+            {
+              "name": "Run actions/checkout@v7",
+              "conclusion": "success"
+            },
+            {
+              "name": "Run github/codeql-action/init@v4",
+              "conclusion": "success"
+            },
+            {
+              "name": "Run github/codeql-action/analyze@v4",
+              "conclusion": "success"
+            },
+            {
+              "name": "Post Run github/codeql-action/analyze@v4",
+              "conclusion": "success"
+            },
+            {
+              "name": "Post Run github/codeql-action/init@v4",
+              "conclusion": "success"
+            },
+            {
+              "name": "Post Run actions/checkout@v7",
+              "conclusion": "success"
+            },
+            {
+              "name": "Complete job",
+              "conclusion": "success"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "runId": 46080562866,
+      "url": "https://github.com/younestech31/PROMO-GEST/actions/runs/46080562866",
+      "headSha": "2613e9b9d1c867a277c66de7c7fb4195f2894ac3",
+      "conclusion": "failure",
+      "jobs": [
+        {
+          "jobId": 140778298053,
+          "name": "Frontend install, checks, and static hosting",
+          "conclusion": "success",
+          "criticalSteps": [
+            {
+              "name": "Set up job",
+              "conclusion": "success"
+            },
+            {
+              "name": "Run actions/checkout@v7",
+              "conclusion": "success"
+            },
+            {
+              "name": "Scan tracked files for committed credentials",
+              "conclusion": "success"
+            },
+            {
+              "name": "Validate documented security settings against the shipped defaults",
+              "conclusion": "success"
+            },
+            {
+              "name": "Validate complete JO44/1985 source extracts",
+              "conclusion": "success"
+            },
+            {
+              "name": "Validate P1-01 candidate crosswalk structure (not legal approval)",
+              "conclusion": "success"
+            },
+            {
+              "name": "Validate P1-01 master reconciliation ledger (structural checks; not legal approval)",
+              "conclusion": "success"
+            },
+            {
+              "name": "Check paired W41 image readings and historical collision controls",
+              "conclusion": "success"
+            },
+            {
+              "name": "Validate JO44 Arabic page-image map (page mapping only; not row transcription or legal approval)",
+              "conclusion": "success"
+            },
+            {
+              "name": "Validate P1-01 bilingual supplements for Q110 and post-1985 naming acts (not legal approval)",
+              "conclusion": "success"
+            },
+            {
+              "name": "Validate second candidate archive JO58 108-row code lineage (not legal approval)",
+              "conclusion": "success"
+            },
+            {
+              "name": "Validate bounded JO61 Annex II new-Wilaya extraction (not legal approval)",
+              "conclusion": "success"
+            },
+            {
+              "name": "Validate JO61 legacy Wilaya group index 01-58 (secondary source only)",
+              "conclusion": "success"
+            },
+            {
+              "name": "Validate selected Arabic legacy JO61 aggregate cross-checks (secondary only)",
+              "conclusion": "success"
+            },
+            {
+              "name": "Verify reproducible practitioner review queue (not a seed)",
+              "conclusion": "success"
+            },
+            {
+              "name": "Validate independent commune decision book (no sign-off)",
+              "conclusion": "success"
+            },
+            {
+              "name": "Build and test offline commune review database (not a production seed)",
+              "conclusion": "success"
+            },
+            {
+              "name": "Publish commune review snapshot",
+              "conclusion": "success"
+            },
+            {
+              "name": "Run actions/setup-node@v7",
+              "conclusion": "success"
+            },
+            {
+              "name": "Install locked dependencies",
+              "conclusion": "success"
+            },
+            {
+              "name": "Audit production dependencies for known vulnerabilities",
+              "conclusion": "success"
+            },
+            {
+              "name": "TypeScript strict check",
+              "conclusion": "success"
+            },
+            {
+              "name": "Lint the SPA with the debt ratchet",
+              "conclusion": "success"
+            },
+            {
+              "name": "Frontend unit tests",
+              "conclusion": "success"
+            },
+            {
+              "name": "Build frontend",
+              "conclusion": "success"
+            },
+            {
+              "name": "Enforce entry bundle budget",
+              "conclusion": "success"
+            },
+            {
+              "name": "Verify frontend production output",
+              "conclusion": "success"
+            },
+            {
+              "name": "Build frontend into ASP.NET Core wwwroot",
+              "conclusion": "success"
+            },
+            {
+              "name": "Verify ASP.NET Core static hosting output",
+              "conclusion": "success"
+            },
+            {
+              "name": "Upload verified production SPA assets",
+              "conclusion": "success"
+            },
+            {
+              "name": "Post Run actions/setup-node@v7",
+              "conclusion": "success"
+            },
+            {
+              "name": "Post Run actions/checkout@v7",
+              "conclusion": "success"
+            },
+            {
+              "name": "Complete job",
+              "conclusion": "success"
+            }
+          ]
+        },
+        {
+          "jobId": 140778298435,
+          "name": "Documentation baseline consistency",
+          "conclusion": "success",
+          "criticalSteps": [
+            {
+              "name": "Set up job",
+              "conclusion": "success"
+            },
+            {
+              "name": "Run actions/checkout@v7",
+              "conclusion": "success"
+            },
+            {
+              "name": "Make the main ref available for the merge-base check",
+              "conclusion": "success"
+            },
+            {
+              "name": "Test the baseline validator",
+              "conclusion": "success"
+            },
+            {
+              "name": "Verify the documented baseline matches this branch",
+              "conclusion": "success"
+            },
+            {
+              "name": "Test disposable browser budget fixture helpers and safety guard",
+              "conclusion": "success"
+            },
+            {
+              "name": "Test staging evidence completeness, privacy and import integrity",
+              "conclusion": "success"
+            },
+            {
+              "name": "Test the repository hygiene guard",
+              "conclusion": "success"
+            },
+            {
+              "name": "Verify tracked file modes and the lockfile match this branch",
+              "conclusion": "success"
+            },
+            {
+              "name": "Post Run actions/checkout@v7",
+              "conclusion": "success"
+            },
+            {
+              "name": "Complete job",
+              "conclusion": "success"
+            }
+          ]
+        },
+        {
+          "jobId": 140778508532,
+          "name": ".NET 10 and PostgreSQL 18 least-privilege tests",
+          "conclusion": "failure",
+          "criticalSteps": [
+            {
+              "name": "Set up job",
+              "conclusion": "success"
+            },
+            {
+              "name": "Initialize containers",
+              "conclusion": "success"
+            },
+            {
+              "name": "Run actions/checkout@v7",
+              "conclusion": "success"
+            },
+            {
+              "name": "Run actions/download-artifact@v8",
+              "conclusion": "success"
+            },
+            {
+              "name": "Run actions/setup-dotnet@v6",
+              "conclusion": "success"
+            },
+            {
+              "name": "Restore solution",
+              "conclusion": "success"
+            },
+            {
+              "name": "Report vulnerable NuGet packages",
+              "conclusion": "success"
+            },
+            {
+              "name": "Build solution with warnings as errors",
+              "conclusion": "success"
+            },
+            {
+              "name": "Publish Linux runtime artifact",
+              "conclusion": "success"
+            },
+            {
+              "name": "Verify Linux published executable",
+              "conclusion": "success"
+            },
+            {
+              "name": "Package and smoke-test the isolated manual acceptance kit",
+              "conclusion": "success"
+            },
+            {
+              "name": "Publish manual operator kit (not a production release)",
+              "conclusion": "success"
+            },
+            {
+              "name": "Verify backup freshness monitoring contract",
+              "conclusion": "success"
+            },
+            {
+              "name": "Validate Linux shell scripts",
+              "conclusion": "success"
+            },
+            {
+              "name": "Domain tests",
+              "conclusion": "success"
+            },
+            {
+              "name": "Application tests",
+              "conclusion": "success"
+            },
+            {
+              "name": "Provision PostgreSQL identities and initial database",
+              "conclusion": "success"
+            },
+            {
+              "name": "Apply migrations and seed roles as migration owner",
+              "conclusion": "success"
+            },
+            {
+              "name": "Run integration tests with separate database identities",
+              "conclusion": "success"
+            },
+            {
+              "name": "Run Phase 0 real-browser setup and logout checks (four disposable profiles)",
+              "conclusion": "failure"
+            },
+            {
+              "name": "Publish sanitized Production HTTPS staging evidence",
+              "conclusion": "success"
+            },
+            {
+              "name": "Post Run actions/checkout@v7",
+              "conclusion": "success"
+            },
+            {
+              "name": "Stop containers",
+              "conclusion": "success"
+            },
+            {
+              "name": "Complete job",
+              "conclusion": "success"
+            }
+          ]
+        },
+        {
+          "jobId": 140778508564,
+          "name": "Windows publish and PowerShell validation",
+          "conclusion": "success",
+          "criticalSteps": [
+            {
+              "name": "Set up job",
+              "conclusion": "success"
+            },
+            {
+              "name": "Run actions/checkout@v7",
+              "conclusion": "success"
+            },
+            {
+              "name": "Run actions/download-artifact@v8",
+              "conclusion": "success"
+            },
+            {
+              "name": "Run actions/setup-dotnet@v6",
+              "conclusion": "success"
+            },
+            {
+              "name": "Restore solution",
+              "conclusion": "success"
+            },
+            {
+              "name": "Build solution",
+              "conclusion": "success"
+            },
+            {
+              "name": "Verify Windows machine-scoped Data Protection key-ring recovery",
+              "conclusion": "success"
+            },
+            {
+              "name": "Publish Windows x64 application",
+              "conclusion": "success"
+            },
+            {
+              "name": "Validate PowerShell scripts",
+              "conclusion": "success"
+            },
+            {
+              "name": "Verify Windows backup freshness and Task Scheduler contracts",
+              "conclusion": "success"
+            },
+            {
+              "name": "Verify Windows encrypted-backup and restore contract",
+              "conclusion": "success"
+            },
+            {
+              "name": "Post Run actions/setup-dotnet@v6",
+              "conclusion": "success"
+            },
+            {
+              "name": "Post Run actions/checkout@v7",
+              "conclusion": "success"
+            },
+            {
+              "name": "Complete job",
+              "conclusion": "success"
+            }
+          ]
+        },
+        {
+          "jobId": 140780095709,
+          "name": "Production HTTPS evidence export",
+          "conclusion": "skipped",
+          "criticalSteps": []
+        }
+      ]
+    },
+    {
+      "runId": 46080562879,
+      "url": "https://github.com/younestech31/PROMO-GEST/actions/runs/46080562879",
+      "headSha": "2613e9b9d1c867a277c66de7c7fb4195f2894ac3",
+      "conclusion": "success",
+      "jobs": [
+        {
+          "jobId": 140778298391,
+          "name": "Analyze csharp",
+          "conclusion": "success",
+          "criticalSteps": [
+            {
+              "name": "Set up job",
+              "conclusion": "success"
+            },
+            {
+              "name": "Run actions/checkout@v7",
+              "conclusion": "success"
+            },
+            {
+              "name": "Run github/codeql-action/init@v4",
+              "conclusion": "success"
+            },
+            {
+              "name": "Run github/codeql-action/autobuild@v4",
+              "conclusion": "success"
+            },
+            {
+              "name": "Run github/codeql-action/analyze@v4",
+              "conclusion": "success"
+            },
+            {
+              "name": "Post Run github/codeql-action/analyze@v4",
+              "conclusion": "success"
+            },
+            {
+              "name": "Post Run github/codeql-action/init@v4",
+              "conclusion": "success"
+            },
+            {
+              "name": "Post Run actions/checkout@v7",
+              "conclusion": "success"
+            },
+            {
+              "name": "Complete job",
+              "conclusion": "success"
+            }
+          ]
+        },
+        {
+          "jobId": 140778298737,
+          "name": "Analyze javascript-typescript",
+          "conclusion": "success",
+          "criticalSteps": [
+            {
+              "name": "Set up job",
+              "conclusion": "success"
+            },
+            {
+              "name": "Run actions/checkout@v7",
+              "conclusion": "success"
+            },
+            {
+              "name": "Run github/codeql-action/init@v4",
+              "conclusion": "success"
+            },
+            {
+              "name": "Run github/codeql-action/analyze@v4",
+              "conclusion": "success"
+            },
+            {
+              "name": "Post Run github/codeql-action/analyze@v4",
+              "conclusion": "success"
+            },
+            {
+              "name": "Post Run github/codeql-action/init@v4",
+              "conclusion": "success"
+            },
+            {
+              "name": "Post Run actions/checkout@v7",
+              "conclusion": "success"
+            },
+            {
+              "name": "Complete job",
+              "conclusion": "success"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "runId": 46081239621,
+      "url": "https://github.com/younestech31/PROMO-GEST/actions/runs/46081239621",
+      "headSha": "895db762e3350d4da8cf812ef0b49c4a34e4dfe7",
+      "conclusion": "success",
+      "jobs": [
+        {
+          "jobId": 140780454875,
+          "name": "Frontend install, checks, and static hosting",
+          "conclusion": "success",
+          "criticalSteps": [
+            {
+              "name": "Set up job",
+              "conclusion": "success"
+            },
+            {
+              "name": "Run actions/checkout@v7",
+              "conclusion": "success"
+            },
+            {
+              "name": "Scan tracked files for committed credentials",
+              "conclusion": "success"
+            },
+            {
+              "name": "Validate documented security settings against the shipped defaults",
+              "conclusion": "success"
+            },
+            {
+              "name": "Validate complete JO44/1985 source extracts",
+              "conclusion": "success"
+            },
+            {
+              "name": "Validate P1-01 candidate crosswalk structure (not legal approval)",
+              "conclusion": "success"
+            },
+            {
+              "name": "Validate P1-01 master reconciliation ledger (structural checks; not legal approval)",
+              "conclusion": "success"
+            },
+            {
+              "name": "Check paired W41 image readings and historical collision controls",
+              "conclusion": "success"
+            },
+            {
+              "name": "Validate JO44 Arabic page-image map (page mapping only; not row transcription or legal approval)",
+              "conclusion": "success"
+            },
+            {
+              "name": "Validate P1-01 bilingual supplements for Q110 and post-1985 naming acts (not legal approval)",
+              "conclusion": "success"
+            },
+            {
+              "name": "Validate second candidate archive JO58 108-row code lineage (not legal approval)",
+              "conclusion": "success"
+            },
+            {
+              "name": "Validate bounded JO61 Annex II new-Wilaya extraction (not legal approval)",
+              "conclusion": "success"
+            },
+            {
+              "name": "Validate JO61 legacy Wilaya group index 01-58 (secondary source only)",
+              "conclusion": "success"
+            },
+            {
+              "name": "Validate selected Arabic legacy JO61 aggregate cross-checks (secondary only)",
+              "conclusion": "success"
+            },
+            {
+              "name": "Verify reproducible practitioner review queue (not a seed)",
+              "conclusion": "success"
+            },
+            {
+              "name": "Validate independent commune decision book (no sign-off)",
+              "conclusion": "success"
+            },
+            {
+              "name": "Build and test offline commune review database (not a production seed)",
+              "conclusion": "success"
+            },
+            {
+              "name": "Publish commune review snapshot",
+              "conclusion": "success"
+            },
+            {
+              "name": "Run actions/setup-node@v7",
+              "conclusion": "success"
+            },
+            {
+              "name": "Install locked dependencies",
+              "conclusion": "success"
+            },
+            {
+              "name": "Audit production dependencies for known vulnerabilities",
+              "conclusion": "success"
+            },
+            {
+              "name": "TypeScript strict check",
+              "conclusion": "success"
+            },
+            {
+              "name": "Lint the SPA with the debt ratchet",
+              "conclusion": "success"
+            },
+            {
+              "name": "Frontend unit tests",
+              "conclusion": "success"
+            },
+            {
+              "name": "Build frontend",
+              "conclusion": "success"
+            },
+            {
+              "name": "Enforce entry bundle budget",
+              "conclusion": "success"
+            },
+            {
+              "name": "Verify frontend production output",
+              "conclusion": "success"
+            },
+            {
+              "name": "Build frontend into ASP.NET Core wwwroot",
+              "conclusion": "success"
+            },
+            {
+              "name": "Verify ASP.NET Core static hosting output",
+              "conclusion": "success"
+            },
+            {
+              "name": "Upload verified production SPA assets",
+              "conclusion": "success"
+            },
+            {
+              "name": "Post Run actions/setup-node@v7",
+              "conclusion": "success"
+            },
+            {
+              "name": "Post Run actions/checkout@v7",
+              "conclusion": "success"
+            },
+            {
+              "name": "Complete job",
+              "conclusion": "success"
+            }
+          ]
+        },
+        {
+          "jobId": 140780455234,
+          "name": "Documentation baseline consistency",
+          "conclusion": "success",
+          "criticalSteps": [
+            {
+              "name": "Set up job",
+              "conclusion": "success"
+            },
+            {
+              "name": "Run actions/checkout@v7",
+              "conclusion": "success"
+            },
+            {
+              "name": "Make the main ref available for the merge-base check",
+              "conclusion": "success"
+            },
+            {
+              "name": "Test the baseline validator",
+              "conclusion": "success"
+            },
+            {
+              "name": "Verify the documented baseline matches this branch",
+              "conclusion": "success"
+            },
+            {
+              "name": "Test disposable browser budget fixture helpers and safety guard",
+              "conclusion": "success"
+            },
+            {
+              "name": "Test staging evidence completeness, privacy and import integrity",
+              "conclusion": "success"
+            },
+            {
+              "name": "Test the repository hygiene guard",
+              "conclusion": "success"
+            },
+            {
+              "name": "Verify tracked file modes and the lockfile match this branch",
+              "conclusion": "success"
+            },
+            {
+              "name": "Post Run actions/checkout@v7",
+              "conclusion": "success"
+            },
+            {
+              "name": "Complete job",
+              "conclusion": "success"
+            }
+          ]
+        },
+        {
+          "jobId": 140780605338,
+          "name": ".NET 10 and PostgreSQL 18 least-privilege tests",
+          "conclusion": "success",
+          "criticalSteps": [
+            {
+              "name": "Set up job",
+              "conclusion": "success"
+            },
+            {
+              "name": "Initialize containers",
+              "conclusion": "success"
+            },
+            {
+              "name": "Run actions/checkout@v7",
+              "conclusion": "success"
+            },
+            {
+              "name": "Run actions/download-artifact@v8",
+              "conclusion": "success"
+            },
+            {
+              "name": "Run actions/setup-dotnet@v6",
+              "conclusion": "success"
+            },
+            {
+              "name": "Restore solution",
+              "conclusion": "success"
+            },
+            {
+              "name": "Report vulnerable NuGet packages",
+              "conclusion": "success"
+            },
+            {
+              "name": "Build solution with warnings as errors",
+              "conclusion": "success"
+            },
+            {
+              "name": "Publish Linux runtime artifact",
+              "conclusion": "success"
+            },
+            {
+              "name": "Verify Linux published executable",
+              "conclusion": "success"
+            },
+            {
+              "name": "Package and smoke-test the isolated manual acceptance kit",
+              "conclusion": "success"
+            },
+            {
+              "name": "Publish manual operator kit (not a production release)",
+              "conclusion": "success"
+            },
+            {
+              "name": "Verify backup freshness monitoring contract",
+              "conclusion": "success"
+            },
+            {
+              "name": "Validate Linux shell scripts",
+              "conclusion": "success"
+            },
+            {
+              "name": "Domain tests",
+              "conclusion": "success"
+            },
+            {
+              "name": "Application tests",
+              "conclusion": "success"
+            },
+            {
+              "name": "Provision PostgreSQL identities and initial database",
+              "conclusion": "success"
+            },
+            {
+              "name": "Apply migrations and seed roles as migration owner",
+              "conclusion": "success"
+            },
+            {
+              "name": "Run integration tests with separate database identities",
+              "conclusion": "success"
+            },
+            {
+              "name": "Run Phase 0 real-browser setup and logout checks (four disposable profiles)",
+              "conclusion": "success"
+            },
+            {
+              "name": "Export P1-10 Arabic desktop review image",
+              "conclusion": "success"
+            },
+            {
+              "name": "Export P1-10 Arabic mobile review image",
+              "conclusion": "success"
+            },
+            {
+              "name": "Export P1-10 French desktop review image",
+              "conclusion": "success"
+            },
+            {
+              "name": "Export P1-10 French mobile review image",
+              "conclusion": "success"
+            },
+            {
+              "name": "Export P1-10 separate Development evidence manifest",
+              "conclusion": "success"
+            },
+            {
+              "name": "Publish sanitized browser evidence (not manual acceptance)",
+              "conclusion": "success"
+            },
+            {
+              "name": "Rehearse isolated Production HTTPS staging and restart (four profiles)",
+              "conclusion": "success"
+            },
+            {
+              "name": "Publish sanitized Production HTTPS staging evidence",
+              "conclusion": "success"
+            },
+            {
+              "name": "Run full database, storage, and Data Protection restore drill",
+              "conclusion": "success"
+            },
+            {
+              "name": "Post Run actions/setup-dotnet@v6",
+              "conclusion": "success"
+            },
+            {
+              "name": "Post Run actions/checkout@v7",
+              "conclusion": "success"
+            },
+            {
+              "name": "Stop containers",
+              "conclusion": "success"
+            },
+            {
+              "name": "Complete job",
+              "conclusion": "success"
+            }
+          ]
+        },
+        {
+          "jobId": 140780605376,
+          "name": "Windows publish and PowerShell validation",
+          "conclusion": "success",
+          "criticalSteps": [
+            {
+              "name": "Set up job",
+              "conclusion": "success"
+            },
+            {
+              "name": "Run actions/checkout@v7",
+              "conclusion": "success"
+            },
+            {
+              "name": "Run actions/download-artifact@v8",
+              "conclusion": "success"
+            },
+            {
+              "name": "Run actions/setup-dotnet@v6",
+              "conclusion": "success"
+            },
+            {
+              "name": "Restore solution",
+              "conclusion": "success"
+            },
+            {
+              "name": "Build solution",
+              "conclusion": "success"
+            },
+            {
+              "name": "Verify Windows machine-scoped Data Protection key-ring recovery",
+              "conclusion": "success"
+            },
+            {
+              "name": "Publish Windows x64 application",
+              "conclusion": "success"
+            },
+            {
+              "name": "Validate PowerShell scripts",
+              "conclusion": "success"
+            },
+            {
+              "name": "Verify Windows backup freshness and Task Scheduler contracts",
+              "conclusion": "success"
+            },
+            {
+              "name": "Verify Windows encrypted-backup and restore contract",
+              "conclusion": "success"
+            },
+            {
+              "name": "Post Run actions/setup-dotnet@v6",
+              "conclusion": "success"
+            },
+            {
+              "name": "Post Run actions/checkout@v7",
+              "conclusion": "success"
+            },
+            {
+              "name": "Complete job",
+              "conclusion": "success"
+            }
+          ]
+        },
+        {
+          "jobId": 140783297598,
+          "name": "Production HTTPS evidence export",
+          "conclusion": "success",
+          "criticalSteps": [
+            {
+              "name": "Set up job",
+              "conclusion": "success"
+            },
+            {
+              "name": "Run actions/checkout@v7",
+              "conclusion": "success"
+            },
+            {
+              "name": "Run actions/download-artifact@v8",
+              "conclusion": "success"
+            },
+            {
+              "name": "Install bounded evidence encoder",
+              "conclusion": "success"
+            },
+            {
+              "name": "Export Arabic desktop staging review image",
+              "conclusion": "success"
+            },
+            {
+              "name": "Export Arabic mobile staging review image",
+              "conclusion": "success"
+            },
+            {
+              "name": "Export French desktop staging review image",
+              "conclusion": "success"
+            },
+            {
+              "name": "Export French mobile staging review image",
+              "conclusion": "success"
+            },
+            {
+              "name": "Export complete staging manifest",
+              "conclusion": "success"
+            },
+            {
+              "name": "Post Run actions/checkout@v7",
+              "conclusion": "success"
+            },
+            {
+              "name": "Complete job",
+              "conclusion": "success"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "runId": 46081239649,
+      "url": "https://github.com/younestech31/PROMO-GEST/actions/runs/46081239649",
+      "headSha": "895db762e3350d4da8cf812ef0b49c4a34e4dfe7",
+      "conclusion": "success",
+      "jobs": [
+        {
+          "jobId": 140780455324,
+          "name": "Analyze csharp",
+          "conclusion": "success",
+          "criticalSteps": [
+            {
+              "name": "Set up job",
+              "conclusion": "success"
+            },
+            {
+              "name": "Run actions/checkout@v7",
+              "conclusion": "success"
+            },
+            {
+              "name": "Run github/codeql-action/init@v4",
+              "conclusion": "success"
+            },
+            {
+              "name": "Run github/codeql-action/autobuild@v4",
+              "conclusion": "success"
+            },
+            {
+              "name": "Run github/codeql-action/analyze@v4",
+              "conclusion": "success"
+            },
+            {
+              "name": "Post Run github/codeql-action/analyze@v4",
+              "conclusion": "success"
+            },
+            {
+              "name": "Post Run github/codeql-action/init@v4",
+              "conclusion": "success"
+            },
+            {
+              "name": "Post Run actions/checkout@v7",
+              "conclusion": "success"
+            },
+            {
+              "name": "Complete job",
+              "conclusion": "success"
+            }
+          ]
+        },
+        {
+          "jobId": 140780455555,
+          "name": "Analyze javascript-typescript",
+          "conclusion": "success",
+          "criticalSteps": [
+            {
+              "name": "Set up job",
+              "conclusion": "success"
+            },
+            {
+              "name": "Run actions/checkout@v7",
+              "conclusion": "success"
+            },
+            {
+              "name": "Run github/codeql-action/init@v4",
+              "conclusion": "success"
+            },
+            {
+              "name": "Run github/codeql-action/analyze@v4",
+              "conclusion": "success"
+            },
+            {
+              "name": "Post Run github/codeql-action/analyze@v4",
+              "conclusion": "success"
+            },
+            {
+              "name": "Post Run github/codeql-action/init@v4",
+              "conclusion": "success"
+            },
+            {
+              "name": "Post Run actions/checkout@v7",
+              "conclusion": "success"
+            },
+            {
+              "name": "Complete job",
+              "conclusion": "success"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "runId": 46082246641,
+      "url": "https://github.com/younestech31/PROMO-GEST/actions/runs/46082246641",
+      "headSha": "a75c2c773f7cddf58f3f6d556bc900565a5df242",
+      "conclusion": "failure",
+      "jobs": [
+        {
+          "jobId": 140783632148,
+          "name": "Frontend install, checks, and static hosting",
+          "conclusion": "success",
+          "criticalSteps": [
+            {
+              "name": "Set up job",
+              "conclusion": "success"
+            },
+            {
+              "name": "Run actions/checkout@v7",
+              "conclusion": "success"
+            },
+            {
+              "name": "Scan tracked files for committed credentials",
+              "conclusion": "success"
+            },
+            {
+              "name": "Validate documented security settings against the shipped defaults",
+              "conclusion": "success"
+            },
+            {
+              "name": "Validate complete JO44/1985 source extracts",
+              "conclusion": "success"
+            },
+            {
+              "name": "Validate P1-01 candidate crosswalk structure (not legal approval)",
+              "conclusion": "success"
+            },
+            {
+              "name": "Validate P1-01 master reconciliation ledger (structural checks; not legal approval)",
+              "conclusion": "success"
+            },
+            {
+              "name": "Check paired W41 image readings and historical collision controls",
+              "conclusion": "success"
+            },
+            {
+              "name": "Validate JO44 Arabic page-image map (page mapping only; not row transcription or legal approval)",
+              "conclusion": "success"
+            },
+            {
+              "name": "Validate P1-01 bilingual supplements for Q110 and post-1985 naming acts (not legal approval)",
+              "conclusion": "success"
+            },
+            {
+              "name": "Validate second candidate archive JO58 108-row code lineage (not legal approval)",
+              "conclusion": "success"
+            },
+            {
+              "name": "Validate bounded JO61 Annex II new-Wilaya extraction (not legal approval)",
+              "conclusion": "success"
+            },
+            {
+              "name": "Validate JO61 legacy Wilaya group index 01-58 (secondary source only)",
+              "conclusion": "success"
+            },
+            {
+              "name": "Validate selected Arabic legacy JO61 aggregate cross-checks (secondary only)",
+              "conclusion": "success"
+            },
+            {
+              "name": "Verify reproducible practitioner review queue (not a seed)",
+              "conclusion": "success"
+            },
+            {
+              "name": "Validate independent commune decision book (no sign-off)",
+              "conclusion": "success"
+            },
+            {
+              "name": "Build and test offline commune review database (not a production seed)",
+              "conclusion": "success"
+            },
+            {
+              "name": "Publish commune review snapshot",
+              "conclusion": "success"
+            },
+            {
+              "name": "Run actions/setup-node@v7",
+              "conclusion": "success"
+            },
+            {
+              "name": "Install locked dependencies",
+              "conclusion": "success"
+            },
+            {
+              "name": "Audit production dependencies for known vulnerabilities",
+              "conclusion": "success"
+            },
+            {
+              "name": "TypeScript strict check",
+              "conclusion": "success"
+            },
+            {
+              "name": "Lint the SPA with the debt ratchet",
+              "conclusion": "success"
+            },
+            {
+              "name": "Frontend unit tests",
+              "conclusion": "success"
+            },
+            {
+              "name": "Build frontend",
+              "conclusion": "success"
+            },
+            {
+              "name": "Enforce entry bundle budget",
+              "conclusion": "success"
+            },
+            {
+              "name": "Verify frontend production output",
+              "conclusion": "success"
+            },
+            {
+              "name": "Build frontend into ASP.NET Core wwwroot",
+              "conclusion": "success"
+            },
+            {
+              "name": "Verify ASP.NET Core static hosting output",
+              "conclusion": "success"
+            },
+            {
+              "name": "Upload verified production SPA assets",
+              "conclusion": "success"
+            },
+            {
+              "name": "Post Run actions/setup-node@v7",
+              "conclusion": "success"
+            },
+            {
+              "name": "Post Run actions/checkout@v7",
+              "conclusion": "success"
+            },
+            {
+              "name": "Complete job",
+              "conclusion": "success"
+            }
+          ]
+        },
+        {
+          "jobId": 140783632417,
+          "name": "Documentation baseline consistency",
+          "conclusion": "success",
+          "criticalSteps": [
+            {
+              "name": "Set up job",
+              "conclusion": "success"
+            },
+            {
+              "name": "Run actions/checkout@v7",
+              "conclusion": "success"
+            },
+            {
+              "name": "Make the main ref available for the merge-base check",
+              "conclusion": "success"
+            },
+            {
+              "name": "Test the baseline validator",
+              "conclusion": "success"
+            },
+            {
+              "name": "Verify the documented baseline matches this branch",
+              "conclusion": "success"
+            },
+            {
+              "name": "Test disposable browser budget fixture helpers and safety guard",
+              "conclusion": "success"
+            },
+            {
+              "name": "Test staging evidence completeness, privacy and import integrity",
+              "conclusion": "success"
+            },
+            {
+              "name": "Test the repository hygiene guard",
+              "conclusion": "success"
+            },
+            {
+              "name": "Verify tracked file modes and the lockfile match this branch",
+              "conclusion": "success"
+            },
+            {
+              "name": "Post Run actions/checkout@v7",
+              "conclusion": "success"
+            },
+            {
+              "name": "Complete job",
+              "conclusion": "success"
+            }
+          ]
+        },
+        {
+          "jobId": 140783787489,
+          "name": ".NET 10 and PostgreSQL 18 least-privilege tests",
+          "conclusion": "failure",
+          "criticalSteps": [
+            {
+              "name": "Set up job",
+              "conclusion": "success"
+            },
+            {
+              "name": "Initialize containers",
+              "conclusion": "success"
+            },
+            {
+              "name": "Run actions/checkout@v7",
+              "conclusion": "success"
+            },
+            {
+              "name": "Run actions/download-artifact@v8",
+              "conclusion": "success"
+            },
+            {
+              "name": "Run actions/setup-dotnet@v6",
+              "conclusion": "success"
+            },
+            {
+              "name": "Restore solution",
+              "conclusion": "success"
+            },
+            {
+              "name": "Report vulnerable NuGet packages",
+              "conclusion": "success"
+            },
+            {
+              "name": "Build solution with warnings as errors",
+              "conclusion": "success"
+            },
+            {
+              "name": "Publish Linux runtime artifact",
+              "conclusion": "success"
+            },
+            {
+              "name": "Verify Linux published executable",
+              "conclusion": "success"
+            },
+            {
+              "name": "Package and smoke-test the isolated manual acceptance kit",
+              "conclusion": "success"
+            },
+            {
+              "name": "Publish manual operator kit (not a production release)",
+              "conclusion": "success"
+            },
+            {
+              "name": "Verify backup freshness monitoring contract",
+              "conclusion": "success"
+            },
+            {
+              "name": "Validate Linux shell scripts",
+              "conclusion": "success"
+            },
+            {
+              "name": "Domain tests",
+              "conclusion": "success"
+            },
+            {
+              "name": "Application tests",
+              "conclusion": "success"
+            },
+            {
+              "name": "Provision PostgreSQL identities and initial database",
+              "conclusion": "success"
+            },
+            {
+              "name": "Apply migrations and seed roles as migration owner",
+              "conclusion": "success"
+            },
+            {
+              "name": "Run integration tests with separate database identities",
+              "conclusion": "success"
+            },
+            {
+              "name": "Run Phase 0 real-browser setup and logout checks (four disposable profiles)",
+              "conclusion": "success"
+            },
+            {
+              "name": "Export P1-10 Arabic desktop review image",
+              "conclusion": "success"
+            },
+            {
+              "name": "Export P1-10 Arabic mobile review image",
+              "conclusion": "success"
+            },
+            {
+              "name": "Export P1-10 French desktop review image",
+              "conclusion": "success"
+            },
+            {
+              "name": "Export P1-10 French mobile review image",
+              "conclusion": "success"
+            },
+            {
+              "name": "Export P1-10 separate Development evidence manifest",
+              "conclusion": "success"
+            },
+            {
+              "name": "Publish sanitized browser evidence (not manual acceptance)",
+              "conclusion": "success"
+            },
+            {
+              "name": "Rehearse isolated Production HTTPS staging and restart (four profiles)",
+              "conclusion": "failure"
+            },
+            {
+              "name": "Publish sanitized Production HTTPS staging evidence",
+              "conclusion": "success"
+            },
+            {
+              "name": "Post Run actions/checkout@v7",
+              "conclusion": "success"
+            },
+            {
+              "name": "Stop containers",
+              "conclusion": "success"
+            },
+            {
+              "name": "Complete job",
+              "conclusion": "success"
+            }
+          ]
+        },
+        {
+          "jobId": 140783787556,
+          "name": "Windows publish and PowerShell validation",
+          "conclusion": "success",
+          "criticalSteps": [
+            {
+              "name": "Set up job",
+              "conclusion": "success"
+            },
+            {
+              "name": "Run actions/checkout@v7",
+              "conclusion": "success"
+            },
+            {
+              "name": "Run actions/download-artifact@v8",
+              "conclusion": "success"
+            },
+            {
+              "name": "Run actions/setup-dotnet@v6",
+              "conclusion": "success"
+            },
+            {
+              "name": "Restore solution",
+              "conclusion": "success"
+            },
+            {
+              "name": "Build solution",
+              "conclusion": "success"
+            },
+            {
+              "name": "Verify Windows machine-scoped Data Protection key-ring recovery",
+              "conclusion": "success"
+            },
+            {
+              "name": "Publish Windows x64 application",
+              "conclusion": "success"
+            },
+            {
+              "name": "Validate PowerShell scripts",
+              "conclusion": "success"
+            },
+            {
+              "name": "Verify Windows backup freshness and Task Scheduler contracts",
+              "conclusion": "success"
+            },
+            {
+              "name": "Verify Windows encrypted-backup and restore contract",
+              "conclusion": "success"
+            },
+            {
+              "name": "Post Run actions/setup-dotnet@v6",
+              "conclusion": "success"
+            },
+            {
+              "name": "Post Run actions/checkout@v7",
+              "conclusion": "success"
+            },
+            {
+              "name": "Complete job",
+              "conclusion": "success"
+            }
+          ]
+        },
+        {
+          "jobId": 140785931248,
+          "name": "Production HTTPS evidence export",
+          "conclusion": "skipped",
+          "criticalSteps": []
+        }
+      ]
+    },
+    {
+      "runId": 46082246588,
+      "url": "https://github.com/younestech31/PROMO-GEST/actions/runs/46082246588",
+      "headSha": "a75c2c773f7cddf58f3f6d556bc900565a5df242",
+      "conclusion": "success",
+      "jobs": [
+        {
+          "jobId": 140783632914,
+          "name": "Analyze csharp",
+          "conclusion": "success",
+          "criticalSteps": [
+            {
+              "name": "Set up job",
+              "conclusion": "success"
+            },
+            {
+              "name": "Run actions/checkout@v7",
+              "conclusion": "success"
+            },
+            {
+              "name": "Run github/codeql-action/init@v4",
+              "conclusion": "success"
+            },
+            {
+              "name": "Run github/codeql-action/autobuild@v4",
+              "conclusion": "success"
+            },
+            {
+              "name": "Run github/codeql-action/analyze@v4",
+              "conclusion": "success"
+            },
+            {
+              "name": "Post Run github/codeql-action/analyze@v4",
+              "conclusion": "success"
+            },
+            {
+              "name": "Post Run github/codeql-action/init@v4",
+              "conclusion": "success"
+            },
+            {
+              "name": "Post Run actions/checkout@v7",
+              "conclusion": "success"
+            },
+            {
+              "name": "Complete job",
+              "conclusion": "success"
+            }
+          ]
+        },
+        {
+          "jobId": 140783633071,
           "name": "Analyze javascript-typescript",
           "conclusion": "success",
           "criticalSteps": [

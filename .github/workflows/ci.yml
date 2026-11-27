@@ -32,6 +32,7 @@ jobs:
           python3 tests/browser/test_project_team.py
           python3 tests/browser/test_navigation_revocation.py
           python3 tests/browser/test_navigation_dirty_settings.py
+          python3 tests/browser/test_navigation_embedded.py
           python3 tests/browser/test_commercialization_review.py
       - name: Test staging evidence completeness, privacy and import integrity
         run: |

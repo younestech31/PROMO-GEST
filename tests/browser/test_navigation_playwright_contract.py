@@ -59,6 +59,14 @@ class NavigationPlaywrightContractTests(unittest.TestCase):
                      'expect_event', 'expect_response', 'screenshot', 'remove_listener'):
             self.assertIn(name, calls)
 
+    def test_embedded_slice_uses_supported_page_methods_and_signatures(self):
+        source = Path(__file__).with_name('navigation_embedded.py').read_text()
+        calls = check_page_calls(source)
+        for name in ('goto', 'get_by_role', 'evaluate', 'close', 'is_closed',
+                     'expect_event', 'go_back', 'go_forward', 'wait_for_function',
+                     'wait_for_load_state', 'screenshot', 'remove_listener'):
+            self.assertIn(name, calls)
+
     def test_nonexistent_failed_request_convenience_method_is_rejected(self):
         with self.assertRaisesRegex(ValueError, 'Unsupported Page method'):
             check_page_calls('p06_page.expect_request_failed(lambda request: True)')

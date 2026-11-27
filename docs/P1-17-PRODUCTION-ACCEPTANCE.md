@@ -6,6 +6,25 @@ Date: 27 November 2026. Status: **isolated Production HTTPS technical acceptance
 المكتب، بما فيها الاستعادة بعد إعادة الدخول وإعادة تشغيل الخادم، وفشل الاتصال
 وتعارض التحديثات، دون تغيير اللغة الافتراضية للمؤسسة. اللقطات أدناه فعلية ومراجَعة.
 
+## Accepted closure — 27 November
+
+Final documentation head `a2fcb191304846232fb22ce0e92fea15fc186d1a`:
+CI[46067193697](https://github.com/younestech31/PROMO-GEST/actions/runs/46067193697)
+**PASS5/5** + CodeQL[46067193694](https://github.com/younestech31/PROMO-GEST/actions/runs/46067193694)
+**PASS2/2**, all eight listed checks SUCCESS. PR #284 merged at21:07:20Z as
+`a5f578345ea3d2fbbe65c4e1ca6bff10f107c7d0`.
+Independent exact-main [CI46068197442](https://github.com/younestech31/PROMO-GEST/actions/runs/46068197442)
+**PASS5/5** and [CodeQL46068197482](https://github.com/younestech31/PROMO-GEST/actions/runs/46068197482)
+**PASS2/2** on that exact merge, including full unfiltered Domain/Application/PG18,
+Development real browser, Production HTTPS/restart/restore/export. All six technical
+criteria accepted; **live Notion P1-17 now Done / Verified** on27November.
+[Final/main check archive](evidence/p1-17-production-2026-11-27/closure-checks.json).
+Original34304e9/testedfb627e2/run46002815426 screenshots retain provenance and
+limits; new actor-isolation evidence is the executed source5346d9d/final/main
+Application/PG18 tests, not a screenshot inference. Historical Pending statements
+below record earlier checkpoints and are superseded by this explicit closure.
+Phase1 and all institution/legal/accounting/municipality/release gates independent.
+
 ## Scope
 
 The own-language preference API and SPA persistence wiring are already shipped.

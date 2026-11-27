@@ -422,7 +422,7 @@ with sync_playwright() as pw:
             'Automated real-browser evidence only, not manual staging acceptance.'
         )
     else:
-        p1_15_evidence = 'Not exercised on mobile: current project-directory mobile cards do not expose Manage Access. No mobile acceptance is claimed.'
+        p1_15_evidence = 'Not exercised by this Development mobile scenario. The separate Production HTTPS project_team.py suite covers mobile access; no mobile result is claimed by this entry.'
 
     p1_09_evidence = (
         'SYSTEM_ADMIN browser edit/save 200; non-admin without org.manage read-only and API 403 '

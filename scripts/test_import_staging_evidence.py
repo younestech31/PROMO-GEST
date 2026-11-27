@@ -144,6 +144,28 @@ class StagingImportTests(unittest.TestCase):
                     module.main()
             self.assertFalse(out.exists())
 
+    def test_team_requires_named_checks_and_all_prerequisite_suites(self):
+        spec = importlib.util.spec_from_file_location('export_schema', Path(__file__).with_name('export-staging-evidence.py'))
+        schema = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(schema)
+        root = Path(__file__).resolve().parents[1] / 'docs/evidence/p1-17-production-2026-11-27/manifest.json'
+        manifest = json.loads(root.read_text())
+        manifest['mode'] = 'disposable Production HTTPS team'
+        for result in manifest['profiles']:
+            result['teamEvidence'] = {key: True for key in schema.TEAM_CHECKS}
+        source = manifest['profiles'][0]['sourceHead']
+        module.validate_manifest(manifest, source)
+        for group in ('checks', 'organizationEvidence', 'sessionEvidence', 'languageEvidence', 'teamEvidence'):
+            modified = copy.deepcopy(manifest)
+            del modified['profiles'][0][group]
+            with self.subTest(group=group), self.assertRaises(ValueError):
+                module.validate_manifest(modified, source)
+        for value in (False, 1, 'true'):
+            modified = copy.deepcopy(manifest)
+            modified['profiles'][0]['teamEvidence'][schema.TEAM_CHECKS[0]] = value
+            with self.subTest(value=value), self.assertRaises(ValueError):
+                module.validate_manifest(modified, source)
+
     def test_unrelated_annotations_are_ignored(self):
         annotations = copy.deepcopy(self.annotations)
         annotations.append({'title': 'Unrelated test warning', 'message': 'not JSON'})

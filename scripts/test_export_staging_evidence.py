@@ -137,6 +137,41 @@ class StagingEvidenceTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             export.read_language_results(self.root)
 
+    def team_fixture(self):
+        for profile in export.PROFILES:
+            (self.root / profile / 'project-team.json').write_text(json.dumps({
+                'profile': profile, 'status': 'PASS',
+                'checks': {key: True for key in export.TEAM_CHECKS}, 'scope': export.TEAM_SCOPE,
+            }))
+
+    def test_team_requires_all_four_profiles(self):
+        self.team_fixture()
+        self.assertEqual(set(export.read_team_results(self.root)), set(export.PROFILES))
+        (self.root / 'fr-mobile/project-team.json').unlink()
+        with self.assertRaises(FileNotFoundError):
+            export.read_team_results(self.root)
+
+    def test_team_rejects_failure_secrets_wrong_identity_and_non_boolean_checks(self):
+        for key, value in (('status', 'FAIL'), ('checks', {}), ('profile', 'fr-mobile'),
+                           ('cookies', 'must never export'), ('scope', 'unexpected'),
+                           ('checks', {k: 1 for k in export.TEAM_CHECKS})):
+            with self.subTest(key=key):
+                self.team_fixture()
+                path = self.root / 'ar-desktop/project-team.json'
+                result = json.loads(path.read_text())
+                result[key] = value
+                path.write_text(json.dumps(result))
+                with self.assertRaises(ValueError):
+                    export.read_team_results(self.root)
+
+    def test_team_rejects_symlinked_result(self):
+        self.team_fixture()
+        path = self.root / 'ar-mobile/project-team.json'
+        path.unlink()
+        path.symlink_to(self.root / 'ar-desktop/project-team.json')
+        with self.assertRaises(ValueError):
+            export.read_team_results(self.root)
+
     def test_requires_all_four_profiles(self):
         self.assertEqual(len(export.read_results(self.root)), 4)
         (self.root / 'fr-mobile/result.json').unlink()

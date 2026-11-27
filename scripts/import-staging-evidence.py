@@ -27,14 +27,15 @@ def validate_manifest(manifest, source_sha):
         'staging_export_schema', Path(__file__).with_name('export-staging-evidence.py'))
     schema = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(schema)
-    suites = ('staging', 'organization', 'sessions', 'language')
+    suites = ('staging', 'organization', 'sessions', 'language', 'team')
     modes = {'disposable Production HTTPS ' + suite: index for index, suite in enumerate(suites)}
     if (not isinstance(manifest, dict) or set(manifest) != {'mode', 'profiles', 'images'}
             or manifest['mode'] not in modes):
         raise ValueError('Unexpected evidence manifest schema or suite')
     level = modes[manifest['mode']]
     groups = [('checks', schema.CHECKS), ('organizationEvidence', schema.ORGANIZATION_CHECKS),
-              ('sessionEvidence', schema.SESSION_CHECKS), ('languageEvidence', schema.LANGUAGE_CHECKS)]
+              ('sessionEvidence', schema.SESSION_CHECKS), ('languageEvidence', schema.LANGUAGE_CHECKS),
+              ('teamEvidence', schema.TEAM_CHECKS)]
     fields = {'profile', 'sourceHead', 'testedCheckout', 'run', 'environment', 'database',
               'proxy', 'viewport', 'checks', 'tlsBoundary', 'scope', 'syntheticDocumentSha256',
               'status', 'browser', 'budgetEvidence'} | {key for key, _ in groups[1:level + 1]}

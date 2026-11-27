@@ -1,4 +1,14 @@
-## Current operating checkpoint — PR #278 merged; P1-09 accepted and P1-10 regression — 27 November 2026
+## Current operating checkpoint — PR #279 verified; P1-10 atomicity repair — 27 November 2026
+
+- **Verified live source:** GitHub `main` = `e827dcb5cf290661d029e5f975a07a2c9947aaa1`, squash merge of [PR #279](https://github.com/younestech31/PROMO-GEST/pull/279). The mandated branch includes this baseline.
+- **Exact verification:** final PR-head CI [46047253659](https://github.com/younestech31/PROMO-GEST/actions/runs/46047253659) PASS 4/4, CodeQL [46047253522](https://github.com/younestech31/PROMO-GEST/actions/runs/46047253522) PASS 2/2. Exact-main CI [46048350110](https://github.com/younestech31/PROMO-GEST/actions/runs/46048350110) PASS 4/4 and CodeQL [46048350121](https://github.com/younestech31/PROMO-GEST/actions/runs/46048350121) PASS 2/2 on the merged SHA.
+- **Roadmap rechecked in Notion before development:** P1-09 Done / Verified; P1-10 In Progress / Pending. Its dependency is resolved, not waived. PR #281 addresses technical [#280](https://github.com/younestech31/PROMO-GEST/issues/280) with deterministic PG18 save-failure/interleaving tests and a narrow single-save/shared-root-CAS repair; no duplicate eligibility/queue/UI implementation. [Detailed semantics and execution log](P1-10-ATOMIC-SUSPENSION.md). Pending/failed runs are not acceptance evidence.
+- **Evidence retained:** original source99bab26 has CI46044806419 PASS 4/4, CodeQL46044806446 PASS 2/2, 28/28 sequential browser assertions and four genuine hashed/visually reviewed confirmation JPEGs. These remain original-source evidence, not repair-head screenshots or concurrency proof. [Seven-criterion mapping and images](P1-10-BROWSER-ACCEPTANCE.md).
+- **Boundaries:** P0-A01/A04 and P1-15 Done / Verified; D-010 administrative closure retained. P1-05 budget/P1-17/P1-19 In Review / Pending; separate P1-05 phase closure Blocked / Not Started. P1-01/P1-35 Deferred / Pending, P1-02/P1-34 Blocked; P1-08 policy, P1-11 institution-local operations/legal/accounting/release scope are independent. Phase 1 IN_PROGRESS; Phases 2–5 gated. This slice changes only narrow Application write coordination and regression/evidence docs, not schema, grants, limiter, operational data or deployment.
+
+---
+
+## Historical operating checkpoint — PR #278 merged; P1-09 accepted and P1-10 regression — 27 November 2026
 
 - **Verified live source:** GitHub `main` = `484871f99aa62dfb65904ad7ec4100c0a9ac1a29`, squash merge of [PR #278](https://github.com/younestech31/PROMO-GEST/pull/278). The mandated branch merged this baseline into its ancestry.
 - **Merge evidence:** final PR-head CI [46040908602](https://github.com/younestech31/PROMO-GEST/actions/runs/46040908602) PASS 4/4 and CodeQL [46040908594](https://github.com/younestech31/PROMO-GEST/actions/runs/46040908594) PASS 2/2. Exact-main CodeQL [46042410441](https://github.com/younestech31/PROMO-GEST/actions/runs/46042410441) PASS 2/2; exact-main CI [46042410429](https://github.com/younestech31/PROMO-GEST/actions/runs/46042410429) PASS 4/4. Both exact-main runs completed successfully on the merged SHA.

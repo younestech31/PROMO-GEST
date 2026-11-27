@@ -256,6 +256,12 @@ public sealed class ProjectSalesReservationService
                 "An archived customer cannot be assigned to a new reservation.");
         }
 
+        // #280: the eligibility read must participate in the eventual write. Rotating the
+        // tracked Project root CAS serializes this create with status changes (and other creates
+        // in this project). Root, hold, unit and creation audit commit in one SaveChanges;
+        // a stale project read loses with 409 and commits none of them. Callers must reload/retry,
+        // never automatically retry a business operation against a changed eligibility state.
+        project.Touch(nowUtc);
         var reservationNumber = $"RSV-{nowUtc:yyyyMMdd}-{Guid.NewGuid():N}"[..21].ToUpperInvariant();
         unit.ReserveForSalesWorkflow(nowUtc);
         var reservation = ProjectSalesReservation.Create(

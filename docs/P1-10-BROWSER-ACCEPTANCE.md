@@ -1,7 +1,11 @@
 # P1-10 — commercialization and suspension-review acceptance
 
 Date: 27 November 2026. **Task: In Progress / Pending.**
-This slice tests existing runtime; it does not implement commercialization again.
+PR #279 tests existing runtime; it does not implement commercialization again.
+Follow-up PR #281 narrowly repairs the discovered suspension/create write boundary;
+see [atomicity/serialization tests, semantics and execution log](P1-10-ATOMIC-SUSPENSION.md).
+The original seven-criterion assessment below records the pre-repair gap, not a
+claim that an unverified repair has already closed it.
 
 ## Dependency reconciliation
 

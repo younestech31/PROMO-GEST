@@ -389,7 +389,6 @@ public sealed class ProjectService
                 metadata.IpAddress,
                 metadata.UserAgent),
             ct);
-        await _projectRepository.SaveChangesAsync(ct);
 
         // ADR-0018: suspension blocks new reservations and must never cancel, expire, or release an
         // existing hold. Every real transition into Suspended therefore records one durable,
@@ -429,8 +428,13 @@ public sealed class ProjectService
                     metadata.IpAddress,
                     metadata.UserAgent),
                 ct);
-            await _reservationRepository.SaveChangesAsync(ct);
         }
+
+        // #280: all scoped repositories/audit writer share the same DbContext. Save the root,
+        // review markers and both audit events ONCE, in the same EF transaction. A concurrent
+        // hold creation touches this root too: its CAS conflict rolls back the entire losing
+        // operation. Never persist Suspended before its review metadata is ready.
+        await _projectRepository.SaveChangesAsync(ct);
 
         var reloaded = await _projectRepository.GetByIdWithMembersAsync(project.Id, ct) ?? project;
         return await MapProjectAsync(reloaded, actorUserId, ct);

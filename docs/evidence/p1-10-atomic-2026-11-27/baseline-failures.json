@@ -1,0 +1,24 @@
+{
+  "schema": "promogest.p1-10-atomic-regression.v1",
+  "kind": "expected-failing-baseline-not-acceptance",
+  "sourceSha": "5eb07d6557d63995781be119ea7b836cd1618139",
+  "runId": 46050829871,
+  "runUrl": "https://github.com/younestech31/PROMO-GEST/actions/runs/46050829871",
+  "event": "pull_request",
+  "conclusion": "failure",
+  "checkRunId": 140681601812,
+  "failedTests": [
+    {
+      "test": "PromoGest.IntegrationTests.PostgresEndToEndTests.SuspensionReviewSaveFailure_RollsBackProjectStampMarkersAndAudits_AndPreservesProjectIsolation",
+      "message": "PromoGest.IntegrationTests.PostgresEndToEndTests — Assert.Equal() Failure: Strings differ ↓ (pos 0) Expected: \"Commercialization\" Actual: \"Suspended\" ↑ (pos 0) | at PromoGest.IntegrationTests.PostgresEndToEndTests.SuspensionReviewSaveFailure_RollsBackProjectStampMarkersAndAudits_AndPreservesProjectIsolation() in /home/runner/work/PROMO-GEST/PROMO-GEST/tests/PromoGest.IntegrationTests/ProjectSuspensionConcurrencyTests.cs:line 121"
+    },
+    {
+      "test": "PromoGest.IntegrationTests.PostgresEndToEndTests.SuspensionAndHoldCreation_SerializeAtProjectRoot_AndRollbackLosingAudit(pauseCreate: False)",
+      "message": "PromoGest.IntegrationTests.PostgresEndToEndTests — Assert.Equal() Failure: Values differ Expected: Conflict Actual: OK | at PromoGest.IntegrationTests.PostgresEndToEndTests.SuspensionAndHoldCreation_SerializeAtProjectRoot_AndRollbackLosingAudit(Boolean pauseCreate) in /home/runner/work/PROMO-GEST/PROMO-GEST/tests/PromoGest.IntegrationTests/ProjectSuspensionConcurrencyTests.cs:line 59"
+    },
+    {
+      "test": "PromoGest.IntegrationTests.PostgresEndToEndTests.SuspensionAndHoldCreation_SerializeAtProjectRoot_AndRollbackLosingAudit(pauseCreate: True)",
+      "message": "PromoGest.IntegrationTests.PostgresEndToEndTests — Assert.Equal() Failure: Values differ Expected: Conflict Actual: Created | at PromoGest.IntegrationTests.PostgresEndToEndTests.SuspensionAndHoldCreation_SerializeAtProjectRoot_AndRollbackLosingAudit(Boolean pauseCreate) in /home/runner/work/PROMO-GEST/PROMO-GEST/tests/PromoGest.IntegrationTests/ProjectSuspensionConcurrencyTests.cs:line 59"
+    }
+  ]
+}

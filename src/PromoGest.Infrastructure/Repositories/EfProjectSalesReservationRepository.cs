@@ -90,7 +90,7 @@ public sealed class EfProjectSalesReservationRepository : IProjectSalesReservati
         {
             throw new ConflictDomainException(
                 "RESERVATION_CONCURRENCY_CONFLICT",
-                "The reservation or property unit was changed by another operation. Reload and try again.");
+                "The project, reservation or property unit was changed by another operation. Reload and review the current state before trying again.");
         }
         catch (DbUpdateException exception) when (
             exception.InnerException is PostgresException postgres &&

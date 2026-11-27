@@ -151,6 +151,28 @@ public sealed partial class PostgresEndToEndTests
         using var foreignCreate = await client.PostAsJsonAsync($"/api/projects/{other.Id}/reservations",
             new CreateProjectSalesReservationRequest(fixture.FreeUnitId, fixture.CustomerId, DateTimeOffset.UtcNow.AddDays(3)));
         Assert.Equal(HttpStatusCode.NotFound, foreignCreate.StatusCode);
+        Assert.Contains("RESERVATION_UNIT_NOT_FOUND", await foreignCreate.Content.ReadAsStringAsync());
+        // With a valid unit in the route project, a foreign customer must independently fail scope.
+        var session = (await client.GetFromJsonAsync<SessionResponse>("/api/auth/me"))!;
+        Guid otherUnitId;
+        using (var scope = factory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+            var now = DateTimeOffset.UtcNow;
+            var building = Building.Create(other.Id, "B", "عمارة", "Bâtiment", BuildingStatus.Planned, session.User.Id, now);
+            var floor = BuildingFloor.Create(building.Id, 0, "أرضي", "RDC", now);
+            var unit = PropertyUnit.Create(floor.Id, "B-001", PropertyUnitType.Apartment,
+                PropertyUnitStatus.AvailableForSale, 90m, 80m, 3, session.User.Id, now);
+            db.Buildings.Add(building);
+            db.BuildingFloors.Add(floor);
+            db.PropertyUnits.Add(unit);
+            await db.SaveChangesAsync();
+            otherUnitId = unit.Id;
+        }
+        using var foreignCustomer = await client.PostAsJsonAsync($"/api/projects/{other.Id}/reservations",
+            new CreateProjectSalesReservationRequest(otherUnitId, fixture.CustomerId, DateTimeOffset.UtcNow.AddDays(3)));
+        Assert.Equal(HttpStatusCode.NotFound, foreignCustomer.StatusCode);
+        Assert.Contains("RESERVATION_CUSTOMER_NOT_FOUND", await foreignCustomer.Content.ReadAsStringAsync());
         var otherQueue = await client.GetFromJsonAsync<List<ProjectSalesReservationDto>>(
             $"/api/projects/{other.Id}/reservations?reviewRequired=true");
         Assert.Empty(otherQueue!);
@@ -158,6 +180,15 @@ public sealed partial class PostgresEndToEndTests
             $"/api/projects/{fixture.ProjectId}/reservations?reviewRequired=true");
         Assert.Equal(holdStamp, Assert.Single(stillQueued!).ConcurrencyStamp);
         Assert.Equal(0, await CountSuspensionAuditAsync(factory, "PROJECT_RESERVATION_REVIEW_COMPLETED"));
+        using (var scope = factory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+            Assert.False(await db.ProjectSalesReservations.AnyAsync(h => h.ProjectId == other.Id));
+            Assert.Equal(other.ConcurrencyStamp, (await db.Projects.SingleAsync(p => p.Id == other.Id)).ConcurrencyStamp);
+            Assert.Equal(PropertyUnitStatus.AvailableForSale,
+                (await db.PropertyUnits.SingleAsync(u => u.Id == otherUnitId)).Status);
+        }
+        Assert.Equal(1, await CountSuspensionAuditAsync(factory, "PROJECT_RESERVATION_CREATED"));
     }
 
     private sealed record SuspensionFixture(Guid ProjectId, Guid CustomerId, Guid HeldUnitId, Guid FreeUnitId,
@@ -211,7 +242,10 @@ public sealed partial class PostgresEndToEndTests
             new CreateProjectSalesReservationRequest(held.Id, customer.Id, DateTimeOffset.UtcNow.AddDays(4)));
         Assert.Equal(HttpStatusCode.Created, holdResponse.StatusCode);
         var hold = (await holdResponse.Content.ReadFromJsonAsync<ProjectSalesReservationDto>())!;
-        return new(project.Id, customer.Id, held.Id, free.Id, hold.Id, hold.ExpiresAtUtc);
+        // Compare persisted PostgreSQL microsecond precision, not the pre-save request ticks.
+        var persistedHold = (await client.GetFromJsonAsync<ProjectSalesReservationDto>(
+            $"/api/projects/{project.Id}/reservations/{hold.Id}"))!;
+        return new(project.Id, customer.Id, held.Id, free.Id, hold.Id, persistedHold.ExpiresAtUtc);
     }
 
     private static async Task<int> CountSuspensionAuditAsync(WebApplicationFactory<Program> factory, string eventType)

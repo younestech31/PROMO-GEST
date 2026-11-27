@@ -44,10 +44,30 @@ Follow-up adds `test_navigation_playwright_contract.py` before the browser loop,
 using the **actual pinned Playwright1.56.0 Page class** with AST/signature checks,
 not unrestricted mocks. **Local4/4 PASS**, including rejection of the original
 nonexistent method and an unsupported keyword. These are API-contract tests, not
-browser behavior proof. The follow-up head requires its own CI before merge.
+browser behavior proof. Final head4b188c4 CI46073355406 PASS5/5 and CodeQL46073355474 PASS. PR286 merged as64c53cf; independent exact-main46074892454/46074892506 still running.
 Python syntax, local frontend118/118 and TypeScript PASS; no local browser/.NET/PG18
 execution is claimed. No new screenshot is imported or visually accepted; the CI
 artifact screenshot illustrates the retained confirmation, not API persistence.
+
+## Next bounded slice: real membership revocation — authored, CI pending
+
+`tests/browser/navigation_revocation.py` runs after budget assertions in the existing
+Development and Production HTTPS four-profile loops, reusing real synthetic actor
+sessions and the disposable database safety guard. It grants a replacement manager
+before revoking the original manager, preserving last-manager protection. It pins
+and records recent access, navigates to organization through the sidebar, then clicks
+the **cached** project card after API revocation. A same-document sentinel prevents
+reload from masquerading as in-memory cache cleanup. Assertions require real403,
+return to organization, removal of the cached card and both preference entries,
+no project in list/directory, preserved authentication/organization and no pageerror.
+The original membership/capabilities are restored in `finally`, then real access
+is positively rechecked. No route interception, SQL or runtime policy change.
+
+Local safety2/2, actual pinned Playwright Page contract5/5 and existing budget
+helper7/7 PASS. These are not browser proof. Browser JSON
+`navigation-revocation.json` and screenshot `p1-06-revoked-project-cleanup.png`
+will be generated only on successful execution; **not yet imported or reviewed**.
+Do not promote the cache criterion or full P1-06 until executed results are checked.
 
 ## Nine-criterion evidence inventory (not promotion)
 
@@ -55,7 +75,7 @@ artifact screenshot illustrates the retained confirmation, not API persistence.
 |---|---|---|
 | Complete ProjectWorkspaceView contract / strict TS | `AppContentRouter` in `src/app/App.tsx`; frontend CI and TypeScript | Pin source/checks in final closure mapping |
 | Protected views never mount for unauthorized routes | `canAccessRoute` pre-render guard; routeRegistry/workspaceGuards tests | Independently exercise actual router self/cross-role cases, not helper-only assertions |
-| Dirty form propagation; Back/Forward/internal/project/logout/reload/close | `useUnsavedGuard`, App callbacks, embedded settings refs; existing browser history flow and original 26-Nov report | Full route/project-switch/logout/embedded form matrix; native unload is browser-controlled (not a custom Save/Discard prompt); failed-save slice source CI PASS (follow-up pending) |
+| Dirty form propagation; Back/Forward/internal/project/logout/reload/close | `useUnsavedGuard`, App callbacks, embedded settings refs; existing browser history flow and original 26-Nov report | Full route/project-switch/logout/embedded form matrix; native unload is browser-controlled (not a custom Save/Discard prompt); failed-save slice source CI PASS (final head PASS; merged-main running) |
 | Revoked access removes cache/pinned/recent and returns home | `handleProjectVerificationFailed`, `revokeProjectAccessFromState`, preferences storage | Actual browser membership revocation and cached/preference cleanup assertions |
 | One API/CSRF/registry/route/localization implementation | `frontendArchitecture.test.ts` dependency/boundary tests | Final exact-source execution references |
 | F–J planned APIs explicit; no-op actions removed; legal review | planned API rejection and metadata boundary tests | Keep qualified Algerian legal review independent; do not mark F–J implemented |

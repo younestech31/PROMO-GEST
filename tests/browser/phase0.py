@@ -7,6 +7,7 @@ import sys
 from pathlib import Path
 
 from playwright.sync_api import expect, sync_playwright
+from project_budget import run_project_budget
 
 BASE = 'http://127.0.0.1:5173'
 lang, device = sys.argv[1:]
@@ -1006,6 +1007,8 @@ with sync_playwright() as pw:
         'offered Save & Continue and persisted before returning to the prior route. Automated CI evidence only.'
     )
 
+    p05_evidence = run_project_budget(browser, ctx, BASE, lang, device, viewport, out)
+
     p17_fresh_context.close()
     employee_ctx.close()
     replay_ctx.close()
@@ -1045,6 +1048,7 @@ with sync_playwright() as pw:
                     P1_19=p19_1_19_evidence,
                     P1_20=p20_1_20_evidence,
                     P1_06=p06_evidence,
+                    P1_05=p05_evidence,
                     mode='automated real-browser; not manual acceptance')
     (out/'result.json').write_text(json.dumps(evidence, indent=2)+'\n')
     print(json.dumps(evidence))

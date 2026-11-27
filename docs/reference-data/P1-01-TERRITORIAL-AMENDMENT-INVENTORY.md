@@ -232,7 +232,7 @@ On 27 November 2026, selected page images from both official editions were visua
 - **Arabic:** printed pages 1527–1530 from [A1984041.pdf](https://www.joradp.dz/FTP/jo-arabe/1984/A1984041.pdf). Page 1527 contains the Arabic order text and begins the annex; pages 1528–1530 show paired commune and seat columns across the Adrar, Chlef, Laghouat, Oum El Bouaghi, Batna and Bejaia sections.
 The bilingual pages confirm the same source structure: commune name and chief-lieu seat are separately stated attributes. This remains a **bounded sample**, not a complete visual transcription of the annex, a full French/Arabic row-pairing exercise, or a 1,541-row seat reconciliation. No new PDF-byte SHA-256 values were captured in this pass.
 
-The 8 February 1986 register amendment (JO11/1986, printed p.280) cites an order dated 13 May 1985 modifying the June 1984 seat order. The standalone issue/page and full annex of that 13 May 1985 instrument remain unlocated. Keep the citation as an unresolved source pointer; do not infer its effects from the recital alone.
+The 8 February 1986 register amendment (JO11/1986, printed p.280) cites the 13 May 1985 order that has now been located in JO24/1985 (French printed p.535; Arabic pp.829–830). The publication reference and four annex entries are documented in section 5J. The remaining gap is the complete 1984 seat annex and later seat/code chain, not the existence or publication locator of the 1985 amendment.
 
 ### Open gates after this pass
 

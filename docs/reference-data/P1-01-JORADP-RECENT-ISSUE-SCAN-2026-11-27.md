@@ -58,9 +58,9 @@ The Arabic source locality label is **وادي المرعى**. The existing Fren
 Executive Decree 21-128 of 29 March 2021, published on 7 April 2021, modifies the territorial-composition table attached to Decree 84-365. Article 1 addresses eight existing Wilayas (01, 07, 08, 11, 30, 33, 39 and 47) and adds the ten Wilayas 49–58 created under Law 19-12. The French annex headings include 49 Timimoun, 50 Bordj Badji Mokhtar, 51 Ouled Djellal, 52 Béni Abbès, 53 In Salah, 54 In Guezzam, 55 Touggourt, 56 Djanet, 57 El Meghaier and 58 El Meniaâ.
 
 - Official French JORADP edition: [F2021026.pdf](https://www.joradp.dz/FTP/jo-francais/2021/F2021026.pdf), Decree and annex pages 5–16 visually inspected.
-- Arabic issue facsimile: [Arabic JO26/2021 facsimile PDF](https://kanonix.app/journals/fac71292-3d61-4b81-8da4-b8965d7ede81/pdf?download=1), pages 5–17 visually inspected. This is a mirror/facsimile, not a direct JORADP Arabic-host download. The direct JORADP Arabic binary could not be retrieved in this pass; no fresh binary checksum comparison was performed.
+- Arabic official JORADP edition: [A2021026.pdf](https://www.joradp.dz/FTP/jo-arabe/2021/A2021026.pdf), pages 5–17 visually inspected directly from the JORADP-hosted PDF. The final printed page 17 contains Wilayas 56 Djanet, 57 El Meghaier and 58 El Meniaâ. The repository already records a historical SHA-256 for A2021026.pdf, but no fresh checksum was calculated from downloaded bytes in this pass.
 
-**Interpretation boundary:** this decree concerns territorial composition/limits, not the four-digit Decree 85-20 commune register or chief-lieu seats. Its annex was not transcribed row by row in this pass. The Arabic mirror inspection is preliminary bilingual page evidence; it does not certify the source binary or professional adjudication. Preserve the decree separately from the interministerial register order published in JO79/2021. Do not infer current codes, seats, effective dates or parent links from Wilaya headings alone.
+**Interpretation boundary:** this decree concerns territorial composition/limits, not the four-digit Decree 85-20 commune register or chief-lieu seats. Its annex was not transcribed row by row in this pass. The French and Arabic page images were visually inspected from JORADP-hosted official PDFs, but this pass did not recalculate or compare PDF-byte SHA-256 values and did not complete row-by-row bilingual adjudication. Preserve the decree separately from the interministerial register order published in JO79/2021. Do not infer current codes, seats, effective dates or parent links from Wilaya headings alone.
 
 ### B. June 1984 chief-lieu seat order / JO41/1984 — sampled French visual review
 
@@ -106,6 +106,6 @@ Official issue PDFs:
 ## 7. Outstanding work and safety boundary
 
 - The 2005 and 2006 Arabic/French page images were checked, but PDF-byte SHA-256 values for the inspected 2005 editions and the Arabic 2006 edition were not captured. This is a binary-provenance gap, not an outstanding page-image review.
-- Full bilingual annex reconciliation for Decree 21-128 / JO26/2021 and the 2 June 1984 chief-lieu seat order remains open.
+- Recalculate/compare SHA-256 for the official JO26/2021 Arabic and French PDF binaries; complete row-by-row bilingual transcription and reconciliation for Decree 21-128. The 2 June 1984 chief-lieu seat order still needs its Arabic annex review and full transcription.
 - All 1,541 master-ledger practitioner sign-offs remain `PENDING`; W30-R007 remains `NEEDS_EVIDENCE`; no commune data is imported; `communesCount = 0` and `PendingOfficialVerification` remain unchanged.
 - No production database, Cloud SQL, application runtime, API contract, schema, migration, or deployed environment was changed.

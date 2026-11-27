@@ -1,0 +1,64 @@
+{
+  "reconciledOn": "2026-11-27",
+  "kind": "existing-evidence-index-not-a-new-test-run",
+  "evidenceCommit": "73a06493241876c35b9f20b2a93ff4d52b3ae909",
+  "recordedSourceBaseline": "a4e1f6daa8828d01d481900f1051dcc335da7e25",
+  "originalMalformedSource": "a4e1f6daa828d01d481900f1051dcc335da7e25",
+  "sourceLimit": "Evidence-deposit parent verified by GitHub API; NO_GIT execution checkout identity not independently attested. All six image git blobs match the deposit; no recapture or new-source browser/API/PG18 execution.",
+  "files": [
+    {
+      "path": "docs/evidence/manual/2026-11-26/P1-06/p1_06_ard_dialog.png",
+      "bytes": 90603,
+      "sha256": "ff3b70294d7d95658fddceaf8115607a4c56b837308493869ed0e5f5414a6ff9",
+      "depositGitBlob": "00c0819c0790ab3ebc355ea1541e5eb196fb2a21",
+      "width": 1440,
+      "height": 900,
+      "visuallyReopenedOnReconciliation": true
+    },
+    {
+      "path": "docs/evidence/manual/2026-11-26/P1-06/p1_06_ard_saved.png",
+      "bytes": 82714,
+      "sha256": "7b638bc05ad4e6da8233601e75e2647fc6afea94c01e3a0e56cdd67b1e8b2455",
+      "depositGitBlob": "e04affe2698752d513e82bb54c54ebc00b057eab",
+      "width": 1440,
+      "height": 900,
+      "visuallyReopenedOnReconciliation": true
+    },
+    {
+      "path": "docs/evidence/manual/2026-11-26/P1-06/p1_06_arm_dialog.png",
+      "bytes": 43730,
+      "sha256": "3ac9afd0dfc2fac7ab74a9cd0b5a87d0d78e4013808c71bc610d6952bf8acaa3",
+      "depositGitBlob": "9de3060cc2df425780a9ee7b0fa4bf3ff707f93d",
+      "width": 390,
+      "height": 844,
+      "visuallyReopenedOnReconciliation": true
+    },
+    {
+      "path": "docs/evidence/manual/2026-11-26/P1-06/p1_06_frd_dialog.png",
+      "bytes": 108290,
+      "sha256": "dc2cfc15295e1226997bd36bdc02c4359971000c7362309ef7657473ad4db5e1",
+      "depositGitBlob": "ed87a2e729e5bdfdb0dd33577d1e9595ea4b6c26",
+      "width": 1440,
+      "height": 900,
+      "visuallyReopenedOnReconciliation": true
+    },
+    {
+      "path": "docs/evidence/manual/2026-11-26/P1-06/p1_06_frd_project_saved.png",
+      "bytes": 135479,
+      "sha256": "81bc036dd0351a82a2b38912a25e244c74ea61c9f6b6674cd0e82c44fe2d8a83",
+      "depositGitBlob": "09fd48f51c21b962523ac027ca8334d223e9d72c",
+      "width": 1440,
+      "height": 900,
+      "visuallyReopenedOnReconciliation": true
+    },
+    {
+      "path": "docs/evidence/manual/2026-11-26/P1-06/p1_06_frm_dialog.png",
+      "bytes": 47927,
+      "sha256": "00e74188c88b06b5e3477b75d1d988c478790d50b4add9ffce85f11b1f84e3a4",
+      "depositGitBlob": "69925d93adb0d2baed732f1f68f767c3c028ec5c",
+      "width": 390,
+      "height": 844,
+      "visuallyReopenedOnReconciliation": true
+    }
+  ]
+}

@@ -33,10 +33,21 @@ Confirmed against the Playwright Python API; replaced with supported
 annotations now diagnose failures without request/cookie/draft values. Full logs
 could not be retrieved through this sandbox's network allowlist; the exact runtime
 traceback is not claimed. The API-contract defect is independently demonstrable.
-The corrected source awaits its own full CI. Python syntax, local frontend118/118
-and TypeScript PASS; no local browser/.NET/PostgreSQL execution is claimed.
-No new screenshot is yet imported or visually accepted. The intended artifact
-screenshot illustrates the retained confirmation, not API persistence.
+**Corrected source `ab46ed962a0524b9961029314787c7fad8ad633b`:**
+[CI46072434925](https://github.com/younestech31/PROMO-GEST/actions/runs/46072434925)
+**PASS5/5**, [CodeQL46072434930](https://github.com/younestech31/PROMO-GEST/actions/runs/46072434930)
+**PASS2/2**. The complete four-profile Development browser step executed the
+failed-save/retry assertions; full PG18, Production HTTPS/restart, restore and
+export also passed. [Failure and correction job/critical-step archive](evidence/p1-06-navigation-2026-11-27/checks.json).
+
+Follow-up adds `test_navigation_playwright_contract.py` before the browser loop,
+using the **actual pinned Playwright1.56.0 Page class** with AST/signature checks,
+not unrestricted mocks. **Local4/4 PASS**, including rejection of the original
+nonexistent method and an unsupported keyword. These are API-contract tests, not
+browser behavior proof. The follow-up head requires its own CI before merge.
+Python syntax, local frontend118/118 and TypeScript PASS; no local browser/.NET/PG18
+execution is claimed. No new screenshot is imported or visually accepted; the CI
+artifact screenshot illustrates the retained confirmation, not API persistence.
 
 ## Nine-criterion evidence inventory (not promotion)
 
@@ -44,20 +55,31 @@ screenshot illustrates the retained confirmation, not API persistence.
 |---|---|---|
 | Complete ProjectWorkspaceView contract / strict TS | `AppContentRouter` in `src/app/App.tsx`; frontend CI and TypeScript | Pin source/checks in final closure mapping |
 | Protected views never mount for unauthorized routes | `canAccessRoute` pre-render guard; routeRegistry/workspaceGuards tests | Independently exercise actual router self/cross-role cases, not helper-only assertions |
-| Dirty form propagation; Back/Forward/internal/project/logout/reload/close | `useUnsavedGuard`, App callbacks, embedded settings refs; existing browser history flow and original 26-Nov report | Full route/project-switch/logout/embedded form matrix; native unload is browser-controlled (not a custom Save/Discard prompt); failed-save slice above pending CI |
+| Dirty form propagation; Back/Forward/internal/project/logout/reload/close | `useUnsavedGuard`, App callbacks, embedded settings refs; existing browser history flow and original 26-Nov report | Full route/project-switch/logout/embedded form matrix; native unload is browser-controlled (not a custom Save/Discard prompt); failed-save slice source CI PASS (follow-up pending) |
 | Revoked access removes cache/pinned/recent and returns home | `handleProjectVerificationFailed`, `revokeProjectAccessFromState`, preferences storage | Actual browser membership revocation and cached/preference cleanup assertions |
 | One API/CSRF/registry/route/localization implementation | `frontendArchitecture.test.ts` dependency/boundary tests | Final exact-source execution references |
 | F–J planned APIs explicit; no-op actions removed; legal review | planned API rejection and metadata boundary tests | Keep qualified Algerian legal review independent; do not mark F–J implemented |
 | Incidental repair scripts removed | architecture/hygiene checks | Scope-specific tracked-file audit |
-| npm/static-host/automated/PR checks pass | Existing baseline CI | New-source PR checks pending; do not inherit old green status |
+| npm/static-host/automated/PR checks pass | Existing baseline CI | Correction source CI PASS; follow-up head checks pending, not inherited |
 | Truthful docs; D-013 design; Phase 1 in progress | This inventory and canonical checkpoints | Preserve independent closure dependencies |
 
-The original report at `evidence/manual/2026-11-26/P1-06/README.md` is historical
-input, not automatically accepted provenance. It still contains the invalid
-39-character source string `a4e1f6daa828d01d481900f1051dcc335da7e25` and an
-unsupported cryptographic workspace claim. Before relying on that report for full
-closure, reconcile its source/parent relationship and image hashes as was done
-for P0; do not silently reinterpret it as a new-source capture or rerun.
+## Original image provenance reconciled (not a new run)
+
+The [26-Nov report](evidence/manual/2026-11-26/P1-06/README.md) now explicitly
+withdraws its unsupported cryptographic workspace claim and retains the malformed
+39-character source string in a correction appendix. GitHub API confirms deposit
+`73a06493241876c35b9f20b2a93ff4d52b3ae909` has exactly one parent,
+`a4e1f6daa8828d01d481900f1051dcc335da7e25`. That is a corrected recorded
+baseline, not independent attestation of the NO_GIT execution checkout.
+
+All six original PNG Git blobs match the deposit; image decoding, SHA-256, sizes
+and dimensions are archived in the [index](evidence/manual/2026-11-26/P1-06/reconciliation-2026-11-27.json).
+All six were visually reopened: four AR/FR desktop/mobile confirmations contain
+Save/Discard/Stay within the viewport, AR desktop profile shows the synthetic saved
+trade name, FR desktop project overview shows `Alger Centre QA`. The old header
+switcher is historical UI, not a new-source capture. These images do not prove
+beforeunload, failed-save, membership revocation or API/SQL persistence by themselves.
+No full P1-06 promotion or new browser execution is inferred from reconciliation.
 
 ## Independent constraints
 

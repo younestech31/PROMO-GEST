@@ -286,6 +286,7 @@ jobs:
           python3 -m venv "$RUNNER_TEMP/p0-python"
           source "$RUNNER_TEMP/p0-python/bin/activate"
           pip install playwright==1.56.0 pillow==12.0.0
+          python3 tests/browser/test_navigation_playwright_contract.py
           python3 scripts/test_export_commercialization_evidence.py
           bash tests/browser/run-phase0.sh
       # Separate prefix and mode: these are Development SPA screenshots, not HTTPS acceptance.

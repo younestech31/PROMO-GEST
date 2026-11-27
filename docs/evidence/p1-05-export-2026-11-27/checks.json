@@ -448,6 +448,147 @@
           "conclusion": "success"
         }
       ]
+    },
+    {
+      "runId": 46061768797,
+      "url": "https://github.com/younestech31/PROMO-GEST/actions/runs/46061768797",
+      "headSha": "b86760fbb82c71d8f5c2dbc52b24da98acfd10f9",
+      "conclusion": "success",
+      "jobs": [
+        {
+          "name": "Documentation baseline consistency",
+          "jobId": 140717478043,
+          "conclusion": "success",
+          "steps": []
+        },
+        {
+          "name": "Frontend install, checks, and static hosting",
+          "jobId": 140717478623,
+          "conclusion": "success",
+          "steps": []
+        },
+        {
+          "name": ".NET 10 and PostgreSQL 18 least-privilege tests",
+          "jobId": 140717700972,
+          "conclusion": "success",
+          "steps": [
+            {
+              "name": "Restore solution",
+              "conclusion": "success"
+            },
+            {
+              "name": "Domain tests",
+              "conclusion": "success"
+            },
+            {
+              "name": "Application tests",
+              "conclusion": "success"
+            },
+            {
+              "name": "Run integration tests with separate database identities",
+              "conclusion": "success"
+            },
+            {
+              "name": "Surface failed integration tests as check-run annotations",
+              "conclusion": "skipped"
+            },
+            {
+              "name": "Run Phase 0 real-browser setup and logout checks (four disposable profiles)",
+              "conclusion": "success"
+            },
+            {
+              "name": "Export P1-10 Arabic desktop review image",
+              "conclusion": "success"
+            },
+            {
+              "name": "Export P1-10 Arabic mobile review image",
+              "conclusion": "success"
+            },
+            {
+              "name": "Export P1-10 French desktop review image",
+              "conclusion": "success"
+            },
+            {
+              "name": "Export P1-10 French mobile review image",
+              "conclusion": "success"
+            },
+            {
+              "name": "Export P1-10 separate Development evidence manifest",
+              "conclusion": "success"
+            },
+            {
+              "name": "Rehearse isolated Production HTTPS staging and restart (four profiles)",
+              "conclusion": "success"
+            },
+            {
+              "name": "Run full database, storage, and Data Protection restore drill",
+              "conclusion": "success"
+            }
+          ]
+        },
+        {
+          "name": "Windows publish and PowerShell validation",
+          "jobId": 140717701002,
+          "conclusion": "success",
+          "steps": [
+            {
+              "name": "Restore solution",
+              "conclusion": "success"
+            },
+            {
+              "name": "Verify Windows encrypted-backup and restore contract",
+              "conclusion": "success"
+            }
+          ]
+        },
+        {
+          "name": "Production HTTPS evidence export",
+          "jobId": 140721046281,
+          "conclusion": "success",
+          "steps": [
+            {
+              "name": "Export Arabic desktop staging review image",
+              "conclusion": "success"
+            },
+            {
+              "name": "Export Arabic mobile staging review image",
+              "conclusion": "success"
+            },
+            {
+              "name": "Export French desktop staging review image",
+              "conclusion": "success"
+            },
+            {
+              "name": "Export French mobile staging review image",
+              "conclusion": "success"
+            },
+            {
+              "name": "Export complete staging manifest",
+              "conclusion": "success"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "runId": 46061768800,
+      "url": "https://github.com/younestech31/PROMO-GEST/actions/runs/46061768800",
+      "headSha": "b86760fbb82c71d8f5c2dbc52b24da98acfd10f9",
+      "conclusion": "success",
+      "jobs": [
+        {
+          "name": "Analyze csharp",
+          "jobId": 140717478030,
+          "conclusion": "success",
+          "steps": []
+        },
+        {
+          "name": "Analyze javascript-typescript",
+          "jobId": 140717478475,
+          "conclusion": "success",
+          "steps": []
+        }
+      ]
     }
   ],
   "deliveryFailure": {

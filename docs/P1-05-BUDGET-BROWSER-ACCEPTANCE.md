@@ -166,3 +166,60 @@ legacy/dedicated selection, failure/skipped/ambiguous rejection. Importer16/16 a
 exporter24/24 PASS. CI now has **five jobs**. New complete image transport, visual
 review and final acceptance remain PENDING; a previous successful run is not a
 successful import. Original PNGs/previous archives are never overwritten in Git.
+
+
+## Verified Production evidence follow-up — independent export succeeded
+
+Source `b86760fbb82c71d8f5c2dbc52b24da98acfd10f9` / tested merge
+`d22d20b9b5b458f7991135b40b353025a3ac50f7`:
+[CI46061768797](https://github.com/younestech31/PROMO-GEST/actions/runs/46061768797)
+**PASS5/5**, [CodeQL46061768800](https://github.com/younestech31/PROMO-GEST/actions/runs/46061768800)
+**PASS2/2**. Full Domain/Application/unfiltered PG18, Development browser,
+Production HTTPS/restart, dedicated image export and restore passed. Strict import
+now succeeded: four images/profiles, exact source/run/tested identity and hashes;
+all four visually opened and independently rehashed. [Permanent evidence/provenance](evidence/p1-05-production-2026-11-27/README.md).
+
+### Seven-criterion technical assessment, pending final PR/main reconciliation
+
+Criteria1–5 are supported by ProjectDto/ProjectService and existing Application,
+PG18 and four-profile Production budget matrix. Revoked manager null-update
+preservation and non-manager financial read-only cases missing from the26Nov
+manual report are explicitly exercised by `tests/browser/project_budget.py`.
+That older scoped report is not overwritten or silently expanded.
+
+Criterion6: Application tests
+`ProjectBudget_RequiresExplicitFinancialCapability_ForReadAndWrite` cover positive,
+restricted manager, financial reader, admin/nonmember and denial audits;
+`ProjectUpdates_RequireManagementPermission_PreserveCode_AndWriteAudit` covers
+stale project edits. `PostgresEndToEndTests.cs` covers financial grants/redaction/
+updates, stale `PROJECT_CONCURRENCY_CONFLICT`, two same-version project edits
+(one200/one409) and persisted zero budget unchanged; Production matrix additionally
+covers preserved **nonzero** budget under null updates and denied writes. These
+are distinct checks, not a claim that screenshots demonstrate a simultaneous
+nonzero-budget race. Shared root CAS/member race tests remain separate evidence.
+
+Criterion7: security policy unchanged; navigation wording corrected below; baseline
+and traceability link this exact evidence. G1 Domain, G3 authorization/scope,
+G5 stale/race, G6 audit, G7 realPG18, G8 frontend/realbrowser and G9 full regression
+passed in the exact-source CI. Machine-readable check identities include all5jobs.
+The new documentation head still needs independent CI/final PR/main reconciliation
+before promoting the task. **Notion remains In Review / Pending**, not blocked on
+an invented device or institution-local signature. No Phase1 closure/later-phase unlock.
+
+### Reviewed screenshots — exact source above
+
+Arabic desktop (general settings after financial capability removal):
+
+![AR desktop revoked-manager general settings](evidence/p1-05-production-2026-11-27/ar-desktop/review.jpg)
+
+Arabic mobile (top viewport only; DOM proves editor absence across the page):
+
+![AR mobile settings top viewport](evidence/p1-05-production-2026-11-27/ar-mobile/review.jpg)
+
+French desktop:
+
+![FR desktop revoked-manager general settings](evidence/p1-05-production-2026-11-27/fr-desktop/review.jpg)
+
+French mobile (top viewport only):
+
+![FR mobile settings top viewport](evidence/p1-05-production-2026-11-27/fr-mobile/review.jpg)

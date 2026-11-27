@@ -124,7 +124,9 @@ def run_navigation_embedded(admin_ctx, base, lang, device, out, project_id, *, f
             assert api.get('/api/auth/me').status == 200
             expect(field).to_have_value(draft)
             if device == 'mobile':
-                p06_page.get_by_role('button', name='Close menu', exact=True).click()
+                # The open drawer overlays the header toggle; use its visible backdrop,
+                # not the covered "Close menu" header button (no forced clicks).
+                p06_page.get_by_role('button', name='Close navigation menu', exact=True).click()
             checks[section + '_logout_stay_keeps_session_and_draft'] = True
 
             # Exercise real App history restoration, not a synthetic popstate event.

@@ -111,7 +111,7 @@ They are **not imported or visually reviewed here**; screenshots illustrate dial
 not proof of server-side writes/revocation by themselves. Local safety3/3, actual
 pinned Playwright contract6/6, budget helpers7/7 and baseline12/12 also PASS; those
 local checks alone are not browser evidence. [Exact-run archive](evidence/p1-06-navigation-2026-11-27/checks.json).
-Final sourcecf64368 CI46079034309 PASS5/5 + CodeQL46079034339 PASS; PR288 merged asc3826dd. Independent exact-main46080260786/46080260781 running, not inherited from head results.
+Final sourcecf64368 CI46079034309 PASS5/5 + CodeQL46079034339 PASS; PR288 merged asc3826dd. Independent exact-main46080260786 PASS5/5 and CodeQL46080260781 PASS, not inherited from head results.
 The second synthetic project remains only in the disposable CI database. Native
 Leave/actual close acceptance, logout Discard and embedded forms are not claimed.
 Full P1-06 remains In Review / Pending, including final protected-view mapping.
@@ -140,6 +140,19 @@ imported or visually reviewed**. Local safety3/3, actual pinned Playwright
 contract7/7 and budget helpers7/7 PASS, not browser execution proof. Logout Discard
 and embedded project-switch combinations are separate remaining acceptance work;
 full P1-06 remains In Review / Pending.
+
+**Original source2613e9b:** CI46080562866 **FAIL** in Development browser step;
+Production/restore/export not reached. Sanitized check annotation pinpoints
+`navigation_embedded.py:127`, AR/mobile structure, `TimeoutError`. The test clicked
+header `Close menu` while the drawer overlay covered it. The shell exposes a
+visible `Close navigation menu` backdrop; correction uses that actual user control,
+not force-click or runtime/UI changes. Original CodeQL46080562879 PASS. Corrected
+browser CI **PENDING**, local embedded safety now4/4 and Page contract7/7 PASS.
+
+The previous settings sourcecf64368 artifact metadata (run46079034309) is readable,
+but artifact binary download redirects to a host unavailable from this workspace
+and returned EOF. No screenshot import/review is claimed; no signed redirect URL
+or credentials are stored in evidence. This does not change the executed CI results.
 
 ## Nine-criterion evidence inventory (not promotion)
 

@@ -27,6 +27,14 @@ class EmbeddedNavigationSafetyTests(unittest.TestCase):
         with patch.dict(os.environ, valid, clear=True), self.assertRaises(ValueError):
             run_navigation_embedded(None, 'http://127.0.0.1:5173', 'ar', 'desktop', None, 'not-a-uuid')
 
+    def test_mobile_drawer_uses_its_backdrop_not_covered_header_toggle(self):
+        shell = (Path(__file__).resolve().parents[2] / 'apps/local-web/src/app/ErpShellLayout.tsx').read_text()
+        helper = Path(__file__).with_name('navigation_embedded.py').read_text()
+        self.assertIn('aria-label="Close navigation menu"', shell)
+        self.assertIn("name='Close navigation menu', exact=True).click()", helper)
+        self.assertNotIn("name='Close menu', exact=True).click()", helper)
+        self.assertNotIn('force=True', helper)
+
     def test_uses_canonical_embedded_route_labels(self):
         registry = (Path(__file__).resolve().parents[2] / 'apps/local-web/src/app/routeRegistry.ts').read_text()
         helper = Path(__file__).with_name('navigation_embedded.py').read_text()

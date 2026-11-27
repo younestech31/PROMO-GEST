@@ -1,0 +1,107 @@
+{
+  "mode": "P1-10 disposable Development real SPA and PostgreSQL 18; not Production HTTPS",
+  "profiles": [
+    {
+      "profile": "ar-desktop",
+      "sourceHead": "99bab26da3dc24d7a18070f40b6b46f0160b8fda",
+      "testedCheckout": "04f9224bfc54babeef7c5199a81ae49d5844af2c",
+      "run": "46044806419",
+      "checks": {
+        "non_commercial_statuses_deny_new_holds_without_mutation": true,
+        "commercialization_spa_creates_active_hold": true,
+        "suspension_queues_without_cancellation_or_unit_release": true,
+        "stale_review_conflicts_without_mutation": true,
+        "spa_review_preserves_hold_expiry_unit_and_suspension": true,
+        "completed_review_does_not_allow_new_holds": true,
+        "review_and_denial_audits_identify_actor_and_target": true
+      },
+      "browser": "157.0.8103.78",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      }
+    },
+    {
+      "profile": "ar-mobile",
+      "sourceHead": "99bab26da3dc24d7a18070f40b6b46f0160b8fda",
+      "testedCheckout": "04f9224bfc54babeef7c5199a81ae49d5844af2c",
+      "run": "46044806419",
+      "checks": {
+        "non_commercial_statuses_deny_new_holds_without_mutation": true,
+        "commercialization_spa_creates_active_hold": true,
+        "suspension_queues_without_cancellation_or_unit_release": true,
+        "stale_review_conflicts_without_mutation": true,
+        "spa_review_preserves_hold_expiry_unit_and_suspension": true,
+        "completed_review_does_not_allow_new_holds": true,
+        "review_and_denial_audits_identify_actor_and_target": true
+      },
+      "browser": "157.0.8103.78",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      }
+    },
+    {
+      "profile": "fr-desktop",
+      "sourceHead": "99bab26da3dc24d7a18070f40b6b46f0160b8fda",
+      "testedCheckout": "04f9224bfc54babeef7c5199a81ae49d5844af2c",
+      "run": "46044806419",
+      "checks": {
+        "non_commercial_statuses_deny_new_holds_without_mutation": true,
+        "commercialization_spa_creates_active_hold": true,
+        "suspension_queues_without_cancellation_or_unit_release": true,
+        "stale_review_conflicts_without_mutation": true,
+        "spa_review_preserves_hold_expiry_unit_and_suspension": true,
+        "completed_review_does_not_allow_new_holds": true,
+        "review_and_denial_audits_identify_actor_and_target": true
+      },
+      "browser": "157.0.8103.78",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      }
+    },
+    {
+      "profile": "fr-mobile",
+      "sourceHead": "99bab26da3dc24d7a18070f40b6b46f0160b8fda",
+      "testedCheckout": "04f9224bfc54babeef7c5199a81ae49d5844af2c",
+      "run": "46044806419",
+      "checks": {
+        "non_commercial_statuses_deny_new_holds_without_mutation": true,
+        "commercialization_spa_creates_active_hold": true,
+        "suspension_queues_without_cancellation_or_unit_release": true,
+        "stale_review_conflicts_without_mutation": true,
+        "spa_review_preserves_hold_expiry_unit_and_suspension": true,
+        "completed_review_does_not_allow_new_holds": true,
+        "review_and_denial_audits_identify_actor_and_target": true
+      },
+      "browser": "157.0.8103.78",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      }
+    }
+  ],
+  "images": [
+    {
+      "profile": "ar-desktop",
+      "file": "ar-desktop/review.jpg",
+      "sha256": "d5537362a061816c3cf859bcbbe4893a58b403970af188bf03cee0dfba038836"
+    },
+    {
+      "profile": "ar-mobile",
+      "file": "ar-mobile/review.jpg",
+      "sha256": "6c3b2ec9d181f724ea6ccbecff8340ea87f3b33560847d9a316425d2bb2029aa"
+    },
+    {
+      "profile": "fr-desktop",
+      "file": "fr-desktop/review.jpg",
+      "sha256": "af6ffcef694390491d651d089eb081cba1273669065dc776745484d750c4959d"
+    },
+    {
+      "profile": "fr-mobile",
+      "file": "fr-mobile/review.jpg",
+      "sha256": "8860cb3a5f48f348b0b3e9f31418815faafcb2b2734075f0ae2f505912b2fa25"
+    }
+  ]
+}

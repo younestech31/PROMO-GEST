@@ -1,23 +1,51 @@
 # P1-10 — commercialization and suspension-review acceptance
 
-Date: 27 November 2026. **Task: In Progress / Pending.**
+Date: 27 November 2026. **Task: Done / Verified — scoped technical acceptance.**
 PR #279 tests existing runtime; it does not implement commercialization again.
 Follow-up PR #281 narrowly repairs the discovered suspension/create write boundary;
 see [atomicity/serialization tests, semantics and execution log](P1-10-ATOMIC-SUSPENSION.md).
 The original seven-criterion assessment below records the pre-repair gap, not a
-claim that an unverified repair has already closed it.
+current acceptance decision. The verified closure below supersedes that baseline.
 
-## Repair verification follow-up — PR #281
+## Current seven-criterion acceptance decision — PR #281 verified
 
-#280 was reproduced before repair on PG18: CI 46050829871 exposed three exact
-failures (partial suspension after injected save failure; stale suspension 200;
-stale create 201). Runtime repair source `7e7c5da` passed CI 46051328233 **4/4**
-and CodeQL 46051328435 **2/2**, including all three deterministic cases, repeat-save
-idempotency, independent cross-project hold/unit/customer checks, four-profile
-browser/Production regressions and restore drill. [Full evidence and ordering semantics](P1-10-ATOMIC-SUSPENSION.md).
-This supplies new technical support for criteria 2/5/6, not a retroactive change to
-original source99bab26 or the baseline assessment below. Final PR-head and exact
-post-merge verification remain separate; **P1-10 stays Pending at this checkpoint**.
+**PASS, 27 November 2026.** Re-read the live Notion criteria and dependencies;
+P1-09 is Done / Verified. No separate device or institution-local signature is a
+criterion of this policy/implementation task. P1-11 remains an independent
+operational acceptance gate, not an unresolved P1-10 implementation dependency.
+
+| # | Actual criterion | Verified evidence / decision |
+|---|---|---|
+| 1 | Approved policy | ADR-0018 in DECISION-LOG, approved 23 November / PR #223; only Commercialization is allow-listed. PASS. |
+| 2 | Suspension denies new holds and queues active holds without automatic cancellation/legal/financial mutation | Sequential API/browser checks plus injected save failure and both deterministic create/suspension orderings. One save atomically commits status, review markers and audits; losing operation rolls back. Active/Reserved/expiry/Suspended are preserved through documentary review. PASS. |
+| 3 | CRM Customer/internal hold is not contract, collection or accounting | Domain and Application service inspection, ADR-0018 and bilingual notices; these workflows invoke no contract/payment/accounting path. PASS for separation, not practitioner approval. |
+| 4 | Actual enum and default-deny | ProjectCommercializationPolicyTests covers defined denied states, undefined values and transition-only review; no inferred eligibility. PASS. |
+| 5 | Domain/Application and server-side relevant API enforcement | Create delegates to the shared policy before mutations; tracked root CAS joins hold/unit/audit transaction. Stale creates/status updates fail 409 with no automatic retry; queue/review keep project scope and permissions. PASS. |
+| 6 | Domain/Application + PG18 transitions, active holds, rejection, concurrency and isolation | Full Domain/Application suites and unfiltered real PG18 API/service integration pass. ProjectSuspensionConcurrencyTests.cs reproduces both stale interleavings plus injected failure/rollback/retry, repeat-save and completed-review idempotency, foreign customer 404 and untouched foreign project/root/hold/unit/queue. Existing sequential eligibility/review/stale/authorization tests pass. PASS. |
+| 7 | Model, roadmap, traceability, PR/CI/evidence | PR #281 merged; final head and exact-main checks below independently successful. DOMAIN-MODEL, DECISION-LOG and nine canonical checkpoints link original screenshots and baseline/repair/closure JSON without relabeling provenance. PASS. |
+
+- Runtime `7e7c5da`: CI **46051328233 PASS 4/4**, CodeQL **46051328435 PASS 2/2**.
+- Final documentation head `945d37def4d411d224020ac658bfc2b77e684cac`:
+  CI [46052651890](https://github.com/younestech31/PROMO-GEST/actions/runs/46052651890)
+  **PASS 4/4**, CodeQL [46052651800](https://github.com/younestech31/PROMO-GEST/actions/runs/46052651800) **PASS 2/2**.
+- PR [#281](https://github.com/younestech31/PROMO-GEST/pull/281) merged at
+  `f2571170ee210616f8b59d165def95ddffd92d3f`. Exact-main CI
+  [46053642662](https://github.com/younestech31/PROMO-GEST/actions/runs/46053642662)
+  **PASS 4/4**, CodeQL [46053642723](https://github.com/younestech31/PROMO-GEST/actions/runs/46053642723) **PASS 2/2**.
+  [Machine-readable final/main job identities](evidence/p1-10-atomic-2026-11-27/closure-checks.json).
+- Full PG18 integration, four-profile Development real browser, separate Production
+  HTTPS/restart, evidence export and restore drill passed. The three original failures
+  are retained in baseline-failures.json; successful runtime critical steps are in
+  repair-checks.json. No local .NET/PG18 execution is claimed.
+- Original source `99bab26` screenshots below remain genuine, hashed and previously
+  reviewed; no new repair screenshots are claimed reviewed. This repair is nonvisual;
+  screenshots do not prove rollback/concurrency. Same-project different-unit creates
+  can conservatively conflict and require reload/explicit retry, as documented.
+
+This decision resolves technical issue #280 and supports Notion Done / Verified.
+It does not accept P1-11 installation, legal/accounting policy, P1-08, municipality
+import, the distinct P1-05 phase-closure task, or release/deployment. Phase 1 stays
+IN_PROGRESS; Phases 2–5 remain gated. New documentation commits have their own CI.
 
 ## Dependency reconciliation
 
@@ -53,10 +81,10 @@ P1-11 operational acceptance and later-phase/release-scope gates remain separate
   contract, receipt, installment, accounting entry or legal/financial approval.
   This test adds none of those operations and does not open Phase 2.
 
-## Seven-criterion reconciliation — 27 November
+## Historical seven-criterion reconciliation — before PR #281 repair
 
 Read against the live Notion P1-10 Acceptance Criteria, not an invented device or
-institutional-signature requirement. Evidence below is scoped; **overall acceptance
+institutional-signature requirement. This is the preserved pre-repair baseline; evidence below is scoped; **overall acceptance
 is NOT PASS**. P1-09 is resolved; the remaining blocker is technical.
 
 | # | Actual criterion | Evidence / decision |

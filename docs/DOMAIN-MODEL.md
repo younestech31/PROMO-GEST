@@ -8,7 +8,7 @@ and undefined/future statuses deny by default. Suspension queues active holds fo
 documentary review; completion never cancels, releases, changes expiry or lifts
 suspension. CRM Customer is not a contract/payment/accounting event. No new schema
 is introduced by this acceptance slice. [Current P1-10 scope and tests](P1-10-BROWSER-ACCEPTANCE.md).
-P1-09 is Done / Verified (27 November); P1-10 remains In Progress / Pending.
+P1-09 is Done / Verified (27 November); P1-10 is Done / Verified after PR #281 exact-main verification and explicit seven-criterion technical acceptance; see the linked report.
 P1-15 is already Done / Verified; P1-01 Deferred / Pending and P1-02 Blocked remain
 gates. The historical task-state statements below are superseded by the current
 [roadmap reconciliation](ROADMAP-RECONCILIATION-2026-11-27.ar.md), not new policy.

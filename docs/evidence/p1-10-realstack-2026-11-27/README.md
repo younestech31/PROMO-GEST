@@ -35,7 +35,7 @@ audits are proved by executed assertions/results, not inferred from confirmation
 Completed-state PNGs remain in the original artifact; they are not represented by another
 state's JPEG. This is sequential browser evidence, not deterministic race proof.
 
-P1-10 tracker remains In Progress / Pending while the complete task acceptance and
-P1-11 operational dependency are reconciled separately. No contract, payment,
+At capture, P1-10 was In Progress / Pending. It is now technically Done / Verified
+after PR #281 and exact-main verification; P1-11 operational acceptance remains separate. No contract, payment,
 accounting entry, suspension lifting, unit release or production deployment is approved.
 See [acceptance scope and run history](../../P1-10-BROWSER-ACCEPTANCE.md).

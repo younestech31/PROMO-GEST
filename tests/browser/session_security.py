@@ -117,6 +117,11 @@ def run_session_security(browser, primary_ctx, base, lang, device, viewport, pri
         page.get_by_role('button', name=label, exact=True).click()
         expect(page.get_by_text(confirmation, exact=True)).to_be_visible()
         assert not requests
+        # Mobile modal scrolls internally: CSS visibility alone can leave the prompt
+        # below the captured viewport. Capture the actual on-screen confirmation.
+        prompt = page.get_by_text(confirmation, exact=True)
+        prompt.scroll_into_view_if_needed()
+        expect(prompt).to_be_in_viewport()
         page.screenshot(path=out/'sessions-02-confirmation.png')
         page.get_by_role('button', name='إلغاء' if lang == 'ar' else 'Annuler', exact=True).click()
         expect(page.get_by_text(confirmation, exact=True)).to_have_count(0)

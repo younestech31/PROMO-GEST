@@ -69,7 +69,14 @@ permission, additional secret or external database is introduced.
   inventory schema, secret-field denial, unique current session and UUID validation.
 - Exporter: **13/13 PASS**, including session completeness/privacy/path checks.
 - Importer: **7/7 PASS**. Python compilation: **PASS**.
-- Actual Production browser execution/screenshots: **PENDING rerun**; not yet scored.
+- Production matrix on source `ef84570`: CI 45998460931 **SUCCESS 4/4**,
+  CodeQL 45998460932 **SUCCESS 2/2**, all eight checks per profile **32/32 PASS**.
+  Independent pre-revocation cookie jar returned 200 before and 401 after current
+  revocation, proving server-side replay denial rather than only browser cookie removal.
+- Visual review of that first export found the mobile confirmation below the
+  screenshot viewport despite CSS visibility. It is not accepted as confirmation
+  screenshot evidence. The runner now scrolls the actual prompt into the modal
+  viewport and asserts it is in view before capture. Corrected screenshot rerun pending.
 - First CI 45997518847 stopped at the fail-closed encryption guard before session
   preparation: its proof flag was previously set only after restart. The staging
   exercise now checks the actual private persisted XML key files for encryptedSecret

@@ -9,10 +9,11 @@ against the actual ASP.NET Core API and fresh PostgreSQL 18 databases. The exist
 runner executes Arabic RTL / French LTR at 1440×900 and 390×844. This is not the Vite
 in-memory preview, a mock, or manual operator acceptance.
 
-Only the exact loopback CI target and `p0_<language>_<device>` disposable database are
-permitted. Users are created with seeded roles through the API; mandatory password
+The Development fixture permits only its exact loopback CI target and
+`p0_<language>_<device>` disposable database; the separate Production HTTPS fixture
+is explicitly allowlisted below. Users are created with seeded roles through the API; mandatory password
 rotation is completed before browser login. No SQL role/permission changes, schema
-changes, migration additions or operational database access are introduced. The disposable
+changes, migration additions or operational database access are introduced. The Development fixture
 API process alone uses a bounded login/password-rotation limiter of 30 requests/minute
 because the expanded multi-user suite exceeds ten requests from the same loopback IP.
 The shipped default remains ten; no operational security configuration is changed.
@@ -74,7 +75,10 @@ The helper now also accepts a second **explicit** disposable fixture: the exact 
 staging host, `stg_<language>_<device>` database, and a successful encrypted-key-ring preflight.
 Arbitrary staging URLs remain forbidden. Its seven offline helper/safety tests pass locally.
 The same budget matrix is called after the Production API restart; this is additional
-technical staging evidence, not a human operator signature. See
+technical staging evidence, not a human operator signature. This additional matrix passed
+all four Production HTTPS profiles in [CI 45988658013](https://github.com/younestech31/PROMO-GEST/actions/runs/45988658013)
+on source head `d7768c42ab8c837a9cc5b9abcec6e4f4fd718b1f`; full matrix screenshots
+are in `staging-https-evidence`, alongside the permanent compact review images. See
 [the Production HTTPS rehearsal record](STAGING-ACCEPTANCE-2026-11-27.ar.md).
 
 ## Remaining operational gate

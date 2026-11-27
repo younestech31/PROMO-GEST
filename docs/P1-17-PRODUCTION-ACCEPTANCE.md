@@ -1,6 +1,10 @@
 # P1-17 — Production HTTPS language preference acceptance
 
-Date: 27 November 2026. Status: **new real-stack execution pending**.
+Date: 27 November 2026. Status: **isolated Production HTTPS technical acceptance PASS**.
+
+نجحت 32 نتيجة تحقق لتفضيل لغة المستخدم بالعربية والفرنسية على الهاتف وسطح
+المكتب، بما فيها الاستعادة بعد إعادة الدخول وإعادة تشغيل الخادم، وفشل الاتصال
+وتعارض التحديثات، دون تغيير اللغة الافتراضية للمؤسسة. اللقطات أدناه فعلية ومراجَعة.
 
 ## Scope
 
@@ -82,10 +86,44 @@ Chrome ignores trust for that fixture CA only, not an organization certificate r
 - New offline helper **3/3 PASS**: guarded I/O rejection and user-stamp-only payload.
 - Exporter **16/16 PASS**: completeness, failed/extra-sensitive fields and symlink denial.
 - Importer **7/7 PASS**. Python compilation **PASS**.
-- New Production browser matrix and screenshots: **PENDING CI**, not scored yet.
-- PR #274 exact-main CI 46002336753: **in progress** at this checkpoint;
+- Production matrix: **8/8 named checks per profile, 32 results PASS** in
+  [CI 46002815426](https://github.com/younestech31/PROMO-GEST/actions/runs/46002815426), **4/4 jobs PASS**;
+  [CodeQL 46002815316](https://github.com/younestech31/PROMO-GEST/actions/runs/46002815316), **2/2 PASS**.
+- Source `34304e98219d2d576b7a48e98c594174a7c7c52d`, tested PR merge
+  `fb627e22ec0d109e2aae7f9f17e89df9f910a3ee`. The baseline (60 results),
+  organization (20) and session (32) matrices also remain green.
+- Local frontend **117/117**, existing budget **7/7**, organization **2/2**, session
+  **5/5**, baseline **12/12** and hygiene **12/12 PASS**. TypeScript, build, lint
+  ratchet, repository hygiene and diff checks pass; secret scan clean.
+- Four actual screenshots imported, hashes rechecked and each opened for visual
+  review; permanent [manifest/provenance and screenshot guide](evidence/p1-17-production-2026-11-27/README.md).
+  Sixteen original language PNGs and JSON are in [artifact 15198929016](https://github.com/younestech31/PROMO-GEST/actions/runs/46002815426/artifacts/15198929016).
+- PR #274 exact-main CI 46002336753: **SUCCESS 4/4**;
   CodeQL 46002336544: **SUCCESS 2/2**.
 
 P1-17 tracking remains In Review / Pending. P1-08 owner policy, P1-10 acceptance
 dependency, P1-01/P1-35 deferral, P1-02 block and Phases 2–5 gates remain unchanged.
 No Notion status or institutional sign-off is changed.
+
+## Reviewed actual screenshots — opposite saved language after restart
+
+### البداية عربية — سطح المكتب بعد الاستعادة بالفرنسية
+
+![Initially Arabic desktop, persisted French LTR after API restart](evidence/p1-17-production-2026-11-27/ar-desktop/review.jpg)
+
+### البداية عربية — الهاتف بعد الاستعادة بالفرنسية
+
+![Initially Arabic mobile, persisted French LTR after API restart](evidence/p1-17-production-2026-11-27/ar-mobile/review.jpg)
+
+### Initialement français — bureau restauré en arabe
+
+![Initially French desktop, persisted Arabic RTL after API restart](evidence/p1-17-production-2026-11-27/fr-desktop/review.jpg)
+
+### Initialement français — mobile restauré en arabe
+
+![Initially French mobile, persisted Arabic RTL after API restart](evidence/p1-17-production-2026-11-27/fr-mobile/review.jpg)
+
+These views illustrate the deliberately switched and persisted preference. The original
+fixture language is restored afterward through the real SPA and independently read
+from the primary session. API denials, failure handling and audit are supported by
+the executed checks, not inferred from the images.

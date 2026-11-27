@@ -24,7 +24,9 @@ jobs:
       - name: Verify the documented baseline matches this branch
         run: python3 scripts/validate-doc-baseline.py --main-ref origin/main
       - name: Test disposable browser budget fixture helpers and safety guard
-        run: python3 tests/browser/test_project_budget.py
+        run: |
+          python3 tests/browser/test_project_budget.py
+          python3 tests/browser/test_organization_permissions.py
       - name: Test staging evidence completeness, privacy and import integrity
         run: |
           python3 scripts/test_export_staging_evidence.py

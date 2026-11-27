@@ -76,8 +76,7 @@ The sample confirms the bilingual source structure but is not a full annex trans
 - Bordj Bou Arréridj: Haraza (حرازة) → Fedala (فضالة); local table row 34.
 - El Oued: Beni Guecha (بني قشة) → Beni Guecha (بني قشة); local table row 19.
 
-The JO41/1984 prior values for the same rows were checked against the scan pages. The Arabic JO41 scan confirms the distinct old seat values for Haraza (`حرازة`) and Beni Guecha (`دويلات`); the French scan gives `Douelat` for the latter. For Bir Ben Laabed, the French JO41 table gives `Bir Ben Laabed` as the old seat, while the Arabic scan page shows commune `بئر بن عابد` and seat `بشر بن عابد`; preserve this as an unresolved bilingual discrepancy. The Guelma entry is Aïn Sandel as both commune and old seat in French and Arabic.
-These JO41 row page images were checked in a digitized issue copy hosted by Kanonix, which labels JORADP as its source; it is not a fresh direct JORADP PDF-byte download. The page locations are French pp.1039, 1041, 1043, 1045 and Arabic pp.1542, 1543, 1547, 1549. No new byte checksum is claimed.
+The JO41/1984 prior values for the same rows were checked directly against the official JORADP PDFs: [French F1984041.pdf](https://www.joradp.dz/FTP/Jo-Francais/1984/F1984041.pdf), printed pp.1039, 1040, 1043 and 1045; [Arabic A1984041.pdf](https://www.joradp.dz/FTP/jo-arabe/1984/A1984041.pdf), printed pp.1542, 1543, 1547 and 1549. The French table shows prior seats Aïn Sandel, Bir Ben Laabed, Haraza and Douelat. The Arabic table shows عين صندل, بشر بن عابد, حرازة and دويلات respectively. **Bir Ben Laabed discrepancy:** French p.1040 lists Bir Ben Laabed as both commune and seat; Arabic p.1543 lists the commune as `بئر بن عابد` and the seat as `بشر بن عابد`. Preserve both readings pending qualified review. No new PDF-byte checksum was captured.
 
 ### D. The 1986 register update supplies the separate four-digit codes
 

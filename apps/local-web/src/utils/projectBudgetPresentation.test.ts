@@ -8,7 +8,9 @@ import { ProjectBudgetValue } from '../modules/module-b-projects';
 function renderBudget(amount: number | null, language: 'ar' | 'fr') {
   const markup = renderToStaticMarkup(createElement(ProjectBudgetValue, { amount, language }));
   const document = new JSDOM(markup).window.document;
-  return { markup, element: document.querySelector('span')! };
+  const element = document.querySelector('span');
+  assert.ok(element, 'budget renderer must expose one text value');
+  return { markup, element };
 }
 
 for (const language of ['ar', 'fr'] as const) {

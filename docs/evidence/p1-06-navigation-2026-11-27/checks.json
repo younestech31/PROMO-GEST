@@ -1,0 +1,245 @@
+{
+  "schema": "promogest.p1-06-navigation-checks.v1",
+  "scope": "failed Save & Continue transport injection and real API retry; not full P1-06 acceptance or new screenshot import",
+  "records": [
+    {
+      "runId": 46071842100,
+      "url": "https://github.com/younestech31/PROMO-GEST/actions/runs/46071842100",
+      "headSha": "7bc08dbeef417f308180c9bd524db37a6c81cc16",
+      "conclusion": "failure",
+      "jobs": [
+        {
+          "jobId": 140750386369,
+          "name": "Documentation baseline consistency",
+          "conclusion": "success",
+          "criticalSteps": [
+            {
+              "name": "Test disposable browser budget fixture helpers and safety guard",
+              "conclusion": "success"
+            },
+            {
+              "name": "Test staging evidence completeness, privacy and import integrity",
+              "conclusion": "success"
+            }
+          ]
+        },
+        {
+          "jobId": 140750386773,
+          "name": "Frontend install, checks, and static hosting",
+          "conclusion": "success",
+          "criticalSteps": [
+            {
+              "name": "Frontend unit tests",
+              "conclusion": "success"
+            }
+          ]
+        },
+        {
+          "jobId": 140750589931,
+          "name": "Windows publish and PowerShell validation",
+          "conclusion": "success",
+          "criticalSteps": []
+        },
+        {
+          "jobId": 140750589950,
+          "name": ".NET 10 and PostgreSQL 18 least-privilege tests",
+          "conclusion": "failure",
+          "criticalSteps": [
+            {
+              "name": "Domain tests",
+              "conclusion": "success"
+            },
+            {
+              "name": "Application tests",
+              "conclusion": "success"
+            },
+            {
+              "name": "Run integration tests with separate database identities",
+              "conclusion": "success"
+            },
+            {
+              "name": "Surface failed integration tests as check-run annotations",
+              "conclusion": "skipped"
+            },
+            {
+              "name": "Run Phase 0 real-browser setup and logout checks (four disposable profiles)",
+              "conclusion": "failure"
+            },
+            {
+              "name": "Publish sanitized browser evidence (not manual acceptance)",
+              "conclusion": "skipped"
+            },
+            {
+              "name": "Rehearse isolated Production HTTPS staging and restart (four profiles)",
+              "conclusion": "skipped"
+            },
+            {
+              "name": "Publish sanitized Production HTTPS staging evidence",
+              "conclusion": "success"
+            },
+            {
+              "name": "Run full database, storage, and Data Protection restore drill",
+              "conclusion": "skipped"
+            }
+          ]
+        },
+        {
+          "jobId": 140751519682,
+          "name": "Production HTTPS evidence export",
+          "conclusion": "skipped",
+          "criticalSteps": []
+        }
+      ]
+    },
+    {
+      "runId": 46071842057,
+      "url": "https://github.com/younestech31/PROMO-GEST/actions/runs/46071842057",
+      "headSha": "7bc08dbeef417f308180c9bd524db37a6c81cc16",
+      "conclusion": "success",
+      "jobs": [
+        {
+          "jobId": 140750386230,
+          "name": "Analyze csharp",
+          "conclusion": "success",
+          "criticalSteps": []
+        },
+        {
+          "jobId": 140750386576,
+          "name": "Analyze javascript-typescript",
+          "conclusion": "success",
+          "criticalSteps": []
+        }
+      ]
+    },
+    {
+      "runId": 46072434925,
+      "url": "https://github.com/younestech31/PROMO-GEST/actions/runs/46072434925",
+      "headSha": "ab46ed962a0524b9961029314787c7fad8ad633b",
+      "conclusion": "success",
+      "jobs": [
+        {
+          "jobId": 140752286225,
+          "name": "Frontend install, checks, and static hosting",
+          "conclusion": "success",
+          "criticalSteps": [
+            {
+              "name": "Frontend unit tests",
+              "conclusion": "success"
+            }
+          ]
+        },
+        {
+          "jobId": 140752286588,
+          "name": "Documentation baseline consistency",
+          "conclusion": "success",
+          "criticalSteps": [
+            {
+              "name": "Test disposable browser budget fixture helpers and safety guard",
+              "conclusion": "success"
+            },
+            {
+              "name": "Test staging evidence completeness, privacy and import integrity",
+              "conclusion": "success"
+            }
+          ]
+        },
+        {
+          "jobId": 140752471046,
+          "name": ".NET 10 and PostgreSQL 18 least-privilege tests",
+          "conclusion": "success",
+          "criticalSteps": [
+            {
+              "name": "Domain tests",
+              "conclusion": "success"
+            },
+            {
+              "name": "Application tests",
+              "conclusion": "success"
+            },
+            {
+              "name": "Run integration tests with separate database identities",
+              "conclusion": "success"
+            },
+            {
+              "name": "Surface failed integration tests as check-run annotations",
+              "conclusion": "skipped"
+            },
+            {
+              "name": "Run Phase 0 real-browser setup and logout checks (four disposable profiles)",
+              "conclusion": "success"
+            },
+            {
+              "name": "Publish sanitized browser evidence (not manual acceptance)",
+              "conclusion": "success"
+            },
+            {
+              "name": "Rehearse isolated Production HTTPS staging and restart (four profiles)",
+              "conclusion": "success"
+            },
+            {
+              "name": "Publish sanitized Production HTTPS staging evidence",
+              "conclusion": "success"
+            },
+            {
+              "name": "Run full database, storage, and Data Protection restore drill",
+              "conclusion": "success"
+            }
+          ]
+        },
+        {
+          "jobId": 140752471049,
+          "name": "Windows publish and PowerShell validation",
+          "conclusion": "success",
+          "criticalSteps": []
+        },
+        {
+          "jobId": 140754780307,
+          "name": "Production HTTPS evidence export",
+          "conclusion": "success",
+          "criticalSteps": [
+            {
+              "name": "Export Arabic desktop staging review image",
+              "conclusion": "success"
+            },
+            {
+              "name": "Export Arabic mobile staging review image",
+              "conclusion": "success"
+            },
+            {
+              "name": "Export French desktop staging review image",
+              "conclusion": "success"
+            },
+            {
+              "name": "Export French mobile staging review image",
+              "conclusion": "success"
+            },
+            {
+              "name": "Export complete staging manifest",
+              "conclusion": "success"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "runId": 46072434930,
+      "url": "https://github.com/younestech31/PROMO-GEST/actions/runs/46072434930",
+      "headSha": "ab46ed962a0524b9961029314787c7fad8ad633b",
+      "conclusion": "success",
+      "jobs": [
+        {
+          "jobId": 140752286221,
+          "name": "Analyze javascript-typescript",
+          "conclusion": "success",
+          "criticalSteps": []
+        },
+        {
+          "jobId": 140752286459,
+          "name": "Analyze csharp",
+          "conclusion": "success",
+          "criticalSteps": []
+        }
+      ]
+    }
+  ]
+}

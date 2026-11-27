@@ -6,6 +6,26 @@ Date: 27 November 2026. Status: **isolated Production HTTPS technical acceptance
 32 نتيجة تحقق، بما فيها الإبطال الانتقائي ورفض إعادة استخدام الجلسة الملغاة
 والتأكيد الصريح قبل تسجيل الخروج. اللقطات أدناه فعلية، وليست صورًا مولّدة.
 
+## Final six-criterion closure — 27 November 2026
+
+**Accepted technically; live Notion Done / Verified at21:40Z.** PR #285 merged at
+21:30:45Z as `42f8831fa33e28dde9031eef14b6c1a0efe8b6c1`. Final head `1b1af8cae05ec5f904023543d832c9c1b56c7cda`
+independently passed CI46069417557 **5/5** and CodeQL46069417572 **2/2**;
+exact merged main passed CI46070780952 **5/5** and CodeQL46070780950 **2/2**.
+[All job/step identities and outcomes](evidence/p1-19-production-2026-11-27/closure-checks.json).
+Unfiltered PG18 integration (including source0fd301a ownership/preservation cases),
+Development browser, Production HTTPS/restart, restore drill and export passed.
+
+The six-criterion mapping below is accepted together with these executed results.
+Earlier Pending statements describe the historical checkpoint before final/main
+verification and are superseded by this closure, not silently edited into past runs.
+The four original screenshots remain source2433962/tested4fa168d/run45999710383;
+there is no new-source recapture or local .NET/PostgreSQL execution claim. No
+institution-specific signature/device gate is invented. Institution, deployment,
+legal/accounting/municipality/release approvals and phase closure remain separate.
+P1-06's new failed-save regression is a separate pending navigation slice, not a
+condition retroactively added to P1-19 acceptance.
+
 ## Scope
 
 P1-19's session list/selective revocation API and bilingual modal are already shipped.

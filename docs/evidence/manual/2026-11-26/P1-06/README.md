@@ -1,7 +1,7 @@
 # P1-06 — Unsaved Changes Detection & Navigation Guard
 
 1. **Task ID & Canonical Reference:** `P1-06` — `apps/local-web/src/app/App.tsx`, `apps/local-web/src/shared/hooks/useUnsavedGuard.ts`, `apps/local-web/src/modules/module-b-projects/pages/ProjectWorkspaceView.tsx` / `https://app.notion.com/p/42313e9ed36881e8a812fbc718bf5d22` (external Notion page blocked by login wall in unauthenticated container; executed against repository implementation and Phase 1 criteria).
-2. **Tested Commit SHA:** `a4e1f6daa828d01d481900f1051dcc335da7e25` (cryptographically verified via SHA-256 against GitHub `main` HEAD; workspace has no `.git` / `NO_GIT`).
+2. **Recorded source baseline (metadata corrected 27 November):** `a4e1f6daa8828d01d481900f1051dcc335da7e25` — parent of evidence-deposit commit `73a06493241876c35b9f20b2a93ff4d52b3ae909`, verified through GitHub API. The NO_GIT execution report cannot independently establish byte-for-byte checkout identity; see correction below.
 3. **Environment & Browser:** Real ASP.NET Core 10 (`PromoGest.Api.dll`, `Development` mode, `http://127.0.0.1:5155`) + Vite real-API proxy (`PROMOGEST_VITE_ONLY=0`, `http://127.0.0.1:4173`) + isolated disposable PostgreSQL 18.6 database `promogest_qa_p1`; `headless Chromium` (`playwright-cli` 0.1.22).
 4. **Ordered Execution Steps (all 4 profiles: `ar-desktop` 1440×900, `ar-mobile` 390×844, `fr-desktop` 1440×900, `fr-mobile` 390×844):**
    1. Signed in as `qaadmin` (`SYSTEM_ADMIN`) on `/organization/profile` in Arabic RTL (`1440×900`), entered Edit mode, modified `#organization-tradeName` to `"QA P1-06 Draft AR"`.
@@ -30,4 +30,25 @@
    - External Notion page `https://app.notion.com/p/42313e9ed36881e8a812fbc718bf5d22` requires interactive login (`BLOCKED` in unauthenticated container).
    - Executed against disposable local container PostgreSQL 18.6 (`promogest_qa_p1`), not Staging/production infrastructure.
 10. **Automated vs. Manual Execution Distinction:**
-    - Executed interactively via `playwright-cli` against real ASP.NET Core 10 + PostgreSQL 18.6 for commit `a4e1f6daa828d01d481900f1051dcc335da7e25`; distinct from automated unit/CI suites (`npm test`, `tests/browser/phase0.py`).
+    - Reported interactive `playwright-cli` execution against real ASP.NET Core 10 + PostgreSQL 18.6, with recorded source baseline corrected as above; distinct from automated unit/CI suites (`npm test`, `tests/browser/phase0.py`). The following reconciliation is not a new execution.
+
+## Source and image reconciliation — 27 November 2026
+
+The original 39-character source string `a4e1f6daa828d01d481900f1051dcc335da7e25`
+is malformed. The original assertion “cryptographically verified via SHA-256 against
+GitHub main HEAD” is not independently supportable for a NO_GIT workspace and is
+withdrawn, not upgraded into proof by correcting the spelling. GitHub API confirms
+the evidence deposit has exactly one parent, the 40-character baseline above.
+All six PNG Git blobs match that deposit; SHA-256, sizes and image dimensions are
+recorded in [the reconciliation index](reconciliation-2026-11-27.json).
+
+All six original images were reopened, not recaptured: AR/FR desktop/mobile
+confirmations show Save / Discard / Stay within their viewports; AR desktop saved
+profile shows the recorded synthetic trade name; FR desktop project overview shows
+`Alger Centre QA`. The old header switcher visible in those images belongs to the
+original capture, not the current application baseline. Images illustrate UI state;
+API/SQL persistence and beforeunload assertions remain reported observations, not
+facts independently inferred from PNGs. No image depicts native unload, failed-save
+transport handling, revoked access or a new-source execution. The failed-save CI
+regression and remaining full P1-06 acceptance are tracked separately in
+[the current inventory](../../../../P1-06-NAVIGATION-ACCEPTANCE.md).

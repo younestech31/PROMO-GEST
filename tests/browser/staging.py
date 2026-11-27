@@ -9,7 +9,7 @@ import traceback
 from pathlib import Path
 
 from playwright.sync_api import expect, sync_playwright
-from project_budget import mutation
+from project_budget import mutation, run_project_budget
 
 BASE = 'https://staging.promogest.test:8443'
 CONTENT = b'PROMO GEST synthetic staging document. No personal or business data.\n'
@@ -188,6 +188,9 @@ def run(lang, device, phase):
             page.goto(BASE + '/organization/profile')
             expect(page.get_by_role('main').get_by_text(fixture['organization'], exact=True)).to_be_visible()
             page.screenshot(path=out/'05-profile-after-restart.png')
+            result['budgetEvidence'] = run_project_budget(
+                browser, ctx, BASE, lang, device, viewport, out, fixture='staging')
+            checks['production_budget_authorization_matrix'] = True
             if device == 'mobile':
                 page.get_by_role('button', name='Open menu', exact=True).click()
             with page.expect_response('**/api/auth/logout') as logout:

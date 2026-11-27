@@ -61,7 +61,23 @@ they must never score a hidden desktop table as mobile evidence.
   (4/4) and [CodeQL 45860100847](https://github.com/younestech31/PROMO-GEST/actions/runs/45860100847)
   (2/2). Those runs predate this new P1-05 scenario and are not evidence for it.
 
-## Remaining manual gate
+## Observed four-profile CI result and staging follow-up
+
+Final implementation head `d7574d1f7d4a3a7b5f9447ff037933efe78b9e38` passed
+[CI 45983974950](https://github.com/younestech31/PROMO-GEST/actions/runs/45983974950)
+(4/4) and [CodeQL 45983974923](https://github.com/younestech31/PROMO-GEST/actions/runs/45983974923)
+(2/2), including all four P1-05 browser profiles, PostgreSQL integration and the full restore drill.
+The earlier wording about execution being delegated to CI is a local-environment boundary,
+not an outstanding result for that head.
+
+The helper now also accepts a second **explicit** disposable fixture: the exact HTTPS
+staging host, `stg_<language>_<device>` database, and a successful encrypted-key-ring preflight.
+Arbitrary staging URLs remain forbidden. Its seven offline helper/safety tests pass locally.
+The same budget matrix is called after the Production API restart; this is additional
+technical staging evidence, not a human operator signature. See
+[the Production HTTPS rehearsal record](STAGING-ACCEPTANCE-2026-11-27.ar.md).
+
+## Remaining operational gate
 
 P1-05 stays **In Review / Pending** and **IMPLEMENTED_NOT_VERIFIED** until the authorized
 operator performs and signs off the Arabic/French Staging acceptance. Automated CI

@@ -28,15 +28,22 @@ def update_payload(project, budget):
     }
 
 
-def run_project_budget(browser, admin_ctx, base, lang, device, viewport, out):
-    # Refuse to create fixture users/projects outside the same isolated CI runner
-    # used by phase0.py. In particular this must never target a preview database.
-    if (os.environ.get('GITHUB_ACTIONS') != 'true'
-            or os.environ.get('PGHOST') != '127.0.0.1'
-            or os.environ.get('PGDATABASE') != f'p0_{lang}_{device}'
-            or base != 'http://127.0.0.1:5173'
-            or lang not in ('ar', 'fr') or device not in ('desktop', 'mobile')):
+def require_budget_fixture(base, lang, device, fixture):
+    phase0 = (fixture == 'phase0' and base == 'http://127.0.0.1:5173'
+              and os.environ.get('PGDATABASE') == f'p0_{lang}_{device}')
+    staging = (fixture == 'staging' and base == 'https://staging.promogest.test:8443'
+               and os.environ.get('STAGING_BASE_URL') == base
+               and os.environ.get('STAGING_DP_ENCRYPTED') == 'true'
+               and os.environ.get('PGDATABASE') == f'stg_{lang}_{device}')
+    if (os.environ.get('GITHUB_ACTIONS') != 'true' or os.environ.get('PGHOST') != '127.0.0.1'
+            or lang not in ('ar', 'fr') or device not in ('desktop', 'mobile')
+            or not (phase0 or staging)):
         raise RuntimeError('P1-05 requires the disposable four-profile CI fixture')
+
+
+def run_project_budget(browser, admin_ctx, base, lang, device, viewport, out, *, fixture='phase0'):
+    # Two explicit runner-local fixtures only; never accept arbitrary staging/preview targets.
+    require_budget_fixture(base, lang, device, fixture)
 
     from playwright.sync_api import expect
 
@@ -59,7 +66,7 @@ def run_project_budget(browser, admin_ctx, base, lang, device, viewport, out):
         })
         assert response.status == 201
         user_id = response.json()['id']
-        context = browser.new_context(base_url=base, viewport=viewport)
+        context = browser.new_context(base_url=base, viewport=viewport, ignore_https_errors=fixture == 'staging')
         contexts.append(context)
         login = mutation(context.request, 'post', '/api/auth/login', {
             'usernameOrEmail': username, 'password': temporary,

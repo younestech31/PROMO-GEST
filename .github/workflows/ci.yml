@@ -25,8 +25,10 @@ jobs:
         run: python3 scripts/validate-doc-baseline.py --main-ref origin/main
       - name: Test disposable browser budget fixture helpers and safety guard
         run: python3 tests/browser/test_project_budget.py
-      - name: Test staging evidence completeness and privacy boundaries
-        run: python3 scripts/test_export_staging_evidence.py
+      - name: Test staging evidence completeness, privacy and import integrity
+        run: |
+          python3 scripts/test_export_staging_evidence.py
+          python3 scripts/test_import_staging_evidence.py
       - name: Test the repository hygiene guard
         run: python3 scripts/test_check_repository_hygiene.py
       - name: Verify tracked file modes and the lockfile match this branch

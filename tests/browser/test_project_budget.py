@@ -3,7 +3,7 @@ import os
 import unittest
 from unittest.mock import Mock, patch
 
-from project_budget import mutation, run_project_budget, update_payload
+from project_budget import mutation, require_budget_fixture, run_project_budget, update_payload
 
 
 class BudgetFixtureTests(unittest.TestCase):
@@ -46,6 +46,23 @@ class BudgetFixtureTests(unittest.TestCase):
         with self.assertRaises(AssertionError):
             mutation(request, 'put', '/api/projects/test-id', {})
         request.put.assert_not_called()
+
+    def test_accepts_only_explicit_encrypted_staging_fixture(self):
+        env = {'GITHUB_ACTIONS': 'true', 'PGHOST': '127.0.0.1', 'PGDATABASE': 'stg_fr_mobile',
+               'STAGING_BASE_URL': 'https://staging.promogest.test:8443', 'STAGING_DP_ENCRYPTED': 'true'}
+        with patch.dict(os.environ, env, clear=True):
+            require_budget_fixture(env['STAGING_BASE_URL'], 'fr', 'mobile', 'staging')
+            for key, value in (('STAGING_DP_ENCRYPTED', 'false'), ('PGDATABASE', 'organization'),
+                               ('STAGING_BASE_URL', 'https://external.example.invalid')):
+                with self.subTest(key=key), patch.dict(os.environ, {key: value}):
+                    with self.assertRaises(RuntimeError):
+                        require_budget_fixture('https://staging.promogest.test:8443', 'fr', 'mobile', 'staging')
+
+    def test_unknown_fixture_does_not_broaden_targets(self):
+        with patch.dict(os.environ, {'GITHUB_ACTIONS': 'true', 'PGHOST': '127.0.0.1',
+                                    'PGDATABASE': 'p0_ar_desktop'}, clear=True):
+            with self.assertRaises(RuntimeError):
+                require_budget_fixture('http://127.0.0.1:5173', 'ar', 'desktop', 'custom')
 
     def test_refuses_non_ci_or_non_disposable_targets_before_any_io(self):
         valid = {'GITHUB_ACTIONS': 'true', 'PGHOST': '127.0.0.1', 'PGDATABASE': 'p0_ar_desktop'}

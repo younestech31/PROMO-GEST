@@ -22,6 +22,7 @@ CHECKS = (
     'session_and_organization_survive_api_restart', 'stored_document_bytes_survive_restart_sha256',
     'anonymous_document_access_401', 'one_organization_user_administrator_after_restart',
     'persisted_data_protection_keys_encrypted', 'logout_revokes_current_and_pre_restart_session',
+    'production_budget_authorization_matrix',
 )
 
 
@@ -41,7 +42,7 @@ def read_results(root):
         # Explicit allowlist: never export unexpected cookie/password/log fields.
         allowed = ('profile', 'sourceHead', 'testedCheckout', 'run', 'environment', 'database',
                    'proxy', 'viewport', 'checks', 'tlsBoundary', 'scope', 'syntheticDocumentSha256',
-                   'status', 'browser')
+                   'status', 'browser', 'budgetEvidence')
         if set(result) - set(allowed):
             raise ValueError('Unexpected evidence field')
         if set(result['checks']) != set(CHECKS):

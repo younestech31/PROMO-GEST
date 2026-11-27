@@ -225,9 +225,12 @@ A name match between the two annexes is not sufficient on its own to assign a cu
 
 ## 5I. June 1984 chief-lieu seat order / JO41/1984 — bounded visual review
 
-The interministerial order dated 2 June 1984 fixes the chief-lieu seats for the communes in its annex. Its two-column structure distinguishes the commune from the seat; therefore the seat must not be silently treated as a commune-name alias or territorial-parent assertion. Official French source: [F1984041.pdf](https://www.joradp.dz/FTP/Jo-Francais/1984/F1984041.pdf).
+The interministerial order dated 2 June 1984 fixes the chief-lieu seats for the communes in its annex. Its two-column structure distinguishes the commune from the seat; therefore the seat must not be silently treated as a commune-name alias or territorial-parent assertion. Official sources: [French F1984041.pdf](https://www.joradp.dz/FTP/Jo-Francais/1984/F1984041.pdf) · [Arabic A1984041.pdf](https://www.joradp.dz/FTP/jo-arabe/1984/A1984041.pdf).
 
-On 27 November 2026, the French official edition was text-reviewed and selected table pages were visually inspected: printed pages 1030, 1044, 1045 and 1048. The inspected samples confirm separate commune/seat columns across multiple Wilaya sections. This is a **bounded sample**, not a complete visual transcription of the annex or a 1,541-row seat reconciliation. The Arabic JORADP edition was not visually reviewed in this pass.
+On 27 November 2026, selected page images from both official editions were visually inspected:
+- **French:** printed pages 1030, 1044, 1045 and 1048 from [F1984041.pdf](https://www.joradp.dz/FTP/Jo-Francais/1984/F1984041.pdf). The samples cover several separated Wilaya sections and confirm the distinct commune-name and chief-lieu-seat columns.
+- **Arabic:** printed pages 1527–1530 from [A1984041.pdf](https://www.joradp.dz/FTP/jo-arabe/1984/A1984041.pdf). Page 1527 contains the Arabic order text and begins the annex; pages 1528–1530 show paired commune and seat columns across the Adrar, Chlef, Laghouat, Oum El Bouaghi, Batna and Bejaia sections.
+The bilingual pages confirm the same source structure: commune name and chief-lieu seat are separately stated attributes. This remains a **bounded sample**, not a complete visual transcription of the annex, a full French/Arabic row-pairing exercise, or a 1,541-row seat reconciliation. No new PDF-byte SHA-256 values were captured in this pass.
 
 The 8 February 1986 register amendment (JO11/1986, printed p.280) cites an order dated 13 May 1985 modifying the June 1984 seat order. The standalone issue/page and full annex of that 13 May 1985 instrument remain unlocated. Keep the citation as an unresolved source pointer; do not infer its effects from the recital alone.
 
@@ -235,6 +238,6 @@ The 8 February 1986 register amendment (JO11/1986, printed p.280) cites an order
 
 - Recalculate SHA-256 directly from both official PDF binaries and compare to the historical hashes recorded in the inventory; complete Decree 21-128's French/Arabic annex transcription and reconciliation row by row.
 - Transcribe and reconcile Decree 21-128's French/Arabic annex row by row, preserving locality/commune/territorial-parent semantics and every sans changement block.
-- Retrieve and inspect the Arabic JO41/1984 seat annex; complete the French/Arabic seat transcription and locate the cited 13 May 1985 amending order.
+- Complete the full French/Arabic seat transcription and row-by-row parity checks; locate the cited 13 May 1985 amending order and determine any effects through the later code/seat register chain.
 - Reconcile the 975 residual source-lineage candidates against all applicable instruments. This does not mean that 975 original JO44/1985 commune rows remain unextracted.
 - All 1,541 qualified-practitioner decisions remain pending; no new code, valid-time value, or import is authorized by this review.

@@ -111,11 +111,35 @@ They are **not imported or visually reviewed here**; screenshots illustrate dial
 not proof of server-side writes/revocation by themselves. Local safety3/3, actual
 pinned Playwright contract6/6, budget helpers7/7 and baseline12/12 also PASS; those
 local checks alone are not browser evidence. [Exact-run archive](evidence/p1-06-navigation-2026-11-27/checks.json).
-Current evidence/documentation follow-up needs its own CI before PR288 merge and
-eventual independent exact-main verification.
+Final sourcecf64368 CI46079034309 PASS5/5 + CodeQL46079034339 PASS; PR288 merged asc3826dd. Independent exact-main46080260786/46080260781 running, not inherited from head results.
 The second synthetic project remains only in the disposable CI database. Native
 Leave/actual close acceptance, logout Discard and embedded forms are not claimed.
 Full P1-06 remains In Review / Pending, including final protected-view mapping.
+
+## Next bounded slice: embedded C/D/E/K drafts — authored, browser CI pending
+
+`tests/browser/navigation_embedded.py` follows the existing helper flows on the
+allowlisted Development and Production HTTPS disposable four-profile databases.
+It reuses the administrator session without logging it out, adding actors, granting
+permissions or submitting business mutations. One extra test page per editor:
+structure building code, new customer name, reservation expiry and document description.
+
+Each incomplete draft must reach the App's global guard on internal navigation,
+logout and real Back. Stay retains the document marker/draft/session; shell Save
+must be **absent**, because embedded editors have no shell save callback. Back
+Discard followed by Forward reconstructs a clean editor, with all four real API
+collections unchanged. Accepting native reload Leave must replace the document
+and reset the draft; accepting native tab-close Leave must actually close the
+extra page without revoking the shared session. A page-request observer rejects
+any API mutation, and independent snapshots/organization/pageerror checks remain.
+Native behavior is Chromium-controlled, not a fake custom prompt or crash recovery.
+
+Four `p1-06-embedded-{structure,customers,reservations,documents}-guard.png` files
+and `navigation-embedded.json` are authored CI outputs, **not yet generated,
+imported or visually reviewed**. Local safety3/3, actual pinned Playwright
+contract7/7 and budget helpers7/7 PASS, not browser execution proof. Logout Discard
+and embedded project-switch combinations are separate remaining acceptance work;
+full P1-06 remains In Review / Pending.
 
 ## Nine-criterion evidence inventory (not promotion)
 

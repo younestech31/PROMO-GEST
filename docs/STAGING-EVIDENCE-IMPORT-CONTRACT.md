@@ -11,7 +11,9 @@ incident or a new application acceptance claim.
 
 ## Contract
 
-- Only the four existing modes are accepted: staging, organization, sessions, language.
+- Explicit modes only: staging, organization, sessions, language, and the P1-15 `team`
+  extension. The team mode requires all four prior assertion groups plus its own eight
+  named checks; prior modes keep their original meanings.
 - All four unique profiles must contain the exact known profile fields, Production
   environment, matching source, PASS verdict, full tested-checkout SHA and numeric run.
 - Every named baseline check must be exactly boolean `true`. Organization, session and
@@ -29,7 +31,12 @@ This is schema/identity validation, not cryptographic attestation of CI or autom
 redaction of arbitrary text in allowed descriptive fields. Successful same-repository
 run/job checks, sanitized exporter inputs and actual visual review remain necessary.
 
-## Verification
+## PR #276 verification (historical baseline)
+
+The subsequent P1-15 extension adds one importer regression (14 total) and three
+exporter regressions (19 total). Its real-stack status is recorded separately in the
+[P1-15 report](P1-15-PRODUCTION-ACCEPTANCE.md); the results below retain their original
+PR #276 scope and do not claim any P1-15 outcome.
 
 - Importer: **13/13 PASS**, including all four archived suites, missing/false/non-boolean
   assertions, missing prerequisite groups, conflicting run/checkouts, unexpected fields,

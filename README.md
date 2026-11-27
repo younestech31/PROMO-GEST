@@ -108,7 +108,9 @@ pre-restart sessions, bilingual privacy notices, selective revocation, explicit
 current-device confirmation and independent cookie replay denial, with reviewed screenshots. See also
 the [P1-17 language preference record](docs/P1-17-PRODUCTION-ACCEPTANCE.md) for real
 save/reload/fresh-login/restart persistence, injected network failure, stale-stamp
-recovery, audit and reviewed screenshots.
+recovery, audit and reviewed screenshots. The [P1-15 team acceptance record](docs/P1-15-PRODUCTION-ACCEPTANCE.md)
+adds Production HTTPS sole-manager protection, replacement handover, exact audit
+checks and actual reviewed screenshots, including the restored mobile Manage Access action.
 
 See the [Arabic execution report and screenshots](docs/STAGING-ACCEPTANCE-2026-11-27.ar.md)
 for actual run outcomes, tested source revisions and limitations. The scripts refuse

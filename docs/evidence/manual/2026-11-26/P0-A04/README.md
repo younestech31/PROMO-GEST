@@ -1,7 +1,7 @@
 # P0-A04 — Logout, Server-Side Session Revocation & Unconfirmed Retry Behavior
 
 1. **Task ID & Canonical Reference:** `P0-A04` — `docs/PHASE-0-MANUAL-ACCEPTANCE.md` (§5A, §4) / `https://app.notion.com/p/42313e9ed36881e8a812fbc718bf5d22` (external Notion page auth-walled in container; canonical repository specification executed).
-2. **Tested Commit SHA:** `a4e1f6daa828d01d481900f1051dcc335da7e25` (cryptographically verified against GitHub `main` HEAD; `NO_GIT` workspace).
+2. **Recorded source baseline (metadata corrected 27 November):** `a4e1f6daa8828d01d481900f1051dcc335da7e25` — parent of evidence-deposit commit `73a06493241876c35b9f20b2a93ff4d52b3ae909`. The NO_GIT execution report cannot independently establish byte-for-byte checkout identity; see correction below.
 3. **Environment & Browser:** Real ASP.NET Core 10 (`http://127.0.0.1:5155`) + Vite real-API proxy (`PROMOGEST_VITE_ONLY=0`, `http://127.0.0.1:4173`) + 4 fresh PostgreSQL 18.6 disposable databases (`promogest_qa_p0_ard`, `promogest_qa_p0_arm`, `promogest_qa_p0_frd`, `promogest_qa_p0_frm`); `headless Chromium` (`playwright-cli` 0.1.22).
 4. **Ordered Execution Steps (all 4 profiles `ar-desktop`, `ar-mobile`, `fr-desktop`, `fr-mobile`):**
    1. Signed in explicitly as `qaadmin` (`POST /api/auth/login` `200`). Verified `localStorage.length === 0` and `sessionStorage.length === 0` (no bearer/session token in Web Storage).
@@ -35,4 +35,14 @@
 9. **Deviations / Environment Limits:**
    - Notion checklist page unreachable due to sign-in wall (`BLOCKED` for external Notion text); canonical repository protocol executed.
 10. **Automated vs. Manual Execution Distinction:**
-    - Executed interactively on disposable PostgreSQL 18 instances for `a4e1f6daa828d01d481900f1051dcc335da7e25`, separate from CI `tests/browser/phase0.py`.
+    - Executed interactively on disposable PostgreSQL 18 instances for `a4e1f6daa8828d01d481900f1051dcc335da7e25`, separate from CI `tests/browser/phase0.py`.
+
+## Metadata reconciliation — 27 November 2026
+
+The original report used `a4e1f6daa828d01d481900f1051dcc335da7e25` (39 characters, not a full SHA).
+The corrected baseline above is the GitHub/git-verified sole parent of the evidence-deposit
+commit; this corrects source metadata, not a rerun or independent cryptographic attestation
+of the NO_GIT execution workspace. Original screenshot pixels are unchanged.
+Recorded interactive acceptance remains PASS for the scope above; Notion is Done / Verified
+with Last Verified 26 November. No named human signature, physical-device test, Production-mode
+run or institution-host approval is asserted. See [reconciliation](../../../../ROADMAP-RECONCILIATION-2026-11-27.ar.md).

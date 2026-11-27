@@ -1,5 +1,19 @@
 # PROMO GEST — Phase 0 Manual Browser & Real-API Acceptance
 
+## Current acceptance reconciliation — 27 November 2026
+
+**P0-A01 / P0-A04: recorded interactive acceptance PASS; Notion Done / Verified (26 November).**
+See the [reconciliation report](ROADMAP-RECONCILIATION-2026-11-27.ar.md) and existing
+[P0-A01](evidence/manual/2026-11-26/P0-A01/README.md) /
+[P0-A04](evidence/manual/2026-11-26/P0-A04/README.md) reports and 16 screenshots.
+The four AR/FR desktop/mobile profiles used real ASP.NET Core and disposable PostgreSQL 18.6.
+This is recorded interactive browser acceptance, not a newly asserted named human signature,
+physical-device test or organization-host production approval. D-010 is preserved.
+The NOT_RUN statements in the historical evidence below are superseded by this record.
+The executable protocol and blank worksheet remain reusable for future runs.
+
+## Historical evidence checkpoints — retained for audit
+
 **Document role:** Executable acceptance protocol for the remaining Phase 0 browser and real-API evidence.  
 **Historical audit baseline (17 November 2026):** The inspected `main` commit is `16ed3fdd93a4a2685d37433b0eed5cdf256f953d` (PR #90 merge). Main CI [Run #787](https://github.com/younestech31/PROMO-GEST/actions/runs/44129809872) passed all 3 required jobs on that exact SHA: frontend/static hosting, .NET 10 + PostgreSQL 18 least-privilege/integration/restore, and Windows x64/PowerShell validation.
 **P0 implementation status:** PR [#85](https://github.com/younestech31/PROMO-GEST/pull/85) (first-run handoff to normal login) and PR [#86](https://github.com/younestech31/PROMO-GEST/pull/86) (server-confirmed logout) are merged. Their automated regression coverage is present in `main`; the integration suite includes empty-database exactly-once setup and logout/session replay-rejection tests.  

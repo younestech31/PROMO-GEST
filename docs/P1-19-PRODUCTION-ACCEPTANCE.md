@@ -1,6 +1,10 @@
 # P1-19 — Production HTTPS active-session technical acceptance
 
-Date: 27 November 2026. Status: **new real-stack execution pending**.
+Date: 27 November 2026. Status: **isolated Production HTTPS technical acceptance PASS**.
+
+تم التحقق فعليًا من الجلسات بالعربية والفرنسية على الهاتف وسطح المكتب: نجحت
+32 نتيجة تحقق، بما فيها الإبطال الانتقائي ورفض إعادة استخدام الجلسة الملغاة
+والتأكيد الصريح قبل تسجيل الخروج. اللقطات أدناه فعلية، وليست صورًا مولّدة.
 
 ## Scope
 
@@ -60,7 +64,9 @@ The explicit exporter `--suite sessions` requires all eight checks, plus the exi
 organization matrix and baseline staging checks, and publishes compact copies of the
 confirmation screenshot using the existing SHA-256-verified read-only annotation
 transport. Default staging and organization suite exports retain their meanings.
-Full originals remain in `staging-https-evidence` (30 days). No CI repository-write
+Full originals remain in `staging-https-evidence` (30 days). curl validates the local
+disposable CA; Chrome ignores trust for that fixture CA only, not a workstation
+certificate-distribution test. No CI repository-write
 permission, additional secret or external database is introduced.
 
 ## Verification log
@@ -76,7 +82,8 @@ permission, additional secret or external database is introduced.
 - Visual review of that first export found the mobile confirmation below the
   screenshot viewport despite CSS visibility. It is not accepted as confirmation
   screenshot evidence. The runner now scrolls the actual prompt into the modal
-  viewport and asserts it is in view before capture. Corrected screenshot rerun pending.
+  viewport and asserts it is in view before capture. Corrected capture run 45999710383 passed; all four corrected images were opened
+  and reviewed, with the confirmation visible on both mobile profiles.
 - First CI 45997518847 stopped at the fail-closed encryption guard before session
   preparation: its proof flag was previously set only after restart. The staging
   exercise now checks the actual private persisted XML key files for encryptedSecret
@@ -88,3 +95,39 @@ permission, additional secret or external database is introduced.
 P1-19 remains In Review / Pending in the task register. P1-08 owner-policy gate,
 P1-10 acceptance dependency, P1-01/P1-35 deferral, P1-02 block and Phase 2–5 gates
 are not changed by this technical slice. No Notion status is advanced.
+
+## Accepted execution and permanent screenshots
+
+- Source head `2433962fb5f06875b32d118353786ff688ffd895`; tested PR merge
+  `4fa168d562393e9171f95f3b6ccc07688c7388f4`.
+- [CI 45999710383](https://github.com/younestech31/PROMO-GEST/actions/runs/45999710383): **4/4 PASS**;
+  [CodeQL 45999710123](https://github.com/younestech31/PROMO-GEST/actions/runs/45999710123): **2/2 PASS**.
+- P1-19 **8/8 named checks per profile, 32 results PASS**. Baseline 15/profile
+  (60 results) and organization 5/profile (20 results) also remain green.
+- Local frontend **117/117**, session helpers **5/5**, exporter **13/13**, importer
+  **7/7**, budget helper **7/7**, organization helper **2/2**, baseline **12/12**,
+  hygiene **12/12 PASS**; TypeScript (`npm run lint`), build, lint ratchet, Python
+  compilation and repository hygiene pass. Secrets/diff checks are clean.
+- Four actual corrected JPEGs are permanently stored with their hashes and provenance
+  in [the evidence folder](evidence/p1-19-production-2026-11-27/README.md).
+  Eight original session PNGs and JSON are in [artifact 15197598552](https://github.com/younestech31/PROMO-GEST/actions/runs/45999710383/artifacts/15197598552).
+
+### العربية — سطح المكتب
+
+![Arabic desktop: privacy notice and explicit sign-out confirmation](evidence/p1-19-production-2026-11-27/ar-desktop/review.jpg)
+
+### العربية — الهاتف، تأكيد ظاهر داخل النافذة
+
+![Arabic mobile: visible confirm and cancel buttons](evidence/p1-19-production-2026-11-27/ar-mobile/review.jpg)
+
+### Français — bureau
+
+![French desktop: privacy notice and explicit sign-out confirmation](evidence/p1-19-production-2026-11-27/fr-desktop/review.jpg)
+
+### Français — mobile, confirmation réellement visible
+
+![French mobile: visible confirmation and cancel buttons](evidence/p1-19-production-2026-11-27/fr-mobile/review.jpg)
+
+Mobile captures show the scrolled confirmation, not the privacy note above the scroll
+position. The original inventory screenshot and browser assertions support privacy
+notice verification. No API behavior is inferred from a screenshot alone.

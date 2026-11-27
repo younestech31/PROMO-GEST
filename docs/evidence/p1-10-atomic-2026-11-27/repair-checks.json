@@ -1,0 +1,68 @@
+{
+  "schema": "promogest.p1-10-atomic-checks.v1",
+  "records": [
+    {
+      "runId": 46051328233,
+      "url": "https://github.com/younestech31/PROMO-GEST/actions/runs/46051328233",
+      "sourceSha": "7e7c5da4c8b28b48413137b170d882d64ad42b18",
+      "conclusion": "success",
+      "jobs": [
+        {
+          "name": "Documentation baseline consistency",
+          "conclusion": "success",
+          "steps": []
+        },
+        {
+          "name": "Frontend install, checks, and static hosting",
+          "conclusion": "success",
+          "steps": []
+        },
+        {
+          "name": ".NET 10 and PostgreSQL 18 least-privilege tests",
+          "conclusion": "success",
+          "steps": [
+            {
+              "name": "Run integration tests with separate database identities",
+              "conclusion": "success"
+            },
+            {
+              "name": "Run Phase 0 real-browser setup and logout checks (four disposable profiles)",
+              "conclusion": "success"
+            },
+            {
+              "name": "Rehearse isolated Production HTTPS staging and restart (four profiles)",
+              "conclusion": "success"
+            },
+            {
+              "name": "Run full database, storage, and Data Protection restore drill",
+              "conclusion": "success"
+            }
+          ]
+        },
+        {
+          "name": "Windows publish and PowerShell validation",
+          "conclusion": "success",
+          "steps": []
+        }
+      ]
+    },
+    {
+      "runId": 46051328435,
+      "url": "https://github.com/younestech31/PROMO-GEST/actions/runs/46051328435",
+      "sourceSha": "7e7c5da4c8b28b48413137b170d882d64ad42b18",
+      "conclusion": "success",
+      "jobs": [
+        {
+          "name": "Analyze csharp",
+          "conclusion": "success",
+          "steps": []
+        },
+        {
+          "name": "Analyze javascript-typescript",
+          "conclusion": "success",
+          "steps": []
+        }
+      ]
+    }
+  ]
+}

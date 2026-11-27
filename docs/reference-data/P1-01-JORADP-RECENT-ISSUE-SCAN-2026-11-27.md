@@ -76,7 +76,21 @@ The sample confirms the bilingual source structure but is not a full annex trans
 - Bordj Bou Arréridj: Haraza (حرازة) → Fedala (فضالة); local table row 34.
 - El Oued: Beni Guecha (بني قشة) → Beni Guecha (بني قشة); local table row 19.
 
-These local row identifiers are not Decree 85-20 four-digit register codes. The amendment changes the seat column only. The full seat-annex lineage and later code/seat reconciliation remain open.
+The JO41/1984 prior values for the same rows were checked against the scan pages. The Arabic JO41 scan confirms the distinct old seat values for Haraza (`حرازة`) and Beni Guecha (`دويلات`); the French scan gives `Douelat` for the latter. For Bir Ben Laabed, the French JO41 table gives `Bir Ben Laabed` as the old seat, while the Arabic scan page shows commune `بئر بن عابد` and seat `بشر بن عابد`; preserve this as an unresolved bilingual discrepancy. The Guelma entry is Aïn Sandel as both commune and old seat in French and Arabic.
+These JO41 row page images were checked in a digitized issue copy hosted by Kanonix, which labels JORADP as its source; it is not a fresh direct JORADP PDF-byte download. The page locations are French pp.1039, 1041, 1043, 1045 and Arabic pp.1542, 1543, 1547, 1549. No new byte checksum is claimed.
+
+### D. The 1986 register update supplies the separate four-digit codes
+
+The 8 February 1986 interministerial order in JO11/1986 expressly cites both the 22 June 1985 territorial-register order and the 13 May 1985 seat amendment, then prints a register table with separate commune, four-digit code and seat columns. The official French JORADP page images were checked at printed p.280 / PDF index 15 and p.281 / index 16. The corresponding Arabic body pages (printed pp.401–402) were visually reviewed in the prior repository audit.
+
+| Wilaya | Commune | Code in JO11/1986 | Seat in JO11/1986 |
+|---|---|---:|---|
+| Guelma | Aïn Sandel | 2407 | Aïn Souda |
+| Médéa | Bir Ben Laabed | 2656 | Zoudj El Beida |
+| Bordj Bou Arréridj | Haraza | 3434 | Fédala |
+| El Oued | Béni Guécha | 3919 | Béni Guécha |
+
+The 1986 values are stored as four separate `register_code_and_seat_assertion` rows; the 1985 rows remain seat-only and their code fields remain blank. The old/new seat sequence is preserved separately from the code assertion. These 1986 codes are historical entries, **not automatically current post-2026 values**; later lineage must be resolved before canonical assignment. Effective dates and practitioner sign-offs remain pending.
 
 ### C. Source-population clarification for JO44/1985
 

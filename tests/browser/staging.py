@@ -154,6 +154,11 @@ def run(lang, device, phase):
             checks['document_uploaded_through_https_spa'] = True
             fixture_path.write_text(json.dumps({'organization': saved_name, 'projectId': project_id, 'fileId': file_id}))
             fixture_path.chmod(0o600)
+            # The session preparer needs the same encryption proof as verify-phase helpers.
+            # Assert actual persisted keys now; do not merely set the guard flag early.
+            keys = list((private / 'keys').glob('*.xml'))
+            assert keys and all('encryptedSecret' in key.read_text() for key in keys)
+            os.environ['STAGING_DP_ENCRYPTED'] = 'true'
             prepare_sessions(browser, BASE, lang, device, viewport, private, setup['adminUsername'], password)
             ctx.storage_state(path=str(state_path))
             state_path.chmod(0o600)

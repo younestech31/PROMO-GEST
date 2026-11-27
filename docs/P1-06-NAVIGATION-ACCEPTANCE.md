@@ -161,7 +161,7 @@ crash recovery or complete action/option Cartesian acceptance. **Newer head a75c
 Development four profiles passed, but Production stopped at AR/desktop structure
 `navigation_embedded.py:166` (`Error` entering native-close expectation). CodeQL
 46082246588 PASS. This newer failure supersedes any assumption of repeatable
-whole-head success from895db76. No merge. Sanitized annotations provide stage/type
+whole-head success from895db76; merge was held until the corrected exact head passed. Sanitized annotations provide stage/type
 only; full traceback and exact browser error are not claimed.
 
 Correction introduces a real App guard/Stay handshake before each native action,
@@ -169,8 +169,12 @@ including after reload, so child `fill` is not treated as proof that App dirty
 state/beforeunload is ready. This is a synchronization hypothesis to verify, not
 an asserted runtime root cause. No sleeps/retries, synthetic unload, force clicks
 or runtime changes. Static stage/page-closed diagnostics added; local safety5/5
-and actual Playwright contract7/7 PASS. Corrected head browser CI pending.
-Final successful-head and independent merged-main verification remain required. [Exact-run job/step archive](evidence/p1-06-navigation-2026-11-27/checks.json).
+and actual Playwright contract7/7 PASS. Corrected exact head125483e:
+CI46083214275 **PASS5/5**, CodeQL46083214283 **PASS**, all eight checks SUCCESS.
+Actual helper completed all four Development and Production HTTPS profiles;
+PG18/restart/restore/export PASS. PR289 merged at23:44:08Z with exact head guard
+into main `e54bde14b74cd86d0c8688fddbb921efccc6fd92`. Independent exact-main
+CI46084131355/CodeQL46084131309 pending; not inherited from head success. [Exact-run job/step archive](evidence/p1-06-navigation-2026-11-27/checks.json).
 
 The previous settings sourcecf64368 artifact metadata (run46079034309) is readable,
 but artifact binary download redirects to a host unavailable from this workspace
@@ -188,7 +192,7 @@ or credentials are stored in evidence. This does not change the executed CI resu
 | One API/CSRF/registry/route/localization implementation | `frontendArchitecture.test.ts` dependency/boundary tests | Final exact-source execution references |
 | F–J planned APIs explicit; no-op actions removed; legal review | planned API rejection and metadata boundary tests | Keep qualified Algerian legal review independent; do not mark F–J implemented |
 | Incidental repair scripts removed | architecture/hygiene checks | Scope-specific tracked-file audit |
-| npm/static-host/automated/PR checks pass | Existing baseline CI | Correction source CI PASS; follow-up head checks pending, not inherited |
+| npm/static-host/automated/PR checks pass | Existing baseline CI | Final125483e CI/CodeQL PASS; merged-main independent checks pending |
 | Truthful docs; D-013 design; Phase 1 in progress | This inventory and canonical checkpoints | Preserve independent closure dependencies |
 
 ## Original image provenance reconciled (not a new run)

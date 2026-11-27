@@ -38,10 +38,10 @@ A targeted search for later acts amending the 22 June 1985 territorial-register 
 
 Official issue PDFs:
 - [JO77/2026](https://www.joradp.dz/FTP/JO-FRANCAIS/2026/F2026077.pdf)
-- [JO78/2026](https://www.joradp.dz/FTP/JO-FRANCAIS/2026/F2026078.pdf)
+- [JO78/2026](https://www.joradp.dz/FTP/jo-francais/2026/F2026078.pdf)
 - [JO79/2026](https://www.joradp.dz/FTP/JO-FRANCAIS/2026/F2026079.pdf)
 - [JO80/2026](https://www.joradp.dz/FTP/JO-FRANCAIS/2026/F2026080.pdf)
-- [JO81/2026](https://www.joradp.dz/FTP/JO-FRANCAIS/2026/F2026081.pdf)
+- [JO81/2026](https://www.joradp.dz/FTP/jo-francais/2026/F2026081.pdf)
 - [JO82/2026](https://www.joradp.dz/FTP/JO-FRANCAIS/2026/F2026082.pdf)
 
 **Negative-search qualification:** this is a bounded search based on index/search results and relevant text, not a page-by-page legal review of every item in every issue, not an exhaustive search of all JORADP archives, and not proof that no separately issued/unindexed act exists. The result should be rechecked before a future release or on receipt of a new instrument.

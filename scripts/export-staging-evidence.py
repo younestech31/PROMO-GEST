@@ -11,6 +11,7 @@ import base64
 import hashlib
 import json
 import os
+import traceback
 from pathlib import Path
 
 PROFILES = ('ar-desktop', 'ar-mobile', 'fr-desktop', 'fr-mobile')
@@ -182,7 +183,7 @@ def notice(name, payload):
 def main(root, record=None, suite='staging'):
     if os.environ.get('GITHUB_ACTIONS') != 'true':
         raise RuntimeError('Evidence export is CI-only')
-    if suite not in ('staging', 'organization', 'sessions', 'language', 'team'):
+    if suite not in ('staging', 'organization', 'sessions', 'language', 'team', 'budget'):
         raise ValueError('Unknown evidence suite')
     from PIL import Image
     results = read_results(root)
@@ -202,22 +203,32 @@ def main(root, record=None, suite='staging'):
         teams = read_team_results(root)
         for result in results:
             result['teamEvidence'] = teams[result['profile']]
+    if suite == 'budget' and any(not isinstance(r.get('budgetEvidence'), str)
+                                 or not r['budgetEvidence'].strip() for r in results):
+        raise ValueError('Missing budget matrix evidence')
     manifest = {'mode': 'disposable Production HTTPS ' + suite, 'profiles': results, 'images': []}
     for profile in PROFILES:
         filename = {'staging': '05-profile-after-restart.png',
                     'organization': 'org-02-authorized-saved.png',
                     'sessions': 'sessions-02-confirmation.png',
                     'language': 'language-04-after-restart.png',
-                    'team': 'team-03-replacement-protected.png'}[suite]
+                    'team': 'team-03-replacement-protected.png',
+                    'budget': 'p1-05-non-financial-manager-general-save.png'}[suite]
         source = root / profile / filename
         if source.is_symlink() or source.resolve().parent.parent != root.resolve():
             raise ValueError('Invalid screenshot path')
         target = root / profile / 'review.jpg'
         with Image.open(source) as image:
             image = image.convert('RGB')
-            image.thumbnail((960, 844))
-            for quality in (65, 50, 35, 20):
-                image.save(target, 'JPEG', quality=quality, optimize=True)
+            # Keep the original PNG intact. Budget settings can be denser than
+            # the prior team screenshot; bounded dimension fallback, never truncation.
+            bounds_list = ((960, 844), (800, 740), (720, 660)) if suite == 'budget' else ((960, 844),)
+            for bounds in bounds_list:
+                image.thumbnail(bounds)
+                for quality in (65, 50, 35, 20):
+                    image.save(target, 'JPEG', quality=quality, optimize=True)
+                    if target.stat().st_size < 20000:
+                        break
                 if target.stat().st_size < 20000:
                     break
         content = target.read_bytes()
@@ -236,6 +247,15 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('root', type=Path)
     parser.add_argument('--record', choices=(*PROFILES, 'manifest'))
-    parser.add_argument('--suite', choices=('staging', 'organization', 'sessions', 'language', 'team'), default='staging')
+    parser.add_argument('--suite', choices=('staging', 'organization', 'sessions', 'language', 'team', 'budget'), default='staging')
     args = parser.parse_args()
-    main(args.root, args.record, args.suite)
+    try:
+        main(args.root, args.record, args.suite)
+    except Exception as error:
+        # Check annotations remain readable even when log-storage redirects are
+        # inaccessible. Static source locations/type only; no paths or form values.
+        for frame in traceback.extract_tb(error.__traceback__):
+            if frame.filename.endswith('/export-staging-evidence.py'):
+                print(f'::error file=scripts/export-staging-evidence.py,line={frame.lineno}::'
+                      f'Evidence export {type(error).__name__} in {frame.name}', flush=True)
+        raise

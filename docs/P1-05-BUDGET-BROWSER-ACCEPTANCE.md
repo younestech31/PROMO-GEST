@@ -81,10 +81,145 @@ on source head `d7768c42ab8c837a9cc5b9abcec6e4f4fd718b1f`; full matrix screensho
 are in `staging-https-evidence`, alongside the permanent compact review images. See
 [the Production HTTPS rehearsal record](STAGING-ACCEPTANCE-2026-11-27.ar.md).
 
-## Remaining operational gate
+## Historical operational-gate wording
 
-P1-05 stays **In Review / Pending** and **IMPLEMENTED_NOT_VERIFIED** until the authorized
+At the original checkpoint, P1-05 stayed **In Review / Pending** and **IMPLEMENTED_NOT_VERIFIED** until the authorized
 operator performs and signs off the Arabic/French Staging acceptance. Automated CI
 must pass first; its screenshots are supporting evidence, not an operator signature.
 No Phase 0 closure, Phase 1 closure, Phase 2–5 start, deployment, existing-database
 migration, or municipality approval/import is implied.
+
+
+## Current acceptance reconciliation — 27 November, budget task only
+
+Live Notion task `41a13e9e-d368-812d-bddf-df171088475f` criteria, dependencies,
+risk and status re-read before this slice. Owner policy is already decided and
+runtime implemented in PR #80; do not implement it again. The user delegated
+technical acceptance to the agent; an additional institution-local signature is
+not invented as a technical criterion. Installation/legal/accounting acceptance
+remains independent. The distinct phase-closure P1-05 record is not this task.
+
+| # | Actual criterion | Current support / remaining work |
+|---|---|---|
+| 1 | Nullable budget/redaction for list/detail/create/update/member responses | ProjectDto and ProjectService actor-aware mapping; Application ProjectBudget_RequiresExplicitFinancialCapability_ForReadAndWrite and PG18 API/browser assertions. |
+| 2 | No SYSTEM_ADMIN or manager bypass | Explicit membership+CanViewFinancials policy; admin and revoked-manager read/write denial tests. |
+| 3 | Write requires projects.manage, ProjectManager and financial flag; null preserves amount, numeric denial audited | Service gate, Application/PG18 tests and real SPA general-edit/null/zero/nonzero matrix. |
+| 4 | Admin cannot create nonzero budget; explicitly financial creator can | Real API matrix verifies 403/admin and 201/director with explicit financial manager membership. |
+| 5 | UI hides editor, sends null, summary dash | Existing four-profile real Production and Development assertions; new bounded export selects actual non-financial manager settings after general save/reload. Images still pending new CI/import/visual review. |
+| 6 | Application and PG18 authorized/revoked/read-only/admin/nonmember/concurrency/null paths | Existing suites and browser matrix; recheck exact test identities and concurrency scope before final acceptance. Images cannot prove authorization, storage or races. |
+| 7 | Security/navigation/baseline/traceability and G1/G3/G5/G6/G7/G8/G9, full CI | Prior merged results exist; this new tooling/docs head requires its own complete CI and seven-criterion final decision. |
+
+**Status remains In Review / Pending at this checkpoint.** Additive export/import
+budget mode reuses the unchanged Production matrix and exact boolean checks;
+no matrix assertion is removed, no browser scenario is skipped, no service/security
+behavior changes. Bounded notices use the existing five export steps instead of
+adding image notices that could exhaust GitHub's job annotation budget. Full PNGs
+for authorized manager, redacted admin/manager and read-only finance remain in the
+normal artifact; the compact selected image is not mislabeled as all those states.
+Original permanent staging images show organization, not budget, and are not reused
+as budget visual evidence. No screenshot generation/editing tool is used.
+
+Local tooling: exporter **22/22**, importer **15/15**, budget helper **7/7 PASS**.
+Synthetic encoder fixtures are only offline tests, never acceptance screenshots.
+Actual new Production browser images/results remain **PENDING CI**, not inherited
+from older runs. No local .NET, PG18 or real-browser pass claimed.
+
+
+### First export execution and bounded follow-up
+
+Source `75fab3f` CI [46059558115](https://github.com/younestech31/PROMO-GEST/actions/runs/46059558115)
+**FAIL 3/4**: first Arabic desktop budget-image export failed. Domain/Application,
+full unfiltered PG18 integration, four-profile Development browser and four-profile
+Production HTTPS/restart matrix all passed before this step. This failed run is
+**not** successful acceptance or imported image evidence. CodeQL46059558101 PASS2/2.
+Check annotations exposed only exit1; log retrieval redirected to an inaccessible
+host (EOF). No size/path/data cause is asserted proven. Follow-up adds static
+source-location/exception-type diagnostics, and a tested budget-only dimension
+fallback 960×844 → 800×740 → 720×660, quality65/50/35/20, retaining the strict <20000
+byte limit and refusing oversized output. Original PNGs remain unchanged. Historical
+suite encoders retain their existing bounds. Controlled encoder tests verify fallback,
+original preservation and fail-closed final bound; exporter now **24/24 PASS**.
+[Machine-readable observed run/job/critical-step identities](evidence/p1-05-export-2026-11-27/checks.json).
+
+PR282 is merged at `2d5bf6d4684179db6ea8707fcc208cce6797872e`; its independent
+exact-main CI46059337780 PASS4/4 and CodeQL46059337794 PASS2/2 are now verified.
+This does not score PR283's new export as PASS. New head execution remains pending.
+
+
+### Export passed, notice transport incomplete — dedicated job repair
+
+Source `109abdc59678733d5431176ebb2d9f7cca6026a7` CI46060648111 **PASS4/4**,
+CodeQL46060648095 **PASS2/2**. Full integration, Development/Production matrices,
+all image/manifest export steps and restore passed. This demonstrates the bounded
+encoder succeeds, not the cause of the first run's failure. Strict import then
+**correctly rejected** incomplete staging notices and wrote no evidence directory.
+GitHub returned exactly50 annotations for job140714017536:10 build warnings,
+38 P1-10 chunks, and only2 of7 first-budget-image chunks. This proves a transport
+budget loss, not a missing real-browser run or permission failure.
+
+The unchanged five Production export steps now run in a dedicated job, consuming
+only the same run's sanitized artifact after backend success. No network target,
+service role or screenshot assertion changes. Import requires successful overall
+run/backend/export job and exact source/run/tested identities; historical job
+selection is supported, but failed new-job fallback is forbidden. Unit tests cover
+legacy/dedicated selection, failure/skipped/ambiguous rejection. Importer16/16 and
+exporter24/24 PASS. CI now has **five jobs**. New complete image transport, visual
+review and final acceptance remain PENDING; a previous successful run is not a
+successful import. Original PNGs/previous archives are never overwritten in Git.
+
+
+## Verified Production evidence follow-up — independent export succeeded
+
+Source `b86760fbb82c71d8f5c2dbc52b24da98acfd10f9` / tested merge
+`d22d20b9b5b458f7991135b40b353025a3ac50f7`:
+[CI46061768797](https://github.com/younestech31/PROMO-GEST/actions/runs/46061768797)
+**PASS5/5**, [CodeQL46061768800](https://github.com/younestech31/PROMO-GEST/actions/runs/46061768800)
+**PASS2/2**. Full Domain/Application/unfiltered PG18, Development browser,
+Production HTTPS/restart, dedicated image export and restore passed. Strict import
+now succeeded: four images/profiles, exact source/run/tested identity and hashes;
+all four visually opened and independently rehashed. [Permanent evidence/provenance](evidence/p1-05-production-2026-11-27/README.md).
+
+### Seven-criterion technical assessment, pending final PR/main reconciliation
+
+Criteria1–5 are supported by ProjectDto/ProjectService and existing Application,
+PG18 and four-profile Production budget matrix. Revoked manager null-update
+preservation and non-manager financial read-only cases missing from the26Nov
+manual report are explicitly exercised by `tests/browser/project_budget.py`.
+That older scoped report is not overwritten or silently expanded.
+
+Criterion6: Application tests
+`ProjectBudget_RequiresExplicitFinancialCapability_ForReadAndWrite` cover positive,
+restricted manager, financial reader, admin/nonmember and denial audits;
+`ProjectUpdates_RequireManagementPermission_PreserveCode_AndWriteAudit` covers
+stale project edits. `PostgresEndToEndTests.cs` covers financial grants/redaction/
+updates, stale `PROJECT_CONCURRENCY_CONFLICT`, two same-version project edits
+(one200/one409) and persisted zero budget unchanged; Production matrix additionally
+covers preserved **nonzero** budget under null updates and denied writes. These
+are distinct checks, not a claim that screenshots demonstrate a simultaneous
+nonzero-budget race. Shared root CAS/member race tests remain separate evidence.
+
+Criterion7: security policy unchanged; navigation wording corrected below; baseline
+and traceability link this exact evidence. G1 Domain, G3 authorization/scope,
+G5 stale/race, G6 audit, G7 realPG18, G8 frontend/realbrowser and G9 full regression
+passed in the exact-source CI. Machine-readable check identities include all5jobs.
+The new documentation head still needs independent CI/final PR/main reconciliation
+before promoting the task. **Notion remains In Review / Pending**, not blocked on
+an invented device or institution-local signature. No Phase1 closure/later-phase unlock.
+
+### Reviewed screenshots — exact source above
+
+Arabic desktop (general settings after financial capability removal):
+
+![AR desktop revoked-manager general settings](evidence/p1-05-production-2026-11-27/ar-desktop/review.jpg)
+
+Arabic mobile (top viewport only; DOM proves editor absence across the page):
+
+![AR mobile settings top viewport](evidence/p1-05-production-2026-11-27/ar-mobile/review.jpg)
+
+French desktop:
+
+![FR desktop revoked-manager general settings](evidence/p1-05-production-2026-11-27/fr-desktop/review.jpg)
+
+French mobile (top viewport only):
+
+![FR mobile settings top viewport](evidence/p1-05-production-2026-11-27/fr-mobile/review.jpg)

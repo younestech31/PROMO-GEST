@@ -5,6 +5,7 @@ import io
 import json
 import tempfile
 import unittest
+from unittest.mock import patch
 from pathlib import Path
 
 spec = importlib.util.spec_from_file_location('staging_export', Path(__file__).with_name('export-staging-evidence.py'))
@@ -171,6 +172,102 @@ class StagingEvidenceTests(unittest.TestCase):
         path.symlink_to(self.root / 'ar-desktop/project-team.json')
         with self.assertRaises(ValueError):
             export.read_team_results(self.root)
+
+    def budget_fixture(self):
+        # Synthetic encoder inputs only, never represented as browser acceptance.
+        from PIL import Image
+        archive = Path(__file__).resolve().parents[1] / 'docs/evidence/staging-2026-11-27/manifest.json'
+        for result in json.loads(archive.read_text())['profiles']:
+            profile = result['profile']
+            (self.root / profile / 'result.json').write_text(json.dumps(result))
+            Image.new('RGB', (100, 80), 'red').save(
+                self.root / profile / 'p1-05-non-financial-manager-general-save.png')
+            Image.new('RGB', (100, 80), 'blue').save(
+                self.root / profile / '05-profile-after-restart.png')
+
+    def test_budget_exports_only_budget_image_and_roundtrips_strict_importer(self):
+        self.budget_fixture()
+        output = io.StringIO()
+        with patch.dict('os.environ', {'GITHUB_ACTIONS': 'true'}), contextlib.redirect_stdout(output):
+            for record in (*export.PROFILES, 'manifest'):
+                export.main(self.root, record, 'budget')
+        from PIL import Image
+        for profile in export.PROFILES:
+            with Image.open(self.root / profile / 'review.jpg') as image:
+                red, _, blue = image.getpixel((0, 0))
+                self.assertGreater(red, blue + 100)
+        spec = importlib.util.spec_from_file_location('budget_import', Path(__file__).with_name('import-staging-evidence.py'))
+        importer = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(importer)
+        annotations = []
+        for line in output.getvalue().splitlines():
+            metadata, message = line.split('::', 2)[1:]
+            annotations.append({'title': metadata.removeprefix('notice title='),
+                                'message': message.replace('%0D', '\r').replace('%0A', '\n').replace('%25', '%')})
+        manifest, images = importer.decode_evidence(annotations, 'd7768c42ab8c837a9cc5b9abcec6e4f4fd718b1f')
+        self.assertEqual(manifest['mode'], 'disposable Production HTTPS budget')
+        self.assertEqual(len(images), 4)
+        self.assertNotIn('teamEvidence', manifest['profiles'][0])
+
+    def test_budget_dimension_fallback_is_bounded_and_never_truncates(self):
+        self.budget_fixture()
+        from PIL import Image
+        original_save = Image.Image.save
+        attempted = []
+
+        def oversized_until_small(image, path, *args, **kwargs):
+            if str(path).endswith('review.jpg'):
+                attempted.append(image.size)
+                if image.width > 720:
+                    Path(path).write_bytes(b'x' * 20000)
+                    return
+            return original_save(image, path, *args, **kwargs)
+
+        for profile in export.PROFILES:
+            Image.new('RGB', (1440, 900), 'red').save(
+                self.root / profile / 'p1-05-non-financial-manager-general-save.png')
+        with patch.dict('os.environ', {'GITHUB_ACTIONS': 'true'}), \
+                patch.object(Image.Image, 'save', oversized_until_small):
+            export.main(self.root, None, 'budget')
+        self.assertTrue(any(width == 960 for width, _ in attempted))
+        self.assertTrue(any(width == 800 for width, _ in attempted))
+        self.assertTrue(any(width == 720 for width, _ in attempted))
+        for profile in export.PROFILES:
+            self.assertLess((self.root / profile / 'review.jpg').stat().st_size, 20000)
+            with Image.open(self.root / profile / 'p1-05-non-financial-manager-general-save.png') as image:
+                self.assertEqual(image.size, (1440, 900))
+
+    def test_budget_rejects_image_still_too_large_at_final_bound(self):
+        self.budget_fixture()
+        def oversized(image, path, *args, **kwargs):
+            Path(path).write_bytes(b'x' * 20000)
+        with patch.dict('os.environ', {'GITHUB_ACTIONS': 'true'}), \
+                patch('PIL.Image.Image.save', oversized):
+            with self.assertRaisesRegex(ValueError, 'Review image too large'):
+                export.main(self.root, 'manifest', 'budget')
+        self.assertFalse((self.root / 'manifest.json').exists())
+
+    def test_budget_requires_matrix_description_and_literal_pass(self):
+        self.budget_fixture()
+        for key, value in (('budgetEvidence', ''), ('budgetEvidence', None),
+                           ('checks', {**{k: True for k in export.CHECKS},
+                                       'production_budget_authorization_matrix': 1})):
+            with self.subTest(key=key), patch.dict('os.environ', {'GITHUB_ACTIONS': 'true'}):
+                self.change(key, value)
+                with self.assertRaises(ValueError):
+                    export.main(self.root, 'manifest', 'budget')
+                self.budget_fixture()
+
+    def test_budget_never_falls_back_to_organization_screenshot(self):
+        self.budget_fixture()
+        source = self.root / 'ar-desktop/p1-05-non-financial-manager-general-save.png'
+        source.unlink()
+        with patch.dict('os.environ', {'GITHUB_ACTIONS': 'true'}):
+            with self.assertRaises(FileNotFoundError):
+                export.main(self.root, 'manifest', 'budget')
+            source.symlink_to(self.root / 'ar-desktop/05-profile-after-restart.png')
+            with self.assertRaisesRegex(ValueError, 'screenshot path'):
+                export.main(self.root, 'manifest', 'budget')
 
     def test_requires_all_four_profiles(self):
         self.assertEqual(len(export.read_results(self.root)), 4)

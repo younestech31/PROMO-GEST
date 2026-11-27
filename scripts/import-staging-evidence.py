@@ -29,6 +29,9 @@ def validate_manifest(manifest, source_sha):
     spec.loader.exec_module(schema)
     suites = ('staging', 'organization', 'sessions', 'language', 'team')
     modes = {'disposable Production HTTPS ' + suite: index for index, suite in enumerate(suites)}
+    # Budget uses the existing Production matrix flag in CHECKS, not the unrelated
+    # organization/session/language/team evidence groups or their screenshots.
+    modes['disposable Production HTTPS budget'] = 0
     if (not isinstance(manifest, dict) or set(manifest) != {'mode', 'profiles', 'images'}
             or manifest['mode'] not in modes):
         raise ValueError('Unexpected evidence manifest schema or suite')
@@ -51,6 +54,9 @@ def validate_manifest(manifest, source_sha):
                 or not re.fullmatch(r'[0-9a-f]{40}', result['testedCheckout'])
                 or not isinstance(result['run'], str) or not result['run'].isdigit()):
             raise ValueError('Evidence schema, source or verdict mismatch')
+        if manifest['mode'] == 'disposable Production HTTPS budget' and (
+                not isinstance(result['budgetEvidence'], str) or not result['budgetEvidence'].strip()):
+            raise ValueError('Missing budget matrix evidence')
         for key, checks in groups[:level + 1]:
             if (not isinstance(result[key], dict) or set(result[key]) != set(checks)
                     or any(value is not True for value in result[key].values())):
@@ -111,6 +117,21 @@ def decode_evidence(annotations, source_sha):
     return manifest, images
 
 
+def select_export_job(jobs):
+    backend = next(job for job in jobs if job['name'] == '.NET 10 and PostgreSQL 18 least-privilege tests')
+    if backend['conclusion'] != 'success':
+        raise ValueError('Staging job did not pass')
+    # New runs isolate notices from the backend job's 50-annotation cap. Legacy
+    # archives retain their original job. Never fall back from a failed new job.
+    exports = [job for job in jobs if job['name'] == 'Production HTTPS evidence export']
+    if len(exports) > 1:
+        raise ValueError('Ambiguous evidence export job')
+    job = exports[0] if exports else backend
+    if job['conclusion'] != 'success':
+        raise ValueError('Evidence export job did not pass')
+    return job
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--run', required=True, type=int)
@@ -120,9 +141,7 @@ def main():
     if run['conclusion'] != 'success' or run['head_repository']['full_name'] != REPOSITORY:
         raise ValueError('Only successful runs from this repository may be imported')
     jobs = api(f'actions/runs/{args.run}/jobs')['jobs']
-    job = next(job for job in jobs if job['name'] == '.NET 10 and PostgreSQL 18 least-privilege tests')
-    if job['conclusion'] != 'success':
-        raise ValueError('Staging job did not pass')
+    job = select_export_job(jobs)
     annotations = []
     page = 1
     while True:

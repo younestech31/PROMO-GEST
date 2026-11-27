@@ -14,6 +14,13 @@ incident or a new application acceptance claim.
 - Explicit modes only: staging, organization, sessions, language, and the P1-15 `team`
   extension. The team mode requires all four prior assertion groups plus its own eight
   named checks; prior modes keep their original meanings.
+- Independent `budget` mode uses the complete baseline Production HTTPS checks,
+  including literal `production_budget_authorization_matrix: true`, and a nonempty
+  sanitized `budgetEvidence` description. It selects only
+  `p1-05-non-financial-manager-general-save.png` (never the organization image).
+  It does not claim team/session/language checks from a different manifest; all
+  scenarios still run unchanged and full results remain in the Actions artifact.
+  Existing team/other archives remain supported with their strict schemas.
 - All four unique profiles must contain the exact known profile fields, Production
   environment, matching source, PASS verdict, full tested-checkout SHA and numeric run.
 - Every named baseline check must be exactly boolean `true`. Organization, session and
@@ -54,3 +61,15 @@ PR #275 merged as `9566f86bc2a971baff68355fd87ea8c2857ddcbc` after final head CI
 46004178317 passed 4/4 and CodeQL 46004178309 passed 2/2. Exact-main CI 46013272743
 passed 4/4 and CodeQL 46013272694 passed 2/2 on that same merged SHA. No deployment, operational database change, Notion mutation, institutional
 signature or phase-gate advancement is performed by this follow-up.
+
+
+## Separate notice budget for Production exports
+
+PR283 observed50 backend annotations:10 warnings +38 P1-10 chunks +only2 budget
+chunks; run46060648111 passed all export steps but strict import correctly rejected
+missing pieces. Production notices now use dedicated job `Production HTTPS evidence
+export`, which downloads the same run's `staging-https-evidence` after successful
+backend. Import requires the overall run and backend to pass, and prefers exactly
+one successful dedicated export job. Failed/skipped/ambiguous dedicated jobs cannot
+fall back to legacy backend notices. Historical runs without it keep original
+selection. This is read-only artifact transport, not an acceptance bypass.

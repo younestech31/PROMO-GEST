@@ -33,7 +33,9 @@ jobs:
           python3 tests/browser/test_commercialization_review.py
       - name: Test staging evidence completeness, privacy and import integrity
         run: |
-          python3 scripts/test_export_staging_evidence.py
+          python3 -m venv "$RUNNER_TEMP/evidence-test-python"
+          "$RUNNER_TEMP/evidence-test-python/bin/pip" install pillow==12.0.0
+          "$RUNNER_TEMP/evidence-test-python/bin/python" scripts/test_export_staging_evidence.py
           python3 scripts/test_import_staging_evidence.py
           python3 scripts/test_export_commercialization_evidence.py
       - name: Test the repository hygiene guard
@@ -320,18 +322,6 @@ jobs:
         run: |
           source "$RUNNER_TEMP/p0-python/bin/activate"
           bash tests/browser/run-staging.sh
-      # Runner check annotations allow ten notices per step. Each record is bounded
-      # to ten <=3000-character chunks; keep publication in distinct read-only steps.
-      - name: Export Arabic desktop staging review image
-        run: '"$RUNNER_TEMP/p0-python/bin/python" scripts/export-staging-evidence.py "$RUNNER_TEMP/staging-evidence" --suite team --record ar-desktop'
-      - name: Export Arabic mobile staging review image
-        run: '"$RUNNER_TEMP/p0-python/bin/python" scripts/export-staging-evidence.py "$RUNNER_TEMP/staging-evidence" --suite team --record ar-mobile'
-      - name: Export French desktop staging review image
-        run: '"$RUNNER_TEMP/p0-python/bin/python" scripts/export-staging-evidence.py "$RUNNER_TEMP/staging-evidence" --suite team --record fr-desktop'
-      - name: Export French mobile staging review image
-        run: '"$RUNNER_TEMP/p0-python/bin/python" scripts/export-staging-evidence.py "$RUNNER_TEMP/staging-evidence" --suite team --record fr-mobile'
-      - name: Export complete staging manifest
-        run: '"$RUNNER_TEMP/p0-python/bin/python" scripts/export-staging-evidence.py "$RUNNER_TEMP/staging-evidence" --suite team --record manifest'
       - name: Publish sanitized Production HTTPS staging evidence
         if: always()
         uses: actions/upload-artifact@v7
@@ -777,6 +767,33 @@ jobs:
             echo "Backup script accepted a single-copy run without an explicit local-only acknowledgement." >&2
             exit 1
           fi
+
+  production-evidence-export:
+    name: Production HTTPS evidence export
+    runs-on: ubuntu-latest
+    needs: backend-and-postgres
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/download-artifact@v8
+        with:
+          name: staging-https-evidence
+          path: ${{ runner.temp }}/staging-evidence
+      - name: Install bounded evidence encoder
+        run: |
+          python3 -m venv "$RUNNER_TEMP/p0-python"
+          "$RUNNER_TEMP/p0-python/bin/pip" install pillow==12.0.0
+      # Runner check annotations allow ten notices per step. Each record is bounded
+      # to ten <=3000-character chunks; keep publication in distinct read-only steps.
+      - name: Export Arabic desktop staging review image
+        run: '"$RUNNER_TEMP/p0-python/bin/python" scripts/export-staging-evidence.py "$RUNNER_TEMP/staging-evidence" --suite budget --record ar-desktop'
+      - name: Export Arabic mobile staging review image
+        run: '"$RUNNER_TEMP/p0-python/bin/python" scripts/export-staging-evidence.py "$RUNNER_TEMP/staging-evidence" --suite budget --record ar-mobile'
+      - name: Export French desktop staging review image
+        run: '"$RUNNER_TEMP/p0-python/bin/python" scripts/export-staging-evidence.py "$RUNNER_TEMP/staging-evidence" --suite budget --record fr-desktop'
+      - name: Export French mobile staging review image
+        run: '"$RUNNER_TEMP/p0-python/bin/python" scripts/export-staging-evidence.py "$RUNNER_TEMP/staging-evidence" --suite budget --record fr-mobile'
+      - name: Export complete staging manifest
+        run: '"$RUNNER_TEMP/p0-python/bin/python" scripts/export-staging-evidence.py "$RUNNER_TEMP/staging-evidence" --suite budget --record manifest'
 
   windows-publish-and-powershell:
     name: Windows publish and PowerShell validation

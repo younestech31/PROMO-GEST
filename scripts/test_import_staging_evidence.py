@@ -175,6 +175,46 @@ class StagingImportTests(unittest.TestCase):
             with self.subTest(value=value), self.assertRaises(ValueError):
                 module.validate_manifest(modified, source)
 
+    def test_budget_requires_actual_matrix_and_description_without_scope_broadening(self):
+        manifest = copy.deepcopy(self.manifest)
+        manifest['mode'] = 'disposable Production HTTPS budget'
+        module.validate_manifest(manifest, SHA)
+        for value in (False, 1, 'true', None):
+            bad = copy.deepcopy(manifest)
+            bad['profiles'][0]['checks']['production_budget_authorization_matrix'] = value
+            with self.subTest(value=value), self.assertRaises(ValueError):
+                module.validate_manifest(bad, SHA)
+        for value in ('', None, 1):
+            bad = copy.deepcopy(manifest)
+            bad['profiles'][0]['budgetEvidence'] = value
+            with self.subTest(value=value), self.assertRaises(ValueError):
+                module.validate_manifest(bad, SHA)
+        bad = copy.deepcopy(manifest)
+        bad['profiles'][0]['teamEvidence'] = {}
+        with self.assertRaises(ValueError):
+            module.validate_manifest(bad, SHA)
+        # Existing Production-only, identity and exact-field protections still apply.
+        for key, value in (('environment', 'Development'), ('sourceHead', 'b' * 40),
+                           ('cookies', 'private')):
+            bad = copy.deepcopy(manifest)
+            bad['profiles'][0][key] = value
+            with self.subTest(key=key), self.assertRaises(ValueError):
+                module.validate_manifest(bad, SHA)
+
+    def test_export_job_selection_supports_legacy_and_dedicated_jobs(self):
+        backend = {'name': '.NET 10 and PostgreSQL 18 least-privilege tests',
+                   'conclusion': 'success', 'id': 1}
+        dedicated = {'name': 'Production HTTPS evidence export', 'conclusion': 'success', 'id': 2}
+        self.assertEqual(module.select_export_job([backend]), backend)
+        self.assertEqual(module.select_export_job([backend, dedicated]), dedicated)
+        for conclusion in ('failure', 'skipped', None):
+            with self.subTest(conclusion=conclusion), self.assertRaises(ValueError):
+                module.select_export_job([backend, {**dedicated, 'conclusion': conclusion}])
+            with self.subTest(backend=conclusion), self.assertRaises(ValueError):
+                module.select_export_job([{**backend, 'conclusion': conclusion}, dedicated])
+        with self.assertRaisesRegex(ValueError, 'Ambiguous'):
+            module.select_export_job([backend, dedicated, dedicated])
+
     def test_unrelated_annotations_are_ignored(self):
         annotations = copy.deepcopy(self.annotations)
         annotations.append({'title': 'Unrelated test warning', 'message': 'not JSON'})

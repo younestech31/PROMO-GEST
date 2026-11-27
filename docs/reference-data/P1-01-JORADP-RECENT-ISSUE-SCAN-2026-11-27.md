@@ -69,7 +69,14 @@ The 2 June 1984 interministerial order sets chief-lieu seats in a column separat
 - French: [F1984041.pdf](https://www.joradp.dz/FTP/Jo-Francais/1984/F1984041.pdf), printed pp.1030, 1044, 1045 and 1048.
 - Arabic: [A1984041.pdf](https://www.joradp.dz/FTP/jo-arabe/1984/A1984041.pdf), printed pp.1527–1530. Page 1527 contains the Arabic order text and begins the annex; pp.1528–1530 show the separate commune and seat columns for sample sections covering Adrar, Chlef, Laghouat, Oum El Bouaghi, Batna and Bejaia.
 
-The sample confirms the bilingual source structure but is not a full annex transcription, full row-by-row language pairing or national seat reconciliation. No new PDF-byte SHA-256 values were captured in this pass. The JO11/1986 amendment cites a further order dated 13 May 1985 modifying the June 1984 seat order; its standalone issue/page and full annex remain unlocated. Do not infer its effects from the recital.
+The sample confirms the bilingual source structure but is not a full annex transcription, full row-by-row language pairing or national seat reconciliation. No new PDF-byte SHA-256 values were captured in this pass. The 13 May 1985 amending order has now been located and visually checked in both official editions: JO24/1985, French printed p.535 / PDF index 28 and Arabic printed pp.829–830 / PDF indices 44–45. It changes four seat entries:
+
+- Guelma: Aïn Sandel (عين صندل) → Aïn Souda (العين السوداء); local table row 07.
+- Médéa: Bir Ben Laabed (بير بن العابد) → Zoudj El Beida (زوج البيضاء); local table row 56.
+- Bordj Bou Arréridj: Haraza (حرازة) → Fedala (فضالة); local table row 34.
+- El Oued: Beni Guecha (بني قشة) → Beni Guecha (بني قشة); local table row 19.
+
+These local row identifiers are not Decree 85-20 four-digit register codes. The amendment changes the seat column only. The full seat-annex lineage and later code/seat reconciliation remain open.
 
 ### C. Source-population clarification for JO44/1985
 
@@ -109,6 +116,6 @@ Official issue PDFs:
 ## 7. Outstanding work and safety boundary
 
 - The 2005 and 2006 Arabic/French page images were checked, but PDF-byte SHA-256 values for the inspected 2005 editions and the Arabic 2006 edition were not captured. This is a binary-provenance gap, not an outstanding page-image review.
-- Recalculate/compare SHA-256 for the official JO26/2021 Arabic and French PDF binaries; complete row-by-row bilingual transcription and reconciliation for Decree 21-128. For JO41/1984, the Arabic annex has now received a bounded visual sample (printed pp.1527–1530); full Arabic/French transcription, row pairing and national seat reconciliation remain open, as does locating the cited 13 May 1985 amending order.
+- Recalculate/compare SHA-256 for the official JO26/2021 Arabic and French PDF binaries; complete row-by-row bilingual transcription and reconciliation for Decree 21-128. For JO41/1984, the Arabic annex has received a bounded visual sample (printed pp.1527–1530); full Arabic/French transcription, row pairing and national seat reconciliation remain open. The 13 May 1985 amendment is now located and four bilingual seat rows are recorded; the entire seat history and later code chain remain open.
 - All 1,541 master-ledger practitioner sign-offs remain `PENDING`; W30-R007 remains `NEEDS_EVIDENCE`; no commune data is imported; `communesCount = 0` and `PendingOfficialVerification` remain unchanged.
 - No production database, Cloud SQL, application runtime, API contract, schema, migration, or deployed environment was changed.

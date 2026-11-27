@@ -1,7 +1,7 @@
 # P0-A01 — First-Run Initialization & Second-Initialization Rejection
 
 1. **Task ID & Canonical Reference:** `P0-A01` — `docs/PHASE-0-MANUAL-ACCEPTANCE.md` (§5A, §4) / `https://app.notion.com/p/42313e9ed36881e8a812fbc718bf5d22` (external Notion page blocked by login wall in unauthenticated container; canonical local repository specification executed).
-2. **Tested Commit SHA:** `a4e1f6daa828d01d481900f1051dcc335da7e25` (cryptographically verified via SHA-256 against GitHub `main` HEAD; workspace has no `.git` / `NO_GIT`).
+2. **Recorded source baseline (metadata corrected 27 November):** `a4e1f6daa8828d01d481900f1051dcc335da7e25` — parent of evidence-deposit commit `73a06493241876c35b9f20b2a93ff4d52b3ae909`. The NO_GIT execution report cannot independently establish byte-for-byte checkout identity; see correction below.
 3. **Environment & Browser:** Real ASP.NET Core 10 (`PromoGest.Api.dll`, `Development` mode, `http://127.0.0.1:5155`) + Vite real-API proxy (`PROMOGEST_VITE_ONLY=0`, `http://127.0.0.1:4173`) + 4 separate fresh empty disposable PostgreSQL 18.6 databases (`promogest_qa_p0_ard`, `promogest_qa_p0_arm`, `promogest_qa_p0_frd`, `promogest_qa_p0_frm`) with distinct migration (`SQL_ADMIN_USER`) and runtime (`SQL_USER`) identities; `headless Chromium` (`playwright-cli` 0.1.22).
 4. **Ordered Execution Steps (per profile: `ar-desktop` 1440×900, `ar-mobile` 390×844, `fr-desktop` 1440×900, `fr-mobile` 390×844):**
    1. Verified empty PostgreSQL 18 schema (`organization_settings=0`, `users=0`, `user_roles[SYSTEM_ADMIN]=0`).
@@ -33,4 +33,14 @@
    - External Notion page `https://app.notion.com/p/42313e9ed36881e8a812fbc718bf5d22` requires interactive login (`BLOCKED` in unauthenticated container); test steps were taken from canonical `docs/PHASE-0-MANUAL-ACCEPTANCE.md`.
    - Performed in disposable local container PostgreSQL 18 databases rather than external Staging/production hardware.
 10. **Automated vs. Manual Execution Distinction:**
-    - This run executed interactively via `playwright-cli` directly on isolated disposable PostgreSQL 18 instances for `a4e1f6daa828d01d481900f1051dcc335da7e25`; it is distinct from GitHub Actions CI `tests/browser/phase0.py`.
+    - This run executed interactively via `playwright-cli` directly on isolated disposable PostgreSQL 18 instances for `a4e1f6daa8828d01d481900f1051dcc335da7e25`; it is distinct from GitHub Actions CI `tests/browser/phase0.py`.
+
+## Metadata reconciliation — 27 November 2026
+
+The original report used `a4e1f6daa828d01d481900f1051dcc335da7e25` (39 characters, not a full SHA).
+The corrected baseline above is the GitHub/git-verified sole parent of the evidence-deposit
+commit; this corrects source metadata, not a rerun or independent cryptographic attestation
+of the NO_GIT execution workspace. Original screenshot pixels are unchanged.
+Recorded interactive acceptance remains PASS for the scope above; Notion is Done / Verified
+with Last Verified 26 November. No named human signature, physical-device test, Production-mode
+run or institution-host approval is asserted. See [reconciliation](../../../../ROADMAP-RECONCILIATION-2026-11-27.ar.md).

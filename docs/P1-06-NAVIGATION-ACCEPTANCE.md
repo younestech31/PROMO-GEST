@@ -78,17 +78,17 @@ The browser helper writes JSON `navigation-revocation.json` and screenshot
 These files are **not imported or visually reviewed** in this checkout. Run success
 establishes the executed assertions, not screenshot authenticity review or an
 institutional deployment. [Archived jobs and exact steps](evidence/p1-06-navigation-2026-11-27/checks.json).
-Final sourcea4809a1 CI46076231175 PASS5/5 + CodeQL46076231298 PASS; PR287 merged as0378e19. Independent exact-main46077867862/46077867845 running, not inherited from head results. This closes only the bounded
+Final sourcea4809a1 CI46076231175 PASS5/5 + CodeQL46076231298 PASS; PR287 merged as0378e19. Independent exact-main46077867862 PASS5/5 and CodeQL46077867845 PASS, not inherited from head results. This closes only the bounded
 same-document revocation regression, **not full P1-06 acceptance**.
 
-## Next bounded slice: dirty project settings — authored, browser CI pending
+## Bounded slice: dirty project settings — source CI PASS
 
 `tests/browser/navigation_dirty_settings.py` follows the revocation helper in the
 same four-profile Development and Production HTTPS loops, reusing the director
 session before deliberately logging it out. The extra project is created by that
 actor through the real API, only in the allowlisted disposable CI databases.
 
-| Action | Options/assertions authored in this slice |
+| Action | Options/assertions executed in source da6068b |
 |---|---|
 | Internal project section | Stay preserves route/draft; Discard returns to overview, no persisted write; reopening settings reconstructs the original value |
 | Explicit project switcher | Stay preserves original project/draft; Save requires real PUT200 before opening the second project; return reconstructs the saved name |
@@ -96,10 +96,23 @@ actor through the real API, only in the allowlisted disposable CI databases.
 | Logout | Stay retains real authenticated session/draft without persistence; Save requires PUT200 and logout204, login surface, actor API401 and independent stored-name equality |
 | Cleanup | Administrator restores only the synthetic name with a fresh concurrency stamp and null financial field, preserving hidden budget semantics; zero pageerror |
 
+**Executed source `da6068b74ab0beea3a8f734905abd61a00662809`:**
+[CI46078167003](https://github.com/younestech31/PROMO-GEST/actions/runs/46078167003)
+**PASS5/5**, [CodeQL46078167004](https://github.com/younestech31/PROMO-GEST/actions/runs/46078167004)
+**PASS**; all eight PR checks SUCCESS. The full Development and Production HTTPS
+four-profile flows, restart, PG18, restore and export passed. Both real beforeunload
+prompts were dismissed without document replacement; both required real settings
+PUTs returned200, logout returned204 and subsequent actor `/auth/me` returned401.
+Independent admin read verified persistence and finally restoration.
+
 Two screenshots (`p1-06-dirty-project-switch.png`, `p1-06-dirty-logout.png`) and
-`navigation-dirty-settings.json` are produced only by the CI execution path. **Not
-yet generated/imported/reviewed for this slice.** Local safety3/3, actual pinned
-Playwright contract6/6 and budget helpers7/7 PASS; not browser behavior evidence.
+`navigation-dirty-settings.json` were written in the successful CI execution path.
+They are **not imported or visually reviewed here**; screenshots illustrate dialogs,
+not proof of server-side writes/revocation by themselves. Local safety3/3, actual
+pinned Playwright contract6/6, budget helpers7/7 and baseline12/12 also PASS; those
+local checks alone are not browser evidence. [Exact-run archive](evidence/p1-06-navigation-2026-11-27/checks.json).
+Current evidence/documentation follow-up needs its own CI before PR288 merge and
+eventual independent exact-main verification.
 The second synthetic project remains only in the disposable CI database. Native
 Leave/actual close acceptance, logout Discard and embedded forms are not claimed.
 Full P1-06 remains In Review / Pending, including final protected-view mapping.
@@ -110,7 +123,7 @@ Full P1-06 remains In Review / Pending, including final protected-view mapping.
 |---|---|---|
 | Complete ProjectWorkspaceView contract / strict TS | `AppContentRouter` in `src/app/App.tsx`; frontend CI and TypeScript | Pin source/checks in final closure mapping |
 | Protected views never mount for unauthorized routes | `canAccessRoute` pre-render guard; routeRegistry/workspaceGuards tests | Independently exercise actual router self/cross-role cases, not helper-only assertions |
-| Dirty form propagation; Back/Forward/internal/project/logout/reload/close | `useUnsavedGuard`, App callbacks, embedded settings refs; existing browser history flow and original 26-Nov report | Full route/project-switch/logout/embedded form matrix; native unload is browser-controlled (not a custom Save/Discard prompt); failed-save slice source CI PASS (final head and independent merged-main PASS) |
+| Dirty form propagation; Back/Forward/internal/project/logout/reload/close | `useUnsavedGuard`, App callbacks, embedded settings refs; existing browser history flow and original 26-Nov report | Source da6068b settings internal Stay/Discard, project-switch Stay/Save, logout Stay/Save and native reload/close dismiss PASS in four Development/Production profiles. Embedded forms, remaining option/action combinations and final-head/main reconciliation remain; native prompts are browser-controlled. Prior history/failed-save regression independently green |
 | Revoked access removes cache/pinned/recent and returns home | `handleProjectVerificationFailed`, `revokeProjectAccessFromState`, preferences storage | Source0f514c8 actual API revocation and same-document cached-card/pin/recent cleanup PASS in all four Development/Production profiles; eventual final-head/main reconciliation; no claim of immediate push invalidation before server verification |
 | One API/CSRF/registry/route/localization implementation | `frontendArchitecture.test.ts` dependency/boundary tests | Final exact-source execution references |
 | F–J planned APIs explicit; no-op actions removed; legal review | planned API rejection and metadata boundary tests | Keep qualified Algerian legal review independent; do not mark F–J implemented |

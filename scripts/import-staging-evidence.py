@@ -7,6 +7,8 @@ not the artifact storage redirect, and gives CI no repository-write permission.
 import argparse
 import base64
 import hashlib
+import importlib.util
+import re
 import json
 import subprocess
 from pathlib import Path
@@ -17,6 +19,44 @@ PROFILES = ('ar-desktop', 'ar-mobile', 'fr-desktop', 'fr-mobile')
 
 def api(path):
     return json.loads(subprocess.check_output(['gh', 'api', f'repos/{REPOSITORY}/{path}'], text=True))
+
+
+def validate_manifest(manifest, source_sha):
+    """Recheck suite verdicts at the trust boundary, before writing any evidence."""
+    spec = importlib.util.spec_from_file_location(
+        'staging_export_schema', Path(__file__).with_name('export-staging-evidence.py'))
+    schema = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(schema)
+    suites = ('staging', 'organization', 'sessions', 'language')
+    modes = {'disposable Production HTTPS ' + suite: index for index, suite in enumerate(suites)}
+    if (not isinstance(manifest, dict) or set(manifest) != {'mode', 'profiles', 'images'}
+            or manifest['mode'] not in modes):
+        raise ValueError('Unexpected evidence manifest schema or suite')
+    level = modes[manifest['mode']]
+    groups = [('checks', schema.CHECKS), ('organizationEvidence', schema.ORGANIZATION_CHECKS),
+              ('sessionEvidence', schema.SESSION_CHECKS), ('languageEvidence', schema.LANGUAGE_CHECKS)]
+    fields = {'profile', 'sourceHead', 'testedCheckout', 'run', 'environment', 'database',
+              'proxy', 'viewport', 'checks', 'tlsBoundary', 'scope', 'syntheticDocumentSha256',
+              'status', 'browser', 'budgetEvidence'} | {key for key, _ in groups[1:level + 1]}
+    profiles = manifest['profiles']
+    if (not isinstance(profiles, list) or len(profiles) != 4
+            or any(not isinstance(r, dict) for r in profiles)
+            or {r.get('profile') for r in profiles} != set(PROFILES)):
+        raise ValueError('Incomplete profile manifest')
+    for result in profiles:
+        if (set(result) != fields or result['sourceHead'] != source_sha
+                or result['status'] != 'PASS' or result['environment'] != 'Production'
+                or not isinstance(result['testedCheckout'], str)
+                or not re.fullmatch(r'[0-9a-f]{40}', result['testedCheckout'])
+                or not isinstance(result['run'], str) or not result['run'].isdigit()):
+            raise ValueError('Evidence schema, source or verdict mismatch')
+        for key, checks in groups[:level + 1]:
+            if (not isinstance(result[key], dict) or set(result[key]) != set(checks)
+                    or any(value is not True for value in result[key].values())):
+                raise ValueError('Incomplete or failed suite evidence')
+    if (len({r['testedCheckout'] for r in profiles}) != 1
+            or len({r['run'] for r in profiles}) != 1):
+        raise ValueError('Mixed tested revisions or run identities')
 
 
 def decode_evidence(annotations, source_sha):
@@ -47,18 +87,19 @@ def decode_evidence(annotations, source_sha):
             raise ValueError('Missing evidence chunk')
         records[key] = json.loads(''.join(pieces[i] for i in range(1, totals[key] + 1)))
     manifest = records['manifest']
-    if {r['profile'] for r in manifest['profiles']} != set(PROFILES) or len(manifest['profiles']) != 4:
-        raise ValueError('Incomplete profile manifest')
-    if any(r['sourceHead'] != source_sha or r['status'] != 'PASS' for r in manifest['profiles']):
-        raise ValueError('Evidence source or verdict mismatch')
+    validate_manifest(manifest, source_sha)
     if len(manifest['images']) != 4:
         raise ValueError('Incomplete image manifest')
     images = {}
     for image in manifest['images']:
+        if not isinstance(image, dict) or set(image) != {'profile', 'file', 'sha256'}:
+            raise ValueError('Unexpected image manifest schema')
         profile = image['profile']
         if profile not in PROFILES or profile in images or image['file'] != f'{profile}/review.jpg':
             raise ValueError('Unexpected image path')
         record = records[profile]
+        if not isinstance(record, dict) or set(record) != {'profile', 'sha256', 'imageBase64'}:
+            raise ValueError('Unexpected image record schema')
         data = base64.b64decode(record['imageBase64'], validate=True)
         if len(data) >= 20000 or not data.startswith(b'\xff\xd8\xff'):
             raise ValueError('Invalid compact JPEG')
@@ -90,6 +131,8 @@ def main():
             break
         page += 1
     manifest, images = decode_evidence(annotations, run['head_sha'])
+    if any(r['run'] != str(args.run) for r in manifest['profiles']):
+        raise ValueError('Evidence run identity mismatch')
     if args.out.exists():
         raise ValueError('Choose a new evidence directory; existing evidence is never overwritten')
     args.out.mkdir(parents=True)

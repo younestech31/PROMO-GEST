@@ -236,8 +236,7 @@ The 8 February 1986 register amendment (JO11/1986, printed p.280) cites an order
 
 ### Open gates after this pass
 
-- Recalculate SHA-256 directly from both official PDF binaries and compare to the historical hashes recorded in the inventory; complete Decree 21-128's French/Arabic annex transcription and reconciliation row by row.
-- Transcribe and reconcile Decree 21-128's French/Arabic annex row by row, preserving locality/commune/territorial-parent semantics and every sans changement block.
+- Recalculate SHA-256 directly from both official JO26/2021 PDF binaries and compare to the historical hashes recorded in the inventory; complete Decree 21-128's French/Arabic annex transcription and reconciliation row by row, preserving commune/locality/territorial-parent semantics and every sans changement block.
 - Complete the full French/Arabic seat transcription and row-by-row parity checks; locate the cited 13 May 1985 amending order and determine any effects through the later code/seat register chain.
 - Reconcile the 975 residual source-lineage candidates against all applicable instruments. This does not mean that 975 original JO44/1985 commune rows remain unextracted.
 - All 1,541 qualified-practitioner decisions remain pending; no new code, valid-time value, or import is authorized by this review.

@@ -1,7 +1,23 @@
 # P1-10 — commercialization and suspension-review acceptance
 
 Date: 27 November 2026. **Task: In Progress / Pending.**
-This slice tests existing runtime; it does not implement commercialization again.
+PR #279 tests existing runtime; it does not implement commercialization again.
+Follow-up PR #281 narrowly repairs the discovered suspension/create write boundary;
+see [atomicity/serialization tests, semantics and execution log](P1-10-ATOMIC-SUSPENSION.md).
+The original seven-criterion assessment below records the pre-repair gap, not a
+claim that an unverified repair has already closed it.
+
+## Repair verification follow-up — PR #281
+
+#280 was reproduced before repair on PG18: CI 46050829871 exposed three exact
+failures (partial suspension after injected save failure; stale suspension 200;
+stale create 201). Runtime repair source `7e7c5da` passed CI 46051328233 **4/4**
+and CodeQL 46051328435 **2/2**, including all three deterministic cases, repeat-save
+idempotency, independent cross-project hold/unit/customer checks, four-profile
+browser/Production regressions and restore drill. [Full evidence and ordering semantics](P1-10-ATOMIC-SUSPENSION.md).
+This supplies new technical support for criteria 2/5/6, not a retroactive change to
+original source99bab26 or the baseline assessment below. Final PR-head and exact
+post-merge verification remain separate; **P1-10 stays Pending at this checkpoint**.
 
 ## Dependency reconciliation
 

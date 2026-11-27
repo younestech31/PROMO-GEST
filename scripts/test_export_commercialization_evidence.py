@@ -70,6 +70,24 @@ class CommercializationExportTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             export.notice('manifest', {'test': 'a' * 30000})
 
+    def test_full_export_pipeline_when_pillow_is_available(self):
+        try:
+            from PIL import Image
+        except ImportError:
+            self.skipTest('Pillow is installed in the browser CI environment')
+        # Encoder plumbing only: these blank temporary images are never acceptance evidence.
+        for profile in export.PROFILES:
+            image = Image.new('RGB', (390, 844), 'white')
+            image.save(self.root / profile / 'p1-10-review-confirmation.png')
+        with patch.dict('os.environ', {'GITHUB_ACTIONS': 'true', 'P1_10_SOURCE_SHA': 'a' * 40}), \
+                contextlib.redirect_stdout(io.StringIO()) as output:
+            export.main(self.root, 'manifest')
+        manifest = json.loads((self.root / 'p1-10-manifest.json').read_text())
+        self.assertEqual(len(manifest['profiles']), 4)
+        self.assertEqual(len(manifest['images']), 4)
+        self.assertEqual(manifest['mode'], export.MODE)
+        self.assertIn('PG-P1-10-manifest:', output.getvalue())
+
     def test_export_rejects_non_ci_before_io(self):
         with patch.dict('os.environ', {}, clear=True):
             with self.assertRaises(RuntimeError):

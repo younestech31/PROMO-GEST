@@ -8,6 +8,7 @@ import os
 from pathlib import Path
 import re
 import sys
+import traceback
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / 'tests/browser'))
 from commercialization_review import CHECKS
@@ -73,9 +74,14 @@ def main(root, record):
         target = safe_file(root, profile, 'p1-10-review.jpg')
         with Image.open(source) as image:
             image = image.convert('RGB')
-            image.thumbnail((960, 844))
-            for quality in (65, 50, 35, 20):
-                image.save(target, 'JPEG', quality=quality, optimize=True)
+            # Keep original PNGs intact; dense bilingual queue text may exceed the
+            # ten-notice budget even at quality 20. Bounded size fallback, never truncate.
+            for bounds in ((960, 844), (800, 740), (720, 660)):
+                image.thumbnail(bounds)
+                for quality in (65, 50, 35, 20):
+                    image.save(target, 'JPEG', quality=quality, optimize=True)
+                    if target.stat().st_size < 20000:
+                        break
                 if target.stat().st_size < 20000:
                     break
         data = target.read_bytes()
@@ -98,4 +104,11 @@ if __name__ == '__main__':
     parser.add_argument('root', type=Path)
     parser.add_argument('--record', required=True, choices=(*PROFILES, 'manifest'))
     args = parser.parse_args()
-    main(args.root, args.record)
+    try:
+        main(args.root, args.record)
+    except Exception as error:
+        for frame in traceback.extract_tb(error.__traceback__):
+            if Path(frame.filename).name == Path(__file__).name:
+                print(f'::error file=scripts/export-commercialization-evidence.py,line={frame.lineno}::'
+                      f'P1-10 evidence export: {type(error).__name__} in {frame.name}', flush=True)
+        raise

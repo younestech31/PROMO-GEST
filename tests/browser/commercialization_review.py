@@ -144,7 +144,8 @@ def run_commercialization_review(admin_ctx, base, lang, device, out):
         confirm = page.get_by_role('button', name='تأكيد تسجيل المراجعة' if lang == 'ar' else 'Confirmer la revue', exact=True)
         confirm.scroll_into_view_if_needed()
         expect(confirm).to_be_in_viewport()
-        page.screenshot(path=out/'p1-10-review-confirmation.png')
+        page.locator('section[aria-labelledby="reservation-review-queue-title"]').screenshot(
+            path=out/'p1-10-review-confirmation.png')
         with page.expect_response('**/review') as reviewed:
             confirm.click()
         assert reviewed.value.status == 200

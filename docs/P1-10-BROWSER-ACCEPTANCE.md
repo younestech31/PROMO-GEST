@@ -48,7 +48,7 @@ The guard rejects anything except the exact disposable GitHub Actions loopback
 This is a Development-mode published ASP.NET Core SPA/PG18 regression, **not** a
 Production HTTPS run or institution-local installation acceptance.
 
-Seven named checks per profile (28 planned assertions, not a claimed result):
+Seven named checks per profile:
 
 1. All four non-commercial actual statuses return 409 `PROJECT_NOT_COMMERCIALIZABLE`
    without changing holds or units.
@@ -60,8 +60,8 @@ Seven named checks per profile (28 planned assertions, not a claimed result):
 6. Even after review, a new hold on the second available unit is denied without mutation.
 7. Exactly one completion audit and a denial audit identify the actor and target.
 
-Screenshots per profile: `p1-10-review-confirmation.png` (confirmation scrolled into
-viewport) and `p1-10-review-completed.png`, published with sanitized `P1_10` results in
+Screenshots per profile: `p1-10-review-confirmation.png` (actual review-queue section,
+confirmation scrolled into viewport) and `p1-10-review-completed.png`, published with sanitized `P1_10` results in
 `phase0-browser-evidence`. No credentials, cookies, session state or response dumps
 are added to artifacts. Screenshots illustrate UI states, not audit/409/concurrency
 proof; those require executed assertions.
@@ -80,8 +80,24 @@ proof; those require executed assertions.
   substring; no runtime change. This failed run is **not** acceptance evidence.
   Its CodeQL 46043064081 passed 2/2; other CI jobs passed.
 - PR #278 exact-main CI 46042410429 **4/4 PASS**, CodeQL 46042410441 **2/2 PASS**.
-- New real-stack browser matrix / screenshots: **PENDING CI execution**. No new
-  screenshot or 28/28 PASS is claimed before the job actually succeeds.
+- Corrected source `a54e34a6b2bc931be200df5a92ca791f71a18da1`:
+  [CI 46043626013](https://github.com/younestech31/PROMO-GEST/actions/runs/46043626013)
+  **4/4 PASS**, including all four real-browser profiles. Seven P1-10 checks per profile
+  executed successfully (**28/28**); raw PNGs/results in that run's `phase0-browser-evidence`.
+  This is executed browser evidence, not a claim of having retrieved/reviewed its screenshots.
+- Follow-up source `f6ea6e1`, CI 46043844633: four-profile browser step passed, but
+  compact screenshot **export failed**, so the overall run is **FAIL**, not accepted.
+  Remote log storage was inaccessible from the restricted workspace; no precise exception
+  message is inferred. Added static source-line/class diagnostics. Local encoding of existing
+  dense queue screenshots demonstrated that the 20,000-byte budget can be exceeded at
+  quality 20; compact transport now has bounded 800/720-pixel fallbacks, and the new
+  confirmation PNG captures the actual queue section rather than unrelated full-page chrome.
+  Original PNGs are not altered or replaced by the derivative JPEG.
+- Exporter tests **6/6 PASS** locally with Pillow, including complete image/manifest plumbing;
+  existing staging exporter **19/19**, importer **14/14 PASS**. Dedicated `PG-P1-10-` notices
+  and explicit Development mode cannot be mistaken for Production HTTPS evidence.
+- Latest screenshot export and visual import/review: **PENDING corrected CI**. No new
+  permanent screenshot is claimed until retrieval, hash verification and visual review.
 
 P1-10 remains Pending until its evidence has been reconciled against all seven task
 criteria. No institutional signature, new policy decision or operational acceptance

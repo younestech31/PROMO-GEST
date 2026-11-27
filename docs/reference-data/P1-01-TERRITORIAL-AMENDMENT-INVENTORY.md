@@ -243,26 +243,45 @@ The 8 February 1986 register amendment (JO11/1986, printed p.280) cites the 13 M
 
 ## 5J. Interministerial order of 13 May 1985 / JO24/1985 — four chief-lieu seat amendments verified bilingually
 
-**Instrument:** Interministerial order dated 13 May 1985, published in JO No. 24 on 5 June 1985, modifying the annex to the interministerial order of 2 June 1984 fixing commune chief-lieu seats. The order's Article 1 modifies four entries; Article 2 orders publication.
+**Instrument:** Interministerial order dated 13 May 1985, published in JO No. 24 on 5 June 1985, modifying the annex to the interministerial order of 2 June 1984 fixing commune chief-lieu seats. Article 1 changes four seat entries; Article 2 orders publication.
 
-Both official editions were visually inspected:
+Both official JORADP editions were visually inspected for the amending entries:
 
 - French official edition: [F1985024.pdf](https://www.joradp.dz/FTP/jo-francais/1985/F1985024.pdf), printed p.535, PDF zero-based index 28.
 - Arabic official edition: [A1985024.pdf](https://www.joradp.dz/FTP/jo-arabe/1985/A1985024.pdf), printed pp.829–830, PDF zero-based indices 44–45.
 
-| Wilaya | Local table row no. | Commune label (FR / AR) | Chief-lieu seat (FR / AR) |
-|---|---:|---|---|
-| Guelma (24) | 07 | Aïn Sandel / عين صندل | Aïn Souda / العين السوداء |
-| Médéa (26) | 56 | Bir Ben Laabed / بير بن العابد | Zoudj El Beida / زوج البيضاء |
-| Bordj Bou Arréridj (34) | 34 | Haraza / حرازة | Fedala / فضالة |
-| El Oued (39) | 19 | Beni Guecha / بني قشة | Beni Guecha / بني قشة |
+The 1984 prior-seat column was compared against the corresponding entries in JO41/1984. The 1984 page images for these rows were visually checked in the issue scan copy hosted by Kanonix, which identifies JORADP as its source; this is a page-image reading of the issue scan, not a fresh JORADP PDF byte download or checksum. Exact pages: French pp.1039, 1041, 1043, 1045; Arabic pp.1542, 1543, 1547, 1549.
 
-**Do not misread the table:** the local row identifiers `07`, `56`, `34` and `19` are not four-digit territorial-register codes under Decree 85-20. They identify positions within the annex for their respective Wilayas. The instrument modifies the chief-lieu-seat column, not commune identity, legal territorial parent or register-code assignment.
+| Wilaya | Local row no. | Commune (FR / AR) | JO41/1984 prior seat (FR / AR) | JO24/1985 amended seat (FR / AR) | JO11/1986 register code |
+|---|---:|---|---|---|---:|
+| Guelma (24) | 07 | Aïn Sandel / عين صندل | Aïn Sandel / عين صندل | Aïn Souda / العين السوداء | 2407 |
+| Médéa (26) | 56 | Bir Ben Laabed / بئر بن عابد | Bir Ben Laabed / بشر بن عابد* | Zoudj El Beida / زوج البيضاء | 2656 |
+| Bordj Bou Arréridj (34) | 34 | Haraza / حرازة | Haraza / حرازة | Fédala / فضالة | 3434 |
+| El Oued (39) | 19 | Beni Guecha / بنى قشة | Douelat / دويلات | Beni Guecha / بني قشة | 3919 |
 
-Four separate row-level assertions were added to `P1-01-TERRITORIAL-CHANGE-ASSERTIONS.csv` with Arabic and French source labels, page locators, and the destination seat recorded separately. The previous seat values are not asserted by this amendment row itself; they remain unfilled unless established from the exact relevant 1984 annex row. `valid_from`, four-digit code and practitioner review remain unadjudicated/pending. No PDF-byte SHA-256 was captured in this pass.
+* **Bilingual source discrepancy — Bir Ben Laabed:** JO41/1984's French table lists Bir Ben Laabed as both commune and seat; the Arabic scan page p.1543 visually shows the commune as `بئر بن عابد` and the seat as `بشر بن عابد`. Preserve the two readings. No transliteration-based normalization is authorized; qualified review is required.
+
+**Do not misread the table:** the local row identifiers `07`, `56`, `34` and `19` in JO24/1985 are positions within the amendment annex, not four-digit territorial-register codes. The 1985 instrument changes the chief-lieu-seat column only. The four-digit codes shown above come from the separate 8 February 1986 register amendment in JO11/1986, not from the 1985 seat amendment.
+
+Four separate 1985 row-level assertions in `P1-01-TERRITORIAL-CHANGE-ASSERTIONS.csv` now hold the prior and amended French seat values, retain the exact Arabic source labels and record the 1984 bilingual discrepancy. For these 1985 rows, `code_four_digit_source` remains blank and `code_assertion_status` remains `not_stated_by_this_instrument`. The valid-time fields and practitioner review remain pending.
+
+## 5K. Interministerial register amendment of 8 February 1986 / JO11/1986 — four code-and-seat rows
+
+**Instrument:** Interministerial order of 8 February 1986 modifying the annex to the 22 June 1985 register order under Decree 85-20. It expressly cites both the 22 June 1985 register order and the 13 May 1985 seat amendment, then prints the commune, four-digit code and seat in separate columns.
+
+Official French JORADP page images were visually inspected on 27 November 2026:
+
+- JO11/1986 printed p.280 / PDF zero-based index 15: Aïn Sandel `2407` / Aïn Souda; Bir Ben Laabed `2656` / Zoudj El Beida; Haraza `3434` / Fédala.
+- JO11/1986 printed p.281 / PDF zero-based index 16: Béni Guécha `3919` / Béni Guécha.
+
+The corresponding Arabic page-image review for JO11/1986 printed pp.401–402 is recorded in the prior bilingual audit. Existing PDF SHA-256 values in the repository inventory are French `F1986011.PDF`: `49cfdbd7aafca943f3c39e33882a24e791ed7531ff251f5b627d9947d111904b`; Arabic `A1986011.PDF`: `3d26169e0094ecb115d034fbfc1ab4507910efb8916822b41247a2ca494d3072`. The French binary checksum was not recalculated in this pass; the Arabic binary checksum was not recalculated or independently compared.
+
+Four new, distinct `register_code_and_seat_assertion` rows were added to the CSV for these 1986 register entries. Their `code_four_digit_source` values are explicit source values, not inferences. The 1985 seat-only rows remain separate and retain blank code fields.
+
+**Historical-data boundary:** these are 1986 register entries. They must not be presented as the current 2026 codes without checking all later register amendments and territorial-parent changes, including JO79/2021, JO58/2026 and any other applicable subsequent instrument. Their `valid_from` is not inferred from the order date or publication date; all practitioner review remains pending.
 
 ### Reconciliation actions now enabled
 
-- Compare each changed seat with its corresponding commune entry in the 2 June 1984 annex and any later seat-register order, preserving the old/new assertions and dates separately.
-- Confirm whether the 13 May 1985 amended seats were carried forward, superseded or amended again by later instruments before assigning current seat values.
-- Keep administrative seat history separate from commune parentage and the four-digit register code. The 1985 amendment does not itself provide a canonical four-digit register code for any of the four entries.
+- Reconcile each 1984 prior seat, 1985 amended seat and 1986 register seat as separate dated assertions, preserving both Arabic and French source forms and the Bir Ben Laabed language discrepancy.
+- Trace the four historic 1986 codes through all later register amendments and new-Wilaya transfers before assigning current values.
+- Keep administrative seat history separate from commune identity, legal territorial parent and the four-digit register code. No import or practitioner approval is implied by this source update.

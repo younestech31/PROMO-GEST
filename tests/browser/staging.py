@@ -12,6 +12,7 @@ from playwright.sync_api import expect, sync_playwright
 from project_budget import mutation, run_project_budget
 from organization_permissions import run_organization_permissions
 from session_security import prepare_sessions, run_session_security
+from language_preferences import prepare_language, verify_language
 
 BASE = 'https://staging.promogest.test:8443'
 CONTENT = b'PROMO GEST synthetic staging document. No personal or business data.\n'
@@ -160,6 +161,8 @@ def run(lang, device, phase):
             assert keys and all('encryptedSecret' in key.read_text() for key in keys)
             os.environ['STAGING_DP_ENCRYPTED'] = 'true'
             prepare_sessions(browser, BASE, lang, device, viewport, private, setup['adminUsername'], password)
+            prepare_language(browser, ctx, BASE, lang, device, viewport, private, out,
+                             setup['adminUsername'], password)
             ctx.storage_state(path=str(state_path))
             state_path.chmod(0o600)
         else:
@@ -189,6 +192,7 @@ def run(lang, device, phase):
             checks['one_organization_user_administrator_after_restart'] = True
             assert os.environ.get('STAGING_DP_ENCRYPTED') == 'true'
             checks['persisted_data_protection_keys_encrypted'] = True
+            verify_language(browser, ctx, BASE, lang, device, viewport, private, out)
             page.goto(BASE + f'/projects/{project_id}/documents')
             expect(page.get_by_text('staging-proof.txt', exact=True)).to_be_visible()
             expect(page.locator('html')).to_have_attribute('dir', 'rtl' if lang == 'ar' else 'ltr')
@@ -226,7 +230,7 @@ if __name__ == '__main__':
         # Static locations only: exception messages/call logs may include filled form secrets.
         for frame in traceback.extract_tb(error.__traceback__):
             filename = Path(frame.filename).name
-            if filename in ('staging.py', 'organization_permissions.py', 'session_security.py'):
+            if filename in ('staging.py', 'organization_permissions.py', 'session_security.py', 'language_preferences.py'):
                 print(f'::error file=tests/browser/{filename},line={frame.lineno}::'
                       f'Staging {type(error).__name__} in {frame.name}', flush=True)
         sys.exit(1)

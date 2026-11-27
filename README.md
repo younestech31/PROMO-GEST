@@ -105,7 +105,10 @@ audit, and permission revocation in an existing session; see the
 [P1-09 Production verification record and permanent screenshots](docs/P1-09-PRODUCTION-ACCEPTANCE.md). The
 [P1-19 session-security verification record](docs/P1-19-PRODUCTION-ACCEPTANCE.md) covers
 pre-restart sessions, bilingual privacy notices, selective revocation, explicit
-current-device confirmation and independent cookie replay denial, with reviewed screenshots.
+current-device confirmation and independent cookie replay denial, with reviewed screenshots. See also
+the [P1-17 language preference record](docs/P1-17-PRODUCTION-ACCEPTANCE.md) for real
+save/reload/fresh-login/restart persistence, injected network failure, stale-stamp
+recovery, audit and reviewed screenshots.
 
 See the [Arabic execution report and screenshots](docs/STAGING-ACCEPTANCE-2026-11-27.ar.md)
 for actual run outcomes, tested source revisions and limitations. The scripts refuse

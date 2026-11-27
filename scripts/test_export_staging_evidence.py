@@ -102,6 +102,41 @@ class StagingEvidenceTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             export.read_session_results(self.root)
 
+    def language_fixture(self):
+        for profile in export.PROFILES:
+            (self.root / profile / 'language-preferences.json').write_text(json.dumps({
+                'profile': profile, 'status': 'PASS',
+                'checks': {key: True for key in export.LANGUAGE_CHECKS}, 'scope': export.LANGUAGE_SCOPE,
+            }))
+
+    def test_language_requires_complete_four_profile_evidence(self):
+        self.language_fixture()
+        self.assertEqual(set(export.read_language_results(self.root)), set(export.PROFILES))
+        (self.root / 'fr-mobile/language-preferences.json').unlink()
+        with self.assertRaises(FileNotFoundError):
+            export.read_language_results(self.root)
+
+    def test_language_rejects_failures_secret_fields_and_wrong_identity(self):
+        for key, value in (('status', 'FAIL'), ('checks', {}), ('profile', 'fr-mobile'),
+                           ('cookies', 'must never export'), ('scope', 'unexpected'),
+                           ('checks', {k: False for k in export.LANGUAGE_CHECKS})):
+            with self.subTest(key=key):
+                self.language_fixture()
+                path = self.root / 'ar-desktop/language-preferences.json'
+                result = json.loads(path.read_text())
+                result[key] = value
+                path.write_text(json.dumps(result))
+                with self.assertRaises(ValueError):
+                    export.read_language_results(self.root)
+
+    def test_language_rejects_symlinked_result(self):
+        self.language_fixture()
+        path = self.root / 'ar-mobile/language-preferences.json'
+        path.unlink()
+        path.symlink_to(self.root / 'ar-desktop/language-preferences.json')
+        with self.assertRaises(ValueError):
+            export.read_language_results(self.root)
+
     def test_requires_all_four_profiles(self):
         self.assertEqual(len(export.read_results(self.root)), 4)
         (self.root / 'fr-mobile/result.json').unlink()

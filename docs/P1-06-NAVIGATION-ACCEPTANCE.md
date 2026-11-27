@@ -44,12 +44,12 @@ Follow-up adds `test_navigation_playwright_contract.py` before the browser loop,
 using the **actual pinned Playwright1.56.0 Page class** with AST/signature checks,
 not unrestricted mocks. **Local4/4 PASS**, including rejection of the original
 nonexistent method and an unsupported keyword. These are API-contract tests, not
-browser behavior proof. Final head4b188c4 CI46073355406 PASS5/5 and CodeQL46073355474 PASS. PR286 merged as64c53cf; independent exact-main46074892454/46074892506 still running.
+browser behavior proof. Final head4b188c4 CI46073355406 PASS5/5 and CodeQL46073355474 PASS. PR286 merged as64c53cf; independent exact-main46074892454 PASS5/5 and CodeQL46074892506 PASS.
 Python syntax, local frontend118/118 and TypeScript PASS; no local browser/.NET/PG18
 execution is claimed. No new screenshot is imported or visually accepted; the CI
 artifact screenshot illustrates the retained confirmation, not API persistence.
 
-## Next bounded slice: real membership revocation — authored, CI pending
+## Bounded slice: real membership revocation — source CI PASS
 
 `tests/browser/navigation_revocation.py` runs after budget assertions in the existing
 Development and Production HTTPS four-profile loops, reusing real synthetic actor
@@ -63,11 +63,24 @@ no project in list/directory, preserved authentication/organization and no pagee
 The original membership/capabilities are restored in `finally`, then real access
 is positively rechecked. No route interception, SQL or runtime policy change.
 
+**Executed source `0f514c8a7e245075be43031787d15b5b8c91bd95`:**
+[CI46075259775](https://github.com/younestech31/PROMO-GEST/actions/runs/46075259775)
+**PASS5/5**, [CodeQL46075259741](https://github.com/younestech31/PROMO-GEST/actions/runs/46075259741)
+**PASS**. All eight PR rollup checks SUCCESS. The actual four-profile Development
+and Production HTTPS/restart loops completed this helper; full PG18, restore and
+Production evidence export also PASS. The same-document marker remains true through
+cached-card navigation and server denial, so a reload cannot substitute for cleanup.
 Local safety2/2, actual pinned Playwright Page contract5/5 and existing budget
-helper7/7 PASS. These are not browser proof. Browser JSON
-`navigation-revocation.json` and screenshot `p1-06-revoked-project-cleanup.png`
-will be generated only on successful execution; **not yet imported or reviewed**.
-Do not promote the cache criterion or full P1-06 until executed results are checked.
+helper7/7 also PASS; those local tests alone are not browser proof.
+
+The browser helper writes JSON `navigation-revocation.json` and screenshot
+`p1-06-revoked-project-cleanup.png` into each profile's existing CI output directory.
+These files are **not imported or visually reviewed** in this checkout. Run success
+establishes the executed assertions, not screenshot authenticity review or an
+institutional deployment. [Archived jobs and exact steps](evidence/p1-06-navigation-2026-11-27/checks.json).
+PR287 remains open; the evidence/documentation follow-up needs its own checks before
+merge and eventual independent exact-main verification. This closes only the bounded
+same-document revocation regression, **not full P1-06 acceptance**.
 
 ## Nine-criterion evidence inventory (not promotion)
 
@@ -75,8 +88,8 @@ Do not promote the cache criterion or full P1-06 until executed results are chec
 |---|---|---|
 | Complete ProjectWorkspaceView contract / strict TS | `AppContentRouter` in `src/app/App.tsx`; frontend CI and TypeScript | Pin source/checks in final closure mapping |
 | Protected views never mount for unauthorized routes | `canAccessRoute` pre-render guard; routeRegistry/workspaceGuards tests | Independently exercise actual router self/cross-role cases, not helper-only assertions |
-| Dirty form propagation; Back/Forward/internal/project/logout/reload/close | `useUnsavedGuard`, App callbacks, embedded settings refs; existing browser history flow and original 26-Nov report | Full route/project-switch/logout/embedded form matrix; native unload is browser-controlled (not a custom Save/Discard prompt); failed-save slice source CI PASS (final head PASS; merged-main running) |
-| Revoked access removes cache/pinned/recent and returns home | `handleProjectVerificationFailed`, `revokeProjectAccessFromState`, preferences storage | Actual browser membership revocation and cached/preference cleanup assertions |
+| Dirty form propagation; Back/Forward/internal/project/logout/reload/close | `useUnsavedGuard`, App callbacks, embedded settings refs; existing browser history flow and original 26-Nov report | Full route/project-switch/logout/embedded form matrix; native unload is browser-controlled (not a custom Save/Discard prompt); failed-save slice source CI PASS (final head and independent merged-main PASS) |
+| Revoked access removes cache/pinned/recent and returns home | `handleProjectVerificationFailed`, `revokeProjectAccessFromState`, preferences storage | Source0f514c8 actual API revocation and same-document cached-card/pin/recent cleanup PASS in all four Development/Production profiles; eventual final-head/main reconciliation; no claim of immediate push invalidation before server verification |
 | One API/CSRF/registry/route/localization implementation | `frontendArchitecture.test.ts` dependency/boundary tests | Final exact-source execution references |
 | F–J planned APIs explicit; no-op actions removed; legal review | planned API rejection and metadata boundary tests | Keep qualified Algerian legal review independent; do not mark F–J implemented |
 | Incidental repair scripts removed | architecture/hygiene checks | Scope-specific tracked-file audit |

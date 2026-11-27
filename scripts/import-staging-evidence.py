@@ -30,7 +30,7 @@ def decode_evidence(annotations, source_sha):
         if len(parts) != 3:
             raise ValueError('Evidence must use numbered, non-truncated chunks')
         key, index, total = parts[0], int(parts[1]), int(parts[2])
-        if key not in (*PROFILES, 'manifest') or not (1 <= index <= total <= 20):
+        if key not in (*PROFILES, 'manifest') or not (1 <= index <= total <= 10):
             raise ValueError('Unexpected evidence chunk')
         if key in totals and totals[key] != total:
             raise ValueError('Conflicting chunk totals')
@@ -60,7 +60,7 @@ def decode_evidence(annotations, source_sha):
             raise ValueError('Unexpected image path')
         record = records[profile]
         data = base64.b64decode(record['imageBase64'], validate=True)
-        if len(data) >= 40000 or not data.startswith(b'\xff\xd8\xff'):
+        if len(data) >= 20000 or not data.startswith(b'\xff\xd8\xff'):
             raise ValueError('Invalid compact JPEG')
         digest = hashlib.sha256(data).hexdigest()
         if record['profile'] != profile or digest != record['sha256'] or digest != image['sha256']:

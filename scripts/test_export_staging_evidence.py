@@ -83,7 +83,7 @@ class StagingEvidenceTests(unittest.TestCase):
         self.assertIn('100%25', output.getvalue())
         self.assertEqual(output.getvalue().count('\n'), 1)
         with self.assertRaises(ValueError):
-            export.notice('manifest', {'data': 'x' * 60001})
+            export.notice('manifest', {'data': 'x' * 30001})
 
 
 if __name__ == '__main__':

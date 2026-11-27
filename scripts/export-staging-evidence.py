@@ -6,11 +6,11 @@ manifest are also carried in check notices so restricted review workspaces can
 retrieve evidence through api.github.com without granting CI repository-write access.
 Only explicitly named post-login synthetic screenshots are eligible; no state/logs.
 """
+import argparse
 import base64
 import hashlib
 import json
 import os
-import sys
 from pathlib import Path
 
 PROFILES = ('ar-desktop', 'ar-mobile', 'fr-desktop', 'fr-mobile')
@@ -55,7 +55,7 @@ def read_results(root):
 
 def notice(name, payload):
     data = json.dumps(payload, separators=(',', ':'))
-    if len(data.encode()) > 60000:
+    if len(data.encode()) > 30000:
         raise ValueError('Compact evidence exceeds check annotation limit')
     # The check-annotations API truncates runner notice messages to 4096 characters.
     # Carry bounded 3000-character pieces, numbered so import fails closed on any loss.
@@ -65,7 +65,7 @@ def notice(name, payload):
         print(f'::notice title=PG-STAGING-{name}:{index}:{len(parts)}::{escaped}', flush=True)
 
 
-def main(root):
+def main(root, record=None):
     if os.environ.get('GITHUB_ACTIONS') != 'true':
         raise RuntimeError('Evidence export is CI-only')
     from PIL import Image
@@ -81,17 +81,23 @@ def main(root):
             image.thumbnail((960, 844))
             for quality in (65, 50, 35, 20):
                 image.save(target, 'JPEG', quality=quality, optimize=True)
-                if target.stat().st_size < 40000:
+                if target.stat().st_size < 20000:
                     break
         content = target.read_bytes()
-        if len(content) >= 40000:
+        if len(content) >= 20000:
             raise ValueError('Review image too large')
         digest = hashlib.sha256(content).hexdigest()
         manifest['images'].append({'profile': profile, 'file': f'{profile}/review.jpg', 'sha256': digest})
-        notice(profile, {'profile': profile, 'sha256': digest, 'imageBase64': base64.b64encode(content).decode()})
+        if record == profile:
+            notice(profile, {'profile': profile, 'sha256': digest, 'imageBase64': base64.b64encode(content).decode()})
     (root / 'manifest.json').write_text(json.dumps(manifest, indent=2) + '\n')
-    notice('manifest', manifest)
+    if record == 'manifest':
+        notice('manifest', manifest)
 
 
 if __name__ == '__main__':
-    main(Path(sys.argv[1]))
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument('root', type=Path)
+    parser.add_argument('--record', choices=(*PROFILES, 'manifest'))
+    args = parser.parse_args()
+    main(args.root, args.record)

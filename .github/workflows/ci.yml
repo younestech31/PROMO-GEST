@@ -270,6 +270,18 @@ jobs:
           source "$RUNNER_TEMP/p0-python/bin/activate"
           pip install pillow==12.0.0
           bash tests/browser/run-staging.sh
+      # Runner check annotations allow ten notices per step. Each record is bounded
+      # to ten <=3000-character chunks; keep publication in distinct read-only steps.
+      - name: Export Arabic desktop staging review image
+        run: '"$RUNNER_TEMP/p0-python/bin/python" scripts/export-staging-evidence.py "$RUNNER_TEMP/staging-evidence" --record ar-desktop'
+      - name: Export Arabic mobile staging review image
+        run: '"$RUNNER_TEMP/p0-python/bin/python" scripts/export-staging-evidence.py "$RUNNER_TEMP/staging-evidence" --record ar-mobile'
+      - name: Export French desktop staging review image
+        run: '"$RUNNER_TEMP/p0-python/bin/python" scripts/export-staging-evidence.py "$RUNNER_TEMP/staging-evidence" --record fr-desktop'
+      - name: Export French mobile staging review image
+        run: '"$RUNNER_TEMP/p0-python/bin/python" scripts/export-staging-evidence.py "$RUNNER_TEMP/staging-evidence" --record fr-mobile'
+      - name: Export complete staging manifest
+        run: '"$RUNNER_TEMP/p0-python/bin/python" scripts/export-staging-evidence.py "$RUNNER_TEMP/staging-evidence" --record manifest'
       - name: Publish sanitized Production HTTPS staging evidence
         if: always()
         uses: actions/upload-artifact@v7

@@ -1,4 +1,14 @@
-## Current operating checkpoint — PR #271 merged; P1-09 Production technical matrix verified — 27 November 2026
+## Current operating checkpoint — PR #273 merged; P1-19 Production session acceptance in progress — 27 November 2026
+
+- **Verified live source:** GitHub `main` = `49add144088a418422da72e9728d7157102fd46a`, squash merge of [PR #273](https://github.com/younestech31/PROMO-GEST/pull/273), verified on 27 November 2026. The mandated active branch merged this main into its ancestry; the following P1-19 work is not yet merged.
+- **Automated merge evidence:** final PR-head CI 45995665394 passed 4/4 and CodeQL 45995665588 passed 2/2. Exact-main postmerge CI [45997088221](https://github.com/younestech31/PROMO-GEST/actions/runs/45997088221) was in progress at this checkpoint; postmerge [CodeQL 45997088222](https://github.com/younestech31/PROMO-GEST/actions/runs/45997088222) passed 2/2. No postmerge CI success is inferred before observation.
+- **Merged technical evidence:** P1-05 baseline Production rehearsal and P1-09 non-admin organization permission matrix are verified, with [P1-09 permanent screenshots and provenance](P1-09-PRODUCTION-ACCEPTANCE.md). These prove isolated Linux technical behavior, not institution-local installation or operator/legal approval.
+- **Current independent slice — P1-19:** add four-profile Production HTTPS session inventory/privacy/selective-revocation/current-confirmation acceptance using extra sessions established before API restart. No new verify-phase login or limiter change. Offline helper 5/5, exporter 13/13, importer 7/7 pass; new real-stack results/screenshots pending. See [P1-19 verification log](P1-19-PRODUCTION-ACCEPTANCE.md).
+- **Gates and scope:** P1-19 and existing P1-05/P1-09 tracking remain In Review / Pending; no institutional sign-off is invented. P1-08 remains owner-policy blocked and P1-10 retains its acceptance dependency. P0-A01/P0-A04 remain NOT_RUN; P1-01/P1-35 Deferred / Pending, P1-02/P1-34 Blocked according to existing records; Phase 0 open, Phase 1 IN_PROGRESS, Phases 2–5 gated. Changes are test/evidence/documentation only: no application runtime, API policy, session lifetime, seeded grants, schema/migration, operational data, deployment, branch protection or Notion status change.
+
+---
+
+## Historical checkpoint — PR #271 merged; P1-09 Production technical matrix verified — 27 November 2026
 
 - **Verified live source:** GitHub `main` = `daefdc107cd3eac0e877c26b984004b1fc55df3b`, squash merge of [PR #271](https://github.com/younestech31/PROMO-GEST/pull/271), verified on 27 November 2026. The active branch has merged this main commit into its ancestry; the following P1-09 work is not yet merged.
 - **Exact-main automated evidence:** postmerge [CodeQL 45992729724](https://github.com/younestech31/PROMO-GEST/actions/runs/45992729724) passed 2/2. Postmerge [CI 45992729728](https://github.com/younestech31/PROMO-GEST/actions/runs/45992729728) passed 4/4 on that exact SHA. Final PR-head CI 45990036901 passed 4/4 and CodeQL 45990036853 passed 2/2 before merge.

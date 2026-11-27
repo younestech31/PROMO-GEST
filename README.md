@@ -102,7 +102,10 @@ setup, secure cookies, CSRF, organization/document persistence across an API res
 P1-05 financial visibility/write boundaries, and logout/replay denial. It additionally
 checks non-admin organization profile access, explicit `org.manage` authorization,
 audit, and permission revocation in an existing session; see the
-[P1-09 Production verification record and permanent screenshots](docs/P1-09-PRODUCTION-ACCEPTANCE.md).
+[P1-09 Production verification record and permanent screenshots](docs/P1-09-PRODUCTION-ACCEPTANCE.md). The
+[P1-19 session-security verification record](docs/P1-19-PRODUCTION-ACCEPTANCE.md) covers
+pre-restart sessions, bilingual privacy notices, selective revocation, explicit
+current-device confirmation and independent cookie replay denial, with reviewed screenshots.
 
 See the [Arabic execution report and screenshots](docs/STAGING-ACCEPTANCE-2026-11-27.ar.md)
 for actual run outcomes, tested source revisions and limitations. The scripts refuse

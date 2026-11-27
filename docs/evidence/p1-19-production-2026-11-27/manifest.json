@@ -1,0 +1,239 @@
+{
+  "mode": "disposable Production HTTPS sessions",
+  "profiles": [
+    {
+      "profile": "ar-desktop",
+      "sourceHead": "2433962fb5f06875b32d118353786ff688ffd895",
+      "testedCheckout": "4fa168d562393e9171f95f3b6ccc07688c7388f4",
+      "run": "45999710383",
+      "environment": "Production",
+      "database": "PostgreSQL 18 (disposable)",
+      "proxy": "v2.10.2 h1:g/gTYjGMD0dec+UgMw8SnfmJ3I9+M2TdvoRL/Ovu6U8=",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "checks": {
+        "https_proxy_hsts_csp_nosniff_no_store": true,
+        "development_preview_endpoint_absent": true,
+        "bootstrap_required_without_token_403": true,
+        "wizard_201_anonymous_handoff_duplicate_409": true,
+        "production_host_cookie_secure_httponly_strict": true,
+        "organization_edit_saved_through_https_spa": true,
+        "authenticated_write_without_csrf_403": true,
+        "document_uploaded_through_https_spa": true,
+        "session_and_organization_survive_api_restart": true,
+        "stored_document_bytes_survive_restart_sha256": true,
+        "anonymous_document_access_401": true,
+        "one_organization_user_administrator_after_restart": true,
+        "persisted_data_protection_keys_encrypted": true,
+        "production_budget_authorization_matrix": true,
+        "logout_revokes_current_and_pre_restart_session": true
+      },
+      "tlsBoundary": "curl validates local CA; browser ignores trust for the disposable CA only",
+      "scope": "developer-led isolated Linux HTTPS staging rehearsal; not on-premises acceptance",
+      "browser": "157.0.8103.78",
+      "syntheticDocumentSha256": "bef7a3b871f037b77436320b7ca3efc2560897ddf1fb27e9093898babc15f70b",
+      "budgetEvidence": "Real ASP.NET Core + PostgreSQL 18 Chrome: SYSTEM_ADMIN without membership cannot create a nonzero estimate or see/edit the budget; detail, list and paged directory redact to null; AR/FR UI displays a dash and hides the editor; financial ProjectManager saved a decimal budget and reload confirmed it; removing financial capability redacted responses and UI; general edit sent null and preserved the stored budget; zero/nonzero tampering returned 403; non-member finance role could not discover project; explicitly assigned finance reader could read but not edit; authorized independent read confirmed unchanged storage; financial-view and denial audits identify actors/project. Automated evidence only; not manual Staging acceptance.",
+      "status": "PASS",
+      "organizationEvidence": {
+        "non_admin_without_org_manage_readonly_api_403_no_mutation": true,
+        "denial_audited": true,
+        "non_admin_with_org_manage_spa_save_reload_persists": true,
+        "authorized_update_audited": true,
+        "revocation_enforced_existing_session_api_and_spa": true
+      },
+      "sessionEvidence": {
+        "pre_restart_sessions_survive_and_inventory_has_no_secrets": true,
+        "csrf_required_for_selective_revocation": true,
+        "current_session_requires_api_confirmation": true,
+        "bilingual_privacy_notice_and_session_inventory": true,
+        "other_session_revoked_replay_denied_current_preserved": true,
+        "cancel_current_revocation_sends_no_request": true,
+        "confirmed_current_revocation_logs_out_replay_denied": true,
+        "both_revocations_audited_primary_session_preserved": true
+      }
+    },
+    {
+      "profile": "ar-mobile",
+      "sourceHead": "2433962fb5f06875b32d118353786ff688ffd895",
+      "testedCheckout": "4fa168d562393e9171f95f3b6ccc07688c7388f4",
+      "run": "45999710383",
+      "environment": "Production",
+      "database": "PostgreSQL 18 (disposable)",
+      "proxy": "v2.10.2 h1:g/gTYjGMD0dec+UgMw8SnfmJ3I9+M2TdvoRL/Ovu6U8=",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "checks": {
+        "https_proxy_hsts_csp_nosniff_no_store": true,
+        "development_preview_endpoint_absent": true,
+        "bootstrap_required_without_token_403": true,
+        "wizard_201_anonymous_handoff_duplicate_409": true,
+        "production_host_cookie_secure_httponly_strict": true,
+        "organization_edit_saved_through_https_spa": true,
+        "authenticated_write_without_csrf_403": true,
+        "document_uploaded_through_https_spa": true,
+        "session_and_organization_survive_api_restart": true,
+        "stored_document_bytes_survive_restart_sha256": true,
+        "anonymous_document_access_401": true,
+        "one_organization_user_administrator_after_restart": true,
+        "persisted_data_protection_keys_encrypted": true,
+        "production_budget_authorization_matrix": true,
+        "logout_revokes_current_and_pre_restart_session": true
+      },
+      "tlsBoundary": "curl validates local CA; browser ignores trust for the disposable CA only",
+      "scope": "developer-led isolated Linux HTTPS staging rehearsal; not on-premises acceptance",
+      "browser": "157.0.8103.78",
+      "syntheticDocumentSha256": "bef7a3b871f037b77436320b7ca3efc2560897ddf1fb27e9093898babc15f70b",
+      "budgetEvidence": "Real ASP.NET Core + PostgreSQL 18 Chrome: SYSTEM_ADMIN without membership cannot create a nonzero estimate or see/edit the budget; detail, list and paged directory redact to null; AR/FR UI displays a dash and hides the editor; financial ProjectManager saved a decimal budget and reload confirmed it; removing financial capability redacted responses and UI; general edit sent null and preserved the stored budget; zero/nonzero tampering returned 403; non-member finance role could not discover project; explicitly assigned finance reader could read but not edit; authorized independent read confirmed unchanged storage; financial-view and denial audits identify actors/project. Automated evidence only; not manual Staging acceptance.",
+      "status": "PASS",
+      "organizationEvidence": {
+        "non_admin_without_org_manage_readonly_api_403_no_mutation": true,
+        "denial_audited": true,
+        "non_admin_with_org_manage_spa_save_reload_persists": true,
+        "authorized_update_audited": true,
+        "revocation_enforced_existing_session_api_and_spa": true
+      },
+      "sessionEvidence": {
+        "pre_restart_sessions_survive_and_inventory_has_no_secrets": true,
+        "csrf_required_for_selective_revocation": true,
+        "current_session_requires_api_confirmation": true,
+        "bilingual_privacy_notice_and_session_inventory": true,
+        "other_session_revoked_replay_denied_current_preserved": true,
+        "cancel_current_revocation_sends_no_request": true,
+        "confirmed_current_revocation_logs_out_replay_denied": true,
+        "both_revocations_audited_primary_session_preserved": true
+      }
+    },
+    {
+      "profile": "fr-desktop",
+      "sourceHead": "2433962fb5f06875b32d118353786ff688ffd895",
+      "testedCheckout": "4fa168d562393e9171f95f3b6ccc07688c7388f4",
+      "run": "45999710383",
+      "environment": "Production",
+      "database": "PostgreSQL 18 (disposable)",
+      "proxy": "v2.10.2 h1:g/gTYjGMD0dec+UgMw8SnfmJ3I9+M2TdvoRL/Ovu6U8=",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "checks": {
+        "https_proxy_hsts_csp_nosniff_no_store": true,
+        "development_preview_endpoint_absent": true,
+        "bootstrap_required_without_token_403": true,
+        "wizard_201_anonymous_handoff_duplicate_409": true,
+        "production_host_cookie_secure_httponly_strict": true,
+        "organization_edit_saved_through_https_spa": true,
+        "authenticated_write_without_csrf_403": true,
+        "document_uploaded_through_https_spa": true,
+        "session_and_organization_survive_api_restart": true,
+        "stored_document_bytes_survive_restart_sha256": true,
+        "anonymous_document_access_401": true,
+        "one_organization_user_administrator_after_restart": true,
+        "persisted_data_protection_keys_encrypted": true,
+        "production_budget_authorization_matrix": true,
+        "logout_revokes_current_and_pre_restart_session": true
+      },
+      "tlsBoundary": "curl validates local CA; browser ignores trust for the disposable CA only",
+      "scope": "developer-led isolated Linux HTTPS staging rehearsal; not on-premises acceptance",
+      "browser": "157.0.8103.78",
+      "syntheticDocumentSha256": "bef7a3b871f037b77436320b7ca3efc2560897ddf1fb27e9093898babc15f70b",
+      "budgetEvidence": "Real ASP.NET Core + PostgreSQL 18 Chrome: SYSTEM_ADMIN without membership cannot create a nonzero estimate or see/edit the budget; detail, list and paged directory redact to null; AR/FR UI displays a dash and hides the editor; financial ProjectManager saved a decimal budget and reload confirmed it; removing financial capability redacted responses and UI; general edit sent null and preserved the stored budget; zero/nonzero tampering returned 403; non-member finance role could not discover project; explicitly assigned finance reader could read but not edit; authorized independent read confirmed unchanged storage; financial-view and denial audits identify actors/project. Automated evidence only; not manual Staging acceptance.",
+      "status": "PASS",
+      "organizationEvidence": {
+        "non_admin_without_org_manage_readonly_api_403_no_mutation": true,
+        "denial_audited": true,
+        "non_admin_with_org_manage_spa_save_reload_persists": true,
+        "authorized_update_audited": true,
+        "revocation_enforced_existing_session_api_and_spa": true
+      },
+      "sessionEvidence": {
+        "pre_restart_sessions_survive_and_inventory_has_no_secrets": true,
+        "csrf_required_for_selective_revocation": true,
+        "current_session_requires_api_confirmation": true,
+        "bilingual_privacy_notice_and_session_inventory": true,
+        "other_session_revoked_replay_denied_current_preserved": true,
+        "cancel_current_revocation_sends_no_request": true,
+        "confirmed_current_revocation_logs_out_replay_denied": true,
+        "both_revocations_audited_primary_session_preserved": true
+      }
+    },
+    {
+      "profile": "fr-mobile",
+      "sourceHead": "2433962fb5f06875b32d118353786ff688ffd895",
+      "testedCheckout": "4fa168d562393e9171f95f3b6ccc07688c7388f4",
+      "run": "45999710383",
+      "environment": "Production",
+      "database": "PostgreSQL 18 (disposable)",
+      "proxy": "v2.10.2 h1:g/gTYjGMD0dec+UgMw8SnfmJ3I9+M2TdvoRL/Ovu6U8=",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "checks": {
+        "https_proxy_hsts_csp_nosniff_no_store": true,
+        "development_preview_endpoint_absent": true,
+        "bootstrap_required_without_token_403": true,
+        "wizard_201_anonymous_handoff_duplicate_409": true,
+        "production_host_cookie_secure_httponly_strict": true,
+        "organization_edit_saved_through_https_spa": true,
+        "authenticated_write_without_csrf_403": true,
+        "document_uploaded_through_https_spa": true,
+        "session_and_organization_survive_api_restart": true,
+        "stored_document_bytes_survive_restart_sha256": true,
+        "anonymous_document_access_401": true,
+        "one_organization_user_administrator_after_restart": true,
+        "persisted_data_protection_keys_encrypted": true,
+        "production_budget_authorization_matrix": true,
+        "logout_revokes_current_and_pre_restart_session": true
+      },
+      "tlsBoundary": "curl validates local CA; browser ignores trust for the disposable CA only",
+      "scope": "developer-led isolated Linux HTTPS staging rehearsal; not on-premises acceptance",
+      "browser": "157.0.8103.78",
+      "syntheticDocumentSha256": "bef7a3b871f037b77436320b7ca3efc2560897ddf1fb27e9093898babc15f70b",
+      "budgetEvidence": "Real ASP.NET Core + PostgreSQL 18 Chrome: SYSTEM_ADMIN without membership cannot create a nonzero estimate or see/edit the budget; detail, list and paged directory redact to null; AR/FR UI displays a dash and hides the editor; financial ProjectManager saved a decimal budget and reload confirmed it; removing financial capability redacted responses and UI; general edit sent null and preserved the stored budget; zero/nonzero tampering returned 403; non-member finance role could not discover project; explicitly assigned finance reader could read but not edit; authorized independent read confirmed unchanged storage; financial-view and denial audits identify actors/project. Automated evidence only; not manual Staging acceptance.",
+      "status": "PASS",
+      "organizationEvidence": {
+        "non_admin_without_org_manage_readonly_api_403_no_mutation": true,
+        "denial_audited": true,
+        "non_admin_with_org_manage_spa_save_reload_persists": true,
+        "authorized_update_audited": true,
+        "revocation_enforced_existing_session_api_and_spa": true
+      },
+      "sessionEvidence": {
+        "pre_restart_sessions_survive_and_inventory_has_no_secrets": true,
+        "csrf_required_for_selective_revocation": true,
+        "current_session_requires_api_confirmation": true,
+        "bilingual_privacy_notice_and_session_inventory": true,
+        "other_session_revoked_replay_denied_current_preserved": true,
+        "cancel_current_revocation_sends_no_request": true,
+        "confirmed_current_revocation_logs_out_replay_denied": true,
+        "both_revocations_audited_primary_session_preserved": true
+      }
+    }
+  ],
+  "images": [
+    {
+      "profile": "ar-desktop",
+      "file": "ar-desktop/review.jpg",
+      "sha256": "a8a2ab58221367012a13c41604a6ebd34d08cffb29fff1865fb14f2b61866f6e"
+    },
+    {
+      "profile": "ar-mobile",
+      "file": "ar-mobile/review.jpg",
+      "sha256": "e271d36b38927c6a6f2332dc7ebe8e8aa9e0e78b729a9f1b3668dee63ccfc72a"
+    },
+    {
+      "profile": "fr-desktop",
+      "file": "fr-desktop/review.jpg",
+      "sha256": "6c7adbea05f75542aa8cc92efc169e921a637cb2fe8a3a25e567251c470d580e"
+    },
+    {
+      "profile": "fr-mobile",
+      "file": "fr-mobile/review.jpg",
+      "sha256": "9281fc69e7acea6fbcb778e47b432aec0311a981a94eee26951d6447ef08b8ca"
+    }
+  ]
+}

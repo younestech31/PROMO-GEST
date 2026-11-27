@@ -67,6 +67,41 @@ class StagingEvidenceTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             export.read_organization_results(self.root)
 
+    def session_fixture(self):
+        for profile in export.PROFILES:
+            (self.root / profile / 'session-security.json').write_text(json.dumps({
+                'profile': profile, 'status': 'PASS',
+                'checks': {key: True for key in export.SESSION_CHECKS}, 'scope': export.SCOPE,
+            }))
+
+    def test_sessions_require_complete_four_profile_evidence(self):
+        self.session_fixture()
+        self.assertEqual(set(export.read_session_results(self.root)), set(export.PROFILES))
+        (self.root / 'fr-mobile/session-security.json').unlink()
+        with self.assertRaises(FileNotFoundError):
+            export.read_session_results(self.root)
+
+    def test_sessions_reject_failures_secret_fields_and_wrong_identity(self):
+        for key, value in (('status', 'FAIL'), ('checks', {}), ('profile', 'fr-mobile'),
+                           ('token', 'must never export'), ('scope', 'unexpected'),
+                           ('checks', {k: False for k in export.SESSION_CHECKS})):
+            with self.subTest(key=key):
+                self.session_fixture()
+                path = self.root / 'ar-desktop/session-security.json'
+                result = json.loads(path.read_text())
+                result[key] = value
+                path.write_text(json.dumps(result))
+                with self.assertRaises(ValueError):
+                    export.read_session_results(self.root)
+
+    def test_sessions_reject_symlinked_result(self):
+        self.session_fixture()
+        path = self.root / 'ar-mobile/session-security.json'
+        path.unlink()
+        path.symlink_to(self.root / 'ar-desktop/session-security.json')
+        with self.assertRaises(ValueError):
+            export.read_session_results(self.root)
+
     def test_requires_all_four_profiles(self):
         self.assertEqual(len(export.read_results(self.root)), 4)
         (self.root / 'fr-mobile/result.json').unlink()

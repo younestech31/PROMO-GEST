@@ -132,3 +132,38 @@ This supplement is documentation-only. It does not constitute the full amendment
 - **Bilingually PNG-verified (23 records):** includes `JO02/1986` (`W10-R031` El Madjen → El Mokrani), `JO16/1987` (`W24-R008` Hammam Meskhoutine → Hammam. Debagh), `JO09/1988` (`W02-R022` Chlef `Souk El Begar` → `Sidi-Abderrahmane`, `W03-R008`, `W03-R012` seat transfer to Bellil, `W19-R013`, `W28-R004`), `JO31/1988` (`W13-R012`), `JO18/1989` (`W06-R043` `Sidi Saïd` → `M'Cisna`), `JO41/1989` (`W25-R011` & Tiaret `W14-R019`), `JO04/1990` (`W15-R045`, `W38-R021`, `W29-R047`), `JO24/1990` rectificatif (`Zelmata`/`زلماطة` → `Zelamta`/`زلامطة`), `JO51/1990` Decree 90-379 (`W10-R019` `Taourirt` → `Ath Mansour`), `JO01/1991` Decree 90-417 (`W25-R009`), `JO09/1991` Decrees 91-51 & 91-52 (`W26-R034`, `W46-R026`), `JO75/1992` Decree 92-378 (`W16-R003`), `JO01/1993` Decree 93-04 (`W13-R045`), and `JO03/1993` Decrees 93-11 & 93-12 (`A1993003_pg05.png` p.5 verifying `بني عمروس`, `أهلية`, `أزقار`, `قنواع`, `الشرايع`, and `عين حساينية` → `هواري بومدين`).
 - **Remaining explicit gaps preserved:** `JO11/1986` has 4 `AR_BODY_PNG_AND_EXISTING_FR_EXTRACTED` rows (`A1986011_pg25.png` p.401 for `2407`, `2656`, `3434`; `A1986011_pg26.png` p.402 for `3919`); 3 partial-cache items miss a body page (`3618` AR p.1685, `0707` FR p.269, `1539` Decree 91-62 FR p.311 / AR p.365); 8 primary naming acts remain `PRIMARY_RENAME_ACT_NOT_IN_CACHE`; `DECR-92-412` and `DECR-06-256` remain `not_reviewed` in Arabic.
 - No master-ledger row, `valid_from`, or practitioner approval is altered: all sign-offs remain `PENDING`, P1-01 remains **In Progress**, P1-02 remains **Blocked**, and `communesCount = 0`.
+
+
+## 5F. Bilingual Afernou source review and late-2026 Official Journal scan — 27 November 2026
+
+### Decree 92-412 / JO 82 of 1992 — Arabic page review closed
+
+The Arabic original of Official Journal No. 82/1992 was located at [JORADP Arabic JO82/1992](https://www.joradp.dz/FTP/Jo-Arabe/1992/A1992082.pdf). The cited decree was visually inspected in both editions:
+
+- French: printed page 1723, PDF zero-based page index 6, [official French PDF](https://www.joradp.dz/FTP/jo-francais/1992/F1992082.PDF).
+- Arabic: printed page 2100, PDF zero-based page index 9, [official Arabic PDF](https://www.joradp.dz/FTP/Jo-Arabe/1992/A1992082.pdf).
+
+The Arabic printed locality label is **أفرنو**. Decree 92-412 states that Afernou, formerly attached to Selma Benziada, is incorporated into the territory of Ziama Mansouriah, Wilaya of Jijel. The source supports a locality-parent transfer. It does **not** state a four-digit Decree 85-20 register code, nor does this audit infer an effective date from the instrument or publication date. The French PDF hash remains the existing recorded hash; no Arabic PDF byte hash was captured in this pass. The row-level evidence status was updated in `P1-01-TERRITORIAL-CHANGE-ASSERTIONS.csv`; no practitioner decision was recorded.
+
+### Bounded scan of the latest available 2026 Official Journal issues
+
+A targeted search of JORADP and review of issue indexes / relevant text for Official Journal Nos. **77–82** (4–25 November 2026) did not identify a later amendment to the 22 June 1985 Decree 85-20 territorial-register order than the 5 May 2026 order published in JO58/2026. This is a bounded search result, **not an exhaustive negative legal opinion** and not proof that no unindexed, separately issued, or subsequently published instrument exists. Re-run the official-index search before any release based on a later reference date.
+
+| Issue | Date | Relevant subject found in the reviewed index/text | P1-01 treatment |
+|---|---|---|---|
+| JO77/2026 | 4 November 2026 | Interministerial orders fixing Wilaya and commune contribution rates to the local solidarity/guarantee fund | Fiscal reference only; not a commune-code or legal-membership register amendment |
+| JO78/2026 | 10 November 2026 | No territorial-register amendment identified in the reviewed issue index | No P1-01 register delta recorded |
+| JO79/2026 | 15 November 2026 | Decrees concerning protected-sector / special-zone geography and a judicial section | Preserve as distinct protected-area, special-zone or judicial-geography concepts; not the commune code register |
+| JO80/2026 | 18 November 2026 | Decree 26-358 modifies tourist-expansion-zone classifications / limits | Tourism overlay only; do not reinterpret as commune/Wilaya membership or code change |
+| JO81/2026 | 22 November 2026 | Interior-ministry text on classification of a national security cynotechnic centre | No commune-register delta identified |
+| JO82/2026 | 25 November 2026 | Decrees 26-370 and 26-371 concern territorial jurisdiction of specialised criminal / administrative judicial bodies | Judicial jurisdiction is not commune legal membership or Decree 85-20 code assignment |
+
+Issue landing/PDF sources: [JORADP JO77/2026](https://www.joradp.dz/FTP/JO-FRANCAIS/2026/F2026077.pdf) · [JO78/2026](https://www.joradp.dz/FTP/JO-FRANCAIS/2026/F2026078.pdf) · [JO79/2026](https://www.joradp.dz/FTP/JO-FRANCAIS/2026/F2026079.pdf) · [JO80/2026](https://www.joradp.dz/FTP/JO-FRANCAIS/2026/F2026080.pdf) · [JO81/2026](https://www.joradp.dz/FTP/JO-FRANCAIS/2026/F2026081.pdf) · [JO82/2026](https://www.joradp.dz/FTP/JO-FRANCAIS/2026/F2026082.pdf).
+
+The search/extraction service (Olostep) was used to discover candidate source pages and extract searchable text. Classification above is based on the identified official JORADP issue material; Olostep output is not itself a legal source, and searchable-text extraction does not replace visual inspection of the official printed page. The latest-issue scan is bounded to the listed issue indexes / relevant text, not a page-by-page legal review of every instrument in those issues.
+
+### Open P1-01 work after this update
+
+- JO49/2006 Decree 06-256 Arabic page-image review and Arabic PDF fingerprint remain open.
+- Full French/Arabic annex parity and row-by-row extraction for Decree 21-128 / JO26/2021 and the June 1984 chief-lieu seat order remain open.
+- The 1,541-row concordance, all 1,541 qualified-practitioner sign-offs, the temporal decision for W30-R007, and release acceptance remain open. No row is approved by this addendum and no commune is imported.

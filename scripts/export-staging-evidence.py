@@ -107,6 +107,36 @@ def read_session_results(root):
     return results
 
 
+LANGUAGE_CHECKS = (
+    'spa_preference_saved_without_organization_default_change',
+    'reload_and_fresh_login_apply_saved_preference',
+    'csrf_denial_preserves_preference',
+    'network_failure_preserves_locale_and_shows_alert',
+    'stale_stamp_409_refreshes_authoritative_locale',
+    'preference_survives_api_restart',
+    'original_locale_restored_organization_default_unchanged',
+    'successful_preference_updates_audited',
+)
+LANGUAGE_SCOPE = 'P1-17 disposable Production HTTPS; own preference persistence and failure recovery'
+
+
+def read_language_results(root):
+    results = {}
+    for profile in PROFILES:
+        path = root / profile / 'language-preferences.json'
+        if path.is_symlink() or path.resolve().parent.parent != root.resolve():
+            raise ValueError('Invalid language evidence path')
+        result = json.loads(path.read_text())
+        if (set(result) != {'profile', 'status', 'checks', 'scope'}
+                or result['profile'] != profile or result['status'] != 'PASS'
+                or set(result['checks']) != set(LANGUAGE_CHECKS)
+                or any(value is not True for value in result['checks'].values())
+                or result['scope'] != LANGUAGE_SCOPE):
+            raise ValueError('Incomplete or unexpected language evidence')
+        results[profile] = result['checks']
+    return results
+
+
 def notice(name, payload):
     data = json.dumps(payload, separators=(',', ':'))
     if len(data.encode()) > 30000:
@@ -122,23 +152,28 @@ def notice(name, payload):
 def main(root, record=None, suite='staging'):
     if os.environ.get('GITHUB_ACTIONS') != 'true':
         raise RuntimeError('Evidence export is CI-only')
-    if suite not in ('staging', 'organization', 'sessions'):
+    if suite not in ('staging', 'organization', 'sessions', 'language'):
         raise ValueError('Unknown evidence suite')
     from PIL import Image
     results = read_results(root)
-    if suite in ('organization', 'sessions'):
+    if suite in ('organization', 'sessions', 'language'):
         organization = read_organization_results(root)
         for result in results:
             result['organizationEvidence'] = organization[result['profile']]
-    if suite == 'sessions':
+    if suite in ('sessions', 'language'):
         sessions = read_session_results(root)
         for result in results:
             result['sessionEvidence'] = sessions[result['profile']]
+    if suite == 'language':
+        language = read_language_results(root)
+        for result in results:
+            result['languageEvidence'] = language[result['profile']]
     manifest = {'mode': 'disposable Production HTTPS ' + suite, 'profiles': results, 'images': []}
     for profile in PROFILES:
         filename = {'staging': '05-profile-after-restart.png',
                     'organization': 'org-02-authorized-saved.png',
-                    'sessions': 'sessions-02-confirmation.png'}[suite]
+                    'sessions': 'sessions-02-confirmation.png',
+                    'language': 'language-04-after-restart.png'}[suite]
         source = root / profile / filename
         if source.is_symlink() or source.resolve().parent.parent != root.resolve():
             raise ValueError('Invalid screenshot path')
@@ -166,6 +201,6 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('root', type=Path)
     parser.add_argument('--record', choices=(*PROFILES, 'manifest'))
-    parser.add_argument('--suite', choices=('staging', 'organization', 'sessions'), default='staging')
+    parser.add_argument('--suite', choices=('staging', 'organization', 'sessions', 'language'), default='staging')
     args = parser.parse_args()
     main(args.root, args.record, args.suite)

@@ -78,9 +78,31 @@ The browser helper writes JSON `navigation-revocation.json` and screenshot
 These files are **not imported or visually reviewed** in this checkout. Run success
 establishes the executed assertions, not screenshot authenticity review or an
 institutional deployment. [Archived jobs and exact steps](evidence/p1-06-navigation-2026-11-27/checks.json).
-PR287 remains open; the evidence/documentation follow-up needs its own checks before
-merge and eventual independent exact-main verification. This closes only the bounded
+Final sourcea4809a1 CI46076231175 PASS5/5 + CodeQL46076231298 PASS; PR287 merged as0378e19. Independent exact-main46077867862/46077867845 running, not inherited from head results. This closes only the bounded
 same-document revocation regression, **not full P1-06 acceptance**.
+
+## Next bounded slice: dirty project settings — authored, browser CI pending
+
+`tests/browser/navigation_dirty_settings.py` follows the revocation helper in the
+same four-profile Development and Production HTTPS loops, reusing the director
+session before deliberately logging it out. The extra project is created by that
+actor through the real API, only in the allowlisted disposable CI databases.
+
+| Action | Options/assertions authored in this slice |
+|---|---|
+| Internal project section | Stay preserves route/draft; Discard returns to overview, no persisted write; reopening settings reconstructs the original value |
+| Explicit project switcher | Stay preserves original project/draft; Save requires real PUT200 before opening the second project; return reconstructs the saved name |
+| Native reload and tab close | Actual Chromium beforeunload event, dismissed; original document marker/route/draft remain; no claim of custom Save/Discard or OS crash recovery |
+| Logout | Stay retains real authenticated session/draft without persistence; Save requires PUT200 and logout204, login surface, actor API401 and independent stored-name equality |
+| Cleanup | Administrator restores only the synthetic name with a fresh concurrency stamp and null financial field, preserving hidden budget semantics; zero pageerror |
+
+Two screenshots (`p1-06-dirty-project-switch.png`, `p1-06-dirty-logout.png`) and
+`navigation-dirty-settings.json` are produced only by the CI execution path. **Not
+yet generated/imported/reviewed for this slice.** Local safety3/3, actual pinned
+Playwright contract6/6 and budget helpers7/7 PASS; not browser behavior evidence.
+The second synthetic project remains only in the disposable CI database. Native
+Leave/actual close acceptance, logout Discard and embedded forms are not claimed.
+Full P1-06 remains In Review / Pending, including final protected-view mapping.
 
 ## Nine-criterion evidence inventory (not promotion)
 

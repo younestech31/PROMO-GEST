@@ -283,6 +283,9 @@ def run_project_budget(browser, admin_ctx, base, lang, device, viewport, out, *,
         from navigation_revocation import run_navigation_revocation
         run_navigation_revocation(admin_ctx, director_ctx, director_page, base, lang, device,
                                   out, project_id, finance_id, fixture=fixture)
+        from navigation_dirty_settings import run_navigation_dirty_settings
+        run_navigation_dirty_settings(admin_ctx, director_ctx, director_page, base, lang, device,
+                                      out, project_id, fixture=fixture)
         assert not errors, 'P1-06 browser reported an uncaught application error'
         return (
             'Real ASP.NET Core + PostgreSQL 18 Chrome: SYSTEM_ADMIN without membership cannot create '

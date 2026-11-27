@@ -45,6 +45,5 @@ run/job checks, sanitized exporter inputs and actual visual review remain necess
 
 PR #275 merged as `9566f86bc2a971baff68355fd87ea8c2857ddcbc` after final head CI
 46004178317 passed 4/4 and CodeQL 46004178309 passed 2/2. Exact-main CI 46013272743
-and CodeQL 46013272694 are pending at this writing; outcomes will be recorded after
-observation. No deployment, operational database change, Notion mutation, institutional
+passed 4/4 and CodeQL 46013272694 passed 2/2 on that same merged SHA. No deployment, operational database change, Notion mutation, institutional
 signature or phase-gate advancement is performed by this follow-up.

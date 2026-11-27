@@ -62,11 +62,14 @@ Executive Decree 21-128 of 29 March 2021, published on 7 April 2021, modifies th
 
 **Interpretation boundary:** this decree concerns territorial composition/limits, not the four-digit Decree 85-20 commune register or chief-lieu seats. Its annex was not transcribed row by row in this pass. The French and Arabic page images were visually inspected from JORADP-hosted official PDFs, but this pass did not recalculate or compare PDF-byte SHA-256 values and did not complete row-by-row bilingual adjudication. Preserve the decree separately from the interministerial register order published in JO79/2021. Do not infer current codes, seats, effective dates or parent links from Wilaya headings alone.
 
-### B. June 1984 chief-lieu seat order / JO41/1984 — sampled French visual review
+### B. June 1984 chief-lieu seat order / JO41/1984 — bounded bilingual visual review
 
-The 2 June 1984 interministerial order sets the chief-lieu seats in a separate column from commune names. The official French PDF [F1984041.pdf](https://www.joradp.dz/FTP/Jo-Francais/1984/F1984041.pdf) was text-reviewed; selected printed table pages 1030, 1044, 1045 and 1048 were visually inspected. These samples confirm the commune/seat distinction but are not a complete annex transcription or a row-by-row reconciliation.
+The 2 June 1984 interministerial order sets chief-lieu seats in a column separate from commune names. Selected page images were visually inspected in both official JORADP editions:
 
-The Arabic JORADP edition was not visually reviewed in this pass. The JO11/1986 amendment cites a further order dated 13 May 1985 modifying the June 1984 seat order; its standalone issue/page and full annex remain unlocated. Do not infer its effects from the recital.
+- French: [F1984041.pdf](https://www.joradp.dz/FTP/Jo-Francais/1984/F1984041.pdf), printed pp.1030, 1044, 1045 and 1048.
+- Arabic: [A1984041.pdf](https://www.joradp.dz/FTP/jo-arabe/1984/A1984041.pdf), printed pp.1527–1530. Page 1527 contains the Arabic order text and begins the annex; pp.1528–1530 show the separate commune and seat columns for sample sections covering Adrar, Chlef, Laghouat, Oum El Bouaghi, Batna and Bejaia.
+
+The sample confirms the bilingual source structure but is not a full annex transcription, full row-by-row language pairing or national seat reconciliation. No new PDF-byte SHA-256 values were captured in this pass. The JO11/1986 amendment cites a further order dated 13 May 1985 modifying the June 1984 seat order; its standalone issue/page and full annex remain unlocated. Do not infer its effects from the recital.
 
 ### C. Source-population clarification for JO44/1985
 
@@ -106,6 +109,6 @@ Official issue PDFs:
 ## 7. Outstanding work and safety boundary
 
 - The 2005 and 2006 Arabic/French page images were checked, but PDF-byte SHA-256 values for the inspected 2005 editions and the Arabic 2006 edition were not captured. This is a binary-provenance gap, not an outstanding page-image review.
-- Recalculate/compare SHA-256 for the official JO26/2021 Arabic and French PDF binaries; complete row-by-row bilingual transcription and reconciliation for Decree 21-128. The 2 June 1984 chief-lieu seat order still needs its Arabic annex review and full transcription.
+- Recalculate/compare SHA-256 for the official JO26/2021 Arabic and French PDF binaries; complete row-by-row bilingual transcription and reconciliation for Decree 21-128. For JO41/1984, the Arabic annex has now received a bounded visual sample (printed pp.1527–1530); full Arabic/French transcription, row pairing and national seat reconciliation remain open, as does locating the cited 13 May 1985 amending order.
 - All 1,541 master-ledger practitioner sign-offs remain `PENDING`; W30-R007 remains `NEEDS_EVIDENCE`; no commune data is imported; `communesCount = 0` and `PendingOfficialVerification` remain unchanged.
 - No production database, Cloud SQL, application runtime, API contract, schema, migration, or deployed environment was changed.

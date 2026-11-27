@@ -63,6 +63,12 @@ def run_session_security(browser, primary_ctx, base, lang, device, viewport, pri
         assert other.request.get('/api/auth/me').status == 200
         assert current.request.get('/api/auth/me').status == 200
         rows = validate_inventory(current.request.get('/api/auth/sessions'))
+        # Keep an independent cookie jar: the UI clears its own cookie on current logout,
+        # so checking that jar alone would not prove server-side replay rejection.
+        replay = browser.new_context(base_url=base, ignore_https_errors=True,
+                                     storage_state=current.storage_state())
+        contexts.append(replay)
+        assert replay.request.get('/api/auth/me').status == 200
         current_id = next(row['id'] for row in rows if row['isCurrentSession'])
         other_id = next(row['id'] for row in rows if row['userAgent'] == f'PROMOGEST-P1-19-other-{lang}-{device}')
         assert current_id != other_id
@@ -123,6 +129,7 @@ def run_session_security(browser, primary_ctx, base, lang, device, viewport, pri
         assert own.value.status == 204
         expect(page.locator('#login-username')).to_be_visible()
         assert current.request.get('/api/auth/me').status == 401
+        assert replay.request.get('/api/auth/me').status == 401
         assert other.request.get('/api/auth/me').status == 401
         checks[SESSION_CHECKS[6]] = True
         # IDs were validated as UUIDs before interpolation; read-only fixture audit inspection.

@@ -5,6 +5,7 @@ production targets, response dumps, passwords or cookies in evidence artifacts.
 """
 import os
 import secrets
+import traceback
 
 def mutation(request, method, url, payload):
     csrf = request.get('/api/auth/csrf')
@@ -274,6 +275,14 @@ def run_project_budget(browser, admin_ctx, base, lang, device, viewport, out):
             'financial-view and denial audits identify actors/project. Automated evidence only; '
             'not manual Staging acceptance.'
         )
+    except Exception as error:
+        # Publish only static source locations and exception type to check annotations.
+        # Avoid response/request dumps or exception messages (which may contain form values).
+        for frame in traceback.extract_tb(error.__traceback__):
+            if frame.filename.endswith('/project_budget.py'):
+                print(f'::error file=tests/browser/project_budget.py,line={frame.lineno}::'
+                      f'P1-05 {lang}/{device}: {type(error).__name__} in {frame.name}', flush=True)
+        raise
     finally:
         for context in contexts:
             context.close()

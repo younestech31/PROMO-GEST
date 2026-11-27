@@ -278,6 +278,12 @@ def run_project_budget(browser, admin_ctx, base, lang, device, viewport, out, *,
             assert any(entry['eventType'] == 'ACCESS_DENIED'
                        and entry['actorUserId'] == actor_id for entry in entries)
         assert not errors, 'P1-05 browser reported an uncaught application error'
+        # P1-06 runs only after budget assertions, reusing these real sessions and
+        # restoring membership capabilities before later team/session fixtures.
+        from navigation_revocation import run_navigation_revocation
+        run_navigation_revocation(admin_ctx, director_ctx, director_page, base, lang, device,
+                                  out, project_id, finance_id, fixture=fixture)
+        assert not errors, 'P1-06 browser reported an uncaught application error'
         return (
             'Real ASP.NET Core + PostgreSQL 18 Chrome: SYSTEM_ADMIN without membership cannot create '
             'a nonzero estimate or see/edit the budget; detail, list and paged directory redact to null; '

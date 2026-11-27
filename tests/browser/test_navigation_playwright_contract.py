@@ -45,6 +45,13 @@ class NavigationPlaywrightContractTests(unittest.TestCase):
         self.assertIn('go_back', calls)
         self.assertIn('go_forward', calls)
 
+    def test_revocation_slice_uses_supported_page_methods_and_signatures(self):
+        source = Path(__file__).with_name('navigation_revocation.py').read_text()
+        calls = check_page_calls(source)
+        for name in ('goto', 'get_by_role', 'evaluate', 'wait_for_function',
+                     'expect_response', 'screenshot', 'remove_listener'):
+            self.assertIn(name, calls)
+
     def test_nonexistent_failed_request_convenience_method_is_rejected(self):
         with self.assertRaisesRegex(ValueError, 'Unsupported Page method'):
             check_page_calls('p06_page.expect_request_failed(lambda request: True)')

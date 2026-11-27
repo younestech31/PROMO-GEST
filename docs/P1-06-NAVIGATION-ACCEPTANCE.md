@@ -116,7 +116,7 @@ The second synthetic project remains only in the disposable CI database. Native
 Leave/actual close acceptance, logout Discard and embedded forms are not claimed.
 Full P1-06 remains In Review / Pending, including final protected-view mapping.
 
-## Bounded slice: embedded C/D/E/K drafts — corrected source CI PASS
+## Bounded slice: embedded C/D/E/K drafts — prior source PASS, newer native-close failure
 
 `tests/browser/navigation_embedded.py` follows the existing helper flows on the
 allowlisted Development and Production HTTPS disposable four-profile databases.
@@ -157,9 +157,20 @@ PG18/restart/restore/export also PASS. Each editor required absent shell Save,
 retained dirty state/session on Stay, real Back Discard and clean Forward, native
 reload document replacement and native tab-close event on Leave, unchanged four
 API collections, no page API mutation requests and no pageerror. This is not OS
-crash recovery or complete action/option Cartesian acceptance. Current evidence/
-documentation follow-up requires its own CI before PR289 merge and independent
-exact-main verification. [Exact-run job/step archive](evidence/p1-06-navigation-2026-11-27/checks.json).
+crash recovery or complete action/option Cartesian acceptance. **Newer head a75c2c7:** CI46082246641 **FAIL** in Production HTTPS;
+Development four profiles passed, but Production stopped at AR/desktop structure
+`navigation_embedded.py:166` (`Error` entering native-close expectation). CodeQL
+46082246588 PASS. This newer failure supersedes any assumption of repeatable
+whole-head success from895db76. No merge. Sanitized annotations provide stage/type
+only; full traceback and exact browser error are not claimed.
+
+Correction introduces a real App guard/Stay handshake before each native action,
+including after reload, so child `fill` is not treated as proof that App dirty
+state/beforeunload is ready. This is a synchronization hypothesis to verify, not
+an asserted runtime root cause. No sleeps/retries, synthetic unload, force clicks
+or runtime changes. Static stage/page-closed diagnostics added; local safety5/5
+and actual Playwright contract7/7 PASS. Corrected head browser CI pending.
+Final successful-head and independent merged-main verification remain required. [Exact-run job/step archive](evidence/p1-06-navigation-2026-11-27/checks.json).
 
 The previous settings sourcecf64368 artifact metadata (run46079034309) is readable,
 but artifact binary download redirects to a host unavailable from this workspace

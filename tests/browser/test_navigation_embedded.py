@@ -35,6 +35,34 @@ class EmbeddedNavigationSafetyTests(unittest.TestCase):
         self.assertNotIn("name='Close menu', exact=True).click()", helper)
         self.assertNotIn('force=True', helper)
 
+    def test_native_leave_is_preceded_by_observable_app_guard_stay(self):
+        import ast
+        tree = ast.parse(Path(__file__).with_name('navigation_embedded.py').read_text())
+        arm = next(node for node in ast.walk(tree)
+                   if isinstance(node, ast.FunctionDef) and node.name == 'arm_native_leave')
+        calls = [node.func.id for node in ast.walk(arm)
+                 if isinstance(node, ast.Call) and isinstance(node.func, ast.Name)]
+        self.assertIn('sidebar', calls)
+        self.assertIn('expect_guard', calls)
+        # Both native actions must follow the explicit guard handshake, not fill alone.
+        tries = [node for node in ast.walk(tree) if isinstance(node, ast.Try)]
+        body = next(node.body for node in tries if any(
+            isinstance(stmt, ast.Assign) and any(isinstance(target, ast.Name)
+                and target.id == 'native_phase' for target in stmt.targets) for stmt in node.body))
+        found = 0
+        for index, node in enumerate(body):
+            if isinstance(node, ast.With) and any(
+                isinstance(item.context_expr, ast.Call)
+                and isinstance(item.context_expr.func, ast.Attribute)
+                and item.context_expr.func.attr == 'expect_event'
+                and item.context_expr.args and isinstance(item.context_expr.args[0], ast.Constant)
+                and item.context_expr.args[0].value == 'dialog' for item in node.items):
+                call = body[index - 2]
+                self.assertIsInstance(call, ast.Expr)
+                self.assertEqual(call.value.func.id, 'arm_native_leave')
+                found += 1
+        self.assertEqual(found, 2)
+
     def test_uses_canonical_embedded_route_labels(self):
         registry = (Path(__file__).resolve().parents[2] / 'apps/local-web/src/app/routeRegistry.ts').read_text()
         helper = Path(__file__).with_name('navigation_embedded.py').read_text()

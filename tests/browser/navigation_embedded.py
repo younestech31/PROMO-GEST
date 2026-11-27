@@ -93,6 +93,19 @@ def run_navigation_embedded(admin_ctx, base, lang, device, out, project_id, *, f
             expect(editor()).to_have_value(draft)
             assert p06_page.evaluate('key => window[key] === true', marker)
 
+        def arm_native_leave():
+            # Filling an input only proves child state. Observe the real App guard
+            # and complete a user click before asking Chromium to unload, especially
+            # after a fresh reload. No sleeps, synthetic beforeunload or retries.
+            p06_page.evaluate('key => { window[key] = true; }', marker)
+            editor().fill(draft)
+            sidebar('ملخص المشروع' if lang == 'ar' else 'Synthèse projet')
+            expect_guard()
+            guard.get_by_role('button', name=stay, exact=True).last.click()
+            expect(guard).to_have_count(0)
+            expect(editor()).to_have_value(draft)
+
+        native_phase = 'navigation'
         try:
             p06_page.goto(overview_url)
             sidebar(arabic_label if lang == 'ar' else french_label)
@@ -150,7 +163,8 @@ def run_navigation_embedded(admin_ctx, base, lang, device, out, project_id, *, f
 
             # Accept browser-native Leave on reload: new document, same server data,
             # fresh embedded draft. This is not a custom Save/Discard dialog.
-            field.fill(draft)
+            arm_native_leave()
+            native_phase = 'reload_leave'
             with p06_page.expect_event('dialog', predicate=lambda value: value.type == 'beforeunload') as reload_prompt:
                 p06_page.evaluate('() => { window.setTimeout(() => window.location.reload(), 0); }')
             reload_prompt.value.accept()
@@ -162,7 +176,8 @@ def run_navigation_embedded(admin_ctx, base, lang, device, out, project_id, *, f
             assert not p06_page.evaluate('key => window[key] === true', marker)
             checks[section + '_native_reload_leave_resets_draft_not_storage'] = True
 
-            field.fill(draft)
+            arm_native_leave()
+            native_phase = 'tab_close_leave'
             with p06_page.expect_event('dialog', predicate=lambda value: value.type == 'beforeunload') as close_prompt:
                 p06_page.close(run_before_unload=True)
             with p06_page.expect_event('close'):
@@ -174,7 +189,8 @@ def run_navigation_embedded(admin_ctx, base, lang, device, out, project_id, *, f
             for frame in traceback.extract_tb(error.__traceback__):
                 if frame.filename.endswith('/navigation_embedded.py'):
                     print(f'::error file=tests/browser/navigation_embedded.py,line={frame.lineno}::'
-                          f'P1-06 {section} {lang}/{device}: {type(error).__name__}', flush=True)
+                          f'P1-06 {section} {lang}/{device}: {type(error).__name__}; '
+                          f'stage={native_phase}; page_closed={p06_page.is_closed()}', flush=True)
             raise
         finally:
             p06_page.remove_listener('request', on_request)

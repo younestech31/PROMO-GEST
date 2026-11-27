@@ -38,6 +38,11 @@ screenshots (`org-01-readonly.png`, `org-02-authorized-saved.png`) and
 `organization-permissions.json` in `staging-https-evidence`. The existing 15-check
 staging manifest and historical screenshots remain unchanged; this additional matrix
 is separately reported and must not be inferred from an old manifest's PASS.
+The explicit `--suite organization` exporter validates all five new checks per profile,
+includes them in `organizationEvidence`, and publishes bounded compact copies of
+`org-02-authorized-saved.png`. Default staging exports retain their original meaning.
+Full read-only and saved screenshots remain in the artifact; no extra notice steps or
+repository-write CI permissions are required.
 
 The guard runs before any I/O: GitHub Actions, loopback PostgreSQL, exact
 `stg_<ar|fr>_<desktop|mobile>` DB, fixed local HTTPS origin and encrypted Data Protection
@@ -55,7 +60,7 @@ reporting names only static source locations and exception classes.
 - Python compile: **PASS** for helper and staging runner.
 - New Production browser results and screenshots: **PENDING CI execution**, not scored yet.
 - PR #271 exact-main postmerge CodeQL [45992729724](https://github.com/younestech31/PROMO-GEST/actions/runs/45992729724): **SUCCESS 2/2**.
-- PR #271 exact-main postmerge CI [45992729728](https://github.com/younestech31/PROMO-GEST/actions/runs/45992729728): **in progress at this checkpoint**.
+- PR #271 exact-main postmerge CI [45992729728](https://github.com/younestech31/PROMO-GEST/actions/runs/45992729728): **SUCCESS 4/4**.
 
 ## Gates
 

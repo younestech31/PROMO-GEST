@@ -102,7 +102,7 @@ def main():
         'repository': REPOSITORY, 'runId': args.run, 'url': run['html_url'],
         'sourceHead': run['head_sha'], 'jobId': job['id'],
         'transport': 'SHA-256-verified compact synthetic images from read-only CI check notices',
-        'originals': 'staging-https-evidence artifact; five full PNGs per profile',
+        'originals': 'staging-https-evidence artifact; full PNGs and result JSON per profile',
     }, indent=2) + '\n')
     print(f'Imported four verified staging screenshots and manifest into {args.out}')
 

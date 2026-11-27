@@ -32,6 +32,41 @@ class StagingEvidenceTests(unittest.TestCase):
         result[key] = value
         path.write_text(json.dumps(result))
 
+    def organization_fixture(self):
+        for profile in export.PROFILES:
+            (self.root / profile / 'organization-permissions.json').write_text(json.dumps({
+                'profile': profile, 'status': 'PASS',
+                'checks': {key: True for key in export.ORGANIZATION_CHECKS},
+                'scope': 'P1-09 disposable Production HTTPS; temporary VIEWER grant revoked',
+            }))
+
+    def test_organization_requires_complete_four_profile_evidence(self):
+        self.organization_fixture()
+        self.assertEqual(set(export.read_organization_results(self.root)), set(export.PROFILES))
+        (self.root / 'fr-mobile/organization-permissions.json').unlink()
+        with self.assertRaises(FileNotFoundError):
+            export.read_organization_results(self.root)
+
+    def test_organization_rejects_failures_extra_fields_and_wrong_identity(self):
+        for key, value in (('status', 'FAIL'), ('checks', {}), ('profile', 'fr-mobile'),
+                           ('cookies', 'must never export'), ('scope', 'unexpected')):
+            with self.subTest(key=key):
+                self.organization_fixture()
+                path = self.root / 'ar-desktop/organization-permissions.json'
+                result = json.loads(path.read_text())
+                result[key] = value
+                path.write_text(json.dumps(result))
+                with self.assertRaises(ValueError):
+                    export.read_organization_results(self.root)
+
+    def test_organization_rejects_symlinked_result(self):
+        self.organization_fixture()
+        path = self.root / 'ar-mobile/organization-permissions.json'
+        path.unlink()
+        path.symlink_to(self.root / 'ar-desktop/organization-permissions.json')
+        with self.assertRaises(ValueError):
+            export.read_organization_results(self.root)
+
     def test_requires_all_four_profiles(self):
         self.assertEqual(len(export.read_results(self.root)), 4)
         (self.root / 'fr-mobile/result.json').unlink()

@@ -6,6 +6,16 @@ Date: 27 November 2026. Status: **isolated Production HTTPS technical acceptance
 المكتب، بما فيها الاستعادة بعد إعادة الدخول وإعادة تشغيل الخادم، وفشل الاتصال
 وتعارض التحديثات، دون تغيير اللغة الافتراضية للمؤسسة. اللقطات أدناه فعلية ومراجَعة.
 
+## Final-head and merge checkpoint — 27 November
+
+Final documentation head `a2fcb191304846232fb22ce0e92fea15fc186d1a`:
+CI[46067193697](https://github.com/younestech31/PROMO-GEST/actions/runs/46067193697)
+**PASS5/5** + CodeQL[46067193694](https://github.com/younestech31/PROMO-GEST/actions/runs/46067193694)
+**PASS2/2**, all eight listed checks SUCCESS. PR #284 merged at21:07:20Z as
+`a5f578345ea3d2fbbe65c4e1ca6bff10f107c7d0`.
+Independent exact-main CI46068197442 / CodeQL46068197482 still **PENDING**;
+P1-17 remains In Review / Pending until these complete. Source CI is not inherited.
+
 ## Scope
 
 The own-language preference API and SPA persistence wiring are already shipped.

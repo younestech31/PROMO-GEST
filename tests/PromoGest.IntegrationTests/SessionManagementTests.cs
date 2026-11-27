@@ -271,6 +271,15 @@ public sealed partial class PostgresEndToEndTests
         Assert.NotNull(listed);
         var onlyCurrent = Assert.Single(listed!);
         Assert.True(onlyCurrent.IsCurrentSession);
+        Assert.Equal(HttpStatusCode.OK, (await client.GetAsync("/api/auth/me")).StatusCode);
+        using var verification = factory.Services.CreateScope();
+        var persisted = verification.ServiceProvider.GetRequiredService<AppDbContext>();
+        var untouchedForeign = await persisted.UserSessions.SingleAsync(item => item.Id == foreignSessionId);
+        Assert.False(untouchedForeign.IsRevoked);
+        Assert.Null(untouchedForeign.RevokedAtUtc);
+        Assert.False((await persisted.UserSessions.SingleAsync(item => item.Id == expiredSessionId)).IsRevoked);
+        Assert.True((await persisted.UserSessions.SingleAsync(item => item.Id == revokedSessionId)).IsRevoked);
+        Assert.False(await persisted.AuditLogs.AnyAsync(entry => entry.EventType == "AUTH_SESSION_REVOKED_BY_USER"));
     }
 
     [Fact]

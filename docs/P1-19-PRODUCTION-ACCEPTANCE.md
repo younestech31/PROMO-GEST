@@ -131,3 +131,31 @@ are not changed by this technical slice. No Notion status is advanced.
 Mobile captures show the scrolled confirmation, not the privacy note above the scroll
 position. The original inventory screenshot and browser assertions support privacy
 notice verification. No API behavior is inferred from a screenshot alone.
+
+
+## Six-criterion reconciliation — 27 November
+
+Live Notion criteria/dependencies/risk and the explicit26November remaining
+boundary were reread before this slice. No new runtime implementation is needed.
+The manual report's omitted IDOR/expired/race/revoke-all cases are **not** silently
+added to that historical report or inferred from screenshots.
+
+| Criterion | Evidence and bounded follow-up |
+|---|---|
+| Own sessions only, public timestamps/IP/User-Agent, no secrets | Existing `SessionManagement_ListOwnActiveSessionsWithoutSecrets_AndRevokeSelectedSession`, owner-bound repository and exact public-schema Production checks. Original inventory/privacy screenshots contain only synthetic metadata. |
+| Owner-bound revocation / IDOR denial / audit | Existing `SessionManagement_RejectsForeignExpiredAndAlreadyRevokedSessionIds` returns404 `SESSION_NOT_FOUND` for all three, not403. New assertions verify foreign row remains unrevoked, expired row remains untouched, old revoked row stays revoked, caller still works, and no false success audit. **New assertions CI pending**. |
+| Selective revoke / current-session choice | Existing PG18 list/selective/current-confirmation tests and eight-check four-profile Production matrix: current session retained, explicit confirmation409, confirm204/logout, cancel sends no request; independent retained-cookie replay401. |
+| PG18 foreign / expired / revoked / replay / concurrent revoke | Existing tests above and `SessionManagement_ConcurrentRevocationCommitsOneUpdateAndOneAudit`: same target race one204 + one409 `CONCURRENCY_CONFLICT`, exactly one success audit, target replay401. This is same-account concurrency, not foreign-owner browser acceptance. |
+| AR RTL / FR LTR privacy and confirmation | Existing32/32 Production results plus four corrected images below; mobile images show the scrolled confirmation, not the privacy note above it. Inventory screenshot and DOM checks prove the notice separately. |
+| Reset/deactivation still revoke all | Existing lifecycle/reset and deactivation integration tests; new two-case `SessionManagement_ResetOrDeactivationRevokesAllEmployeeSessionsWithoutRevokingAdministrator` explicitly logs in twice, snapshots original cookies in memory, resets/deactivates via administrator API, checks both persisted rows revoked/security stamp rotated/exact actor-target audit/unaffected admin, replays original cookies401, and reactivation cannot revive old cookies. **New theory CI pending**. |
+
+The new preservation theory uses one isolated disposable PG18 database per case.
+Two ordinary employee sessions and an administrator are real API logins; cookies
+are kept only in test memory and never logged/uploaded. Synthetic accounts are
+prepared directly in that disposable database without shipped-grant changes.
+No new session lifetime, idle policy, sliding expiry, runtime change or admin-wide
+session inventory is introduced. No local .NET/PostgreSQL runtime exists, so
+**new C# cases remain NOT RUN locally / CI pending**. P1-19 stays In Review /
+Pending until executed/full/final-main evidence is reconciled. P1-17 merged but
+independent main checks are still pending at this checkpoint; institutional,
+legal/accounting/municipality/release and phase gates remain independent.

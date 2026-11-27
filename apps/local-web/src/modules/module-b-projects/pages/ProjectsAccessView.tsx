@@ -10,7 +10,7 @@ import type {
   UserDto,
 } from '@/types/erp';
 import { getTranslations, translateApiError } from '@/core/localization/translations';
-import { formatDzd } from '@/shared/utils/algerianFormat';
+import { ProjectBudgetValue } from '../components/ProjectBudgetValue';
 import { useAdministrativeReference } from '@/shared/hooks/useAdministrativeReference';
 import {
   canCreateProject,
@@ -521,7 +521,7 @@ export function ProjectsAccessView({
           <>
             <div className="md:hidden divide-y divide-slate-100">
               {projects.map((p) => (
-                <div key={p.id} className="p-4 space-y-3">
+                <article key={p.id} aria-label={p.code} className="p-4 space-y-3">
                   <div className="flex items-start justify-between gap-2">
                     <div className="min-w-0">
                       {onOpenProjectWorkspace ? (
@@ -556,6 +556,13 @@ export function ProjectsAccessView({
                       {language === 'ar' ? 'وحدات' : 'unités'}
                     </div>
                   </div>
+
+                  <dl className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1 text-xs">
+                    <dt className="text-slate-500">{t.projects.tableBudget}</dt>
+                    <dd className="font-data text-slate-900">
+                      <ProjectBudgetValue amount={p.estimatedBudgetDzd} language={language} />
+                    </dd>
+                  </dl>
 
                   <div className="flex flex-wrap gap-1.5 pt-1">
                     {onOpenProjectWorkspace && (
@@ -609,7 +616,7 @@ export function ProjectsAccessView({
                       </button>
                     )}
                   </div>
-                </div>
+                </article>
               ))}
             </div>
 
@@ -666,7 +673,7 @@ export function ProjectsAccessView({
                       </td>
                       <td className="py-3 px-4 text-xs text-slate-700 whitespace-nowrap">{statusLabel(p.status)}</td>
                       <td className="py-3 px-4 text-end font-data text-slate-900 whitespace-nowrap">
-                        {p.estimatedBudgetDzd === null ? '—' : formatDzd(p.estimatedBudgetDzd, language)}
+                        <ProjectBudgetValue amount={p.estimatedBudgetDzd} language={language} />
                       </td>
                       <td className="py-3 px-4 text-end font-data text-slate-700 whitespace-nowrap">
                         {p.members.length}

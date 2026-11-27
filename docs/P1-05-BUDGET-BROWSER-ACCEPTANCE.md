@@ -32,9 +32,20 @@ The administrator's member-assignment responses are also checked for budget reda
 The test checks authorization immediately with the existing sessions after capability
 changes; it does not rely on logging in again to enforce resource scope.
 
+## Mobile correction found during browser execution
+
+The first runs passed the Arabic desktop slice but stopped on Arabic mobile: the
+responsive directory uses cards, not table rows. Those cards also omitted the budget
+entirely. The fix adds a labeled budget definition to each accessible project article,
+using the same `ProjectBudgetValue` component as the desktop table. Authorized amounts
+are localized with two decimals; server-redacted null stays a dash, distinct from zero.
+Four rendering tests cover null, zero, decimals and LTR isolation in both languages.
+Browser assertions target the visible card on mobile and the visible row on desktop;
+they must never score a hidden desktop table as mobile evidence.
+
 ## Evidence and verification boundary
 
-- Local: `npm ci --no-audit --no-fund`, `npm run lint`, `npm test` (113/113),
+- Local: `npm ci --no-audit --no-fund`, `npm run lint`, `npm test` (117/117),
   `npm run build`, Python compilation, and `python3 tests/browser/test_project_budget.py`
   (5/5) passed on 27 November 2026. The helper tests check null/zero/decimal payloads,
   fresh CSRF retrieval, missing-token refusal and non-CI/non-disposable target rejection.

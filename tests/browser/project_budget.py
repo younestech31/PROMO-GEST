@@ -102,9 +102,16 @@ def run_project_budget(browser, admin_ctx, base, lang, device, viewport, out):
 
     def assert_directory(actor_page, expected_budget):
         actor_page.goto(base + '/projects')
-        row = actor_page.get_by_role('row').filter(has_text=code)
-        expect(row).to_have_count(1)
-        budget_cell = row.get_by_role('cell').nth(4)
+        if device == 'mobile':
+            card = actor_page.get_by_role('article', name=code, exact=True)
+            expect(card).to_have_count(1)
+            budget_cell = card.locator('dd')
+        else:
+            row = actor_page.get_by_role('row').filter(has_text=code)
+            expect(row).to_have_count(1)
+            budget_cell = row.get_by_role('cell').nth(4)
+        budget_cell.scroll_into_view_if_needed()
+        expect(budget_cell).to_be_visible()
         if expected_budget is None:
             expect(budget_cell).to_have_text('—')
         else:

@@ -402,6 +402,110 @@
           "steps": []
         }
       ]
+    },
+    {
+      "runId": 46060648111,
+      "url": "https://github.com/younestech31/PROMO-GEST/actions/runs/46060648111",
+      "headSha": "109abdc59678733d5431176ebb2d9f7cca6026a7",
+      "conclusion": "success",
+      "jobs": [
+        {
+          "name": "Frontend install, checks, and static hosting",
+          "jobId": 140713793435,
+          "conclusion": "success"
+        },
+        {
+          "name": "Documentation baseline consistency",
+          "jobId": 140713793791,
+          "conclusion": "success"
+        },
+        {
+          "name": "Windows publish and PowerShell validation",
+          "jobId": 140714017460,
+          "conclusion": "success"
+        },
+        {
+          "name": ".NET 10 and PostgreSQL 18 least-privilege tests",
+          "jobId": 140714017536,
+          "conclusion": "success"
+        }
+      ]
+    },
+    {
+      "runId": 46060648095,
+      "url": "https://github.com/younestech31/PROMO-GEST/actions/runs/46060648095",
+      "headSha": "109abdc59678733d5431176ebb2d9f7cca6026a7",
+      "conclusion": "success",
+      "jobs": [
+        {
+          "name": "Analyze csharp",
+          "jobId": 140713793827,
+          "conclusion": "success"
+        },
+        {
+          "name": "Analyze javascript-typescript",
+          "jobId": 140713794197,
+          "conclusion": "success"
+        }
+      ]
     }
-  ]
+  ],
+  "deliveryFailure": {
+    "runId": 46060648111,
+    "jobId": 140714017536,
+    "annotationCount": 50,
+    "titles": [
+      "PG-STAGING-ar-desktop:2:7",
+      "PG-STAGING-ar-desktop:1:7",
+      "PG-P1-10-manifest:2:2",
+      "PG-P1-10-manifest:1:2",
+      "PG-P1-10-fr-mobile:9:9",
+      "PG-P1-10-fr-mobile:8:9",
+      "PG-P1-10-fr-mobile:7:9",
+      "PG-P1-10-fr-mobile:6:9",
+      "PG-P1-10-fr-mobile:5:9",
+      "PG-P1-10-fr-mobile:4:9",
+      "PG-P1-10-fr-mobile:3:9",
+      "PG-P1-10-fr-mobile:2:9",
+      "PG-P1-10-fr-mobile:1:9",
+      "PG-P1-10-fr-desktop:9:9",
+      "PG-P1-10-fr-desktop:8:9",
+      "PG-P1-10-fr-desktop:7:9",
+      "PG-P1-10-fr-desktop:6:9",
+      "PG-P1-10-fr-desktop:5:9",
+      "PG-P1-10-fr-desktop:4:9",
+      "PG-P1-10-fr-desktop:3:9",
+      "PG-P1-10-fr-desktop:2:9",
+      "PG-P1-10-fr-desktop:1:9",
+      "PG-P1-10-ar-mobile:9:9",
+      "PG-P1-10-ar-mobile:8:9",
+      "PG-P1-10-ar-mobile:7:9",
+      "PG-P1-10-ar-mobile:6:9",
+      "PG-P1-10-ar-mobile:5:9",
+      "PG-P1-10-ar-mobile:4:9",
+      "PG-P1-10-ar-mobile:3:9",
+      "PG-P1-10-ar-mobile:2:9",
+      "PG-P1-10-ar-mobile:1:9",
+      "PG-P1-10-ar-desktop:9:9",
+      "PG-P1-10-ar-desktop:8:9",
+      "PG-P1-10-ar-desktop:7:9",
+      "PG-P1-10-ar-desktop:6:9",
+      "PG-P1-10-ar-desktop:5:9",
+      "PG-P1-10-ar-desktop:4:9",
+      "PG-P1-10-ar-desktop:3:9",
+      "PG-P1-10-ar-desktop:2:9",
+      "PG-P1-10-ar-desktop:1:9",
+      "",
+      "",
+      "",
+      "",
+      "",
+      "",
+      "",
+      "",
+      "",
+      ""
+    ],
+    "importVerdict": "rejected: Incomplete staging evidence export; no directory created"
+  }
 }

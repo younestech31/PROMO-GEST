@@ -144,3 +144,25 @@ original preservation and fail-closed final bound; exporter now **24/24 PASS**.
 PR282 is merged at `2d5bf6d4684179db6ea8707fcc208cce6797872e`; its independent
 exact-main CI46059337780 PASS4/4 and CodeQL46059337794 PASS2/2 are now verified.
 This does not score PR283's new export as PASS. New head execution remains pending.
+
+
+### Export passed, notice transport incomplete — dedicated job repair
+
+Source `109abdc59678733d5431176ebb2d9f7cca6026a7` CI46060648111 **PASS4/4**,
+CodeQL46060648095 **PASS2/2**. Full integration, Development/Production matrices,
+all image/manifest export steps and restore passed. This demonstrates the bounded
+encoder succeeds, not the cause of the first run's failure. Strict import then
+**correctly rejected** incomplete staging notices and wrote no evidence directory.
+GitHub returned exactly50 annotations for job140714017536:10 build warnings,
+38 P1-10 chunks, and only2 of7 first-budget-image chunks. This proves a transport
+budget loss, not a missing real-browser run or permission failure.
+
+The unchanged five Production export steps now run in a dedicated job, consuming
+only the same run's sanitized artifact after backend success. No network target,
+service role or screenshot assertion changes. Import requires successful overall
+run/backend/export job and exact source/run/tested identities; historical job
+selection is supported, but failed new-job fallback is forbidden. Unit tests cover
+legacy/dedicated selection, failure/skipped/ambiguous rejection. Importer16/16 and
+exporter24/24 PASS. CI now has **five jobs**. New complete image transport, visual
+review and final acceptance remain PENDING; a previous successful run is not a
+successful import. Original PNGs/previous archives are never overwritten in Git.

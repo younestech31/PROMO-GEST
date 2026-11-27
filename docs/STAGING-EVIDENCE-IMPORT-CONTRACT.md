@@ -61,3 +61,15 @@ PR #275 merged as `9566f86bc2a971baff68355fd87ea8c2857ddcbc` after final head CI
 46004178317 passed 4/4 and CodeQL 46004178309 passed 2/2. Exact-main CI 46013272743
 passed 4/4 and CodeQL 46013272694 passed 2/2 on that same merged SHA. No deployment, operational database change, Notion mutation, institutional
 signature or phase-gate advancement is performed by this follow-up.
+
+
+## Separate notice budget for Production exports
+
+PR283 observed50 backend annotations:10 warnings +38 P1-10 chunks +only2 budget
+chunks; run46060648111 passed all export steps but strict import correctly rejected
+missing pieces. Production notices now use dedicated job `Production HTTPS evidence
+export`, which downloads the same run's `staging-https-evidence` after successful
+backend. Import requires the overall run and backend to pass, and prefers exactly
+one successful dedicated export job. Failed/skipped/ambiguous dedicated jobs cannot
+fall back to legacy backend notices. Historical runs without it keep original
+selection. This is read-only artifact transport, not an acceptance bypass.

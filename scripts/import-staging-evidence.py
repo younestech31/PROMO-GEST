@@ -117,6 +117,21 @@ def decode_evidence(annotations, source_sha):
     return manifest, images
 
 
+def select_export_job(jobs):
+    backend = next(job for job in jobs if job['name'] == '.NET 10 and PostgreSQL 18 least-privilege tests')
+    if backend['conclusion'] != 'success':
+        raise ValueError('Staging job did not pass')
+    # New runs isolate notices from the backend job's 50-annotation cap. Legacy
+    # archives retain their original job. Never fall back from a failed new job.
+    exports = [job for job in jobs if job['name'] == 'Production HTTPS evidence export']
+    if len(exports) > 1:
+        raise ValueError('Ambiguous evidence export job')
+    job = exports[0] if exports else backend
+    if job['conclusion'] != 'success':
+        raise ValueError('Evidence export job did not pass')
+    return job
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--run', required=True, type=int)
@@ -126,9 +141,7 @@ def main():
     if run['conclusion'] != 'success' or run['head_repository']['full_name'] != REPOSITORY:
         raise ValueError('Only successful runs from this repository may be imported')
     jobs = api(f'actions/runs/{args.run}/jobs')['jobs']
-    job = next(job for job in jobs if job['name'] == '.NET 10 and PostgreSQL 18 least-privilege tests')
-    if job['conclusion'] != 'success':
-        raise ValueError('Staging job did not pass')
+    job = select_export_job(jobs)
     annotations = []
     page = 1
     while True:

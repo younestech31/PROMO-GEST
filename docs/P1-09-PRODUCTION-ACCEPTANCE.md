@@ -1,6 +1,7 @@
 # P1-09 — Production HTTPS organization permission acceptance
 
-Date: 27 November 2026. Status: implementation ready; new real-stack CI execution pending.
+Date: 27 November 2026. Status: **isolated Production HTTPS technical acceptance PASS**;
+PR #273 remains under review, institution-local/operator acceptance is not asserted.
 
 ## Scope and correction
 
@@ -58,14 +59,50 @@ reporting names only static source locations and exception classes.
 - TypeScript check: **PASS** (`npm --prefix apps/local-web run lint`).
 - New offline helper tests: **2/2 PASS**, nullable payload/stamp and rejection before SQL/browser/filesystem.
 - Python compile: **PASS** for helper and staging runner.
-- New Production browser results and screenshots: **PENDING CI execution**, not scored yet.
+- Production browser matrix: **5/5 named checks in each of four profiles (20 results) PASS**
+  in [CI 45994447145](https://github.com/younestech31/PROMO-GEST/actions/runs/45994447145),
+  **4/4 jobs PASS**; [CodeQL 45994447199](https://github.com/younestech31/PROMO-GEST/actions/runs/45994447199), **2/2 PASS**.
+- Source head `a4b48765a9149b843dd42e40e585968d4ae52893`; tested PR merge
+  `433b506db22cb0d0562f7a009c2b792b7d2d027e`. The existing Production baseline also
+  passed all 15 named checks per profile (60 results), separately from the new matrix.
+- Four compact screenshots imported through the existing verified read-only annotation
+  transport, opened visually and SHA-256 rechecked. Permanent [manifest/provenance](evidence/p1-09-production-2026-11-27/README.md);
+  eight original organization PNGs and JSON are in [artifact 15195088601](https://github.com/younestech31/PROMO-GEST/actions/runs/45994447145/artifacts/15195088601).
+- Exporter validation tests: **10/10 PASS** (including organization completeness/privacy/path checks);
+  importer **7/7**, budget helpers **7/7**, baseline **12/12**, hygiene **12/12 PASS**.
+  Build, lint ratchet, secret scan and diff checks also pass.
+- First implementation run on `f6aad30` was also green: CI 45993498808 **4/4**,
+  CodeQL 45993498642 **2/2**. The later run above adds the durable organization-specific export.
 - PR #271 exact-main postmerge CodeQL [45992729724](https://github.com/younestech31/PROMO-GEST/actions/runs/45992729724): **SUCCESS 2/2**.
 - PR #271 exact-main postmerge CI [45992729728](https://github.com/younestech31/PROMO-GEST/actions/runs/45992729728): **SUCCESS 4/4**.
 
 ## Gates
 
-P1-09 remains In Review / Pending until new technical evidence is observed and reviewed.
-No Notion status is advanced. This is developer-led isolated Linux technical acceptance,
+The technical matrix is now executed and its four screenshots reviewed. P1-09's existing
+In Review / Pending tracking is retained rather than silently inventing institutional
+approval; no Notion status is advanced. This is developer-led isolated Linux technical acceptance,
 not an institutional signature, organization workstation setup or Windows service test.
 P1-10 retains its acceptance dependency; P1-08 policy is not inferred. P1-01/P1-35
 remain Deferred/Pending; P1-02 stays Blocked; Phases 2–5 stay gated.
+
+## Reviewed screenshots — authorized non-admin save and reload
+
+### العربية — سطح المكتب
+
+![Arabic desktop, saved profile and non-admin VIEWER](evidence/p1-09-production-2026-11-27/ar-desktop/review.jpg)
+
+### العربية — الهاتف
+
+![Arabic RTL mobile saved profile](evidence/p1-09-production-2026-11-27/ar-mobile/review.jpg)
+
+### Français — bureau
+
+![French desktop, saved profile and non-admin VIEWER](evidence/p1-09-production-2026-11-27/fr-desktop/review.jpg)
+
+### Français — mobile
+
+![French LTR mobile saved profile](evidence/p1-09-production-2026-11-27/fr-mobile/review.jpg)
+
+These images show the authorized state only; 403, audit and existing-session revocation
+are proved by executed assertions and the manifest's five-check matrix, not by these
+screenshots alone. Full read-only captures remain in the linked original artifact.

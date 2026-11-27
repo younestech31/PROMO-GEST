@@ -99,7 +99,10 @@ The Linux CI job also runs a separate four-profile Arabic/French desktop/mobile 
 of the published application in **Production** mode behind Caddy HTTPS, using fresh
 PostgreSQL 18 databases and encrypted persistent Data Protection keys. It checks first-run
 setup, secure cookies, CSRF, organization/document persistence across an API restart,
-P1-05 financial visibility/write boundaries, and logout/replay denial.
+P1-05 financial visibility/write boundaries, and logout/replay denial. It additionally
+checks non-admin organization profile access, explicit `org.manage` authorization,
+audit, and permission revocation in an existing session; see the
+[P1-09 Production verification record and permanent screenshots](docs/P1-09-PRODUCTION-ACCEPTANCE.md).
 
 See the [Arabic execution report and screenshots](docs/STAGING-ACCEPTANCE-2026-11-27.ar.md)
 for actual run outcomes, tested source revisions and limitations. The scripts refuse

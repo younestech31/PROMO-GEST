@@ -1,0 +1,407 @@
+{
+  "schema": "promogest.p1-05-export-checks.v1",
+  "records": [
+    {
+      "runId": 46056135004,
+      "url": "https://github.com/younestech31/PROMO-GEST/actions/runs/46056135004",
+      "headSha": "d30774dbe86d5da790ad1e15975ebd15c301789c",
+      "conclusion": "success",
+      "jobs": [
+        {
+          "name": "Frontend install, checks, and static hosting",
+          "jobId": 140698961413,
+          "conclusion": "success",
+          "steps": []
+        },
+        {
+          "name": "Documentation baseline consistency",
+          "jobId": 140698961710,
+          "conclusion": "success",
+          "steps": []
+        },
+        {
+          "name": ".NET 10 and PostgreSQL 18 least-privilege tests",
+          "jobId": 140699142332,
+          "conclusion": "success",
+          "steps": [
+            {
+              "name": "Restore solution",
+              "conclusion": "success"
+            },
+            {
+              "name": "Domain tests",
+              "conclusion": "success"
+            },
+            {
+              "name": "Application tests",
+              "conclusion": "success"
+            },
+            {
+              "name": "Run integration tests with separate database identities",
+              "conclusion": "success"
+            },
+            {
+              "name": "Surface failed integration tests as check-run annotations",
+              "conclusion": "skipped"
+            },
+            {
+              "name": "Run Phase 0 real-browser setup and logout checks (four disposable profiles)",
+              "conclusion": "success"
+            },
+            {
+              "name": "Export P1-10 Arabic desktop review image",
+              "conclusion": "success"
+            },
+            {
+              "name": "Export P1-10 Arabic mobile review image",
+              "conclusion": "success"
+            },
+            {
+              "name": "Export P1-10 French desktop review image",
+              "conclusion": "success"
+            },
+            {
+              "name": "Export P1-10 French mobile review image",
+              "conclusion": "success"
+            },
+            {
+              "name": "Export P1-10 separate Development evidence manifest",
+              "conclusion": "success"
+            },
+            {
+              "name": "Rehearse isolated Production HTTPS staging and restart (four profiles)",
+              "conclusion": "success"
+            },
+            {
+              "name": "Export Arabic desktop staging review image",
+              "conclusion": "success"
+            },
+            {
+              "name": "Export Arabic mobile staging review image",
+              "conclusion": "success"
+            },
+            {
+              "name": "Export French desktop staging review image",
+              "conclusion": "success"
+            },
+            {
+              "name": "Export French mobile staging review image",
+              "conclusion": "success"
+            },
+            {
+              "name": "Export complete staging manifest",
+              "conclusion": "success"
+            },
+            {
+              "name": "Run full database, storage, and Data Protection restore drill",
+              "conclusion": "success"
+            }
+          ]
+        },
+        {
+          "name": "Windows publish and PowerShell validation",
+          "jobId": 140699142488,
+          "conclusion": "success",
+          "steps": [
+            {
+              "name": "Restore solution",
+              "conclusion": "success"
+            },
+            {
+              "name": "Verify Windows encrypted-backup and restore contract",
+              "conclusion": "success"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "runId": 46056134944,
+      "url": "https://github.com/younestech31/PROMO-GEST/actions/runs/46056134944",
+      "headSha": "d30774dbe86d5da790ad1e15975ebd15c301789c",
+      "conclusion": "success",
+      "jobs": [
+        {
+          "name": "Analyze javascript-typescript",
+          "jobId": 140698961507,
+          "conclusion": "success",
+          "steps": []
+        },
+        {
+          "name": "Analyze csharp",
+          "jobId": 140698961735,
+          "conclusion": "success",
+          "steps": []
+        }
+      ]
+    },
+    {
+      "runId": 46059337780,
+      "url": "https://github.com/younestech31/PROMO-GEST/actions/runs/46059337780",
+      "headSha": "2d5bf6d4684179db6ea8707fcc208cce6797872e",
+      "conclusion": "success",
+      "jobs": [
+        {
+          "name": "Documentation baseline consistency",
+          "jobId": 140709507231,
+          "conclusion": "success",
+          "steps": []
+        },
+        {
+          "name": "Frontend install, checks, and static hosting",
+          "jobId": 140709507604,
+          "conclusion": "success",
+          "steps": []
+        },
+        {
+          "name": "Windows publish and PowerShell validation",
+          "jobId": 140709728401,
+          "conclusion": "success",
+          "steps": [
+            {
+              "name": "Restore solution",
+              "conclusion": "success"
+            },
+            {
+              "name": "Verify Windows encrypted-backup and restore contract",
+              "conclusion": "success"
+            }
+          ]
+        },
+        {
+          "name": ".NET 10 and PostgreSQL 18 least-privilege tests",
+          "jobId": 140709728455,
+          "conclusion": "success",
+          "steps": [
+            {
+              "name": "Restore solution",
+              "conclusion": "success"
+            },
+            {
+              "name": "Domain tests",
+              "conclusion": "success"
+            },
+            {
+              "name": "Application tests",
+              "conclusion": "success"
+            },
+            {
+              "name": "Run integration tests with separate database identities",
+              "conclusion": "success"
+            },
+            {
+              "name": "Surface failed integration tests as check-run annotations",
+              "conclusion": "skipped"
+            },
+            {
+              "name": "Run Phase 0 real-browser setup and logout checks (four disposable profiles)",
+              "conclusion": "success"
+            },
+            {
+              "name": "Export P1-10 Arabic desktop review image",
+              "conclusion": "success"
+            },
+            {
+              "name": "Export P1-10 Arabic mobile review image",
+              "conclusion": "success"
+            },
+            {
+              "name": "Export P1-10 French desktop review image",
+              "conclusion": "success"
+            },
+            {
+              "name": "Export P1-10 French mobile review image",
+              "conclusion": "success"
+            },
+            {
+              "name": "Export P1-10 separate Development evidence manifest",
+              "conclusion": "success"
+            },
+            {
+              "name": "Rehearse isolated Production HTTPS staging and restart (four profiles)",
+              "conclusion": "success"
+            },
+            {
+              "name": "Export Arabic desktop staging review image",
+              "conclusion": "success"
+            },
+            {
+              "name": "Export Arabic mobile staging review image",
+              "conclusion": "success"
+            },
+            {
+              "name": "Export French desktop staging review image",
+              "conclusion": "success"
+            },
+            {
+              "name": "Export French mobile staging review image",
+              "conclusion": "success"
+            },
+            {
+              "name": "Export complete staging manifest",
+              "conclusion": "success"
+            },
+            {
+              "name": "Run full database, storage, and Data Protection restore drill",
+              "conclusion": "success"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "runId": 46059337794,
+      "url": "https://github.com/younestech31/PROMO-GEST/actions/runs/46059337794",
+      "headSha": "2d5bf6d4684179db6ea8707fcc208cce6797872e",
+      "conclusion": "success",
+      "jobs": [
+        {
+          "name": "Analyze csharp",
+          "jobId": 140709507566,
+          "conclusion": "success",
+          "steps": []
+        },
+        {
+          "name": "Analyze javascript-typescript",
+          "jobId": 140709507868,
+          "conclusion": "success",
+          "steps": []
+        }
+      ]
+    },
+    {
+      "runId": 46059558115,
+      "url": "https://github.com/younestech31/PROMO-GEST/actions/runs/46059558115",
+      "headSha": "75fab3f2aefb1624eb611bb1402473ae5f02566b",
+      "conclusion": "failure",
+      "jobs": [
+        {
+          "name": "Frontend install, checks, and static hosting",
+          "jobId": 140710224774,
+          "conclusion": "success",
+          "steps": []
+        },
+        {
+          "name": "Documentation baseline consistency",
+          "jobId": 140710224957,
+          "conclusion": "success",
+          "steps": []
+        },
+        {
+          "name": ".NET 10 and PostgreSQL 18 least-privilege tests",
+          "jobId": 140710376082,
+          "conclusion": "failure",
+          "steps": [
+            {
+              "name": "Restore solution",
+              "conclusion": "success"
+            },
+            {
+              "name": "Domain tests",
+              "conclusion": "success"
+            },
+            {
+              "name": "Application tests",
+              "conclusion": "success"
+            },
+            {
+              "name": "Run integration tests with separate database identities",
+              "conclusion": "success"
+            },
+            {
+              "name": "Surface failed integration tests as check-run annotations",
+              "conclusion": "skipped"
+            },
+            {
+              "name": "Run Phase 0 real-browser setup and logout checks (four disposable profiles)",
+              "conclusion": "success"
+            },
+            {
+              "name": "Export P1-10 Arabic desktop review image",
+              "conclusion": "success"
+            },
+            {
+              "name": "Export P1-10 Arabic mobile review image",
+              "conclusion": "success"
+            },
+            {
+              "name": "Export P1-10 French desktop review image",
+              "conclusion": "success"
+            },
+            {
+              "name": "Export P1-10 French mobile review image",
+              "conclusion": "success"
+            },
+            {
+              "name": "Export P1-10 separate Development evidence manifest",
+              "conclusion": "success"
+            },
+            {
+              "name": "Rehearse isolated Production HTTPS staging and restart (four profiles)",
+              "conclusion": "success"
+            },
+            {
+              "name": "Export Arabic desktop staging review image",
+              "conclusion": "failure"
+            },
+            {
+              "name": "Export Arabic mobile staging review image",
+              "conclusion": "skipped"
+            },
+            {
+              "name": "Export French desktop staging review image",
+              "conclusion": "skipped"
+            },
+            {
+              "name": "Export French mobile staging review image",
+              "conclusion": "skipped"
+            },
+            {
+              "name": "Export complete staging manifest",
+              "conclusion": "skipped"
+            },
+            {
+              "name": "Run full database, storage, and Data Protection restore drill",
+              "conclusion": "skipped"
+            }
+          ]
+        },
+        {
+          "name": "Windows publish and PowerShell validation",
+          "jobId": 140710376180,
+          "conclusion": "success",
+          "steps": [
+            {
+              "name": "Restore solution",
+              "conclusion": "success"
+            },
+            {
+              "name": "Verify Windows encrypted-backup and restore contract",
+              "conclusion": "success"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "runId": 46059558101,
+      "url": "https://github.com/younestech31/PROMO-GEST/actions/runs/46059558101",
+      "headSha": "75fab3f2aefb1624eb611bb1402473ae5f02566b",
+      "conclusion": "success",
+      "jobs": [
+        {
+          "name": "Analyze csharp",
+          "jobId": 140710224579,
+          "conclusion": "success",
+          "steps": []
+        },
+        {
+          "name": "Analyze javascript-typescript",
+          "jobId": 140710224895,
+          "conclusion": "success",
+          "steps": []
+        }
+      ]
+    }
+  ]
+}

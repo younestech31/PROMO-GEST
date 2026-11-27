@@ -209,6 +209,44 @@ class StagingEvidenceTests(unittest.TestCase):
         self.assertEqual(len(images), 4)
         self.assertNotIn('teamEvidence', manifest['profiles'][0])
 
+    def test_budget_dimension_fallback_is_bounded_and_never_truncates(self):
+        self.budget_fixture()
+        from PIL import Image
+        original_save = Image.Image.save
+        attempted = []
+
+        def oversized_until_small(image, path, *args, **kwargs):
+            if str(path).endswith('review.jpg'):
+                attempted.append(image.size)
+                if image.width > 720:
+                    Path(path).write_bytes(b'x' * 20000)
+                    return
+            return original_save(image, path, *args, **kwargs)
+
+        for profile in export.PROFILES:
+            Image.new('RGB', (1440, 900), 'red').save(
+                self.root / profile / 'p1-05-non-financial-manager-general-save.png')
+        with patch.dict('os.environ', {'GITHUB_ACTIONS': 'true'}), \
+                patch.object(Image.Image, 'save', oversized_until_small):
+            export.main(self.root, None, 'budget')
+        self.assertTrue(any(width == 960 for width, _ in attempted))
+        self.assertTrue(any(width == 800 for width, _ in attempted))
+        self.assertTrue(any(width == 720 for width, _ in attempted))
+        for profile in export.PROFILES:
+            self.assertLess((self.root / profile / 'review.jpg').stat().st_size, 20000)
+            with Image.open(self.root / profile / 'p1-05-non-financial-manager-general-save.png') as image:
+                self.assertEqual(image.size, (1440, 900))
+
+    def test_budget_rejects_image_still_too_large_at_final_bound(self):
+        self.budget_fixture()
+        def oversized(image, path, *args, **kwargs):
+            Path(path).write_bytes(b'x' * 20000)
+        with patch.dict('os.environ', {'GITHUB_ACTIONS': 'true'}), \
+                patch('PIL.Image.Image.save', oversized):
+            with self.assertRaisesRegex(ValueError, 'Review image too large'):
+                export.main(self.root, 'manifest', 'budget')
+        self.assertFalse((self.root / 'manifest.json').exists())
+
     def test_budget_requires_matrix_description_and_literal_pass(self):
         self.budget_fixture()
         for key, value in (('budgetEvidence', ''), ('budgetEvidence', None),

@@ -123,3 +123,24 @@ Local tooling: exporter **22/22**, importer **15/15**, budget helper **7/7 PASS*
 Synthetic encoder fixtures are only offline tests, never acceptance screenshots.
 Actual new Production browser images/results remain **PENDING CI**, not inherited
 from older runs. No local .NET, PG18 or real-browser pass claimed.
+
+
+### First export execution and bounded follow-up
+
+Source `75fab3f` CI [46059558115](https://github.com/younestech31/PROMO-GEST/actions/runs/46059558115)
+**FAIL 3/4**: first Arabic desktop budget-image export failed. Domain/Application,
+full unfiltered PG18 integration, four-profile Development browser and four-profile
+Production HTTPS/restart matrix all passed before this step. This failed run is
+**not** successful acceptance or imported image evidence. CodeQL46059558101 PASS2/2.
+Check annotations exposed only exit1; log retrieval redirected to an inaccessible
+host (EOF). No size/path/data cause is asserted proven. Follow-up adds static
+source-location/exception-type diagnostics, and a tested budget-only dimension
+fallback 960×844 → 800×740 → 720×660, quality65/50/35/20, retaining the strict <20000
+byte limit and refusing oversized output. Original PNGs remain unchanged. Historical
+suite encoders retain their existing bounds. Controlled encoder tests verify fallback,
+original preservation and fail-closed final bound; exporter now **24/24 PASS**.
+[Machine-readable observed run/job/critical-step identities](evidence/p1-05-export-2026-11-27/checks.json).
+
+PR282 is merged at `2d5bf6d4684179db6ea8707fcc208cce6797872e`; its independent
+exact-main CI46059337780 PASS4/4 and CodeQL46059337794 PASS2/2 are now verified.
+This does not score PR283's new export as PASS. New head execution remains pending.

@@ -11,6 +11,7 @@ import base64
 import hashlib
 import json
 import os
+import traceback
 from pathlib import Path
 
 PROFILES = ('ar-desktop', 'ar-mobile', 'fr-desktop', 'fr-mobile')
@@ -219,9 +220,15 @@ def main(root, record=None, suite='staging'):
         target = root / profile / 'review.jpg'
         with Image.open(source) as image:
             image = image.convert('RGB')
-            image.thumbnail((960, 844))
-            for quality in (65, 50, 35, 20):
-                image.save(target, 'JPEG', quality=quality, optimize=True)
+            # Keep the original PNG intact. Budget settings can be denser than
+            # the prior team screenshot; bounded dimension fallback, never truncation.
+            bounds_list = ((960, 844), (800, 740), (720, 660)) if suite == 'budget' else ((960, 844),)
+            for bounds in bounds_list:
+                image.thumbnail(bounds)
+                for quality in (65, 50, 35, 20):
+                    image.save(target, 'JPEG', quality=quality, optimize=True)
+                    if target.stat().st_size < 20000:
+                        break
                 if target.stat().st_size < 20000:
                     break
         content = target.read_bytes()
@@ -242,4 +249,13 @@ if __name__ == '__main__':
     parser.add_argument('--record', choices=(*PROFILES, 'manifest'))
     parser.add_argument('--suite', choices=('staging', 'organization', 'sessions', 'language', 'team', 'budget'), default='staging')
     args = parser.parse_args()
-    main(args.root, args.record, args.suite)
+    try:
+        main(args.root, args.record, args.suite)
+    except Exception as error:
+        # Check annotations remain readable even when log-storage redirects are
+        # inaccessible. Static source locations/type only; no paths or form values.
+        for frame in traceback.extract_tb(error.__traceback__):
+            if frame.filename.endswith('/export-staging-evidence.py'):
+                print(f'::error file=scripts/export-staging-evidence.py,line={frame.lineno}::'
+                      f'Evidence export {type(error).__name__} in {frame.name}', flush=True)
+        raise

@@ -60,8 +60,17 @@ account behavior are not newly scored. A browser test does not prove operator ap
 
 PR #276 merged as `f3d675d13372acb5805d04a5ae9bf6bc869fbdbc` after final PR-head CI
 46014381828 passed 4/4 and CodeQL 46014381535 passed 2/2. Exact-main CI 46034527006
-and CodeQL 46034527163 are pending observation at this checkpoint.
+passed 4/4 and CodeQL 46034527163 passed 2/2 on that exact merged SHA.
 
 P1-15 remains In Review / Pending in existing tracking. Existing owner-policy,
 institution-local/operator requirements, P1-10 dependency and phase gates remain
 unchanged. No Notion state, institutional signature or deployment is changed.
+
+## Initial execution correction
+
+CI 46035154510 reached the new Production scenario but rejected project creation:
+the helper incorrectly used `null` for the create contract's non-null decimal budget.
+This is distinct from the intentionally nullable update/redaction contract. The fixture
+now uses the existing SYSTEM_ADMIN zero-budget creation path, matching Development
+coverage and the shipped API, with no authorization relaxation. That failed run is not
+accepted evidence; the corrected full matrix must pass before results are scored.

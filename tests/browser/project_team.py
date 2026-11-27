@@ -60,10 +60,13 @@ def run_project_team(browser, admin_ctx, base, lang, device, viewport, out):
         'wilayaName': 'الجزائر / Alger', 'municipality': 'Dely Ibrahim',
         'address': 'QA synthetic address', 'landTitleReference': None,
         'buildingPermitNumber': None, 'buildingPermitDate': None,
-        'status': 'Planning', 'estimatedBudgetDzd': None,
+        # Create contract uses a non-null decimal; zero is the non-financial
+        # SYSTEM_ADMIN creation path (unlike nullable update/redaction payloads).
+        'status': 'Planning', 'estimatedBudgetDzd': 0,
         'plannedBlocksCount': 1, 'plannedUnitsCount': 1,
     })
-    assert created.status == 201 and created.json()['members'] == []
+    assert created.status == 201
+    assert created.json()['members'] == []
     project_id = str(uuid.UUID(created.json()['id']))
     url = f'/api/projects/{project_id}'
     checks = {}

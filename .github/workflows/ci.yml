@@ -30,6 +30,7 @@ jobs:
           python3 tests/browser/test_session_security.py
           python3 tests/browser/test_language_preferences.py
           python3 tests/browser/test_project_team.py
+          python3 tests/browser/test_commercialization_review.py
       - name: Test staging evidence completeness, privacy and import integrity
         run: |
           python3 scripts/test_export_staging_evidence.py

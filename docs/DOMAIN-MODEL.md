@@ -1,3 +1,20 @@
+## Current scope clarification — 27 November 2026
+
+The audited 22 November snapshot below is historical, not a claim that PR #186 is
+still the last runtime change. ADR-0018 commercialization/review runtime was merged
+in PR #233/#234/#235 and UI #237. `ProjectStatus.Commercialization` alone permits
+marketing/new internal holds; Planning, UnderConstruction, Delivered, Suspended
+and undefined/future statuses deny by default. Suspension queues active holds for
+documentary review; completion never cancels, releases, changes expiry or lifts
+suspension. CRM Customer is not a contract/payment/accounting event. No new schema
+is introduced by this acceptance slice. [Current P1-10 scope and tests](P1-10-BROWSER-ACCEPTANCE.md).
+P1-09 is Done / Verified (27 November); P1-10 remains In Progress / Pending.
+P1-15 is already Done / Verified; P1-01 Deferred / Pending and P1-02 Blocked remain
+gates. The historical task-state statements below are superseded by the current
+[roadmap reconciliation](ROADMAP-RECONCILIATION-2026-11-27.ar.md), not new policy.
+
+---
+
 ## Verified repository snapshot — 22 November 2026 (audited before this documentation-only PR)
 
 - **Audited source snapshot:** GitHub `main` was independently resolved at `5e361160cc29ce30947e3e7bea790f940a5c06a7` before this documentation-only synchronization. This SHA anchors the evidence below; it is not a promise that `main` remains at this SHA after this PR. Always resolve the live branch ref before starting work, merging, or reporting current repository state.

@@ -29,6 +29,9 @@ def validate_manifest(manifest, source_sha):
     spec.loader.exec_module(schema)
     suites = ('staging', 'organization', 'sessions', 'language', 'team')
     modes = {'disposable Production HTTPS ' + suite: index for index, suite in enumerate(suites)}
+    # Budget uses the existing Production matrix flag in CHECKS, not the unrelated
+    # organization/session/language/team evidence groups or their screenshots.
+    modes['disposable Production HTTPS budget'] = 0
     if (not isinstance(manifest, dict) or set(manifest) != {'mode', 'profiles', 'images'}
             or manifest['mode'] not in modes):
         raise ValueError('Unexpected evidence manifest schema or suite')
@@ -51,6 +54,9 @@ def validate_manifest(manifest, source_sha):
                 or not re.fullmatch(r'[0-9a-f]{40}', result['testedCheckout'])
                 or not isinstance(result['run'], str) or not result['run'].isdigit()):
             raise ValueError('Evidence schema, source or verdict mismatch')
+        if manifest['mode'] == 'disposable Production HTTPS budget' and (
+                not isinstance(result['budgetEvidence'], str) or not result['budgetEvidence'].strip()):
+            raise ValueError('Missing budget matrix evidence')
         for key, checks in groups[:level + 1]:
             if (not isinstance(result[key], dict) or set(result[key]) != set(checks)
                     or any(value is not True for value in result[key].values())):

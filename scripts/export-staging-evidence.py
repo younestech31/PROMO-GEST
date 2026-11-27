@@ -182,7 +182,7 @@ def notice(name, payload):
 def main(root, record=None, suite='staging'):
     if os.environ.get('GITHUB_ACTIONS') != 'true':
         raise RuntimeError('Evidence export is CI-only')
-    if suite not in ('staging', 'organization', 'sessions', 'language', 'team'):
+    if suite not in ('staging', 'organization', 'sessions', 'language', 'team', 'budget'):
         raise ValueError('Unknown evidence suite')
     from PIL import Image
     results = read_results(root)
@@ -202,13 +202,17 @@ def main(root, record=None, suite='staging'):
         teams = read_team_results(root)
         for result in results:
             result['teamEvidence'] = teams[result['profile']]
+    if suite == 'budget' and any(not isinstance(r.get('budgetEvidence'), str)
+                                 or not r['budgetEvidence'].strip() for r in results):
+        raise ValueError('Missing budget matrix evidence')
     manifest = {'mode': 'disposable Production HTTPS ' + suite, 'profiles': results, 'images': []}
     for profile in PROFILES:
         filename = {'staging': '05-profile-after-restart.png',
                     'organization': 'org-02-authorized-saved.png',
                     'sessions': 'sessions-02-confirmation.png',
                     'language': 'language-04-after-restart.png',
-                    'team': 'team-03-replacement-protected.png'}[suite]
+                    'team': 'team-03-replacement-protected.png',
+                    'budget': 'p1-05-non-financial-manager-general-save.png'}[suite]
         source = root / profile / filename
         if source.is_symlink() or source.resolve().parent.parent != root.resolve():
             raise ValueError('Invalid screenshot path')
@@ -236,6 +240,6 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('root', type=Path)
     parser.add_argument('--record', choices=(*PROFILES, 'manifest'))
-    parser.add_argument('--suite', choices=('staging', 'organization', 'sessions', 'language', 'team'), default='staging')
+    parser.add_argument('--suite', choices=('staging', 'organization', 'sessions', 'language', 'team', 'budget'), default='staging')
     args = parser.parse_args()
     main(args.root, args.record, args.suite)

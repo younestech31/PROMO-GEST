@@ -81,10 +81,45 @@ on source head `d7768c42ab8c837a9cc5b9abcec6e4f4fd718b1f`; full matrix screensho
 are in `staging-https-evidence`, alongside the permanent compact review images. See
 [the Production HTTPS rehearsal record](STAGING-ACCEPTANCE-2026-11-27.ar.md).
 
-## Remaining operational gate
+## Historical operational-gate wording
 
-P1-05 stays **In Review / Pending** and **IMPLEMENTED_NOT_VERIFIED** until the authorized
+At the original checkpoint, P1-05 stayed **In Review / Pending** and **IMPLEMENTED_NOT_VERIFIED** until the authorized
 operator performs and signs off the Arabic/French Staging acceptance. Automated CI
 must pass first; its screenshots are supporting evidence, not an operator signature.
 No Phase 0 closure, Phase 1 closure, Phase 2–5 start, deployment, existing-database
 migration, or municipality approval/import is implied.
+
+
+## Current acceptance reconciliation — 27 November, budget task only
+
+Live Notion task `41a13e9e-d368-812d-bddf-df171088475f` criteria, dependencies,
+risk and status re-read before this slice. Owner policy is already decided and
+runtime implemented in PR #80; do not implement it again. The user delegated
+technical acceptance to the agent; an additional institution-local signature is
+not invented as a technical criterion. Installation/legal/accounting acceptance
+remains independent. The distinct phase-closure P1-05 record is not this task.
+
+| # | Actual criterion | Current support / remaining work |
+|---|---|---|
+| 1 | Nullable budget/redaction for list/detail/create/update/member responses | ProjectDto and ProjectService actor-aware mapping; Application ProjectBudget_RequiresExplicitFinancialCapability_ForReadAndWrite and PG18 API/browser assertions. |
+| 2 | No SYSTEM_ADMIN or manager bypass | Explicit membership+CanViewFinancials policy; admin and revoked-manager read/write denial tests. |
+| 3 | Write requires projects.manage, ProjectManager and financial flag; null preserves amount, numeric denial audited | Service gate, Application/PG18 tests and real SPA general-edit/null/zero/nonzero matrix. |
+| 4 | Admin cannot create nonzero budget; explicitly financial creator can | Real API matrix verifies 403/admin and 201/director with explicit financial manager membership. |
+| 5 | UI hides editor, sends null, summary dash | Existing four-profile real Production and Development assertions; new bounded export selects actual non-financial manager settings after general save/reload. Images still pending new CI/import/visual review. |
+| 6 | Application and PG18 authorized/revoked/read-only/admin/nonmember/concurrency/null paths | Existing suites and browser matrix; recheck exact test identities and concurrency scope before final acceptance. Images cannot prove authorization, storage or races. |
+| 7 | Security/navigation/baseline/traceability and G1/G3/G5/G6/G7/G8/G9, full CI | Prior merged results exist; this new tooling/docs head requires its own complete CI and seven-criterion final decision. |
+
+**Status remains In Review / Pending at this checkpoint.** Additive export/import
+budget mode reuses the unchanged Production matrix and exact boolean checks;
+no matrix assertion is removed, no browser scenario is skipped, no service/security
+behavior changes. Bounded notices use the existing five export steps instead of
+adding image notices that could exhaust GitHub's job annotation budget. Full PNGs
+for authorized manager, redacted admin/manager and read-only finance remain in the
+normal artifact; the compact selected image is not mislabeled as all those states.
+Original permanent staging images show organization, not budget, and are not reused
+as budget visual evidence. No screenshot generation/editing tool is used.
+
+Local tooling: exporter **22/22**, importer **15/15**, budget helper **7/7 PASS**.
+Synthetic encoder fixtures are only offline tests, never acceptance screenshots.
+Actual new Production browser images/results remain **PENDING CI**, not inherited
+from older runs. No local .NET, PG18 or real-browser pass claimed.

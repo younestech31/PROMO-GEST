@@ -175,6 +175,32 @@ class StagingImportTests(unittest.TestCase):
             with self.subTest(value=value), self.assertRaises(ValueError):
                 module.validate_manifest(modified, source)
 
+    def test_budget_requires_actual_matrix_and_description_without_scope_broadening(self):
+        manifest = copy.deepcopy(self.manifest)
+        manifest['mode'] = 'disposable Production HTTPS budget'
+        module.validate_manifest(manifest, SHA)
+        for value in (False, 1, 'true', None):
+            bad = copy.deepcopy(manifest)
+            bad['profiles'][0]['checks']['production_budget_authorization_matrix'] = value
+            with self.subTest(value=value), self.assertRaises(ValueError):
+                module.validate_manifest(bad, SHA)
+        for value in ('', None, 1):
+            bad = copy.deepcopy(manifest)
+            bad['profiles'][0]['budgetEvidence'] = value
+            with self.subTest(value=value), self.assertRaises(ValueError):
+                module.validate_manifest(bad, SHA)
+        bad = copy.deepcopy(manifest)
+        bad['profiles'][0]['teamEvidence'] = {}
+        with self.assertRaises(ValueError):
+            module.validate_manifest(bad, SHA)
+        # Existing Production-only, identity and exact-field protections still apply.
+        for key, value in (('environment', 'Development'), ('sourceHead', 'b' * 40),
+                           ('cookies', 'private')):
+            bad = copy.deepcopy(manifest)
+            bad['profiles'][0][key] = value
+            with self.subTest(key=key), self.assertRaises(ValueError):
+                module.validate_manifest(bad, SHA)
+
     def test_unrelated_annotations_are_ignored(self):
         annotations = copy.deepcopy(self.annotations)
         annotations.append({'title': 'Unrelated test warning', 'message': 'not JSON'})

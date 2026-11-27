@@ -14,6 +14,13 @@ incident or a new application acceptance claim.
 - Explicit modes only: staging, organization, sessions, language, and the P1-15 `team`
   extension. The team mode requires all four prior assertion groups plus its own eight
   named checks; prior modes keep their original meanings.
+- Independent `budget` mode uses the complete baseline Production HTTPS checks,
+  including literal `production_budget_authorization_matrix: true`, and a nonempty
+  sanitized `budgetEvidence` description. It selects only
+  `p1-05-non-financial-manager-general-save.png` (never the organization image).
+  It does not claim team/session/language checks from a different manifest; all
+  scenarios still run unchanged and full results remain in the Actions artifact.
+  Existing team/other archives remain supported with their strict schemas.
 - All four unique profiles must contain the exact known profile fields, Production
   environment, matching source, PASS verdict, full tested-checkout SHA and numeric run.
 - Every named baseline check must be exactly boolean `true`. Organization, session and

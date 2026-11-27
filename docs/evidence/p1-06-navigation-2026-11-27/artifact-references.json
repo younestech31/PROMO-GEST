@@ -1,0 +1,42 @@
+{
+  "scope": "GitHub artifact metadata only; bytes not downloaded or visually reviewed; no signed redirect URLs or credentials stored",
+  "downloadLimit": "Prior cf64368 phase0 artifact download redirected outside the workspace allowlist and returned EOF; not retried",
+  "artifacts": [
+    {
+      "runId": 46079034309,
+      "sourceHead": "cf6436893f388be10e94c1e7db7c15d41f13a2bd",
+      "id": 15236835731,
+      "name": "staging-https-evidence",
+      "size_in_bytes": 9208310,
+      "digest": "sha256:ae1c730cb32117ed02b844aef5cf4429c1100402ea40c327f21466667cfd027c",
+      "expired": false
+    },
+    {
+      "runId": 46079034309,
+      "sourceHead": "cf6436893f388be10e94c1e7db7c15d41f13a2bd",
+      "id": 15236555572,
+      "name": "phase0-browser-evidence",
+      "size_in_bytes": 11063242,
+      "digest": "sha256:1f8f9295889dd3039f20cf1d8468bf89df18ac839940f11696f3b6af24f98fab",
+      "expired": false
+    },
+    {
+      "runId": 46081239621,
+      "sourceHead": "895db762e3350d4da8cf812ef0b49c4a34e4dfe7",
+      "id": 15236538908,
+      "name": "staging-https-evidence",
+      "size_in_bytes": 10963368,
+      "digest": "sha256:a104a7af1650baa8b3a623b102bb0d561eedae38e1c2120706c9fa601aef9e57",
+      "expired": false
+    },
+    {
+      "runId": 46081239621,
+      "sourceHead": "895db762e3350d4da8cf812ef0b49c4a34e4dfe7",
+      "id": 15236249638,
+      "name": "phase0-browser-evidence",
+      "size_in_bytes": 12532260,
+      "digest": "sha256:9c21586d5ee570d200b0f0b0005cac44ad3045d209bcedefba82674294a025f3",
+      "expired": false
+    }
+  ]
+}

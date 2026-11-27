@@ -116,7 +116,7 @@ The second synthetic project remains only in the disposable CI database. Native
 Leave/actual close acceptance, logout Discard and embedded forms are not claimed.
 Full P1-06 remains In Review / Pending, including final protected-view mapping.
 
-## Next bounded slice: embedded C/D/E/K drafts — authored, browser CI pending
+## Bounded slice: embedded C/D/E/K drafts — corrected source CI PASS
 
 `tests/browser/navigation_embedded.py` follows the existing helper flows on the
 allowlisted Development and Production HTTPS disposable four-profile databases.
@@ -135,9 +135,10 @@ any API mutation, and independent snapshots/organization/pageerror checks remain
 Native behavior is Chromium-controlled, not a fake custom prompt or crash recovery.
 
 Four `p1-06-embedded-{structure,customers,reservations,documents}-guard.png` files
-and `navigation-embedded.json` are authored CI outputs, **not yet generated,
-imported or visually reviewed**. Local safety3/3, actual pinned Playwright
-contract7/7 and budget helpers7/7 PASS, not browser execution proof. Logout Discard
+and `navigation-embedded.json` are written by the successful CI helper, **not
+imported or visually reviewed here**. Local safety4/4, actual pinned Playwright
+contract7/7, budget helpers7/7 and baseline12/12 PASS; those checks alone are not
+browser proof. [Artifact metadata, not screenshot bytes](evidence/p1-06-navigation-2026-11-27/artifact-references.json). Logout Discard
 and embedded project-switch combinations are separate remaining acceptance work;
 full P1-06 remains In Review / Pending.
 
@@ -147,7 +148,18 @@ Production/restore/export not reached. Sanitized check annotation pinpoints
 header `Close menu` while the drawer overlay covered it. The shell exposes a
 visible `Close navigation menu` backdrop; correction uses that actual user control,
 not force-click or runtime/UI changes. Original CodeQL46080562879 PASS. Corrected
-browser CI **PENDING**, local embedded safety now4/4 and Page contract7/7 PASS.
+source `895db762e3350d4da8cf812ef0b49c4a34e4dfe7`:
+[CI46081239621](https://github.com/younestech31/PROMO-GEST/actions/runs/46081239621)
+**PASS5/5**, [CodeQL46081239649](https://github.com/younestech31/PROMO-GEST/actions/runs/46081239649)
+**PASS**; all eight rollup checks SUCCESS. Actual C/D/E/K embedded helper completed
+all four AR/FR desktop/mobile Development and Production HTTPS profiles, with
+PG18/restart/restore/export also PASS. Each editor required absent shell Save,
+retained dirty state/session on Stay, real Back Discard and clean Forward, native
+reload document replacement and native tab-close event on Leave, unchanged four
+API collections, no page API mutation requests and no pageerror. This is not OS
+crash recovery or complete action/option Cartesian acceptance. Current evidence/
+documentation follow-up requires its own CI before PR289 merge and independent
+exact-main verification. [Exact-run job/step archive](evidence/p1-06-navigation-2026-11-27/checks.json).
 
 The previous settings sourcecf64368 artifact metadata (run46079034309) is readable,
 but artifact binary download redirects to a host unavailable from this workspace
@@ -160,7 +172,7 @@ or credentials are stored in evidence. This does not change the executed CI resu
 |---|---|---|
 | Complete ProjectWorkspaceView contract / strict TS | `AppContentRouter` in `src/app/App.tsx`; frontend CI and TypeScript | Pin source/checks in final closure mapping |
 | Protected views never mount for unauthorized routes | `canAccessRoute` pre-render guard; routeRegistry/workspaceGuards tests | Independently exercise actual router self/cross-role cases, not helper-only assertions |
-| Dirty form propagation; Back/Forward/internal/project/logout/reload/close | `useUnsavedGuard`, App callbacks, embedded settings refs; existing browser history flow and original 26-Nov report | Source da6068b settings internal Stay/Discard, project-switch Stay/Save, logout Stay/Save and native reload/close dismiss PASS in four Development/Production profiles. Embedded forms, remaining option/action combinations and final-head/main reconciliation remain; native prompts are browser-controlled. Prior history/failed-save regression independently green |
+| Dirty form propagation; Back/Forward/internal/project/logout/reload/close | `useUnsavedGuard`, App callbacks, embedded settings refs; existing browser history flow and original 26-Nov report | Source da6068b settings internal Stay/Discard, project-switch Stay/Save, logout Stay/Save and native reload/close dismiss PASS in four Development/Production profiles. Source895db76 C/D/E/K embedded internal/logout Stay, Back Stay/Discard+clean Forward, no false Save and native reload/tab-close Leave PASS in all four Development/Production profiles. Remaining option/action combinations and final-head/main reconciliation remain; native prompts are browser-controlled. Prior history/failed-save regression independently green |
 | Revoked access removes cache/pinned/recent and returns home | `handleProjectVerificationFailed`, `revokeProjectAccessFromState`, preferences storage | Source0f514c8 actual API revocation and same-document cached-card/pin/recent cleanup PASS in all four Development/Production profiles; eventual final-head/main reconciliation; no claim of immediate push invalidation before server verification |
 | One API/CSRF/registry/route/localization implementation | `frontendArchitecture.test.ts` dependency/boundary tests | Final exact-source execution references |
 | F–J planned APIs explicit; no-op actions removed; legal review | planned API rejection and metadata boundary tests | Keep qualified Algerian legal review independent; do not mark F–J implemented |

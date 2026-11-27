@@ -62,9 +62,9 @@ JO No. 49/1996 includes school-establishment directory annexes that list Chabet 
 
 Do not silently replace a project note that says “1996” with “1986”. Ask the reviewer to confirm whether the note meant the 8 February 1986 register amendment or another 1996 instrument.
 
-## 4. Unresolved historical pointer: 13 May 1985 seat amendment
+## 4. 13 May 1985 seat amendment — publication and annex now located
 
-The 2 June 1984 seat-setting order in JO41/1984 is identified. The existence and subject of an order dated 13 May 1985 modifying its commune chief-lieu-seat annex are expressly cited in the 'Vu' clauses of the 8 February 1986 register amendment (JO11/1986, printed p. 280). Its standalone JORADP issue/page and full annex remain unlocated; treat this as an established source pointer with incomplete publication/evidence metadata. Do not infer its full effects from the 1986 recital alone.
+The interministerial order dated 13 May 1985 modifying the 2 June 1984 chief-lieu seat annex is published in **JO No. 24 of 5 June 1985, printed French p. 535 and Arabic pp. 829–830**. Both official editions were visually inspected on 27 November 2026. The 8 February 1986 register amendment (JO11/1986, printed p. 280) cites this same order. Its publication pointer is therefore closed; full reconciliation of the entire 1984/1985 seat annex, the earlier and later register/code chain, and practitioner sign-off remain open. Do not infer valid-from dates or four-digit codes from the seat table's local row numbers.
 
 ## 4C. JO79/2021 — eight re-published existing-Wilaya tables
 
@@ -90,7 +90,7 @@ Completed vs remaining visual/bilingual work:
 - **Completed:** PNG page-image verification in both French and Arabic for JO58/2026 (pp. 9–25, all 404 rows), JO79/2021 (pp. 13–19 FR & 15–22 AR, all 162 rows), JO11/1986 (pp. 280–281 FR & 401–402 AR), JO23/1998 (Boumerdès FR p. 11 vs AR p. 13), and disputed sections of JO44/1985 (FR pp. 1065–1070 & AR pp. 1631–1635, resolving Chabet El Ameur `3514` and Chihani FR `3624` vs AR `3614`).
 - **Completed by 27 November 2026:** bilingual page-image review of Decree 92-412 / JO82/1992, Decrees 93-11 and 93-12 / JO03/1993, Decree 05-127 / JO29/2005 (administrative-seat relocation), and Decree 06-256 / JO49/2006 (locality-parent transfer). The relevant printed-page locations are kept distinct by edition.
 - **Current JO44 source-population status:** French searchable-text extraction covers all 48 original Wilaya sections and all 1,541 commune rows (the separate `1600 — Ville d'Alger` special assertion is excluded from the 1,541 count). The 975 figure in the source-coverage supplement is a residual source-lineage/reconciliation bucket across 30 legacy/unmodified Wilayas; it is **not** an unextracted-row count. Historical 78/975, 187/975, 293/975 and 360/975 figures in sections 5A–5D are dated incremental checkpoints from 18 November 2026, not the current extraction total.
-- **Remaining:** complete and adjudicate the 975-row residual lineage bucket across relevant intervening instruments, codes, parents and temporal relationships; complete the full bilingual and row-level annex reconciliation of Decree 21-128 (JO26/2021) and the June 1984 chief-lieu seat order (JO41/1984); resolve the cited but still unlocated 13 May 1985 seat-order amendment; and obtain qualified Algerian practitioner sign-off. The 2005/2006 bilingual page-image checks did not capture new PDF-byte hashes.
+- **Remaining:** complete and adjudicate the 975-row residual lineage bucket across relevant intervening instruments, codes, parents and temporal relationships; complete the full bilingual and row-level annex reconciliation of Decree 21-128 (JO26/2021) and the June 1984 chief-lieu seat order (JO41/1984); reconcile the now-located 13 May 1985 seat-order amendment against the complete 1984/1985 annex and later seat/code chain; and obtain qualified Algerian practitioner sign-off. The 2005/2006 bilingual page-image checks did not capture new PDF-byte hashes.
 
 ## 5A. JO44/1985 original-table extraction progress — 18 November 2026
 
@@ -237,6 +237,32 @@ The 8 February 1986 register amendment (JO11/1986, printed p.280) cites an order
 ### Open gates after this pass
 
 - Recalculate SHA-256 directly from both official JO26/2021 PDF binaries and compare to the historical hashes recorded in the inventory; complete Decree 21-128's French/Arabic annex transcription and reconciliation row by row, preserving commune/locality/territorial-parent semantics and every sans changement block.
-- Complete the full French/Arabic seat transcription and row-by-row parity checks; locate the cited 13 May 1985 amending order and determine any effects through the later code/seat register chain.
+- Complete the full French/Arabic seat transcription and row-by-row parity checks; reconcile the located 13 May 1985 amending order through the later code/seat register chain.
 - Reconcile the 975 residual source-lineage candidates against all applicable instruments. This does not mean that 975 original JO44/1985 commune rows remain unextracted.
 - All 1,541 qualified-practitioner decisions remain pending; no new code, valid-time value, or import is authorized by this review.
+
+## 5J. Interministerial order of 13 May 1985 / JO24/1985 — four chief-lieu seat amendments verified bilingually
+
+**Instrument:** Interministerial order dated 13 May 1985, published in JO No. 24 on 5 June 1985, modifying the annex to the interministerial order of 2 June 1984 fixing commune chief-lieu seats. The order's Article 1 modifies four entries; Article 2 orders publication.
+
+Both official editions were visually inspected:
+
+- French official edition: [F1985024.pdf](https://www.joradp.dz/FTP/jo-francais/1985/F1985024.pdf), printed p.535, PDF zero-based index 28.
+- Arabic official edition: [A1985024.pdf](https://www.joradp.dz/FTP/jo-arabe/1985/A1985024.pdf), printed pp.829–830, PDF zero-based indices 44–45.
+
+| Wilaya | Local table row no. | Commune label (FR / AR) | Chief-lieu seat (FR / AR) |
+|---|---:|---|---|
+| Guelma (24) | 07 | Aïn Sandel / عين صندل | Aïn Souda / العين السوداء |
+| Médéa (26) | 56 | Bir Ben Laabed / بير بن العابد | Zoudj El Beida / زوج البيضاء |
+| Bordj Bou Arréridj (34) | 34 | Haraza / حرازة | Fedala / فضالة |
+| El Oued (39) | 19 | Beni Guecha / بني قشة | Beni Guecha / بني قشة |
+
+**Do not misread the table:** the local row identifiers `07`, `56`, `34` and `19` are not four-digit territorial-register codes under Decree 85-20. They identify positions within the annex for their respective Wilayas. The instrument modifies the chief-lieu-seat column, not commune identity, legal territorial parent or register-code assignment.
+
+Four separate row-level assertions were added to `P1-01-TERRITORIAL-CHANGE-ASSERTIONS.csv` with Arabic and French source labels, page locators, and the destination seat recorded separately. The previous seat values are not asserted by this amendment row itself; they remain unfilled unless established from the exact relevant 1984 annex row. `valid_from`, four-digit code and practitioner review remain unadjudicated/pending. No PDF-byte SHA-256 was captured in this pass.
+
+### Reconciliation actions now enabled
+
+- Compare each changed seat with its corresponding commune entry in the 2 June 1984 annex and any later seat-register order, preserving the old/new assertions and dates separately.
+- Confirm whether the 13 May 1985 amended seats were carried forward, superseded or amended again by later instruments before assigning current seat values.
+- Keep administrative seat history separate from commune parentage and the four-digit register code. The 1985 amendment does not itself provide a canonical four-digit register code for any of the four entries.

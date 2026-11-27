@@ -280,6 +280,16 @@ Four new, distinct `register_code_and_seat_assertion` rows were added to the CSV
 
 **Historical-data boundary:** these are 1986 register entries. They must not be presented as the current 2026 codes without checking all later register amendments and territorial-parent changes, including JO79/2021, JO58/2026 and any other applicable subsequent instrument. Their `valid_from` is not inferred from the order date or publication date; all practitioner review remains pending.
 
+### Subsequent-source spot check in the current P1-01 workpapers — 27 November 2026
+
+The 1986 entries were checked against the later row-level workpapers already present on `main`; no canonical row was modified in this audit:
+
+- **Code 2656 / Médéa:** JO58/2026 prints `Bir Ben Abed / 2656 / Zoudj El Beïda` at French printed p.20 (order dated 5 May 2026; publication 12 August 2026). This is a later source assertion for the same code as the 1986 `Bir Ben Laabed / 2656 / Zoudj El Beida` row, but the French label/accent variants are preserved. The corresponding working-crosswalk candidate is `W26-R038`; its row remains `CANDIDATE_ONLY_NOT_APPROVED`, and the qualified-practitioner status is `PENDING`. The normalized mapping is not itself a legal sign-off.
+- **Code 3919 / El Oued:** JO79/2021 prints `Beni Guecha / 3919 / Beni Guecha` at French printed p.16 (order dated 12 September 2021; publication 17 October 2021); the Arabic page-image review is recorded for the issue annex. The current candidate row is `W39-R002` (`Ben Guecha` / `بن  قشة`), and the source extract keeps its status `POTENTIAL_LABEL_VARIANT_UNLINKED`. The master reconciliation ledger marks this row `EXPLICIT_PRACTITIONER_DECISION_REQUIRED`, still `PENDING`. Do not collapse `Beni Guecha`, `Béni Guécha` and `Ben Guecha` into one approved alias without that decision.
+- **Codes 2407 and 3434:** the master ledger currently proposes 2407 for `W24-R032` (Aïn Sandel) and 3434 for `W34-R026` (Haraza), each classed `PROPOSED_CLEAN_FOR_SIGNOFF` but still `PENDING`. The inspected JO79/JO58 extracts do not provide a later row for either code in the slices reviewed. Absence from those bounded extracts is not proof of present-day validity or a substitute for full subsequent-source reconciliation.
+
+This spot check is provenance triage only. It does not alter the master ledger, crosswalk, decision book, codes, effective dates, candidate mappings, practitioner states, or import gate.
+
 ### Reconciliation actions now enabled
 
 - Reconcile each 1984 prior seat, 1985 amended seat and 1986 register seat as separate dated assertions, preserving both Arabic and French source forms and the Bir Ben Laabed language discrepancy.

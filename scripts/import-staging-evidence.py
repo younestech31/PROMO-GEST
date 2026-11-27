@@ -20,17 +20,32 @@ def api(path):
 
 
 def decode_evidence(annotations, source_sha):
-    records = {}
+    chunks = {}
+    totals = {}
     for annotation in annotations:
         title = annotation.get('title', '')
         if not title.startswith('PG-STAGING-'):
             continue
-        key = title.removeprefix('PG-STAGING-')
-        if key not in (*PROFILES, 'manifest') or key in records:
-            raise ValueError('Unexpected or duplicate evidence annotation')
-        records[key] = json.loads(annotation['message'])
-    if set(records) != {*PROFILES, 'manifest'}:
+        parts = title.removeprefix('PG-STAGING-').split(':')
+        if len(parts) != 3:
+            raise ValueError('Evidence must use numbered, non-truncated chunks')
+        key, index, total = parts[0], int(parts[1]), int(parts[2])
+        if key not in (*PROFILES, 'manifest') or not (1 <= index <= total <= 20):
+            raise ValueError('Unexpected evidence chunk')
+        if key in totals and totals[key] != total:
+            raise ValueError('Conflicting chunk totals')
+        totals[key] = total
+        chunks.setdefault(key, {})
+        if index in chunks[key] or len(annotation['message']) > 3000:
+            raise ValueError('Duplicate or oversized evidence chunk')
+        chunks[key][index] = annotation['message']
+    if set(chunks) != {*PROFILES, 'manifest'}:
         raise ValueError('Incomplete staging evidence export')
+    records = {}
+    for key, pieces in chunks.items():
+        if set(pieces) != set(range(1, totals[key] + 1)):
+            raise ValueError('Missing evidence chunk')
+        records[key] = json.loads(''.join(pieces[i] for i in range(1, totals[key] + 1)))
     manifest = records['manifest']
     if {r['profile'] for r in manifest['profiles']} != set(PROFILES) or len(manifest['profiles']) != 4:
         raise ValueError('Incomplete profile manifest')

@@ -57,9 +57,12 @@ def notice(name, payload):
     data = json.dumps(payload, separators=(',', ':'))
     if len(data.encode()) > 60000:
         raise ValueError('Compact evidence exceeds check annotation limit')
-    # Workflow command escaping; never interpolate arbitrary titles.
-    data = data.replace('%', '%25').replace('\r', '%0D').replace('\n', '%0A')
-    print(f'::notice title=PG-STAGING-{name}::{data}', flush=True)
+    # The check-annotations API truncates runner notice messages to 4096 characters.
+    # Carry bounded 3000-character pieces, numbered so import fails closed on any loss.
+    parts = [data[i:i + 3000] for i in range(0, len(data), 3000)]
+    for index, part in enumerate(parts, 1):
+        escaped = part.replace('%', '%25').replace('\r', '%0D').replace('\n', '%0A')
+        print(f'::notice title=PG-STAGING-{name}:{index}:{len(parts)}::{escaped}', flush=True)
 
 
 def main(root):

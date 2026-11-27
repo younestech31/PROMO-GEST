@@ -17,7 +17,7 @@ class StagingImportTests(unittest.TestCase):
     def setUp(self):
         data = b'\xff\xd8\xff synthetic JPEG fixture'
         digest = hashlib.sha256(data).hexdigest()
-        self.annotations = [{'title': f'PG-STAGING-{profile}', 'message': json.dumps({
+        self.annotations = [{'title': f'PG-STAGING-{profile}:1:1', 'message': json.dumps({
             'profile': profile, 'sha256': digest, 'imageBase64': base64.b64encode(data).decode(),
         })} for profile in module.PROFILES]
         manifest = {
@@ -25,11 +25,22 @@ class StagingImportTests(unittest.TestCase):
             'images': [{'profile': profile, 'file': f'{profile}/review.jpg', 'sha256': digest}
                        for profile in module.PROFILES],
         }
-        self.annotations.append({'title': 'PG-STAGING-manifest', 'message': json.dumps(manifest)})
+        self.annotations.append({'title': 'PG-STAGING-manifest:1:1', 'message': json.dumps(manifest)})
 
     def test_imports_complete_matching_evidence(self):
         _, images = module.decode_evidence(self.annotations, SHA)
         self.assertEqual(set(images), set(module.PROFILES))
+
+    def test_reassembles_out_of_order_chunks_and_rejects_missing_piece(self):
+        record = self.annotations.pop(0)
+        message = record['message']
+        pieces = [message[:30], message[30:]]
+        for index, piece in enumerate(pieces, 1):
+            self.annotations.append({'title': f'PG-STAGING-ar-desktop:{index}:2', 'message': piece})
+        self.assertEqual(len(module.decode_evidence(list(reversed(self.annotations)), SHA)[1]), 4)
+        self.annotations.pop()
+        with self.assertRaisesRegex(ValueError, 'Missing evidence chunk'):
+            module.decode_evidence(self.annotations, SHA)
 
     def test_missing_or_duplicate_annotations_are_rejected(self):
         for records in (self.annotations[:-1], self.annotations + [self.annotations[0]]):

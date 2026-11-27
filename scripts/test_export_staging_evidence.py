@@ -65,6 +65,17 @@ class StagingEvidenceTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             export.read_results(self.root)
 
+    def test_large_records_are_split_below_github_truncation_limit(self):
+        output = io.StringIO()
+        payload = {'synthetic': 'x' * 12000}
+        with contextlib.redirect_stdout(output):
+            export.notice('manifest', payload)
+        lines = output.getvalue().splitlines()
+        self.assertEqual(len(lines), 5)
+        messages = [line.split('::', 2)[2] for line in lines]
+        self.assertTrue(all(len(message) <= 3000 for message in messages))
+        self.assertEqual(json.loads(''.join(messages)), payload)
+
     def test_notice_is_bounded_and_escaped(self):
         output = io.StringIO()
         with contextlib.redirect_stdout(output):

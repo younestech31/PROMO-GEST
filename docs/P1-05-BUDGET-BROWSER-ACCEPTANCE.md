@@ -12,7 +12,10 @@ in-memory preview, a mock, or manual operator acceptance.
 Only the exact loopback CI target and `p0_<language>_<device>` disposable database are
 permitted. Users are created with seeded roles through the API; mandatory password
 rotation is completed before browser login. No SQL role/permission changes, schema
-changes, migration additions or operational database access are introduced.
+changes, migration additions or operational database access are introduced. The disposable
+API process alone uses a bounded login/password-rotation limiter of 30 requests/minute
+because the expanded multi-user suite exceeds ten requests from the same loopback IP.
+The shipped default remains ten; no operational security configuration is changed.
 
 ## Regression matrix
 

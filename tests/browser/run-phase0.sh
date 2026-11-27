@@ -17,6 +17,10 @@ SQL
     export ASPNETCORE_ENVIRONMENT=Development
     PROMOGEST_MIGRATE_DB_CONNECTION="Host=$PGHOST;Database=$PGDATABASE;Username=$PGUSER;Password=$PGPASSWORD" ./PromoGest.Api --migrate
     export PGUSER=promogest_app PGPASSWORD=app_pass
+    # Expanded multi-user browser fixtures exceed ten login/password-rotation requests
+    # per loopback IP/minute. Keep a bounded limiter on this disposable CI process;
+    # shipped defaults and operational configuration remain unchanged at ten.
+    Security__LoginRateLimitPermitLimit=30 \
     ConnectionStrings__DefaultConnection="Host=$PGHOST;Database=$PGDATABASE;Username=$PGUSER;Password=$PGPASSWORD" \
       ./PromoGest.Api --urls http://127.0.0.1:5173 > "$RUNNER_TEMP/p0-api.log" 2>&1 &
     pid=$!

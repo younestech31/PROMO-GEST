@@ -334,6 +334,12 @@ test('organization profile edit visibility uses the canonical org.manage permiss
   assert.equal(canManageOrganizationProfile(createUser(['org.read'])), false);
   assert.equal(canManageOrganizationProfile(createUser(['organization.manage'])), false);
   assert.equal(canManageOrganizationProfile(createUser([], true)), true);
+  assert.equal(canManageOrganizationProfile(null), false);
+  for (const isSystemAdministrator of [false, true]) {
+    assert.equal(canManageOrganizationProfile({
+      ...createUser(['org.read', 'org.manage'], isSystemAdministrator), isActive: false,
+    }), false, 'inactive accounts must never see organization editing controls');
+  }
 
   const appSource = fs.readFileSync(path.join(srcRoot, 'app', 'App.tsx'), 'utf8');
   const permissionSource = fs.readFileSync(

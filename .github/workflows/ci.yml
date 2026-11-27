@@ -24,7 +24,9 @@ jobs:
       - name: Verify the documented baseline matches this branch
         run: python3 scripts/validate-doc-baseline.py --main-ref origin/main
       - name: Test disposable browser budget fixture helpers and safety guard
-        run: python3 tests/browser/test_project_budget.py
+        run: |
+          python3 tests/browser/test_project_budget.py
+          python3 tests/browser/test_organization_permissions.py
       - name: Test staging evidence completeness, privacy and import integrity
         run: |
           python3 scripts/test_export_staging_evidence.py
@@ -273,15 +275,15 @@ jobs:
       # Runner check annotations allow ten notices per step. Each record is bounded
       # to ten <=3000-character chunks; keep publication in distinct read-only steps.
       - name: Export Arabic desktop staging review image
-        run: '"$RUNNER_TEMP/p0-python/bin/python" scripts/export-staging-evidence.py "$RUNNER_TEMP/staging-evidence" --record ar-desktop'
+        run: '"$RUNNER_TEMP/p0-python/bin/python" scripts/export-staging-evidence.py "$RUNNER_TEMP/staging-evidence" --suite organization --record ar-desktop'
       - name: Export Arabic mobile staging review image
-        run: '"$RUNNER_TEMP/p0-python/bin/python" scripts/export-staging-evidence.py "$RUNNER_TEMP/staging-evidence" --record ar-mobile'
+        run: '"$RUNNER_TEMP/p0-python/bin/python" scripts/export-staging-evidence.py "$RUNNER_TEMP/staging-evidence" --suite organization --record ar-mobile'
       - name: Export French desktop staging review image
-        run: '"$RUNNER_TEMP/p0-python/bin/python" scripts/export-staging-evidence.py "$RUNNER_TEMP/staging-evidence" --record fr-desktop'
+        run: '"$RUNNER_TEMP/p0-python/bin/python" scripts/export-staging-evidence.py "$RUNNER_TEMP/staging-evidence" --suite organization --record fr-desktop'
       - name: Export French mobile staging review image
-        run: '"$RUNNER_TEMP/p0-python/bin/python" scripts/export-staging-evidence.py "$RUNNER_TEMP/staging-evidence" --record fr-mobile'
+        run: '"$RUNNER_TEMP/p0-python/bin/python" scripts/export-staging-evidence.py "$RUNNER_TEMP/staging-evidence" --suite organization --record fr-mobile'
       - name: Export complete staging manifest
-        run: '"$RUNNER_TEMP/p0-python/bin/python" scripts/export-staging-evidence.py "$RUNNER_TEMP/staging-evidence" --record manifest'
+        run: '"$RUNNER_TEMP/p0-python/bin/python" scripts/export-staging-evidence.py "$RUNNER_TEMP/staging-evidence" --suite organization --record manifest'
       - name: Publish sanitized Production HTTPS staging evidence
         if: always()
         uses: actions/upload-artifact@v7

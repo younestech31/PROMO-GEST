@@ -10,6 +10,7 @@ from pathlib import Path
 
 from playwright.sync_api import expect, sync_playwright
 from project_budget import mutation, run_project_budget
+from organization_permissions import run_organization_permissions
 
 BASE = 'https://staging.promogest.test:8443'
 CONTENT = b'PROMO GEST synthetic staging document. No personal or business data.\n'
@@ -191,6 +192,7 @@ def run(lang, device, phase):
             result['budgetEvidence'] = run_project_budget(
                 browser, ctx, BASE, lang, device, viewport, out, fixture='staging')
             checks['production_budget_authorization_matrix'] = True
+            run_organization_permissions(browser, ctx, BASE, lang, device, viewport, out)
             if device == 'mobile':
                 page.get_by_role('button', name='Open menu', exact=True).click()
             with page.expect_response('**/api/auth/logout') as logout:
@@ -215,7 +217,8 @@ if __name__ == '__main__':
     except Exception as error:
         # Static locations only: exception messages/call logs may include filled form secrets.
         for frame in traceback.extract_tb(error.__traceback__):
-            if frame.filename.endswith('/staging.py'):
-                print(f'::error file=tests/browser/staging.py,line={frame.lineno}::'
+            filename = Path(frame.filename).name
+            if filename in ('staging.py', 'organization_permissions.py'):
+                print(f'::error file=tests/browser/{filename},line={frame.lineno}::'
                       f'Staging {type(error).__name__} in {frame.name}', flush=True)
         sys.exit(1)

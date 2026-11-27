@@ -53,6 +53,30 @@ def read_results(root):
     return results
 
 
+ORGANIZATION_CHECKS = (
+    'non_admin_without_org_manage_readonly_api_403_no_mutation', 'denial_audited',
+    'non_admin_with_org_manage_spa_save_reload_persists', 'authorized_update_audited',
+    'revocation_enforced_existing_session_api_and_spa',
+)
+
+
+def read_organization_results(root):
+    results = {}
+    for profile in PROFILES:
+        path = root / profile / 'organization-permissions.json'
+        if path.is_symlink() or path.resolve().parent.parent != root.resolve():
+            raise ValueError('Invalid organization evidence path')
+        result = json.loads(path.read_text())
+        if (set(result) != {'profile', 'status', 'checks', 'scope'}
+                or result['profile'] != profile or result['status'] != 'PASS'
+                or set(result['checks']) != set(ORGANIZATION_CHECKS)
+                or any(value is not True for value in result['checks'].values())
+                or result['scope'] != 'P1-09 disposable Production HTTPS; temporary VIEWER grant revoked'):
+            raise ValueError('Incomplete or unexpected organization evidence')
+        results[profile] = result['checks']
+    return results
+
+
 def notice(name, payload):
     data = json.dumps(payload, separators=(',', ':'))
     if len(data.encode()) > 30000:
@@ -65,14 +89,21 @@ def notice(name, payload):
         print(f'::notice title=PG-STAGING-{name}:{index}:{len(parts)}::{escaped}', flush=True)
 
 
-def main(root, record=None):
+def main(root, record=None, suite='staging'):
     if os.environ.get('GITHUB_ACTIONS') != 'true':
         raise RuntimeError('Evidence export is CI-only')
+    if suite not in ('staging', 'organization'):
+        raise ValueError('Unknown evidence suite')
     from PIL import Image
     results = read_results(root)
-    manifest = {'mode': 'disposable Production HTTPS staging', 'profiles': results, 'images': []}
+    if suite == 'organization':
+        organization = read_organization_results(root)
+        for result in results:
+            result['organizationEvidence'] = organization[result['profile']]
+    manifest = {'mode': 'disposable Production HTTPS ' + suite, 'profiles': results, 'images': []}
     for profile in PROFILES:
-        source = root / profile / '05-profile-after-restart.png'
+        source = root / profile / ('org-02-authorized-saved.png' if suite == 'organization'
+                                   else '05-profile-after-restart.png')
         if source.is_symlink() or source.resolve().parent.parent != root.resolve():
             raise ValueError('Invalid screenshot path')
         target = root / profile / 'review.jpg'
@@ -99,5 +130,6 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('root', type=Path)
     parser.add_argument('--record', choices=(*PROFILES, 'manifest'))
+    parser.add_argument('--suite', choices=('staging', 'organization'), default='staging')
     args = parser.parse_args()
-    main(args.root, args.record)
+    main(args.root, args.record, args.suite)

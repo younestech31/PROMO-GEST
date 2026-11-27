@@ -132,7 +132,7 @@ export function canManagePartyIdentity(user: AuthenticatedUser | null): boolean 
 }
 
 export function canManageOrganizationProfile(user: AuthenticatedUser | null): boolean {
-  return Boolean(user?.isSystemAdministrator || hasPermission(user, 'org.manage'));
+  return hasPermission(user, 'org.manage');
 }
 
 export function canViewTechnicalAdmin(user: AuthenticatedUser | null): boolean {

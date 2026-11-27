@@ -250,7 +250,7 @@ Both official JORADP editions were visually inspected for the amending entries:
 - French official edition: [F1985024.pdf](https://www.joradp.dz/FTP/jo-francais/1985/F1985024.pdf), printed p.535, PDF zero-based index 28.
 - Arabic official edition: [A1985024.pdf](https://www.joradp.dz/FTP/jo-arabe/1985/A1985024.pdf), printed pp.829–830, PDF zero-based indices 44–45.
 
-The 1984 prior-seat column was compared against the corresponding entries in JO41/1984. The 1984 page images for these rows were visually checked in the issue scan copy hosted by Kanonix, which identifies JORADP as its source; this is a page-image reading of the issue scan, not a fresh JORADP PDF byte download or checksum. Exact pages: French pp.1039, 1041, 1043, 1045; Arabic pp.1542, 1543, 1547, 1549.
+The 1984 prior-seat column was compared against the corresponding entries directly in both official JORADP PDFs for JO41/1984: [French F1984041.pdf](https://www.joradp.dz/FTP/Jo-Francais/1984/F1984041.pdf), printed pp.1039, 1040, 1043 and 1045; [Arabic A1984041.pdf](https://www.joradp.dz/FTP/jo-arabe/1984/A1984041.pdf), printed pp.1542, 1543, 1547 and 1549. Old French seats: Aïn Sandel, Bir Ben Laabed, Haraza and Douelat respectively. Arabic old-seat readings: عين صندل, بشر بن عابد, حرازة and دويلات respectively. The official Arabic p.1543 row differs from the French p.1040 row for Bir Ben Laabed: commune بئر بن عابد and prior seat بشر بن عابد in Arabic, versus Bir Ben Laabed as both commune and seat in French. Preserve both source readings. No fresh PDF-byte SHA-256 was calculated in this pass.
 
 | Wilaya | Local row no. | Commune (FR / AR) | JO41/1984 prior seat (FR / AR) | JO24/1985 amended seat (FR / AR) | JO11/1986 register code |
 |---|---:|---|---|---|---:|

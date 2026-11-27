@@ -88,7 +88,9 @@ Downloaded official PDFs and verified SHA-256 checksums for instruments referenc
 
 Completed vs remaining visual/bilingual work:
 - **Completed:** PNG page-image verification in both French and Arabic for JO58/2026 (pp. 9–25, all 404 rows), JO79/2021 (pp. 13–19 FR & 15–22 AR, all 162 rows), JO11/1986 (pp. 280–281 FR & 401–402 AR), JO23/1998 (Boumerdès FR p. 11 vs AR p. 13), and disputed sections of JO44/1985 (FR pp. 1065–1070 & AR pp. 1631–1635, resolving Chabet El Ameur `3514` and Chihani FR `3624` vs AR `3614`).
-- **Completed by 27 November 2026:** bilingual page-image review of Decree 92-412 / JO82/1992, Decrees 93-11 and 93-12 / JO03/1993, Decree 05-127 / JO29/2005 (administrative-seat relocation), and Decree 06-256 / JO49/2006 (locality-parent transfer). The relevant printed-page locations are kept distinct by edition.\n- **Remaining:** full Arabic/French annex parity for Decree 21-128 (JO26/2021) and the 2 June 1984 chief-lieu seat order (JO41/1984); extract and reconcile the remaining 897 of the 975 planned original-register rows (78 are now transcribed in W31 Oran and W06 Bejaia text-layer source files), subject to final national row-count reconciliation. PDF byte hashes for the newly inspected 2005/2006 editions were not captured in this pass.
+- **Completed by 27 November 2026:** bilingual page-image review of Decree 92-412 / JO82/1992, Decrees 93-11 and 93-12 / JO03/1993, Decree 05-127 / JO29/2005 (administrative-seat relocation), and Decree 06-256 / JO49/2006 (locality-parent transfer). The relevant printed-page locations are kept distinct by edition.
+- **Current JO44 source-population status:** French searchable-text extraction covers all 48 original Wilaya sections and all 1,541 commune rows (the separate `1600 — Ville d'Alger` special assertion is excluded from the 1,541 count). The 975 figure in the source-coverage supplement is a residual source-lineage/reconciliation bucket across 30 legacy/unmodified Wilayas; it is **not** an unextracted-row count. Historical 78/975, 187/975, 293/975 and 360/975 figures in sections 5A–5D are dated incremental checkpoints from 18 November 2026, not the current extraction total.
+- **Remaining:** complete and adjudicate the 975-row residual lineage bucket across relevant intervening instruments, codes, parents and temporal relationships; complete the full bilingual and row-level annex reconciliation of Decree 21-128 (JO26/2021) and the June 1984 chief-lieu seat order (JO41/1984); resolve the cited but still unlocated 13 May 1985 seat-order amendment; and obtain qualified Algerian practitioner sign-off. The 2005/2006 bilingual page-image checks did not capture new PDF-byte hashes.
 
 ## 5A. JO44/1985 original-table extraction progress — 18 November 2026
 
@@ -165,7 +167,7 @@ The search/extraction service (Olostep) was used to discover candidate source pa
 ### Open P1-01 work after this update
 
 - JO49/2006 Decree 06-256 Arabic page-image review was completed on 27 November 2026 (printed p.4, PDF index 3). The Arabic PDF byte fingerprint remains unrecorded.
-- Full French/Arabic annex parity and row-by-row extraction for Decree 21-128 / JO26/2021 and the June 1984 chief-lieu seat order remain open.
+- Full bilingual row-by-row reconciliation for Decree 21-128 / JO26/2021 and the June 1984 chief-lieu seat order remains open; see sections 5H–5I below for bounded 27 November evidence and source limitations.
 - The 1,541-row concordance, all 1,541 qualified-practitioner sign-offs, the temporal decision for W30-R007, and release acceptance remain open. No row is approved by this addendum and no commune is imported.
 
 
@@ -198,3 +200,41 @@ The Arabic source label is **وادي المرعى**. The French PDF SHA-256 alr
 ### C. Data-model consequence
 
 The source chain establishes two different facts at different dates: first, a change in the physical location of the chief-lieu seat; later, a change in the territorial membership of the place that hosts it. A system that stores only one commune parent relationship or one undated commune-seat value would lose this distinction. Preserve separate source assertions and their provenance; do not infer the legal effective date, code history, operational competence, or service handover from these two decrees alone.
+
+## 5H. Decree 21-128 / JO26/2021 — territorial composition is distinct from the register-code order
+
+**Instrument:** Executive Decree No. 21-128 dated 29 March 2021, published in JO No. 26 on 7 April 2021. Article 1 modifies/completes the territorial-composition table attached to Executive Decree 84-365. The table covers eight existing Wilayas (01 Adrar, 07 Biskra, 08 Béchar, 11 Tamanrasset, 30 Ouargla, 33 Illizi, 39 El Oued and 47 Ghardaïa) and adds the ten Wilayas 49–58 established under Law 19-12.
+
+The ten new-Wilaya headings in the French annex are: 49 Timimoun; 50 Bordj Badji Mokhtar; 51 Ouled Djellal; 52 Béni Abbès; 53 In Salah; 54 In Guezzam; 55 Touggourt; 56 Djanet; 57 El Meghaier; and 58 El Meniaâ. This is a composition/territorial-limits instrument. It is **not** the four-digit Decree 85-20 register or a commune chief-lieu seat list.
+
+### Evidence reviewed on 27 November 2026
+
+- **French official JORADP edition:** [F2021026.pdf](https://www.joradp.dz/FTP/jo-francais/2021/F2021026.pdf). The decree and Annex pages 5–16 were visually inspected. The annex continues through the late new-Wilaya headings on printed pages 15–16.
+- **Arabic edition facsimile:** the Arabic pages 5–17 were visually inspected in a page-for-page issue facsimile hosted by Kanonix: [Arabic JO26/2021 facsimile PDF](https://kanonix.app/journals/fac71292-3d61-4b81-8da4-b8965d7ede81/pdf?download=1). This is a mirror/facsimile, not a direct download from the JORADP Arabic host. The JORADP Arabic binary was not retrievable in this pass; the historical repository inventory lists an older SHA-256 for A2021026.pdf, but that hash was not recalculated or compared to the mirror bytes in this audit.
+
+**Evidence boundary:** page-image review of the Arabic mirror supports a preliminary bilingual page-layout/content cross-check, not a fresh verification of the Arabic JORADP PDF binary. No complete row-by-row bilingual annex transcription, checksum comparison, or practitioner adjudication is claimed. Do not infer four-digit commune register codes, commune seats, legal effective dates, or parent assignments from headings alone. Preserve the sans changement passages as verbatim change/no-change assertions, not as a licence to infer missing rows.
+
+### Relationship to JO79/2021
+
+Keep the instruments in separate source families:
+
+1. Decree 21-128 / JO26/2021 amends the **territorial composition and limits** table under Decree 84-365.
+2. The interministerial order published in JO79/2021 amends the **1985 territorial register** under Decree 85-20, including four-digit codes and administrative seats.
+
+A name match between the two annexes is not sufficient on its own to assign a current code, seat, or valid_from. Link each assertion only through the applicable source lineage and preserve unresolved differences as exceptions.
+
+## 5I. June 1984 chief-lieu seat order / JO41/1984 — bounded visual review
+
+The interministerial order dated 2 June 1984 fixes the chief-lieu seats for the communes in its annex. Its two-column structure distinguishes the commune from the seat; therefore the seat must not be silently treated as a commune-name alias or territorial-parent assertion. Official French source: [F1984041.pdf](https://www.joradp.dz/FTP/Jo-Francais/1984/F1984041.pdf).
+
+On 27 November 2026, the French official edition was text-reviewed and selected table pages were visually inspected: printed pages 1030, 1044, 1045 and 1048. The inspected samples confirm separate commune/seat columns across multiple Wilaya sections. This is a **bounded sample**, not a complete visual transcription of the annex or a 1,541-row seat reconciliation. The Arabic JORADP edition was not visually reviewed in this pass.
+
+The 8 February 1986 register amendment (JO11/1986, printed p.280) cites an order dated 13 May 1985 modifying the June 1984 seat order. The standalone issue/page and full annex of that 13 May 1985 instrument remain unlocated. Keep the citation as an unresolved source pointer; do not infer its effects from the recital alone.
+
+### Open gates after this pass
+
+- Retrieve and byte-verify the original Arabic JORADP binary for JO26/2021; compare it with the page-facsimile mirror before upgrading the evidence status.
+- Transcribe and reconcile Decree 21-128's French/Arabic annex row by row, preserving locality/commune/territorial-parent semantics and every sans changement block.
+- Retrieve and inspect the Arabic JO41/1984 seat annex; complete the French/Arabic seat transcription and locate the cited 13 May 1985 amending order.
+- Reconcile the 975 residual source-lineage candidates against all applicable instruments. This does not mean that 975 original JO44/1985 commune rows remain unextracted.
+- All 1,541 qualified-practitioner decisions remain pending; no new code, valid-time value, or import is authorized by this review.

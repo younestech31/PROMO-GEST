@@ -28,6 +28,22 @@ public sealed class ApplicationSecurityAndFoundationTests
             => throw new IOException("Simulated audit persistence failure.");
     }
 
+    private sealed class FailingDocumentSaveRepository : IProjectDocumentRepository
+    {
+        private readonly IProjectDocumentRepository _inner;
+        public FailingDocumentSaveRepository(IProjectDocumentRepository inner) => _inner = inner;
+        public Task<IReadOnlyList<ProjectDocumentListItem>> ListProjectDocumentsAsync(Guid projectId, CancellationToken ct = default)
+            => _inner.ListProjectDocumentsAsync(projectId, ct);
+        public Task<StoredFile?> GetProjectDocumentAsync(Guid projectId, Guid fileId, CancellationToken ct = default)
+            => _inner.GetProjectDocumentAsync(projectId, fileId, ct);
+        public Task<IReadOnlySet<Guid>> ListCustomerIdentityDocumentIdsAsync(Guid projectId, CancellationToken ct = default)
+            => _inner.ListCustomerIdentityDocumentIdsAsync(projectId, ct);
+        public Task<bool> IsCustomerIdentityDocumentAsync(Guid projectId, Guid fileId, CancellationToken ct = default)
+            => _inner.IsCustomerIdentityDocumentAsync(projectId, fileId, ct);
+        public Task AddAsync(StoredFile file, CancellationToken ct = default) => _inner.AddAsync(file, ct);
+        public Task SaveChangesAsync(CancellationToken ct = default) => throw new IOException("Simulated ambiguous commit.");
+    }
+
     private sealed class SpyPasswordHasher : IPasswordHasher
     {
         private readonly IPasswordHasher _inner;
@@ -71,6 +87,7 @@ public sealed class ApplicationSecurityAndFoundationTests
         public List<ProjectCustomer> ProjectCustomers { get; } = new();
         public List<CustomerInteraction> CustomerInteractions { get; } = new();
         public List<StoredFile> StoredFiles { get; } = new();
+        public bool FailStructureRead { get; set; }
 
         public InMemoryStore()
         {
@@ -144,6 +161,12 @@ public sealed class ApplicationSecurityAndFoundationTests
         public Task SaveChangesAsync(CancellationToken ct = default) => Task.CompletedTask;
 
         public Task<User?> GetByIdWithRolesAsync(Guid userId, CancellationToken ct = default) => Task.FromResult(Users.FirstOrDefault(u => u.Id == userId));
+        public async Task<bool> ExecuteWithUserLockAsync(User user, Func<CancellationToken, Task<Guid>> action, CancellationToken ct = default)
+        {
+            if (!Users.Contains(user)) return false;
+            await action(ct);
+            return true;
+        }
         public Task<User?> GetSystemAdministratorAsync(CancellationToken ct = default) => Task.FromResult(Users.FirstOrDefault(u => u.IsSystemAdministrator));
         public Task<User?> GetByUsernameOrEmailWithRolesAsync(string usernameOrEmail, CancellationToken ct = default)
         {
@@ -174,6 +197,13 @@ public sealed class ApplicationSecurityAndFoundationTests
         public Task AddSessionAsync(UserSession session, CancellationToken ct = default) { Sessions.Add(session); return Task.CompletedTask; }
         public Task<UserSession?> GetSessionByTokenHashAsync(string tokenHash, CancellationToken ct = default)
             => Task.FromResult(Sessions.FirstOrDefault(s => s.TokenHash == tokenHash));
+        public Task<bool> TryTouchSessionAsync(UserSession session, User user, DateTimeOffset nowUtc, TimeSpan idleTimeout, CancellationToken ct = default)
+        {
+            if (!session.IsValid(nowUtc, idleTimeout) || !user.IsActive || user.SecurityStamp != session.SecurityStamp)
+                return Task.FromResult(false);
+            session.Touch(nowUtc);
+            return Task.FromResult(true);
+        }
         public Task<IReadOnlyList<UserSession>> ListSessionsByUserAsync(Guid userId, CancellationToken ct = default)
             => Task.FromResult<IReadOnlyList<UserSession>>(Sessions.Where(session => session.UserId == userId).ToList());
         public Task<UserSession?> GetSessionByIdAsync(Guid userId, Guid sessionId, CancellationToken ct = default)
@@ -256,7 +286,10 @@ public sealed class ApplicationSecurityAndFoundationTests
         // The in-memory store retains the aggregate instance, so AssignMember has already updated its collection.
         public Task AddMemberAsync(ProjectMember member, CancellationToken ct = default) => Task.CompletedTask;
         public Task<IReadOnlyList<Building>> ListBuildingsByProjectAsync(Guid projectId, CancellationToken ct = default)
-            => Task.FromResult<IReadOnlyList<Building>>(Buildings.Where(b => b.ProjectId == projectId).ToList());
+        {
+            if (FailStructureRead) throw new IOException("Simulated structure read failure.");
+            return Task.FromResult<IReadOnlyList<Building>>(Buildings.Where(b => b.ProjectId == projectId).ToList());
+        }
         public Task<IReadOnlyList<BuildingFloor>> ListFloorsByProjectAsync(Guid projectId, CancellationToken ct = default)
         {
             var buildingIds = Buildings.Where(b => b.ProjectId == projectId).Select(b => b.Id).ToHashSet();
@@ -1409,6 +1442,17 @@ public sealed class ApplicationSecurityAndFoundationTests
             project.Id,
             new AssignProjectMemberRequest(init.SystemAdminUserId, nameof(ProjectRole.ProjectManager), true, true, true, true),
             metadata);
+        var membershipAudit = store.AuditLogs.Last(entry => entry.EventType == "PROJECT_MEMBER_ASSIGNED");
+        using (var auditMetadata = System.Text.Json.JsonDocument.Parse(membershipAudit.MetadataJson!))
+        {
+            var root = auditMetadata.RootElement;
+            Assert.Equal(init.SystemAdminUserId, root.GetProperty("TargetUserId").GetGuid());
+            Assert.Equal(nameof(ProjectRole.FinanceController), root.GetProperty("Previous").GetProperty("Role").GetString());
+            Assert.False(root.GetProperty("Previous").GetProperty("CanManageSales").GetBoolean());
+            Assert.Equal(nameof(ProjectRole.ProjectManager), root.GetProperty("Current").GetProperty("Role").GetString());
+            Assert.True(root.GetProperty("Current").GetProperty("CanManageSales").GetBoolean());
+            Assert.True(root.GetProperty("Current").GetProperty("CanViewFinancials").GetBoolean());
+        }
         var adminProjectManagerRead = await projectSvc.GetProjectByIdAsync(init.SystemAdminUserId, project.Id, metadata);
         var adminManagerBudgetUpdate = await projectSvc.UpdateProjectAsync(
             init.SystemAdminUserId,
@@ -1970,6 +2014,65 @@ public sealed class ApplicationSecurityAndFoundationTests
                 new CreateBuildingRequest("B1", "عمارة 1", "Bloc 1", "Planned"),
                 meta));
         Assert.Equal("FORBIDDEN_PROJECT_STRUCTURE_MANAGE", deniedCreate.Code);
+    }
+
+    [Fact]
+    public async Task ProjectDocumentUpload_PreservesBytesAfterAmbiguousDatabaseSave()
+    {
+        var root = Path.Combine(Path.GetTempPath(), $"promogest-ambiguous-upload-{Guid.NewGuid():N}");
+        try
+        {
+            var store = new InMemoryStore();
+            var clock = new FakeClock();
+            var setup = new SetupService(store, new Pbkdf2PasswordHasher(), store, clock);
+            var projects = new ProjectService(store, store, store, clock);
+            var storage = new LocalFileStorageService(new LocalStorageOptions { RootDirectory = root }, clock);
+            var documents = new ProjectDocumentService(new FailingDocumentSaveRepository(store), store, store, storage, store, clock);
+            var metadata = new RequestMetadata("127.0.0.1", "xUnit");
+            var init = await setup.InitializeAsync(ValidInitRequest(), metadata);
+            var project = await projects.CreateProjectAsync(init.SystemAdminUserId,
+                new CreateProjectRequest("DOC-AMBIGUOUS", "مشروع", "Projet", "16", "Alger", "Hydra",
+                    null, null, null, null, "Planning", 0m, 1, 10), metadata);
+            await using var content = new MemoryStream(System.Text.Encoding.UTF8.GetBytes("recoverable content"));
+            await Assert.ThrowsAsync<IOException>(() => documents.UploadAsync(init.SystemAdminUserId, project.Id,
+                content, "file.txt", "Other", null, content.Length, metadata));
+            var file = Assert.Single(store.StoredFiles);
+            Assert.True(File.Exists(storage.ResolveSafeFullPath(file)));
+
+            // Failures before a database save is attempted can still safely clean up.
+            var preSaveFailure = new ProjectDocumentService(store, store, store, storage, new FailingAuditWriter(), clock);
+            await using var secondContent = new MemoryStream(System.Text.Encoding.UTF8.GetBytes("uncommitted content"));
+            await Assert.ThrowsAsync<IOException>(() => preSaveFailure.UploadAsync(init.SystemAdminUserId, project.Id,
+                secondContent, "second.txt", "Other", null, secondContent.Length, metadata));
+            var second = store.StoredFiles.Last();
+            Assert.False(File.Exists(storage.ResolveSafeFullPath(second)));
+        }
+        finally { if (Directory.Exists(root)) Directory.Delete(root, recursive: true); }
+    }
+
+    [Fact]
+    public async Task StructureWrite_WhenFollowUpReadFails_ReportsCommittedAndCanBeReloaded()
+    {
+        var store = new InMemoryStore();
+        var clock = new FakeClock();
+        var setup = new SetupService(store, new Pbkdf2PasswordHasher(), store, clock);
+        var projects = new ProjectService(store, store, store, clock);
+        var structure = new ProjectStructureService(store, store, store, store, clock);
+        var metadata = new RequestMetadata("127.0.0.1", "xUnit");
+        var init = await setup.InitializeAsync(ValidInitRequest(), metadata);
+        var project = await projects.CreateProjectAsync(init.SystemAdminUserId,
+            new CreateProjectRequest("STRUCT-REFRESH", "مشروع", "Projet", "16", "Alger", "Hydra",
+                null, null, null, null, "Planning", 0m, 1, 10), metadata);
+        store.FailStructureRead = true;
+        var error = await Assert.ThrowsAsync<CommittedWriteResponseException>(() => structure.CreateBuildingAsync(
+            init.SystemAdminUserId, project.Id, new CreateBuildingRequest("B1", "عمارة", "Bâtiment", "Planned"), metadata));
+        Assert.Equal("STRUCTURE_WRITE_COMMITTED_REFRESH_FAILED", error.Code);
+        Assert.IsType<IOException>(error.InnerException);
+        Assert.Single(store.Buildings);
+        Assert.Single(store.AuditLogs.Where(entry => entry.EventType == "BUILDING_CREATED"));
+        store.FailStructureRead = false;
+        var reloaded = await structure.GetProjectStructureAsync(init.SystemAdminUserId, project.Id, metadata);
+        Assert.Single(reloaded.Buildings);
     }
 
     [Fact]

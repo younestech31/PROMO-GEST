@@ -89,9 +89,15 @@ These scripts compile the frontend, copy the verified static output into `src/Pr
 
 ## Development preview versus database-backed testing
 
-Running the root Vite development server without `ASPNETCORE_URL` uses an **in-memory development API**. It is useful for frontend workflow previews only. Its data is ephemeral and it does not prove PostgreSQL persistence, production authentication, database authorization or migrations.
+The disposable **in-memory development API** requires an explicit opt-in:
 
-For a database-backed development session, use the documented Cloud SQL development connection script and inspect its logs and health response. Cloud SQL is optional development infrastructure only; it is not the local-first production architecture. Do not run migrations against an existing preview database unless a separate backup and explicit operational approval are in place.
+```bash
+PROMOGEST_VITE_ONLY=1 npm run dev
+```
+
+Do not combine that flag with `ASPNETCORE_URL` or Cloud SQL settings. Its data is ephemeral and it does not prove PostgreSQL persistence, production authentication, database authorization or migrations. Without either an API target or the explicit demo flag, the launcher exits with an error.
+
+For a local database-backed development session, export the backend connection and settings in the launching environment and set `ASPNETCORE_URL`, for example `ASPNETCORE_URL=http://127.0.0.1:5055 npm run dev`. Vite reads its own settings from the root `.env`, but the launcher does **not** automatically export backend settings from that file to ASP.NET Core. Alternatively, use the documented Cloud SQL development connection script and inspect its logs and health response. Cloud SQL is optional development infrastructure only; it is not the local-first production architecture. Do not run migrations against an existing preview database unless a separate backup and explicit operational approval are in place.
 
 ## Isolated Production HTTPS staging rehearsal
 

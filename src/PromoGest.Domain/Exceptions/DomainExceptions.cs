@@ -8,6 +8,18 @@ public class DomainException : Exception
     {
         Code = code;
     }
+
+    public DomainException(string code, string message, Exception innerException) : base(message, innerException)
+    {
+        Code = code;
+    }
+}
+
+// The mutation committed, but the follow-up read used to build its response failed.
+public sealed class CommittedWriteResponseException : DomainException
+{
+    public CommittedWriteResponseException(string code, string message, Exception innerException)
+        : base(code, message, innerException) { }
 }
 
 public sealed class UnauthorizedDomainException : DomainException

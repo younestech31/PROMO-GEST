@@ -12,6 +12,8 @@ A complete backup must preserve a consistent set of:
 
 Backing up only PostgreSQL leaves documents orphaned. Backing up database and documents without the Data Protection key ring can make previously protected payloads unreadable after restoration. Store backup bundles on encrypted media or an encrypted NAS and restrict access to the service and maintenance administrators.
 
+A document upload can leave unreferenced bytes if the process crashes or a database save fails. A save error can also mean the database committed but the acknowledgement was lost; the application therefore retains the file rather than risking deletion of a committed document. Before a user retries an uncertain upload, inspect the project document list and audit record. There is currently no automated storage reconciliation or orphan cleanup: investigate under a maintenance window with writes stopped, compare a consistent database snapshot of `stored_files.stored_relative_path` against a protected storage snapshot, and verify backups and references before considering any removal. Treat unmatched files as potentially confidential and do not delete them automatically or expose them through a web server. Missing referenced files require recovery from a matching backup; an orphan scan alone is not recovery.
+
 **Linux production path (implemented 2026-11-20):** the backup job now seals, packs, and encrypts the bundle with an X.509 recipient certificate, writes it together with a SHA-256 sidecar, copies and verifies it on an independent offsite mount, applies a retention policy that never prunes below the newest configured artefacts, and removes the unencrypted bundle by default. Encryption and offsite replication are fail-closed: the job refuses to run without a recipient certificate and an offsite target unless an operator explicitly acknowledges the risk in configuration.
 
 **Windows path (parity implemented 2026-11-20):** `backup-promogest.ps1` applies the same contract as the Linux job: seal, package as `promogest_backup_<UTC>.tar.gz`, CMS-envelope to an X.509 recipient certificate (AES-256-CBC, DER — the same artefact format the Linux tooling produces), write a `sha256sum`-compatible sidecar, copy to an independent offsite target and verify that copy, apply retention in both locations, and delete the plaintext bundle unless an operator asks to keep it. Encryption and offsite replication are fail-closed. The private key must not exist on the Windows server.
@@ -149,19 +151,25 @@ Restore output defaults to isolated directories under `C:\PromoGest-Restore\`, o
 
 ### Linux
 
+**Important:** the Linux script below is a verification drill, not a production recovery or cutover tool. It deletes the scratch database and temporary restored files when the drill ends. There is currently no tested, supported Linux procedure in this repository to retain and deploy the restored database, documents, configuration, and Data Protection keys. Do not use this drill expecting a recoverable installation to remain afterward. Plan and test a separate recovery and cutover procedure before relying on Linux disaster recovery; do not improvise against a live installation.
+
 Use `promogest_owner` for the dump/restore operations, `postgres` (or another maintenance identity) to create and remove the uniquely named scratch database, and `promogest_app` only for the runtime-access checks.
 
 To verify the **actual production artefact** created by the systemd job, pass the `.cms` file and the matching private key. Use the exact filename printed by `backup-promogest.sh`:
 
+Run the following in a protected, elevated maintenance shell on the recovery workstation. Obtain the certificate password from the vault at the silent prompt; do not paste it into a command or shell history. The variable is inherited by the drill and should be removed immediately afterward.
+
 ```bash
-sudo env \
-  PGHOST=127.0.0.1 PGUSER=promogest_owner PGPROVISION_USER=postgres \
+read -r -s -p 'Data Protection certificate password: ' PROMOGEST_DATA_PROTECTION_CERT_PASSWORD
+printf '\n'
+export PROMOGEST_DATA_PROTECTION_CERT_PASSWORD
+PGHOST=127.0.0.1 PGUSER=promogest_owner PGPROVISION_USER=postgres \
   PROMOGEST_APP_USER=promogest_app \
   PGPASSFILE=/etc/promogest/pgpass \
-  PROMOGEST_DATA_PROTECTION_CERT_PASSWORD='<secret-from-vault>' \
   PROMOGEST_BACKUP_DECRYPT_KEY=/secure/offline/promogest-backup-key.pem \
   ./scripts/verify-backup-restore.sh promogest "" "" "" \
   /mnt/promogest-offsite/promogest_backup_YYYYMMDD_HHMMSS.tar.gz.cms
+unset PROMOGEST_DATA_PROTECTION_CERT_PASSWORD
 ```
 
 The drill first verifies the sidecar SHA-256 of the ciphertext, decrypts it with the offline key, rejects unsafe or linked archive members, extracts the bundle into a temporary directory, and then validates and restores the exact `database.dump`, `storage.tar.gz`, `dataprotection-keys.tar.gz`, and `config-sanitized.tar.gz` components exactly as before. A plaintext `.tar.gz` artefact can also be passed when encryption was explicitly disabled; `.cms` additionally requires `PROMOGEST_BACKUP_DECRYPT_KEY`. The backup job removes a partial bundle if any backup stage fails, and its exit handler attempts to restart the service if it had stopped it; an error restarting the service is a critical operational alert. It checks the SHA-256 manifest, rejects unsafe archive paths and links, verifies the restored Data Protection certificate, restores into temporary directories and a new scratch database, reapplies least-privilege grants, and checks each database-referenced document by path, byte length, and SHA-256. The drill removes only the uniquely named scratch database it created; it never drops the source database or changes the selected backup bundle.

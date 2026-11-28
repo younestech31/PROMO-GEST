@@ -22,12 +22,12 @@ The browser is not a second business database:
 
 The optional service worker caches only public static shell resources:
 
-- `/index.html` and `/manifest.webmanifest` are pre-cached during installation.
-- Hashed static bundles under `/assets/` are cached after a successful network fetch.
+- `/index.html`, `/manifest.webmanifest`, and the shell's referenced entry assets under `/assets/` are cached during installation.
+- On a successful online navigation, the worker caches the new shell's referenced entry assets before replacing the offline HTML. If that refresh fails, the previous shell remains available. Other hashed assets, including lazy modules, are cached only after a successful network fetch and may not be available offline.
 - A navigation request can fall back to the cached `/index.html` when the local server is temporarily unreachable. The shell may render, but it cannot load current business data or perform transactions while the API is unavailable.
 - Requests to `/api/*`, `/health/*`, and all non-GET requests bypass Cache Storage. Private business and health responses are never cached.
 
-This is an **offline shell fallback**, not offline ERP operation. Static assets are refreshed through normal application updates; the cache version is advanced when the shell caching strategy changes.
+This is an **offline shell fallback**, not offline ERP operation. The cache version is advanced when the shell caching strategy changes.
 
 ## 4. Behavior when the local server is unavailable
 

@@ -31,9 +31,11 @@ public sealed class ExceptionHandlingMiddleware
                 UnauthorizedDomainException => HttpStatusCode.Unauthorized,
                 ForbiddenDomainException => HttpStatusCode.Forbidden,
                 NotFoundDomainException => HttpStatusCode.NotFound,
-                ConflictDomainException => HttpStatusCode.Conflict,
+                ConflictDomainException or CommittedWriteResponseException => HttpStatusCode.Conflict,
                 _ => HttpStatusCode.BadRequest
             };
+            if (ex is CommittedWriteResponseException)
+                _logger.LogWarning(ex, "Write committed but response refresh failed on {Method} {Path}", context.Request.Method, context.Request.Path);
 
             context.Response.StatusCode = (int)statusCode;
             await context.Response.WriteAsJsonAsync(new ApiErrorResponse(ex.Code, ex.Message));

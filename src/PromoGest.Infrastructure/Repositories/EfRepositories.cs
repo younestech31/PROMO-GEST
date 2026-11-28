@@ -115,6 +115,38 @@ public sealed class EfUserRepository : IUserRepository
             .FirstOrDefaultAsync(u => u.NormalizedUsername == normalized || u.NormalizedEmail == normalized, ct);
     }
 
+    public async Task<bool> ExecuteWithUserLockAsync(User user, Func<CancellationToken, Task<Guid>> action, CancellationToken ct = default)
+    {
+        Guid? committedAuditId = null;
+        var strategy = _dbContext.Database.CreateExecutionStrategy();
+        return await strategy.ExecuteAsync(async () =>
+        {
+            // If commit succeeded but its acknowledgement was lost, the audit row is
+            // proof the failed attempt was already counted in the same transaction.
+            if (committedAuditId is { } auditId && auditId != Guid.Empty &&
+                await _dbContext.AuditLogs.AsNoTracking().AnyAsync(entry => entry.Id == auditId, ct))
+                return true;
+
+            // Discard any unsaved audit from a rolled-back attempt before retrying.
+            foreach (var entry in _dbContext.ChangeTracker.Entries<AuditLog>().Where(entry => entry.State == EntityState.Added).ToList())
+                entry.State = EntityState.Detached;
+
+            await using var transaction = await _dbContext.Database.BeginTransactionAsync(ct);
+            // Acquire the row lock even though the account was previously loaded.
+            var locked = await _dbContext.Users
+                .FromSqlInterpolated($"SELECT * FROM users WHERE id = {user.Id} FOR UPDATE")
+                .AsNoTracking()
+                .ToListAsync(ct);
+            if (locked.Count == 0)
+                return false;
+
+            await _dbContext.Entry(user).ReloadAsync(ct);
+            committedAuditId = await action(ct);
+            await transaction.CommitAsync(ct);
+            return true;
+        });
+    }
+
     public async Task<IReadOnlyList<User>> ListUsersWithRolesAsync(CancellationToken ct = default)
         => await _dbContext.Users
             .Include(u => u.UserRoles)
@@ -164,6 +196,35 @@ public sealed class EfUserRepository : IUserRepository
 
     public Task<UserSession?> GetSessionByTokenHashAsync(string tokenHash, CancellationToken ct = default)
         => _dbContext.UserSessions.FirstOrDefaultAsync(s => s.TokenHash == tokenHash, ct);
+
+    public async Task<bool> TryTouchSessionAsync(
+        UserSession session, User user, DateTimeOffset nowUtc, TimeSpan idleTimeout, CancellationToken ct = default)
+    {
+        session.Touch(nowUtc);
+        try
+        {
+            await _dbContext.SaveChangesAsync(ct);
+            return true;
+        }
+        catch (DbUpdateConcurrencyException exception) when (
+            exception.Entries.Count == 1 && ReferenceEquals(exception.Entries[0].Entity, session))
+        {
+            // Another request may have touched the same session, or it may have been
+            // revoked. Reload rather than blindly accepting the losing write.
+            var sessionEntry = _dbContext.Entry(session);
+            await sessionEntry.ReloadAsync(ct);
+            if (sessionEntry.State == EntityState.Detached)
+                return false;
+
+            var userEntry = _dbContext.Entry(user);
+            await userEntry.ReloadAsync(ct);
+            return userEntry.State != EntityState.Detached &&
+                   user.IsActive && user.SecurityStamp == session.SecurityStamp &&
+                   session.IsValid(nowUtc, idleTimeout) &&
+                   (!user.MustChangePasswordAtNextLogin ||
+                    (user.PasswordChangeRequiredUntilUtc.HasValue && user.PasswordChangeRequiredUntilUtc.Value > nowUtc));
+        }
+    }
 
     public async Task<IReadOnlyList<UserSession>> ListSessionsByUserAsync(Guid userId, CancellationToken ct = default)
         => await _dbContext.UserSessions

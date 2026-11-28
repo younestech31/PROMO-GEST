@@ -71,6 +71,11 @@ public sealed class ProjectCustomer : BaseEntity
         };
     }
 
+    // Reservation creation depends on the customer being eligible. Rotate only the
+    // concurrency token so an archival racing that eligibility check cannot commit
+    // against a stale status; this is not a customer profile edit.
+    public void TouchReservationEligibility() => ConcurrencyStamp = Guid.NewGuid();
+
     public void AttachParty(Party party)
     {
         ArgumentNullException.ThrowIfNull(party);

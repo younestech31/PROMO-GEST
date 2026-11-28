@@ -265,6 +265,9 @@ public sealed class ProjectSalesReservationService
         // a stale project read loses with 409 and commits none of them. Callers must reload/retry,
         // never automatically retry a business operation against a changed eligibility state.
         project.Touch(nowUtc);
+        // Make the customer status read part of the same optimistic transaction. If
+        // archival commits first, this write conflicts and the hold is rolled back.
+        customer.TouchReservationEligibility();
         var reservationNumber = $"RSV-{nowUtc:yyyyMMdd}-{Guid.NewGuid():N}"[..21].ToUpperInvariant();
         unit.ReserveForSalesWorkflow(nowUtc);
         var reservation = ProjectSalesReservation.Create(
@@ -537,14 +540,27 @@ public sealed class ProjectSalesReservationExpiryProcessor
         var due = await _reservationRepository.ListDueForExpiryAsync(nowUtc, 100, ct);
         var expiredCount = 0;
 
-        foreach (var reservation in due)
+        // ProcessDueAsync is run in its own worker scope. Save each reservation
+        // separately so a single stale aggregate does not roll back the whole batch.
+        foreach (var candidate in due)
         {
-            if (await TryExpireAsync(reservation, nowUtc, ct))
-                expiredCount++;
-        }
+            try
+            {
+                var reservation = await _reservationRepository.GetByProjectAsync(candidate.ProjectId, candidate.Id, ct);
+                if (reservation is null || !await TryExpireAsync(reservation, nowUtc, ct))
+                    continue;
 
-        if (expiredCount > 0)
-            await _reservationRepository.SaveChangesAsync(ct);
+                await _reservationRepository.SaveChangesAsync(ct);
+                expiredCount++;
+            }
+            catch (ConflictDomainException exception) when (exception.Code == "RESERVATION_CONCURRENCY_CONFLICT")
+            {
+                // SaveChanges rolled back this reservation, unit, project and audit.
+                // Clear the failed tracked state before continuing with a fresh read;
+                // the skipped reservation will be reconsidered on the next pass.
+                _reservationRepository.DiscardTrackedChanges();
+            }
+        }
 
         return expiredCount;
     }

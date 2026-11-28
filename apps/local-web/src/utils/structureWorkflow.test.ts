@@ -50,6 +50,38 @@ for (const language of ['ar', 'fr'] as AppLanguage[]) {
     }
   });
 
+  test(`structure (${language}): committed write with failed refresh disables resubmission until reload`, async () => {
+    const original = { read: apiClient.getProjectStructure, write: apiClient.createProjectBuilding };
+    let reads = 0;
+    let writes = 0;
+    let notifications = 0;
+    apiClient.getProjectStructure = async () => { reads++; return structure; };
+    apiClient.createProjectBuilding = async () => {
+      writes++;
+      throw new ApiError(409, 'STRUCTURE_WRITE_COMMITTED_REFRESH_FAILED', 'saved');
+    };
+    const ui = await renderReact(createElement(ProjectStructureModal, {
+      project, language, mode: 'embedded', onStructureChanged: () => { notifications++; },
+    }));
+    try {
+      await ui.click(getTranslations(language).projects.createBuilding);
+      await ui.change('#structure-building-code', 'NEW');
+      await ui.submit('#structure-building-code');
+      assert.equal(writes, 1);
+      assert.equal(notifications, 1);
+      assert.equal(ui.container.querySelector('#structure-building-code'), null);
+      assert.equal(ui.container.querySelector('form'), null);
+      assert.match(ui.container.textContent ?? '', language === 'ar' ? /تم حفظ التغيير/ : /modification a été enregistrée/);
+      await ui.click(language === 'ar' ? 'إعادة تحميل الهيكل' : 'Recharger la structure');
+      assert.equal(reads, 2);
+      assert.equal(writes, 1);
+      await ui.click(getTranslations(language).projects.createBuilding);
+      assert.equal((ui.container.querySelector('#structure-building-code') as HTMLInputElement).value, '');
+    } finally {
+      await ui.cleanup(); apiClient.getProjectStructure = original.read; apiClient.createProjectBuilding = original.write;
+    }
+  });
+
   for (const kind of ['building', 'floor', 'unit', 'edit-unit', 'status'] as const) {
     test(`structure (${language}): ${kind} write locks context, rejects duplicate submits and preserves failed draft/stamp`, async () => {
       const original = { read: apiClient.getProjectStructure, create: apiClient.createProjectBuilding,

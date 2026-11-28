@@ -90,10 +90,11 @@ def run_navigation_embedded(admin_ctx, base, lang, device, out, project_id, *, f
             p06_page.locator('header button').filter(has=p06_page.locator('kbd')).click()
             switcher = p06_page.get_by_role('dialog')
             switcher.get_by_role('searchbox').fill(code)
-            # A project may appear more than once in the switcher (for example,
-            # in Recent and in All). These rows are duplicate actions for the same
-            # unique project code; choose the first exact accessible-name match.
-            row = switcher.get_by_role('button', name=code, exact=True)
+            # Project buttons expose a composed accessible name (code, project
+            # name, wilaya, municipality and status), not the code alone. The same
+            # project can also appear in Recent and All; filter its visible text and
+            # choose one real row without bypassing Playwright actionability.
+            row = switcher.get_by_role('button').filter(has_text=code)
             expect(row.first).to_be_visible()
             row.first.click()
 

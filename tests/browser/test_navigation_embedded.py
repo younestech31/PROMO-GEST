@@ -69,7 +69,7 @@ class EmbeddedNavigationSafetyTests(unittest.TestCase):
             "api.get('/api/projects', params={'q': 'QA-NAV-'})",
             "p06_page.locator('header button').filter(has=p06_page.locator('kbd')).click()",
             "switcher.get_by_role('searchbox').fill(code)",
-            "switcher.get_by_role('button', name=code, exact=True)",
+            "switcher.get_by_role('button').filter(has_text=code)",
             "row.first.click()",
             "section + '_embedded_project_switch_stay_preserves_draft'",
             "section + '_embedded_project_switch_discard_navigates_without_write'",

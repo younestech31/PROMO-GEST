@@ -2121,17 +2121,17 @@ public sealed class ApplicationSecurityAndFoundationTests
             await projectSvc.AssignMemberAsync(init.SystemAdminUserId, project.Id, new AssignProjectMemberRequest(viewerUser.Id, nameof(ProjectRole.ReadOnlyObserver), false, false, false, false), meta);
 
             // Admin uploads documents across categories and one customer identity document
-            async Task<ProjectDocumentDto> UploadTextAsync(Guid actorId, string name, string category)
+            async Task<ProjectDocumentDto> UploadTextAsync(Guid actorId, string name, string category, bool isIdentity = false)
             {
                 await using var ms = new MemoryStream(System.Text.Encoding.UTF8.GetBytes($"content-{name}"));
-                return await docSvc.UploadAsync(actorId, project.Id, ms, name, category, null, ms.Length, meta);
+                return await docSvc.UploadAsync(actorId, project.Id, ms, name, category, null, ms.Length, meta, isCustomerIdentitySensitive: isIdentity);
             }
 
             var financialDoc = await UploadTextAsync(init.SystemAdminUserId, "budget.txt", "Financial");
             var engineeringDoc = await UploadTextAsync(init.SystemAdminUserId, "plan.txt", "Engineering");
             var legalDoc = await UploadTextAsync(init.SystemAdminUserId, "title.txt", "Legal");
             var generalDoc = await UploadTextAsync(init.SystemAdminUserId, "note.txt", "Other");
-            var customerIdDoc = await UploadTextAsync(init.SystemAdminUserId, "cni-client.txt", "Commercial");
+            var customerIdDoc = await UploadTextAsync(init.SystemAdminUserId, "cni-client.txt", "Commercial", true);
 
             var party = Party.Create(Guid.NewGuid(), PartyKind.Person, "Amine Client", clock.UtcNow);
             var customer = ProjectCustomer.Create(
@@ -2175,7 +2175,7 @@ public sealed class ApplicationSecurityAndFoundationTests
             await Assert.ThrowsAsync<ForbiddenDomainException>(() => docSvc.GetDownloadAsync(siteUser.Id, project.Id, financialDoc.Id, meta));
 
             // Even if customer identity doc is uploaded under "Other", SiteEngineer (lacks customers.read) cannot see or download it
-            var disguisedIdDoc = await UploadTextAsync(init.SystemAdminUserId, "passport-other.txt", "Other");
+            var disguisedIdDoc = await UploadTextAsync(init.SystemAdminUserId, "passport-other.txt", "Other", true);
             var party2 = Party.Create(Guid.NewGuid(), PartyKind.Person, "Karima Client", clock.UtcNow);
             var customer2 = ProjectCustomer.Create(
                 project.Id,

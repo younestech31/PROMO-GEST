@@ -101,7 +101,7 @@ public sealed class ProjectDocumentService
         return files
             .Where(item =>
                 CanAccessCategory(actor.IsSystemAdministrator, membership, forUpload: false, item.File.Category) &&
-                (canReadCustomerIdentity || !identityDocIds.Contains(item.File.Id)))
+                (canReadCustomerIdentity || (!item.File.IsCustomerIdentitySensitive && !identityDocIds.Contains(item.File.Id))))
             .Select(item => Map(item.File, item.UploadedByFullName))
             .ToList();
     }
@@ -115,10 +115,13 @@ public sealed class ProjectDocumentService
         string? description,
         long declaredSize,
         RequestMetadata metadata,
-        CancellationToken ct = default)
+        CancellationToken ct = default,
+        bool isCustomerIdentitySensitive = true)
     {
-        var (actor, project, membership, _) = await RequireProjectAccessAsync(
+        var (actor, project, membership, permissions) = await RequireProjectAccessAsync(
             actorUserId, projectId, canWrite: true, metadata, ct);
+        if (isCustomerIdentitySensitive && !CanReadCustomerIdentityDocuments(actor, permissions))
+            throw new ForbiddenDomainException("CUSTOMER_IDENTITY_DOCUMENT_ACCESS_DENIED", "Customer read permission is required to upload identity documents.");
 
         var normalizedCategory = (category ?? string.Empty).Trim();
         if (!AllowedCategories.Contains(normalizedCategory))
@@ -176,6 +179,7 @@ public sealed class ProjectDocumentService
             actor.Id,
             MaxDocumentBytes,
             ct);
+        storedFile.ClassifyNewUpload(isCustomerIdentitySensitive);
 
         try
         {
@@ -191,7 +195,7 @@ public sealed class ProjectDocumentService
                     "StoredFile",
                     storedFile.Id.ToString(),
                     $"Uploaded project document '{storedFile.OriginalFileName}' to '{project.Code}'.",
-                    JsonSerializer.Serialize(new { projectId = project.Id, category = storedFile.Category, sizeBytes = storedFile.SizeBytes }),
+                    JsonSerializer.Serialize(new { projectId = project.Id, category = storedFile.Category, sizeBytes = storedFile.SizeBytes, identitySensitive = storedFile.IsCustomerIdentitySensitive }),
                     metadata.IpAddress,
                     metadata.UserAgent),
                 ct);
@@ -212,6 +216,33 @@ public sealed class ProjectDocumentService
         return Map(storedFile, actor.FullName);
     }
 
+    public async Task ReviewSensitivityAsync(
+        Guid actorUserId, Guid projectId, Guid fileId,
+        ReviewProjectDocumentSensitivityRequest request, RequestMetadata metadata,
+        CancellationToken ct = default)
+    {
+        var (actor, project, _, _) = await RequireProjectAccessAsync(actorUserId, projectId, canWrite: true, metadata, ct);
+        if (!actor.IsSystemAdministrator)
+            throw new ForbiddenDomainException("FILE_SENSITIVITY_REVIEW_FORBIDDEN", "Only the system administrator can classify legacy documents.");
+        var file = await _documentRepository.GetProjectDocumentAsync(project.Id, fileId, ct)
+            ?? throw new NotFoundDomainException("PROJECT_DOCUMENT_NOT_FOUND", "Project document was not found.");
+        if (request.ExpectedConcurrencyStamp == Guid.Empty || request.ExpectedConcurrencyStamp != file.ConcurrencyStamp)
+            throw new ConflictDomainException("CONCURRENCY_CONFLICT", "The document changed after it was loaded. Reload before reviewing it.");
+        if (!request.IsCustomerIdentitySensitive.HasValue)
+            throw new DomainException("FILE_SENSITIVITY_CLASSIFICATION_REQUIRED", "A sensitivity classification is required.");
+        if (!request.IsCustomerIdentitySensitive.Value && await _documentRepository.IsCustomerIdentityDocumentAsync(project.Id, file.Id, ct))
+            throw new ConflictDomainException("FILE_IDENTITY_LINKED", "A linked customer identity document cannot be classified as general.");
+
+        var nowUtc = _clock.UtcNow;
+        file.ReviewLegacySensitivity(request.IsCustomerIdentitySensitive.Value, nowUtc);
+        await _auditWriter.WriteAsync(AuditLog.Record(nowUtc, actor.Id, actor.Username,
+            "PROJECT_DOCUMENT_SENSITIVITY_REVIEWED", AuditSeverity.Security, "StoredFile", file.Id.ToString(),
+            "Reviewed the sensitivity of a legacy project document.",
+            JsonSerializer.Serialize(new { projectId, fileId, identitySensitive = file.IsCustomerIdentitySensitive }),
+            metadata.IpAddress, metadata.UserAgent), ct);
+        await _documentRepository.SaveChangesAsync(ct);
+    }
+
     public async Task<ProjectDocumentDownload> GetDownloadAsync(
         Guid actorUserId,
         Guid projectId,
@@ -226,7 +257,7 @@ public sealed class ProjectDocumentService
 
         var categoryAllowed = CanAccessCategory(actor.IsSystemAdministrator, membership, forUpload: false, file.Category);
         var isBlockedIdentityDocument = !CanReadCustomerIdentityDocuments(actor, permissions) &&
-            await _documentRepository.IsCustomerIdentityDocumentAsync(project.Id, file.Id, ct);
+            (file.IsCustomerIdentitySensitive || await _documentRepository.IsCustomerIdentityDocumentAsync(project.Id, file.Id, ct));
 
         if (!categoryAllowed || isBlockedIdentityDocument)
         {
@@ -470,5 +501,8 @@ public sealed class ProjectDocumentService
             file.Sha256Checksum,
             file.UploadedByUserId,
             uploadedByFullName,
-            file.CreatedAtUtc);
+            file.CreatedAtUtc,
+            file.IsCustomerIdentitySensitive,
+            file.RequiresSensitivityReview,
+            file.ConcurrencyStamp);
 }

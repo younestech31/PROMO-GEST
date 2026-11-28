@@ -12,7 +12,29 @@ A complete backup must preserve a consistent set of:
 
 Backing up only PostgreSQL leaves documents orphaned. Backing up database and documents without the Data Protection key ring can make previously protected payloads unreadable after restoration. Store backup bundles on encrypted media or an encrypted NAS and restrict access to the service and maintenance administrators.
 
-A document upload can leave unreferenced bytes if the process crashes or a database save fails. A save error can also mean the database committed but the acknowledgement was lost; the application therefore retains the file rather than risking deletion of a committed document. Before a user retries an uncertain upload, inspect the project document list and audit record. There is currently no automated storage reconciliation or orphan cleanup: investigate under a maintenance window with writes stopped, compare a consistent database snapshot of `stored_files.stored_relative_path` against a protected storage snapshot, and verify backups and references before considering any removal. Treat unmatched files as potentially confidential and do not delete them automatically or expose them through a web server. Missing referenced files require recovery from a matching backup; an orphan scan alone is not recovery.
+A document upload can leave unreferenced bytes if the process crashes or a database save fails. A save error can also mean the database committed but the acknowledgement was lost; the application therefore retains the file rather than risking deletion of a committed document. Before a user retries an uncertain upload, inspect the project document list and audit record. The read-only Linux reconciliation procedure below identifies candidates for investigation; it does **not** delete files or prove that an unmatched file is safe to delete. Treat unmatched files as potentially confidential and never expose them through a web server. Missing referenced files require recovery from a matching backup; an orphan scan alone is not recovery.
+
+### Read-only document storage reconciliation (Linux)
+
+During a maintenance window, stop **all** application instances and other storage/database writers. Use a matching restored database and storage snapshot captured consistently while writes were stopped; do not compare a live database against live storage. Restrict access to the snapshots and maintenance directory. The manifest and optional report contain sensitive paths; keep both outside the storage tree and web root, with a private parent directory. Use a read-only PostgreSQL identity and an approved protected credential mechanism. Example, from a maintenance shell with `SNAPSHOT_DATABASE` configured for the restored database and `STORAGE_SNAPSHOT` pointing to its corresponding storage snapshot:
+
+```bash
+umask 077
+work="$(mktemp -d)"
+# psql uses the maintenance account's normal protected connection configuration.
+if ! psql -X -qAt --set=ON_ERROR_STOP=1 --dbname="$SNAPSHOT_DATABASE" \
+  --command="SELECT COALESCE(json_agg(json_build_object('path', stored_relative_path, 'size', size_bytes, 'sha256', sha256_checksum)), '[]'::json) FROM stored_files;" \
+  > "$work/manifest.json"; then
+  echo 'Export failed; do not scan or treat it as an empty manifest.' >&2
+  exit 1
+fi
+python3 scripts/reconcile-document-storage.py --manifest "$work/manifest.json" \
+  --storage "$STORAGE_SNAPSHOT" --verify-content --report "$work/findings.json"
+```
+
+The tool prints counts only; the optional newly created mode-0600 JSON report contains relative paths and must be protected and disposed of according to local data-handling rules. It refuses existing reports, reports or manifests inside the storage tree, malformed/duplicate manifest paths, symlink roots and unreadable scans. Symlinks and other non-regular entries are flagged, not followed. Exit status `0` means no findings, `1` means findings, and `2` means the scan could not be completed. Review every candidate against the matching database, audit records and protected backups before any manual action; no automatic cleanup is provided.
+
+`--verify-content` reads each **referenced regular file** and compares its SHA-256 against the manifest; it requires valid checksums in every manifest record and may take considerable time and disk I/O. Unreferenced and non-regular entries are not read. If the file's observed identity, size or timestamps change during hashing, or it cannot be safely read, the scan fails rather than reporting a clean result. These checks do not detect every possible concurrent modification, so immutable snapshots and stopped writers remain mandatory. Omitting the flag supports older path-and-size manifests but checks only existence and size; the summary and report explicitly record whether checksum verification was requested. A clean result cannot verify that the database export is authentic or prove backup recoverability. Use the full restore verification procedure for recovery testing. Never rely on this procedure while writers are active, or on an incomplete export/snapshot.
 
 **Linux production path (implemented 2026-11-20):** the backup job now seals, packs, and encrypts the bundle with an X.509 recipient certificate, writes it together with a SHA-256 sidecar, copies and verifies it on an independent offsite mount, applies a retention policy that never prunes below the newest configured artefacts, and removes the unencrypted bundle by default. Encryption and offsite replication are fail-closed: the job refuses to run without a recipient certificate and an offsite target unless an operator explicitly acknowledges the risk in configuration.
 
@@ -193,3 +215,11 @@ Never treat a sanitized configuration archive as a substitute for the offline se
 ## 6. Caddy internal CA recovery
 
 The backup bundles preserve the Caddy configuration file, but they do **not** currently include Caddy's internal PKI/data directory. A same-machine restore normally retains the existing Caddy state if that directory was not lost. During a full host replacement or after loss of Caddy state, expect Caddy to use a new local CA; export the new Caddy root certificate and reinstall it on every trusted LAN workstation before users rely on HTTPS. Do not assume that restoring `Caddyfile` alone preserves the previous trust relationship.
+
+### Document sensitivity rollout and rollback
+
+Migration `20261128120000_ClassifyLegacyProjectDocuments` restricts every existing stored file as potentially containing customer identity information. Known current identity links remain restricted; all other legacy files require review. This can temporarily remove general-document access for users without customer-read permission. The document category (including Financial access controls) remains independent of sensitivity.
+
+A system administrator can download and inspect each restricted legacy project file, then use the document screen to classify it as either restricted identity or general. Review is audited and irreversible in that screen; marking a file general may grant access to additional project members, so inspect its entire contents first. General files cannot be linked as customer identity documents; upload a new copy as an identity document if necessary. Identity restrictions persist after a customer link is removed. New uploads default to restricted identity unless the uploader explicitly selects general. Older clients that omit the classification therefore fail closed and may be unable to upload without customer-read permission.
+
+Back up the database and document store together before the migration. Do **not** expose a downgraded application or database to ordinary users: older versions derive identity restrictions only from current links, so files unlinked before or after migration can be exposed. A rollback requires a separately reviewed access-control plan and restoration of a consistent backup; migration rollback alone removes the durable classification.

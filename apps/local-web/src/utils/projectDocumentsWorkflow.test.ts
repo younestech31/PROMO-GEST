@@ -11,6 +11,7 @@ function document(id: string, category = 'Plans'): ProjectDocumentDto {
     id, originalFileName: `${id}.pdf`, category, description: id === 'plan' ? 'Building A layout' : 'Permit dossier',
     contentType: 'application/pdf', sizeBytes: 128, sha256Checksum: 'a'.repeat(64),
     uploadedByUserId: 'operator', uploadedByFullName: 'Operator', createdAtUtc: '2026-11-20T10:00:00Z',
+    isCustomerIdentitySensitive: false, requiresSensitivityReview: false, concurrencyStamp: 'v1',
   };
 }
 

@@ -1324,6 +1324,7 @@ public sealed partial class PostgresEndToEndTests : IClassFixture<PostgreSql18In
             {
                 financialUpload.Add(new ByteArrayContent(financialDocumentBytes), "file", "project-budget.txt");
                 financialUpload.Add(new StringContent("Financial"), "category");
+                financialUpload.Add(new StringContent("false"), "isCustomerIdentitySensitive");
                 var financialUploadResponse = await adminClient.PostAsync(
                     $"/api/projects/{createdProject.Id}/documents",
                     financialUpload);
@@ -3487,6 +3488,7 @@ public sealed partial class PostgresEndToEndTests : IClassFixture<PostgreSql18In
         {
             genForm.Add(new ByteArrayContent(System.Text.Encoding.UTF8.GetBytes("general-note")), "file", "general.txt");
             genForm.Add(new StringContent("Other"), "category");
+                genForm.Add(new StringContent("false"), "isCustomerIdentitySensitive");
             var genUpload = await adminClient.PostAsync($"/api/projects/{project.Id}/documents", genForm);
             Assert.Equal(HttpStatusCode.Created, genUpload.StatusCode);
             generalDocId = (await genUpload.Content.ReadFromJsonAsync<ProjectDocumentDto>())!.Id;
@@ -3499,6 +3501,11 @@ public sealed partial class PostgresEndToEndTests : IClassFixture<PostgreSql18In
             Assert.Equal(HttpStatusCode.Created, idUpload.StatusCode);
             identityDocId = (await idUpload.Content.ReadFromJsonAsync<ProjectDocumentDto>())!.Id;
         }
+
+        // A general upload cannot later be attached as identity and silently exposed.
+        var badLink = await adminClient.PostAsJsonAsync($"/api/projects/{project.Id}/customers",
+            new CreateProjectCustomerRequest("Individual", "General Link", null, "0550123457", null, null, "fr", "WalkIn", generalDocId));
+        Assert.Equal(HttpStatusCode.Conflict, badLink.StatusCode);
 
         var customerResp = await adminClient.PostAsJsonAsync(
             $"/api/projects/{project.Id}/customers",
@@ -3553,8 +3560,34 @@ public sealed partial class PostgresEndToEndTests : IClassFixture<PostgreSql18In
         var piiError = await piiDownloadResp.Content.ReadFromJsonAsync<ApiErrorResponse>();
         Assert.Equal("PROJECT_DOCUMENT_ACCESS_DENIED", piiError!.Code);
 
+        var unlink = await adminClient.PutAsJsonAsync($"/api/projects/{project.Id}/customers/{createdCustomer.Id}",
+            new UpdateProjectCustomerRequest(createdCustomer.CustomerType, createdCustomer.DisplayName, createdCustomer.ContactPerson,
+                createdCustomer.Phone, createdCustomer.Email, createdCustomer.Address, createdCustomer.PreferredLanguage,
+                createdCustomer.Source, createdCustomer.Status, null, createdCustomer.ConcurrencyStamp, createdCustomer.PartyConcurrencyStamp));
+        Assert.Equal(HttpStatusCode.OK, unlink.StatusCode);
+        Assert.Equal(HttpStatusCode.Forbidden, (await siteClient.GetAsync($"/api/projects/{project.Id}/documents/{identityDocId}/download")).StatusCode);
+        var afterUnlink = await siteClient.GetFromJsonAsync<List<ProjectDocumentDto>>($"/api/projects/{project.Id}/documents");
+        Assert.DoesNotContain(afterUnlink!, d => d.Id == identityDocId);
+
+        // Simulate an unknown legacy file, exercise audited review and stale-write protection.
         using var scope = factory.Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+        await db.Database.ExecuteSqlInterpolatedAsync($"UPDATE stored_files SET is_customer_identity_sensitive = TRUE, requires_sensitivity_review = TRUE WHERE id = {generalDocId}");
+        Assert.Equal(HttpStatusCode.Forbidden, (await siteClient.GetAsync($"/api/projects/{project.Id}/documents/{generalDocId}/download")).StatusCode);
+        var adminDocs = await adminClient.GetFromJsonAsync<List<ProjectDocumentDto>>($"/api/projects/{project.Id}/documents");
+        var legacy = adminDocs!.Single(d => d.Id == generalDocId);
+        Assert.True(legacy.RequiresSensitivityReview);
+        var reviewPath = $"/api/projects/{project.Id}/documents/{generalDocId}/sensitivity-review";
+        var omittedChoice = await adminClient.PostAsJsonAsync(reviewPath, new { expectedConcurrencyStamp = legacy.ConcurrencyStamp });
+        Assert.Equal(HttpStatusCode.BadRequest, omittedChoice.StatusCode);
+        var stale = await adminClient.PostAsJsonAsync(reviewPath, new ReviewProjectDocumentSensitivityRequest(false, Guid.NewGuid()));
+        Assert.Equal(HttpStatusCode.Conflict, stale.StatusCode);
+        var review = await adminClient.PostAsJsonAsync(reviewPath, new ReviewProjectDocumentSensitivityRequest(false, legacy.ConcurrencyStamp));
+        Assert.Equal(HttpStatusCode.NoContent, review.StatusCode);
+        Assert.Equal(HttpStatusCode.OK, (await siteClient.GetAsync($"/api/projects/{project.Id}/documents/{generalDocId}/download")).StatusCode);
+        Assert.Equal(HttpStatusCode.Conflict, (await adminClient.PostAsJsonAsync(reviewPath,
+            new ReviewProjectDocumentSensitivityRequest(false, legacy.ConcurrencyStamp))).StatusCode);
+        Assert.Contains(await db.AuditLogs.ToListAsync(), a => a.EventType == "PROJECT_DOCUMENT_SENSITIVITY_REVIEWED" && a.TargetEntityId == generalDocId.ToString());
         Assert.Contains(await db.AuditLogs.ToListAsync(), a =>
             a.EventType == "ACCESS_DENIED" &&
             a.ActorUserId == siteUser.Id &&

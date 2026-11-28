@@ -241,6 +241,9 @@ export interface ProjectDocumentDto {
   uploadedByUserId: string;
   uploadedByFullName: string;
   createdAtUtc: string;
+  isCustomerIdentitySensitive: boolean;
+  requiresSensitivityReview: boolean;
+  concurrencyStamp: string;
 }
 
 export interface ProjectCustomerListItemDto {

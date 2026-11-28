@@ -10,4 +10,9 @@ public sealed record ProjectDocumentDto(
     string Sha256Checksum,
     Guid UploadedByUserId,
     string UploadedByFullName,
-    DateTimeOffset CreatedAtUtc);
+    DateTimeOffset CreatedAtUtc,
+    bool IsCustomerIdentitySensitive,
+    bool RequiresSensitivityReview,
+    Guid ConcurrencyStamp);
+
+public sealed record ReviewProjectDocumentSensitivityRequest(bool? IsCustomerIdentitySensitive, Guid ExpectedConcurrencyStamp);

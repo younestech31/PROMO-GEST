@@ -719,14 +719,14 @@ export function ProjectCustomerRegistryModal({
                     <span>{isArabic ? 'وثيقة الهوية المرتبطة (من وثائق المشروع)' : 'Pièce d’identité (documents du projet)'}</span>
                     <select className={inputClass} value={form.identityDocumentStoredFileId} onChange={(e) => setForm((current) => ({ ...current, identityDocumentStoredFileId: e.target.value }))}>
                       <option value="">{isArabic ? 'بدون وثيقة مرتبطة' : 'Aucune pièce liée'}</option>
-                      {documents.map((document) => (
+                      {documents.filter((document) => document.isCustomerIdentitySensitive && !document.requiresSensitivityReview).map((document) => (
                         <option key={document.id} value={document.id}>{document.originalFileName} · {document.category}</option>
                       ))}
                     </select>
                     <span className="text-[10px] font-normal text-slate-500">
                       {isArabic
-                        ? 'يتم ربط ملف موجود في مستندات هذا المشروع فقط. لا يخزن النظام رقم بطاقة الهوية في حقل مستقل.'
-                        : 'Seul un fichier déjà présent dans ce projet peut être lié. Le numéro de pièce n’est pas stocké dans un champ séparé.'}
+                        ? 'اختر ملفاً صُنّف كوثيقة هوية زبون عند الرفع. يجب مراجعة الملفات القديمة أولاً. لا يُخزن رقم الهوية في حقل مستقل.'
+                        : 'Choisissez un fichier classifié comme pièce d’identité client lors du téléversement. Les anciens fichiers doivent d’abord être examinés. Le numéro de pièce n’est pas stocké séparément.'}
                     </span>
                   </label>
 

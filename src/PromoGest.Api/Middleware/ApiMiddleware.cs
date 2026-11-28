@@ -35,7 +35,8 @@ public sealed class ExceptionHandlingMiddleware
                 _ => HttpStatusCode.BadRequest
             };
             if (ex is CommittedWriteResponseException)
-                _logger.LogWarning(ex, "Write committed but response refresh failed on {Method} {Path}", context.Request.Method, context.Request.Path);
+                _logger.LogWarning("A structure write committed but the response refresh failed. Exception type: {ExceptionType}",
+                    ex.InnerException?.GetType().Name);
 
             context.Response.StatusCode = (int)statusCode;
             await context.Response.WriteAsJsonAsync(new ApiErrorResponse(ex.Code, ex.Message));

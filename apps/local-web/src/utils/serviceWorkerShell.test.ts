@@ -29,7 +29,8 @@ function createWorkerHarness() {
   let failedAsset: string | null = null;
   const normalize = (request: string | { url: string }) => {
     const value = typeof request === 'string' ? request : request.url;
-    return value.startsWith('https://promogest.test') ? new URL(value).pathname : value;
+    const parsed = new URL(value, 'https://promogest.test');
+    return parsed.origin === 'https://promogest.test' ? `${parsed.pathname}${parsed.search}` : parsed.href;
   };
   const cache = {
     addAll: async (urls: string[]) => {
@@ -136,6 +137,7 @@ test('service worker never intercepts API, health, or non-GET requests', () => {
     { url: 'https://promogest.test/api/projects', method: 'GET', mode: 'cors' },
     { url: 'https://promogest.test/health/ready', method: 'GET', mode: 'cors' },
     { url: 'https://promogest.test/api/projects', method: 'POST', mode: 'cors' },
+    { url: 'https://promogest.test.attacker.example/assets/index-old.js', method: 'GET', mode: 'cors' },
   ]) {
     let intercepted = false;
     worker.handlers.fetch({ request, respondWith: () => { intercepted = true; } });

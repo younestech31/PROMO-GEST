@@ -465,6 +465,8 @@ public sealed partial class PostgresEndToEndTests
     public async Task ConcurrentFailedLoginUpdates_SerializeAndReachLockout()
     {
         var connection = await _fixture.CreateIsolatedDatabaseConnectionStringAsync();
+        Assert.False(new Npgsql.NpgsqlConnectionStringBuilder(connection).Pooling);
+        Assert.False(new Npgsql.NpgsqlConnectionStringBuilder(_fixture.GetMigrationConnectionString(connection)).Pooling);
         // Production enables retry-on-failure, which requires an execution strategy
         // around user-managed transactions.
         var options = new DbContextOptionsBuilder<AppDbContext>()

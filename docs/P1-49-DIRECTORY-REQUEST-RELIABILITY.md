@@ -7,8 +7,9 @@
 `da9988f51252f58b02f60e8deecd70962064a9ee` passed all eight PR checks:
 CI[46095458732](https://github.com/younestech31/PROMO-GEST/actions/runs/46095458732)
 and CodeQL[46095458725](https://github.com/younestech31/PROMO-GEST/actions/runs/46095458725).
-Independent merged-main CI46096601652/CodeQL46096601635 are pending at this
-checkpoint; do not inherit head results or close deferred manual acceptance.
+Independent merged-main CI[46096601652](https://github.com/younestech31/PROMO-GEST/actions/runs/46096601652) **PASS5/5** and
+CodeQL[46096601635](https://github.com/younestech31/PROMO-GEST/actions/runs/46096601635) **PASS** on the exact merge SHA.
+This independent check does not close deferred manual acceptance.
 
 ## Scope
 

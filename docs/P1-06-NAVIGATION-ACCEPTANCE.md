@@ -181,6 +181,29 @@ but artifact binary download redirects to a host unavailable from this workspace
 and returned EOF. No screenshot import/review is claimed; no signed redirect URL
 or credentials are stored in evidence. This does not change the executed CI results.
 
+## Bounded slice: embedded project switching — exact-head CI pending
+
+The current branch extends the actual C/D/E/K Playwright helper in the same disposable
+Development and Production HTTPS four-profile loops. The preceding dirty-settings
+helper creates one second project through the real ProjectManager API; this helper
+discovers it from the server-filtered project list and uses the visible shell
+ProjectSwitcherModal, not a constructed route or a mocked callback.
+
+For each embedded editor, the test:
+1. Creates a real incomplete draft and selects the second project in the switcher.
+2. Requires the App guard, absent shell Save action, and a real Stay that preserves
+   the original route/draft and all four source API collections.
+3. Repeats the real project selection and chooses Discard; requires navigation to the
+   second project's overview, unchanged API collections, an intact authenticated
+   session, and zero page API writes.
+4. Switches back to the original project and reopens the same editor, proving the
+   discarded draft was not restored.
+
+This is automated evidence only. No production data, permission grant, business
+mutation, schema, application runtime, or deployment change is included. The new
+exact-head CI/CodeQL result is pending; no pass is claimed until the four-profile
+Development and Production HTTPS runs, PostgreSQL 18 and restore gates complete.
+
 ## Nine-criterion evidence inventory (not promotion)
 
 | Live criterion | Existing implementation / evidence | Remaining acceptance work |

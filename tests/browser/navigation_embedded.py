@@ -45,6 +45,24 @@ def run_navigation_embedded(admin_ctx, base, lang, device, out, project_id, *, f
     assert identity_before.status == 200
     organization = identity_before.json()['organization']
 
+    # The preceding dirty-settings helper creates exactly one second project
+    # through the real ProjectManager API, in this same disposable profile only.
+    # Resolve it from the server list so this test never invents a project ID.
+    original_response = api.get(prefix)
+    assert original_response.status == 200
+    original_code = original_response.json()['code']
+    candidates_response = api.get('/api/projects', params={'q': 'QA-NAV-'})
+    assert candidates_response.status == 200
+    candidates = [
+        row for row in candidates_response.json()
+        if row.get('id') != project_id and str(row.get('code', '')).startswith('QA-NAV-')
+    ]
+    assert len(candidates) == 1
+    other_project = candidates[0]
+    other_project_id = str(uuid.UUID(other_project['id']))
+    other_project_code = other_project['code']
+    other_overview_url = base + '/projects/' + other_project_id + '/overview'
+
     def on_request(request):
         if '/api/' in request.url and request.method not in ('GET', 'HEAD', 'OPTIONS'):
             # Static boolean only, never record URL/body/cookies/file contents.
@@ -66,6 +84,19 @@ def run_navigation_embedded(admin_ctx, base, lang, device, out, project_id, *, f
                 p06_page.get_by_role('button', name='Open menu', exact=True).click()
             p06_page.get_by_role('navigation', name='Main navigation', exact=True).get_by_role(
                 'button', name=label, exact=True).click()
+
+        def switch_project(code):
+            # Use the real shell project switcher and server-filtered result.
+            p06_page.locator('header button').filter(has=p06_page.locator('kbd')).click()
+            switcher = p06_page.get_by_role('dialog')
+            switcher.get_by_role('searchbox').fill(code)
+            # Project buttons expose a composed accessible name (code, project
+            # name, wilaya, municipality and status), not the code alone. The same
+            # project can also appear in Recent and All; filter its visible text and
+            # choose one real row without bypassing Playwright actionability.
+            row = switcher.get_by_role('button').filter(has_text=code)
+            expect(row.first).to_be_visible()
+            row.first.click()
 
         def editor():
             if section == 'structure':
@@ -114,9 +145,48 @@ def run_navigation_embedded(admin_ctx, base, lang, device, out, project_id, *, f
             expect(field).to_be_enabled()
             initial_value = field.input_value()
             assert initial_value != draft
+
+            # Project switching from each embedded C/D/E/K draft must reach the
+            # App guard. Embedded forms intentionally have no shell Save callback.
             p06_page.evaluate('key => { window[key] = true; }', marker)
             field.fill(draft)
+            native_phase = 'embedded_project_switch_stay'
+            switch_project(other_project_code)
+            expect_guard()
+            guard.get_by_role('button', name=stay, exact=True).last.click()
+            expect(guard).to_have_count(0)
+            expect(p06_page).to_have_url(section_url)
+            expect(field).to_have_value(draft)
+            assert snapshot() == baseline
+            assert not writes
+            checks[section + '_embedded_project_switch_stay_preserves_draft'] = True
 
+            native_phase = 'embedded_project_switch_discard'
+            switch_project(other_project_code)
+            expect_guard()
+            guard.get_by_role('button', name=discard, exact=True).click()
+            expect(guard).to_have_count(0)
+            expect(p06_page).to_have_url(other_overview_url)
+            assert p06_page.evaluate('key => window[key] === true', marker)
+            assert snapshot() == baseline
+            assert not writes
+            assert api.get('/api/auth/me').status == 200
+            checks[section + '_embedded_project_switch_discard_navigates_without_write'] = True
+
+            native_phase = 'embedded_project_switch_return'
+            switch_project(original_code)
+            expect(p06_page).to_have_url(overview_url)
+            sidebar(arabic_label if lang == 'ar' else french_label)
+            expect(p06_page).to_have_url(section_url)
+            field = editor()
+            expect(field).not_to_have_value(draft)
+            assert snapshot() == baseline
+            assert not writes
+            checks[section + '_return_from_embedded_project_switch_reopens_clean_draft'] = True
+
+            # Continue with the existing internal navigation/logout/history checks.
+            p06_page.evaluate('key => { window[key] = true; }', marker)
+            field.fill(draft)
             sidebar('ملخص المشروع' if lang == 'ar' else 'Synthèse projet')
             expect_guard()
             p06_page.screenshot(path=out / f'p1-06-embedded-{section}-guard.png')
@@ -205,8 +275,8 @@ def run_navigation_embedded(admin_ctx, base, lang, device, out, project_id, *, f
     checks['all_four_collections_unchanged_and_no_page_api_mutations'] = True
     checks['administrator_session_and_organization_preserved_no_pageerror'] = True
     (out / 'navigation-embedded.json').write_text(json.dumps({
-        'scope': 'P1-06 C/D/E/K embedded drafts: internal/history/logout Stay, Back Discard, native Leave',
+        'scope': 'P1-06 C/D/E/K embedded drafts: project switch Stay/Discard, internal/history/logout Stay, Back Discard, native Leave',
         'fixture': fixture, 'language': lang, 'device': device, 'checks': checks,
         'limits': 'Incomplete drafts only; no embedded save is falsely offered. Native Chromium Leave, '
-                  'not OS crash/recovery. Logout Discard and project-switch embedded combinations remain separate.',
+                  'not OS crash/recovery. Logout Discard and the remaining protected-view mapping stay separate.',
     }, indent=2) + '\n')

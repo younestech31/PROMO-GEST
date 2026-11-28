@@ -63,6 +63,23 @@ class EmbeddedNavigationSafetyTests(unittest.TestCase):
                 found += 1
         self.assertEqual(found, 2)
 
+    def test_embedded_project_switch_uses_real_switcher_and_preserves_no_write_boundary(self):
+        helper = Path(__file__).with_name('navigation_embedded.py').read_text()
+        for contract in (
+            "api.get('/api/projects', params={'q': 'QA-NAV-'})",
+            "p06_page.locator('header button').filter(has=p06_page.locator('kbd')).click()",
+            "switcher.get_by_role('searchbox').fill(code)",
+            "switcher.get_by_role('button').filter(has_text=code)",
+            "row.first.click()",
+            "section + '_embedded_project_switch_stay_preserves_draft'",
+            "section + '_embedded_project_switch_discard_navigates_without_write'",
+            "assert snapshot() == baseline",
+            "assert not writes",
+        ):
+            self.assertIn(contract, helper)
+        self.assertNotIn("force=True", helper)
+        self.assertNotIn("page.route(", helper)
+
     def test_uses_canonical_embedded_route_labels(self):
         registry = (Path(__file__).resolve().parents[2] / 'apps/local-web/src/app/routeRegistry.ts').read_text()
         helper = Path(__file__).with_name('navigation_embedded.py').read_text()

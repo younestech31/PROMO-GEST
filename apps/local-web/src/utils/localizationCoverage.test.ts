@@ -122,3 +122,14 @@ test('every C# backend and preview middleware API error code has AR and FR trans
     `API error codes missing AR/FR localization: ${untranslated.join(', ')}`,
   );
 });
+
+test('expiry conflict explains preserved suspended/review holds instead of promising unconditional release', () => {
+  const ar = translateApiError('RESERVATION_EXPIRY_REACHED', '__UNMAPPED__', 'ar');
+  const fr = translateApiError('RESERVATION_EXPIRY_REACHED', '__UNMAPPED__', 'fr');
+  assert.match(ar, /المعلّقة/);
+  assert.match(ar, /المنتظرة للمراجعة/);
+  assert.match(ar, /حدّث القائمة/);
+  assert.match(fr, /projets suspendus/);
+  assert.match(fr, /attente de revue/);
+  assert.match(fr, /Actualisez la liste/);
+});

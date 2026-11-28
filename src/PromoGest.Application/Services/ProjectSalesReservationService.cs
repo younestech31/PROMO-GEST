@@ -18,6 +18,7 @@ public sealed class ProjectSalesReservationService
     private readonly IUserRepository _userRepository;
     private readonly IAuditWriter _auditWriter;
     private readonly IClock _clock;
+    private readonly ProjectSalesReservationExpiryProcessor _expiryProcessor;
 
     public ProjectSalesReservationService(
         IProjectSalesReservationRepository reservationRepository,
@@ -25,7 +26,8 @@ public sealed class ProjectSalesReservationService
         IProjectCustomerRepository customerRepository,
         IUserRepository userRepository,
         IAuditWriter auditWriter,
-        IClock clock)
+        IClock clock,
+        ProjectSalesReservationExpiryProcessor expiryProcessor)
     {
         _reservationRepository = reservationRepository;
         _projectRepository = projectRepository;
@@ -33,6 +35,7 @@ public sealed class ProjectSalesReservationService
         _userRepository = userRepository;
         _auditWriter = auditWriter;
         _clock = clock;
+        _expiryProcessor = expiryProcessor;
     }
 
     public async Task<IReadOnlyList<ProjectSalesReservationDto>> ListAsync(
@@ -324,9 +327,13 @@ public sealed class ProjectSalesReservationService
 
         if (reservation.ExpiresAtUtc <= _clock.UtcNow)
         {
+            // Reconcile this exact due reservation before returning the existing 409 contract.
+            // The shared processor preserves suspended projects and holds awaiting review.
+            await _expiryProcessor.ProcessReservationIfDueAsync(project.Id, reservation.Id, ct);
+
             throw new ConflictDomainException(
                 "RESERVATION_EXPIRY_REACHED",
-                "This reservation has reached its expiry time and will be closed by the expiry processor.");
+                "This reservation has reached its expiry time. The system reconciles it immediately when the project state permits; suspended projects and holds awaiting review remain unchanged.");
         }
 
         var unit = await _reservationRepository.GetPropertyUnitForProjectAsync(
@@ -508,15 +515,18 @@ public sealed class ProjectSalesReservationService
 public sealed class ProjectSalesReservationExpiryProcessor
 {
     private readonly IProjectSalesReservationRepository _reservationRepository;
+    private readonly IProjectRepository _projectRepository;
     private readonly IAuditWriter _auditWriter;
     private readonly IClock _clock;
 
     public ProjectSalesReservationExpiryProcessor(
         IProjectSalesReservationRepository reservationRepository,
+        IProjectRepository projectRepository,
         IAuditWriter auditWriter,
         IClock clock)
     {
         _reservationRepository = reservationRepository;
+        _projectRepository = projectRepository;
         _auditWriter = auditWriter;
         _clock = clock;
     }
@@ -529,45 +539,90 @@ public sealed class ProjectSalesReservationExpiryProcessor
 
         foreach (var reservation in due)
         {
-            var unit = await _reservationRepository.GetPropertyUnitForProjectAsync(
-                reservation.ProjectId, reservation.PropertyUnitId, ct);
-            if (unit is null)
-                continue;
-
-            var unitStateMatches = unit.Status == PropertyUnitStatus.Reserved;
-            if (unitStateMatches)
-                unit.ReleaseSalesReservation(nowUtc);
-
-            reservation.Expire(nowUtc);
-            await _auditWriter.WriteAsync(
-                AuditLog.Record(
-                    nowUtc,
-                    null,
-                    "system",
-                    unitStateMatches
-                        ? "PROJECT_RESERVATION_EXPIRED"
-                        : "PROJECT_RESERVATION_EXPIRED_UNIT_STATE_MISMATCH",
-                    unitStateMatches ? AuditSeverity.Info : AuditSeverity.Warning,
-                    "ProjectSalesReservation",
-                    reservation.Id.ToString(),
-                    unitStateMatches
-                        ? "Automatically expired a project unit reservation and released its unit."
-                        : "Automatically expired a reservation; the linked unit was not in the expected Reserved state and was left unchanged.",
-                    JsonSerializer.Serialize(new
-                    {
-                        projectId = reservation.ProjectId,
-                        reservationId = reservation.Id,
-                        propertyUnitId = reservation.PropertyUnitId
-                    }),
-                    null,
-                    "PROMO GEST reservation expiry worker"),
-                ct);
-            expiredCount++;
+            if (await TryExpireAsync(reservation, nowUtc, ct))
+                expiredCount++;
         }
 
         if (expiredCount > 0)
             await _reservationRepository.SaveChangesAsync(ct);
 
         return expiredCount;
+    }
+
+    /// <summary>
+    /// Reconciles one due reservation through the same path used by the worker.
+    /// A suspended project or a hold awaiting suspension review is deliberately left untouched.
+    /// </summary>
+    public async Task<bool> ProcessReservationIfDueAsync(
+        Guid projectId,
+        Guid reservationId,
+        CancellationToken ct = default)
+    {
+        var reservation = await _reservationRepository.GetByProjectAsync(projectId, reservationId, ct);
+        if (reservation is null)
+            return false;
+
+        var nowUtc = _clock.UtcNow;
+        if (!await TryExpireAsync(reservation, nowUtc, ct))
+            return false;
+
+        await _reservationRepository.SaveChangesAsync(ct);
+        return true;
+    }
+
+    private async Task<bool> TryExpireAsync(
+        ProjectSalesReservation reservation,
+        DateTimeOffset nowUtc,
+        CancellationToken ct)
+    {
+        if (reservation.Status != SalesReservationStatus.Active || reservation.ExpiresAtUtc > nowUtc)
+            return false;
+
+        // Load the tracked aggregate root. Touching its concurrency token makes expiry contend
+        // with project suspension; EF saves the root, reservation, unit and audit in one transaction.
+        var project = await _projectRepository.GetByIdWithMembersAsync(reservation.ProjectId, ct);
+        if (project is null ||
+            project.Status == ProjectStatus.Suspended ||
+            reservation.IsAwaitingReview)
+        {
+            return false;
+        }
+
+        var unit = await _reservationRepository.GetPropertyUnitForProjectAsync(
+            reservation.ProjectId, reservation.PropertyUnitId, ct);
+        if (unit is null)
+            return false;
+
+        project.Touch(nowUtc);
+        var unitStateMatches = unit.Status == PropertyUnitStatus.Reserved;
+        if (unitStateMatches)
+            unit.ReleaseSalesReservation(nowUtc);
+
+        reservation.Expire(nowUtc);
+        await _auditWriter.WriteAsync(
+            AuditLog.Record(
+                nowUtc,
+                null,
+                "system",
+                unitStateMatches
+                    ? "PROJECT_RESERVATION_EXPIRED"
+                    : "PROJECT_RESERVATION_EXPIRED_UNIT_STATE_MISMATCH",
+                unitStateMatches ? AuditSeverity.Info : AuditSeverity.Warning,
+                "ProjectSalesReservation",
+                reservation.Id.ToString(),
+                unitStateMatches
+                    ? "Automatically expired a project unit reservation and released its unit."
+                    : "Automatically expired a reservation; the linked unit was not in the expected Reserved state and was left unchanged.",
+                JsonSerializer.Serialize(new
+                {
+                    projectId = reservation.ProjectId,
+                    reservationId = reservation.Id,
+                    propertyUnitId = reservation.PropertyUnitId
+                }),
+                null,
+                "PROMO GEST reservation expiry worker"),
+            ct);
+
+        return true;
     }
 }

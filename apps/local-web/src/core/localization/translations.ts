@@ -1162,8 +1162,8 @@ const API_ERROR_MESSAGES: Record<string, { ar: string; fr: string }> = {
     fr: 'Cette réservation ne peut plus être clôturée car elle n’est plus active.',
   },
   RESERVATION_EXPIRY_REACHED: {
-    ar: 'انتهت مدة الحجز؛ سيغلقه النظام آلياً وتُحدّث حالة الوحدة.',
-    fr: 'La réservation a expiré ; le système la clôturera automatiquement et actualisera l’état de l’unité.',
+    ar: 'انتهت مدة الحجز. تُسوّى الحجوزات المؤهلة فوراً؛ تبقى حجوزات المشاريع المعلّقة والحجوزات المنتظرة للمراجعة محفوظة. حدّث القائمة لعرض الحالة الحالية.',
+    fr: 'L’échéance est atteinte. Les réservations éligibles sont régularisées immédiatement ; celles des projets suspendus ou en attente de revue sont préservées. Actualisez la liste pour afficher l’état actuel.',
   },
   RESERVATION_NOT_DUE: {
     ar: 'لم يحن موعد انتهاء هذا الحجز بعد.',

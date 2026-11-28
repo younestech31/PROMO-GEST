@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState, type FormEvent } from 'react';
+import { useCallback, useEffect, useRef, useState, type FormEvent } from 'react';
 import { Download, FileText, LoaderCircle, Upload, X } from 'lucide-react';
 import type { AppLanguage, ProjectDocumentDto, ProjectDto } from '@/types/erp';
 import { apiClient, ApiError } from '@/core/api/apiClient';
@@ -63,6 +63,15 @@ export function ProjectDocumentsModal({
   const [category, setCategory] = useState<string>('Other');
   const [description, setDescription] = useState('');
   const [error, setError] = useState<string | null>(null);
+  const [loadError, setLoadError] = useState<string | null>(null);
+  const [uploadSuccess, setUploadSuccess] = useState<string | null>(null);
+  const [query, setQuery] = useState('');
+  const [categoryFilter, setCategoryFilter] = useState('');
+  const listRequest = useRef(0);
+  const viewLifetime = useRef<object | null>(null);
+  const uploadRequest = useRef<object | null>(null);
+  const downloadRequest = useRef<object | null>(null);
+  const fileInput = useRef<HTMLInputElement | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [downloadingId, setDownloadingId] = useState<string | null>(null);
   const [pendingAction, setPendingAction] = useState<
@@ -70,6 +79,12 @@ export function ProjectDocumentsModal({
     | { kind: 'subView'; target: 'vault' | 'metadataPlanned' | 'linksPlanned' | 'retentionPlanned' }
     | null
   >(null);
+
+  const normalizedQuery = query.trim().normalize('NFKC').toLocaleLowerCase();
+  const visibleDocuments = documents.filter((item) =>
+    (!categoryFilter || item.category === categoryFilter) &&
+    (!normalizedQuery || [item.originalFileName, item.description]
+      .some((value) => value?.normalize('NFKC').toLocaleLowerCase().includes(normalizedQuery))));
 
   const isDirty = canUpload && (selectedFile !== null || description.trim() !== '' || category !== 'Other');
 
@@ -87,11 +102,11 @@ export function ProjectDocumentsModal({
     setSelectedFile(null);
     setDescription('');
     setCategory('Other');
-    const input = document.getElementById('project-document-file') as HTMLInputElement | null;
-    if (input) input.value = '';
+    if (fileInput.current) fileInput.current.value = '';
   };
 
   const requestClose = () => {
+    if (uploadRequest.current) return;
     if (isDirty) {
       setPendingAction({ kind: 'close' });
       return;
@@ -100,7 +115,7 @@ export function ProjectDocumentsModal({
   };
 
   const requestSwitchSubView = (target: 'vault' | 'metadataPlanned' | 'linksPlanned' | 'retentionPlanned') => {
-    if (target === subView) return;
+    if (uploadRequest.current || target === subView) return;
     if (isDirty) {
       setPendingAction({ kind: 'subView', target });
       return;
@@ -109,28 +124,52 @@ export function ProjectDocumentsModal({
   };
 
   const loadDocuments = useCallback(async () => {
+    const request = ++listRequest.current;
     setDocuments([]);
     setLoading(true);
-    setError(null);
+    setLoadError(null);
     try {
       const result = await apiClient.listProjectDocuments(project.id);
-      setDocuments(result);
+      if (request === listRequest.current) setDocuments(result);
     } catch (err) {
-      setError(err instanceof ApiError
+      if (request !== listRequest.current) return;
+      setLoadError(err instanceof ApiError
         ? translateApiError(err.code, err.message, language)
         : (isArabic ? 'تعذر تحميل وثائق المشروع.' : 'Impossible de charger les documents du projet.'));
     } finally {
-      setLoading(false);
+      if (request === listRequest.current) setLoading(false);
     }
   }, [project.id, isArabic]);
 
   useEffect(() => {
+    viewLifetime.current = { projectId: project.id };
+    uploadRequest.current = null;
+    downloadRequest.current = null;
+    setSubmitting(false);
+    setDownloadingId(null);
+    setSelectedFile(null);
+    setDescription('');
+    setCategory('Other');
+    if (fileInput.current) fileInput.current.value = '';
+    setQuery('');
+    setCategoryFilter('');
+    setSubView('vault');
+    setPendingAction(null);
+    setError(null);
+    setUploadSuccess(null);
+    return () => { viewLifetime.current = null; };
+  }, [project.id]);
+
+  useEffect(() => {
     void loadDocuments();
+    return () => { ++listRequest.current; };
   }, [loadDocuments]);
 
   const handleUpload = async (event: FormEvent) => {
     event.preventDefault();
+    if (!canUpload || uploadRequest.current) return;
     setError(null);
+    setUploadSuccess(null);
 
     if (!selectedFile) {
       setError(isArabic ? 'اختر ملفاً أولاً.' : 'Sélectionnez d’abord un fichier.');
@@ -148,29 +187,40 @@ export function ProjectDocumentsModal({
     form.append('category', category);
     form.append('description', description.trim());
 
+    const lifetime = viewLifetime.current;
+    const request = {};
+    uploadRequest.current = request;
     setSubmitting(true);
     try {
       await apiClient.uploadProjectDocument(project.id, form);
+      if (lifetime !== viewLifetime.current) return;
+      setUploadSuccess(selectedFile.name);
       setSelectedFile(null);
       setDescription('');
       setCategory('Other');
-      const input = document.getElementById('project-document-file') as HTMLInputElement | null;
-      if (input) input.value = '';
+      if (fileInput.current) fileInput.current.value = '';
       await loadDocuments();
     } catch (err) {
+      if (lifetime !== viewLifetime.current) return;
       setError(err instanceof ApiError
         ? translateApiError(err.code, err.message, language)
         : (isArabic ? 'فشل رفع الوثيقة إلى الخادم المحلي.' : 'Échec du téléversement vers le serveur local.'));
     } finally {
-      setSubmitting(false);
+      if (uploadRequest.current === request) uploadRequest.current = null;
+      if (lifetime === viewLifetime.current) setSubmitting(false);
     }
   };
 
   const handleDownload = async (item: ProjectDocumentDto) => {
+    if (downloadRequest.current || loading || loadError) return;
+    const request = {};
+    const lifetime = viewLifetime.current;
+    downloadRequest.current = request;
     setError(null);
     setDownloadingId(item.id);
     try {
       const blob = await apiClient.downloadProjectDocument(project.id, item.id);
+      if (lifetime !== viewLifetime.current) return;
       const objectUrl = URL.createObjectURL(blob);
       const anchor = document.createElement('a');
       anchor.href = objectUrl;
@@ -180,11 +230,13 @@ export function ProjectDocumentsModal({
       anchor.remove();
       window.setTimeout(() => URL.revokeObjectURL(objectUrl), 1000);
     } catch (err) {
+      if (lifetime !== viewLifetime.current) return;
       setError(err instanceof ApiError
         ? translateApiError(err.code, err.message, language)
         : (isArabic ? 'تعذر تنزيل الوثيقة.' : 'Impossible de télécharger le document.'));
     } finally {
-      setDownloadingId(null);
+      if (downloadRequest.current === request) downloadRequest.current = null;
+      if (lifetime === viewLifetime.current) setDownloadingId(null);
     }
   };
 
@@ -204,7 +256,7 @@ export function ProjectDocumentsModal({
             <button
               key={tab.id}
               type="button"
-              onClick={() => requestSwitchSubView(tab.id)}
+              disabled={submitting} onClick={() => requestSwitchSubView(tab.id)}
               className={`px-3 py-2 text-xs font-semibold border-b-2 transition-colors whitespace-nowrap ${
                 subView === tab.id
                   ? 'border-teal-800 text-teal-900 bg-white rounded-t'
@@ -242,8 +294,21 @@ export function ProjectDocumentsModal({
             </div>
           )}
 
+          {uploadSuccess && <p role="status" className="rounded border border-teal-200 bg-teal-50 px-3 py-2 text-xs text-teal-950">
+            {isArabic
+              ? `تم رفع «${uploadSuccess}» إلى الخادم. لا تُعد رفعه إذا تعذر تحديث القائمة.`
+              : `« ${uploadSuccess} » a été téléversé sur le serveur. Ne le renvoyez pas si le rechargement de la liste échoue.`}
+          </p>}
+          {loadError && <div role="alert" className="space-y-2 rounded border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-800">
+            <p>{loadError}</p>
+            <button type="button" disabled={loading || submitting} onClick={() => void loadDocuments()} className="rounded border border-red-300 px-3 py-2">
+              {isArabic ? 'إعادة تحميل الوثائق' : 'Recharger les documents'}
+            </button>
+          </div>}
+
           {canUpload && (
             <form onSubmit={handleUpload} className="space-y-3 rounded-md border border-slate-200 bg-slate-50 p-4">
+              <fieldset disabled={submitting} className="space-y-3">
               <h3 className="text-sm font-bold text-slate-900">
                 {isArabic ? 'رفع وثيقة جديدة إلى الخادم المحلي' : 'Ajouter un document au serveur local'}
               </h3>
@@ -252,6 +317,7 @@ export function ProjectDocumentsModal({
                   <span>{isArabic ? 'الملف' : 'Fichier'}</span>
                   <input
                     id="project-document-file"
+                    ref={fileInput}
                     type="file"
                     accept=".pdf,.png,.jpg,.jpeg,.webp,.doc,.docx,.xls,.xlsx,.txt,.csv"
                     onChange={(event) => setSelectedFile(event.target.files?.[0] ?? null)}
@@ -302,6 +368,7 @@ export function ProjectDocumentsModal({
                     : (isArabic ? 'رفع الوثيقة' : 'Téléverser')}
                 </button>
               </div>
+              </fieldset>
             </form>
           )}
 
@@ -319,25 +386,39 @@ export function ProjectDocumentsModal({
               <button
                 type="button"
                 onClick={() => void loadDocuments()}
-                disabled={loading}
+                disabled={loading || submitting}
                 className="text-xs font-medium text-teal-800 hover:underline disabled:opacity-50"
               >
                 {isArabic ? 'تحديث القائمة' : 'Actualiser'}
               </button>
             </div>
 
+            <div className="grid gap-2 sm:grid-cols-2">
+              <input type="search" aria-label={isArabic ? 'بحث في الوثائق المحملة' : 'Rechercher dans les documents chargés'}
+                value={query} onChange={(event) => setQuery(event.target.value)}
+                placeholder={isArabic ? 'اسم الملف أو الوصف...' : 'Nom du fichier ou description...'} className="rounded border border-slate-300 px-3 py-2 text-xs" />
+              <select aria-label={isArabic ? 'تصفية تصنيف الوثائق' : 'Filtrer par catégorie de document'}
+                value={categoryFilter} onChange={(event) => setCategoryFilter(event.target.value)} className="rounded border border-slate-300 px-3 py-2 text-xs">
+                <option value="">{isArabic ? 'كل التصنيفات' : 'Toutes les catégories'}</option>
+                {CATEGORIES.map((item) => <option key={item.code} value={item.code}>{isArabic ? item.ar : item.fr}</option>)}
+              </select>
+              <p aria-live="polite" className="text-[11px] text-slate-500">{isArabic ? `عرض ${visibleDocuments.length} من ${documents.length}` : `${visibleDocuments.length} sur ${documents.length}`}</p>
+              {(query || categoryFilter) && <button type="button" onClick={() => { setQuery(''); setCategoryFilter(''); }} className="text-xs font-semibold text-teal-800">{isArabic ? 'مسح التصفية' : 'Effacer les filtres'}</button>}
+            </div>
             {loading ? (
               <div className="flex items-center justify-center gap-2 py-8 text-xs text-slate-500">
                 <LoaderCircle className="h-4 w-4 animate-spin" />
                 {isArabic ? 'جارٍ تحميل الوثائق...' : 'Chargement des documents...'}
               </div>
-            ) : documents.length === 0 ? (
+            ) : loadError ? null : visibleDocuments.length === 0 ? (
               <div className="rounded border border-dashed border-slate-300 px-4 py-10 text-center text-xs text-slate-500">
-                {isArabic ? 'لا توجد وثائق مسجلة لهذا المشروع بعد.' : 'Aucun document enregistré pour ce projet.'}
+                {query || categoryFilter
+                  ? (isArabic ? 'لا توجد وثائق تطابق البحث والتصفية.' : 'Aucun document ne correspond aux filtres.')
+                  : (isArabic ? 'لا توجد وثائق مسجلة لهذا المشروع بعد.' : 'Aucun document enregistré pour ce projet.')}
               </div>
             ) : (
               <div className="divide-y divide-slate-100 rounded border border-slate-200">
-                {documents.map((item) => (
+                {visibleDocuments.map((item) => (
                   <article key={item.id} className="flex flex-col gap-3 p-3 sm:flex-row sm:items-center sm:justify-between">
                     <div className="flex min-w-0 items-start gap-3">
                       <div className="rounded bg-teal-50 p-2 text-teal-800">
@@ -361,7 +442,7 @@ export function ProjectDocumentsModal({
                     <button
                       type="button"
                       onClick={() => void handleDownload(item)}
-                      disabled={downloadingId === item.id}
+                      disabled={downloadingId !== null || loading}
                       className="inline-flex shrink-0 items-center justify-center gap-2 rounded border border-slate-200 px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50 disabled:opacity-50"
                     >
                       {downloadingId === item.id
@@ -391,6 +472,7 @@ export function ProjectDocumentsModal({
       confirmLabel={isArabic ? 'تجاهل والمتابعة' : 'Abandonner et continuer'}
       cancelLabel={isArabic ? 'البقاء في النموذج' : 'Rester sur le formulaire'}
       onConfirm={() => {
+        if (uploadRequest.current) return;
         const next = pendingAction;
         setPendingAction(null);
         resetUploadDraft();

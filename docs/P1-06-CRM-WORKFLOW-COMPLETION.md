@@ -1,5 +1,15 @@
 # Phase 1 / P1-06 — customer and Party workflow completion
 
+## Delivery checkpoint
+
+[PR #295](https://github.com/younestech31/PROMO-GEST/pull/295) merged at
+`36c637c0ad7c131d6a9fe6d3fb2c4c1fa61f7271` after all eight exact-head checks
+passed on `94d581d4425c1b411cae5b16cd9d242ab9321154`:
+CI[46098184595](https://github.com/younestech31/PROMO-GEST/actions/runs/46098184595)
+and CodeQL[46098184512](https://github.com/younestech31/PROMO-GEST/actions/runs/46098184512).
+Independent main CI46129790407 is pending and CodeQL46129790417 PASS at this
+checkpoint. P1-06 overall acceptance remains separate.
+
 ## Scope and work selection
 
 The operational backlog query returned no Phase 1 task in Ready or In Progress.

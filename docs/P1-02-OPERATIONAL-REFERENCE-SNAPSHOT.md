@@ -36,11 +36,11 @@ reads. This establishes an adopted **operational source**, not byte identity wit
 an earlier attachment. A subsequent [resumable captured-cell adapter](P1-02-SHEETS-CAPTURE.md)
 now persists bounded actual-source reads and reports exact gaps. The initial
 checkpoint contained 69 wilayas, 50 communes and 20 aliases. The current first-pass
-checkpoint contains **69 wilayas, 600 communes and all 151 aliases**, from complete
+checkpoint contains **69 wilayas, 1000 communes and all 151 aliases**, from complete
 connector responses, with transcription/provenance limitations explicitly retained.
 Only wilayas and aliases have a complete first pass; the next missing commune row
-is physical sheet row **602** (941 commune rows still missing). No independent
-second pass has been recorded. The 49 captured commune/alias intersections have
+is physical sheet row **1002** (541 commune rows still missing). No independent
+second pass has been recorded. The 101 captured commune/alias intersections have
 exact original AR/FR equality; this subset check is not complete source verification.
 The complete 1541/69/151 files have **not yet been captured and packaged**; there
 is no claimed source-snapshot checksum yet. A partial journal digest is not a

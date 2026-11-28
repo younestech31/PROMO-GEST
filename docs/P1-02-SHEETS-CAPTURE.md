@@ -172,3 +172,14 @@ The subsequent progress head `94f1626ee44d902741ffd915a214486dc89d871b` also pas
 all reported PR307 checks (PR CI46168332800, push CI46168328595 and
 CodeQL46168332756), including .NET/PG18 and production HTTPS evidence export.
 This supersedes that head's pending checkpoint, not the incomplete-source status.
+
+The 1000-commune checkpoint was reconciled against all 19 previously committed
+chunk hashes and eight added complete bounded reads. All 27 envelopes reload,
+with exact gap/count/digest agreement and empty second passes. After main PR308
+was merged on the same branch, local frontend209/209, TypeScript, build, lint,
+12 baseline,14 capture,21 preflight/package,10 offline import and15 offline
+storage-reconciliation tests passed; eight PG18 import cases were skipped locally.
+No local .NET/PostgreSQL success is claimed. The earlier `b6b7164` PR-merge docs
+check failed after main advanced; main integration and nine synchronized canonical
+checkpoints address that cause without changing the validator. Combined-head
+remote CI remains separate from these local checks and adopted-source verification.

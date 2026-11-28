@@ -1,6 +1,26 @@
 # P1-12 — Safe, immediate reservation-expiry reconciliation
 
-Status: **In Progress / Pending execution**, not production rollout approval.
+Status: **Implementation merged; final head verified; independent main pending.**
+Not production rollout approval.
+
+PR [292](https://github.com/younestech31/PROMO-GEST/pull/292) merged with exact
+head guard at01:44:38Z into `f89cc4448b89974440c2be2af527e9dcbac1f997`.
+Final head `34f7b564b594287cd30c25142cd5e087ad1447be`:
+CI[46093639878](https://github.com/younestech31/PROMO-GEST/actions/runs/46093639878)
+**PASS5/5** + CodeQL[46093639911](https://github.com/younestech31/PROMO-GEST/actions/runs/46093639911)
+**PASS**; all eight PR checks SUCCESS. Real PG18 integration, existing all-four
+Development/Production HTTPS profiles, restart, restore and export gates PASS.
+Local frontend119/119, TypeScript, baseline12/12, hygiene/secrets673/diff PASS.
+Arabic/French expiry-conflict wording now explicitly preserves suspended and
+review-required holds and instructs refreshing the list; no unconditional
+release or manual-cancel success is promised.
+
+Independent exact merged-main CI46094642448/CodeQL46094642443 pending at checkpoint;
+head success is not inherited. [Compact exact-run archive](evidence/p1-12-reservation-expiry/checks.json).
+Previous PR291 main8ff4330 CI46092836863/CodeQL46092836856 also independently PASS.
+Superseded source5924eb8 CI46093550987 explicitly cancelled to avoid wasting
+resources after the localized final head; its CodeQL was cancelled too.
+No evidence-only follow-up PR or new browser matrix is required.
 
 ## User-visible outcome
 
@@ -62,5 +82,6 @@ No sleeps, dropped assertions, disabled suites or synthetic browser evidence.
 The normal full CI/CodeQL, PG18, restore and existing four-profile browser gates
 remain in place. No extra browser scenarios were added for this backend change.
 Local checks do not substitute for .NET/PG execution (not installed locally).
-Final exact-head results and independent main verification must be checked before
-acceptance; this record does not claim either has run yet.
+Final exact-head results are verified above; independent merged-main verification
+remains pending before final task closure. No new screenshots or manual UI acceptance
+are claimed.

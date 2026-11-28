@@ -1,4 +1,4 @@
-import { lazy, Suspense, useEffect, useState, type FormEvent } from 'react';
+import { lazy, Suspense, useEffect, useRef, useState, type FormEvent } from 'react';
 import { ArrowUpRight, CalendarClock, FileText, FolderPlus, KeyRound, Layers3, Pencil, Search, ShieldAlert, Trash2, Users, UsersRound, X } from 'lucide-react';
 import type {
   AppLanguage,
@@ -90,7 +90,13 @@ export function ProjectsAccessView({
   const [pageSize, setPageSize] = useState(25);
   const [totalCount, setTotalCount] = useState(0);
   const [totalPages, setTotalPages] = useState(1);
-  const [usersLoaded, setUsersLoaded] = useState(false);
+  const [usersLoadedFor, setUsersLoadedFor] = useState<string | null>(null);
+  const userScope = `${currentUser.id}:${currentUser.concurrencyStamp}`;
+  const directoryRequest = useRef(0);
+  // Draft text is not an applied server filter. Paging and mutation refreshes
+  // must keep the successful query until the user explicitly applies another.
+  const appliedDirectory = useRef({ q: '', status: '', page: 1, pageSize: 25 });
+  const requestedDirectory = useRef(appliedDirectory.current);
 
   const [createOpen, setCreateOpen] = useState(false);
   const [editingProject, setEditingProject] = useState<ProjectDto | null>(null);
@@ -163,45 +169,61 @@ export function ProjectsAccessView({
     page?: number;
     pageSize?: number;
   }) => {
+    const requestId = ++directoryRequest.current;
+    const query = { ...appliedDirectory.current, ...filters };
+    query.q = query.q?.trim() ?? '';
+    query.status = query.status?.trim() ?? '';
+    requestedDirectory.current = query;
     setLoading(true);
     setError(null);
-    const activeQ = filters ? filters.q : searchQuery;
-    const activeStatus = filters ? filters.status : statusFilter;
-    const activePage = filters?.page ?? page;
-    const activePageSize = filters?.pageSize ?? pageSize;
+    // Never keep actionable rows from an older query after a failed refresh.
+    setProjects([]);
+    setTotalCount(0);
 
     try {
       const result = await apiClient.listProjectDirectoryPage({
-        q: activeQ?.trim() || undefined,
-        status: activeStatus?.trim() || undefined,
-        page: activePage,
-        pageSize: activePageSize,
+        q: query.q || undefined,
+        status: query.status || undefined,
+        page: query.page,
+        pageSize: query.pageSize,
       });
+      if (requestId !== directoryRequest.current) return;
+      appliedDirectory.current = { ...query, page: result.page, pageSize: result.pageSize };
       setProjects(result.items);
       setPage(result.page);
       setPageSize(result.pageSize);
       setTotalCount(result.totalCount);
       setTotalPages(Math.max(1, result.totalPages));
 
-      if (canManageUsers(currentUser) && !usersLoaded) {
+      if (canManageUsers(currentUser) && usersLoadedFor !== userScope) {
         const userList = await apiClient.listUsers();
+        if (requestId !== directoryRequest.current) return;
         setUsers(userList.filter((u) => !u.isSystemAdministrator && u.isActive));
-        setUsersLoaded(true);
+        setUsersLoadedFor(userScope);
       }
     } catch (err) {
+      if (requestId !== directoryRequest.current) return;
+      setProjects([]);
+      setTotalCount(0);
       if (err instanceof ApiError) {
         setError(translateApiError(err.code, err.message, language));
       } else {
         setError(language === 'ar' ? 'تعذر تحميل المشاريع.' : 'Impossible de charger les projets.');
       }
     } finally {
-      setLoading(false);
+      if (requestId === directoryRequest.current) setLoading(false);
     }
   };
 
+  // Reload only for a new authenticated actor/version, not every loader render.
+  // biome-ignore lint/correctness/useExhaustiveDependencies: actor lifecycle owns the initial load; actions use the current render's loader.
   useEffect(() => {
-    void loadData();
-  }, []);
+    setSearchQuery('');
+    setStatusFilter('');
+    setUsers([]);
+    void loadData({ q: '', status: '', page: 1, pageSize: 25 });
+    return () => { ++directoryRequest.current; };
+  }, [userScope]);
 
   const handleFilterSubmit = (e: FormEvent) => {
     e.preventDefault();
@@ -259,14 +281,14 @@ export function ProjectsAccessView({
           expectedConcurrencyStamp: editingProject.concurrencyStamp,
         };
         await apiClient.updateProject(editingProject.id, payload);
-        await loadData({ q: searchQuery, status: statusFilter, page });
+        await loadData();
       } else {
         await apiClient.createProject({
           ...canonicalForm,
           estimatedBudgetDzd: canEditProjectBudget ? canonicalForm.estimatedBudgetDzd : 0,
           buildingPermitDate: canonicalForm.buildingPermitDate || null,
         });
-        await loadData({ q: searchQuery, status: statusFilter, page: 1 });
+        await loadData({ page: 1 });
       }
 
       setCreateOpen(false);
@@ -350,7 +372,7 @@ export function ProjectsAccessView({
     try {
       const updated = await apiClient.assignProjectMember(accessProject.id, memberForm);
       setAccessProject(updated);
-      await loadData({ q: searchQuery, status: statusFilter, page });
+      await loadData();
     } catch (err) {
       if (err instanceof ApiError) {
         setModalError(translateApiError(err.code, err.message, language));
@@ -365,7 +387,7 @@ export function ProjectsAccessView({
     try {
       const updated = await apiClient.removeProjectMember(projectId, userId);
       setAccessProject(updated);
-      await loadData({ q: searchQuery, status: statusFilter, page });
+      await loadData();
     } catch (err) {
       if (err instanceof ApiError) {
         setModalError(translateApiError(err.code, err.message, language));
@@ -460,7 +482,7 @@ export function ProjectsAccessView({
           onChange={(e) => {
             const nextStatus = e.target.value;
             setStatusFilter(nextStatus);
-            void loadData({ q: searchQuery, status: nextStatus, page: 1 });
+            void loadData({ status: nextStatus, page: 1 });
           }}
           className={`${inputBaseClass} md:w-56`}
         >
@@ -477,8 +499,6 @@ export function ProjectsAccessView({
             value={pageSize}
             disabled={loading}
             onChange={(e) => void loadData({
-              q: searchQuery,
-              status: statusFilter,
               page: 1,
               pageSize: Number(e.target.value),
             })}
@@ -509,17 +529,21 @@ export function ProjectsAccessView({
 
       {error && (
         <div role="alert" className="rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">
-          {error}
+          <p>{error}</p>
+          <button type="button" onClick={() => void loadData(requestedDirectory.current)}
+            className="mt-2 rounded border border-red-300 px-3 py-2 text-xs font-semibold hover:bg-red-100">
+            {language === 'ar' ? 'إعادة المحاولة' : 'Réessayer'}
+          </button>
         </div>
       )}
 
-      <div className="bg-white border border-slate-200 rounded-lg overflow-hidden">
+      <div aria-busy={loading} className="bg-white border border-slate-200 rounded-lg overflow-hidden">
         {loading ? (
           <div className="p-8 space-y-3">
             <div className="h-10 bg-slate-100 rounded animate-pulse" />
             <div className="h-10 bg-slate-100 rounded animate-pulse" />
           </div>
-        ) : projects.length === 0 ? (
+        ) : error ? null : projects.length === 0 ? (
           <div className="p-12 text-center">
             <Users className="w-8 h-8 text-slate-400 mx-auto mb-3" aria-hidden="true" />
             <h2 className="text-sm font-bold text-slate-900">{t.projects.emptyTitle}</h2>
@@ -790,7 +814,7 @@ export function ProjectsAccessView({
             <button
               type="button"
               disabled={loading || page <= 1}
-              onClick={() => void loadData({ q: searchQuery, status: statusFilter, page: page - 1 })}
+              onClick={() => void loadData({ page: page - 1 })}
               className="rounded-md border border-slate-200 px-3 py-2 text-xs font-medium text-slate-700 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40"
             >
               {language === 'ar' ? 'السابق' : 'Précédent'}
@@ -801,7 +825,7 @@ export function ProjectsAccessView({
             <button
               type="button"
               disabled={loading || page >= totalPages}
-              onClick={() => void loadData({ q: searchQuery, status: statusFilter, page: page + 1 })}
+              onClick={() => void loadData({ page: page + 1 })}
               className="rounded-md border border-slate-200 px-3 py-2 text-xs font-medium text-slate-700 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40"
             >
               {language === 'ar' ? 'التالي' : 'Suivant'}

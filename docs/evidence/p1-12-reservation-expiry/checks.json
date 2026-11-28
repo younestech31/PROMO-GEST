@@ -1,0 +1,173 @@
+{
+  "scope": "Exact final PR292 head and prior PR291 main verification; not merged PR292 main verification or screenshot review",
+  "records": [
+    {
+      "runId": 46093639878,
+      "headSha": "34f7b564b594287cd30c25142cd5e087ad1447be",
+      "url": "https://github.com/younestech31/PROMO-GEST/actions/runs/46093639878",
+      "conclusion": "success",
+      "jobs": [
+        {
+          "name": "Documentation baseline consistency",
+          "conclusion": "success",
+          "jobId": 140819986717,
+          "criticalSteps": []
+        },
+        {
+          "name": "Frontend install, checks, and static hosting",
+          "conclusion": "success",
+          "jobId": 140819986835,
+          "criticalSteps": [
+            {
+              "name": "Frontend unit tests",
+              "conclusion": "success"
+            }
+          ]
+        },
+        {
+          "name": "Windows publish and PowerShell validation",
+          "conclusion": "success",
+          "jobId": 140820145983,
+          "criticalSteps": []
+        },
+        {
+          "name": ".NET 10 and PostgreSQL 18 least-privilege tests",
+          "conclusion": "success",
+          "jobId": 140820146111,
+          "criticalSteps": [
+            {
+              "name": "Run integration tests with separate database identities",
+              "conclusion": "success"
+            },
+            {
+              "name": "Surface failed integration tests as check-run annotations",
+              "conclusion": "skipped"
+            },
+            {
+              "name": "Run Phase 0 real-browser setup and logout checks (four disposable profiles)",
+              "conclusion": "success"
+            },
+            {
+              "name": "Rehearse isolated Production HTTPS staging and restart (four profiles)",
+              "conclusion": "success"
+            },
+            {
+              "name": "Run full database, storage, and Data Protection restore drill",
+              "conclusion": "success"
+            }
+          ]
+        },
+        {
+          "name": "Production HTTPS evidence export",
+          "conclusion": "success",
+          "jobId": 140822906996,
+          "criticalSteps": []
+        }
+      ]
+    },
+    {
+      "runId": 46093639911,
+      "headSha": "34f7b564b594287cd30c25142cd5e087ad1447be",
+      "url": "https://github.com/younestech31/PROMO-GEST/actions/runs/46093639911",
+      "conclusion": "success",
+      "jobs": [
+        {
+          "name": "Analyze csharp",
+          "conclusion": "success",
+          "jobId": 140820042681,
+          "criticalSteps": []
+        },
+        {
+          "name": "Analyze javascript-typescript",
+          "conclusion": "success",
+          "jobId": 140820042856,
+          "criticalSteps": []
+        }
+      ]
+    },
+    {
+      "runId": 46092836863,
+      "headSha": "8ff43304e0eff2a2133ebb4f1d07cf797cd929ac",
+      "url": "https://github.com/younestech31/PROMO-GEST/actions/runs/46092836863",
+      "conclusion": "success",
+      "jobs": [
+        {
+          "name": "Documentation baseline consistency",
+          "conclusion": "success",
+          "jobId": 140817458361,
+          "criticalSteps": []
+        },
+        {
+          "name": "Frontend install, checks, and static hosting",
+          "conclusion": "success",
+          "jobId": 140817458587,
+          "criticalSteps": [
+            {
+              "name": "Frontend unit tests",
+              "conclusion": "success"
+            }
+          ]
+        },
+        {
+          "name": "Windows publish and PowerShell validation",
+          "conclusion": "success",
+          "jobId": 140817616397,
+          "criticalSteps": []
+        },
+        {
+          "name": ".NET 10 and PostgreSQL 18 least-privilege tests",
+          "conclusion": "success",
+          "jobId": 140817616446,
+          "criticalSteps": [
+            {
+              "name": "Run integration tests with separate database identities",
+              "conclusion": "success"
+            },
+            {
+              "name": "Surface failed integration tests as check-run annotations",
+              "conclusion": "skipped"
+            },
+            {
+              "name": "Run Phase 0 real-browser setup and logout checks (four disposable profiles)",
+              "conclusion": "success"
+            },
+            {
+              "name": "Rehearse isolated Production HTTPS staging and restart (four profiles)",
+              "conclusion": "success"
+            },
+            {
+              "name": "Run full database, storage, and Data Protection restore drill",
+              "conclusion": "success"
+            }
+          ]
+        },
+        {
+          "name": "Production HTTPS evidence export",
+          "conclusion": "success",
+          "jobId": 140820539024,
+          "criticalSteps": []
+        }
+      ]
+    },
+    {
+      "runId": 46092836856,
+      "headSha": "8ff43304e0eff2a2133ebb4f1d07cf797cd929ac",
+      "url": "https://github.com/younestech31/PROMO-GEST/actions/runs/46092836856",
+      "conclusion": "success",
+      "jobs": [
+        {
+          "name": "Analyze csharp",
+          "conclusion": "success",
+          "jobId": 140817458550,
+          "criticalSteps": []
+        },
+        {
+          "name": "Analyze javascript-typescript",
+          "conclusion": "success",
+          "jobId": 140817458823,
+          "criticalSteps": []
+        }
+      ]
+    }
+  ]
+}

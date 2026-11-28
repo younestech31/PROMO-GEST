@@ -1,7 +1,8 @@
 ## القراءة الحالية تتقدم على السجل التاريخي أدناه
 
 راجع [مطابقة المعايير الحالية](PHASE-1-ACCEPTANCE-RECONCILIATION.ar.md) و[نقطة
-canonical](CURRENT-STATE-BASELINE.md): PR303 مدمج؛ P1-01/P1-35 Done/Verified
+canonical](CURRENT-STATE-BASELINE.md): PR304 مدمج؛ أُنجز [فاحص وتحزيم لقطة P1-02](P1-02-OPERATIONAL-REFERENCE-SNAPSHOT.md)
+دون ادعاء التقاط المصدر الكامل أو استيراده؛ P1-01/P1-35 Done/Verified
 بقبول تشغيلي مسجّل، وP1-02 In Progress. لا تُستخدم عبارة «أحدث» في العناوين
 التاريخية التالية كحالة حالية، ولا تورث نتائج CI ولا قبولًا يدويًا لمصدر أحدث.
 

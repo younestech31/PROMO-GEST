@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using PromoGest.Domain.Entities;
+using PromoGest.Domain.Reference;
 
 namespace PromoGest.Infrastructure.Persistence;
 
@@ -26,6 +27,14 @@ public sealed class AppDbContext : DbContext
     public DbSet<CustomerInteraction> CustomerInteractions => Set<CustomerInteraction>();
     public DbSet<ProjectSalesReservation> ProjectSalesReservations => Set<ProjectSalesReservation>();
     public DbSet<UserSession> UserSessions => Set<UserSession>();
+
+    // Staged, server-owned reference storage. No active-version selection or legacy rewrite.
+    public DbSet<AdministrativeReferenceVersion> AdministrativeReferenceVersions => Set<AdministrativeReferenceVersion>();
+    public DbSet<AdministrativeWilayaIdentity> AdministrativeWilayaIdentities => Set<AdministrativeWilayaIdentity>();
+    public DbSet<AdministrativeCommuneIdentity> AdministrativeCommuneIdentities => Set<AdministrativeCommuneIdentity>();
+    public DbSet<AdministrativeWilayaVersion> AdministrativeWilayaVersions => Set<AdministrativeWilayaVersion>();
+    public DbSet<AdministrativeCommuneVersion> AdministrativeCommuneVersions => Set<AdministrativeCommuneVersion>();
+    public DbSet<AdministrativeCommuneAlias> AdministrativeCommuneAliases => Set<AdministrativeCommuneAlias>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

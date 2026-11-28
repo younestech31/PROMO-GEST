@@ -1,4 +1,14 @@
-## Current operating checkpoint — PR #295 merged; document workflow batch — 28 November 2026
+## Current operating checkpoint — PR #296 merged; Phase 1 closure execution — 28 November 2026
+
+- **Verified live source:** GitHub `main` = `c0c32757ee109c3179d8a39ca40471fd7de7b336`, squash merge of [PR #296](https://github.com/younestech31/PROMO-GEST/pull/296), integrated on the mandated branch. All eight exact-head checks SUCCESS on `a54cd56`: CI46130175418 and CodeQL46130175356. Independent main CI46136104804 pending; CodeQL46136104813 PASS. [Document delivery](P1-06-DOCUMENT-WORKFLOW-COMPLETION.md).
+- **CRM independently verified:** PR295 main `36c637c` CI46129790407 and CodeQL46129790417 PASS; prior PR294 independent-main CI46098043619/CodeQL46098043550 PASS. Original P1-12 backend acceptance remains distinct.
+- **Bounded closure execution, not yet verified remotely:** actual document upload/acknowledged-write plus injected list-failure/read-only retry, filters, checksum download and unauthorized router non-mounting added to existing four-profile Development/Production fixtures without new actors/grants. Local target guard2/2; new actual browser execution pending own CI. Added read-only Linux host evidence collector; local synthetic privacy/fail-closed checks9/9. Frontend155/155 and TypeScript PASS. [Execution, operator commands and blocker ledger](PHASE-1-CLOSURE-EXECUTION.ar.md).
+- **Evidence boundary:** owner's pasted other-environment QA report is recorded as reported evidence, not independently reproduced/reviewed artifacts. P1-06/P1-20/P1-49 remain In Review pending final criterion reconciliation; no fabricated visual acceptance. Linux collector never grants Phase1 acceptance or performs migration/restore/service mutation; Windows/actual AI Studio/institution-host gates separate.
+- **Preserved gates:** Phase1 IN_PROGRESS, Phases2–5 gated; P1-08 explicit owner category policy, P1-11 actual preflight/drift resolution/restore/migration, institutional/legal/release decisions outstanding. P1-01/P1-35 Deferred/P1-02 Blocked; no Sheets import or professional signoff. No API/schema/permissions/KYC/retention/DocumentLink/financial/deployment changes.
+
+---
+
+## Historical operating checkpoint — PR #295 merged; document workflow batch — 28 November 2026
 
 - **Verified live source:** GitHub `main` = `36c637c0ad7c131d6a9fe6d3fb2c4c1fa61f7271`, squash merge of [PR #295](https://github.com/younestech31/PROMO-GEST/pull/295); integrated on the mandated branch. Restored local Git history from the fetched branch only after a temporary-index comparison proved the persisted working files exactly matched remote `94d581d`; no worktree content was overwritten.
 - **Delivered CRM workflows:** exact head `94d581d` CI46098184595 and CodeQL46098184512 PASS; all eight checks SUCCESS before merge. Six bounded work packages cover customer navigation/drafts, reliable reads/retry, truthful customer/interaction save outcomes, loaded registry filters and central Party identity/search safety. Independent main CI46129790407 pending; CodeQL46129790417 PASS at checkpoint. [Implementation](P1-06-CRM-WORKFLOW-COMPLETION.md).

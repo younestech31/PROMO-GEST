@@ -280,6 +280,8 @@ def run_project_budget(browser, admin_ctx, base, lang, device, viewport, out, *,
         assert not errors, 'P1-05 browser reported an uncaught application error'
         # P1-06 runs only after budget assertions, reusing these real sessions and
         # restoring membership capabilities before later team/session fixtures.
+        from document_workflow import run_document_workflow
+        run_document_workflow(admin_ctx, finance_ctx, base, lang, device, out, project_id, fixture=fixture)
         from navigation_revocation import run_navigation_revocation
         run_navigation_revocation(admin_ctx, director_ctx, director_page, base, lang, device,
                                   out, project_id, finance_id, fixture=fixture)

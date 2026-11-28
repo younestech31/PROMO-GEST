@@ -36,15 +36,23 @@ reads. This establishes an adopted **operational source**, not byte identity wit
 an earlier attachment. A subsequent [resumable captured-cell adapter](P1-02-SHEETS-CAPTURE.md)
 now persists bounded actual-source reads and reports exact gaps. The initial
 checkpoint contained 69 wilayas, 50 communes and 20 aliases. The current first-pass
-checkpoint contains **69 wilayas, 1000 communes and all 151 aliases**, from complete
-connector responses, with transcription/provenance limitations explicitly retained.
-Only wilayas and aliases have a complete first pass; the next missing commune row
-is physical sheet row **1002** (541 commune rows still missing). No independent
-second pass has been recorded. The 101 captured commune/alias intersections have
-exact original AR/FR equality; this subset check is not complete source verification.
-The complete 1541/69/151 files have **not yet been captured and packaged**; there
-is no claimed source-snapshot checksum yet. A partial journal digest is not a
-source snapshot ID. Do not treat hashes of synthetic inputs as source evidence.
+checkpoint contains **69 wilayas, all 1541 communes and all 151 aliases**, in 38
+complete first-pass connector responses, with transcription/provenance limitations
+explicitly retained. First-pass structural inspection through the unchanged
+production-profile preflight reconciled all child counts and all 151 original
+AR/FR alias targets; declared/observed dairas remain 550/549, seats 460 yes / 1081
+unknown / 0 no. The aggregate separately labels its first-pass hashes as unverified,
+not sealed source evidence.
+
+Fresh second-pass reads now match all 69 wilayas and commune physical rows
+1002–1051 exactly (40 registered chunks overall). Commune and alias second passes
+remain incomplete and begin/resume at physical row 1, skipping the commune interval
+already retained. A live intermediate metadata/count/tail/extra-column recheck
+found no profile expansion; it must be repeated before finalization.
+The complete 1541/69/151 **two-pass package has not yet been created**; the journal
+digest and provisional first-pass content digest are not sealed source snapshot
+IDs. No actual-source import or activation is claimed. Do not treat hashes of
+synthetic inputs as source evidence.
 
 Sample cells were also read, including `0101`/`01`, a blank seat marker at `0102`,
 and aliases such as reference FR `Chief` → alias FR `Chlef`. Original labels,

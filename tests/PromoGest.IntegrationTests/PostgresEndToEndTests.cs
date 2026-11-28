@@ -1276,7 +1276,6 @@ public sealed partial class PostgresEndToEndTests : IClassFixture<PostgreSql18In
             {
                 documentUpload.Add(new ByteArrayContent(permitBytes), "file", "building-permit.pdf");
                 documentUpload.Add(new StringContent("Permits"), "category");
-                documentUpload.Add(new StringContent("false"), "isCustomerIdentitySensitive");
                 documentUpload.Add(new StringContent("Permis de construire initial"), "description");
                 var uploadResponse = await adminClient.PostAsync(
                     $"/api/projects/{createdProject.Id}/documents",

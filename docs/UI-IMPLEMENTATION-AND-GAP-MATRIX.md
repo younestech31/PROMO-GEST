@@ -1,3 +1,12 @@
+## Module C functional follow-up — current editor recovery
+
+The current structure editor has read failure/retry states, project-scoped async
+lifetimes, stable drafts on language change, synchronous write locking and frozen
+context/form controls while saving. Failed writes retain draft/stamp; obsolete
+completions cannot affect the next project. Remote verification pending; no manual
+visual acceptance claimed. [Scope and limits](P1-06-STRUCTURE-WORKFLOW-COMPLETION.md).
+No delete, bulk generation, pricing or unified property-file feature is added.
+
 ## Module K functional follow-up — existing document workflow
 
 Upload intent is protected while pending; known upload success remains distinct

@@ -1,4 +1,4 @@
-import { useEffect, useState, type FormEvent } from 'react';
+import { useEffect, useRef, useState, type FormEvent } from 'react';
 import { Building2, ChevronDown, ChevronRight, Layers3, Pencil, Plus, X } from 'lucide-react';
 import type {
   AppLanguage,
@@ -58,7 +58,13 @@ const NEXT_UNIT_STATUSES: Record<string, string[]> = {
   AvailableForSale: ['Withdrawn'],
 };
 
-export function ProjectStructureModal({
+// A project change owns a fresh editor lifetime: never carry a draft or a
+// completion from one project into another, even when the caller reuses the view.
+export function ProjectStructureModal(props: ProjectStructureModalProps) {
+  return <ProjectStructureEditor key={props.project.id} {...props} />;
+}
+
+function ProjectStructureEditor({
   project,
   language,
   mode = 'modal',
@@ -74,6 +80,10 @@ export function ProjectStructureModal({
   const [selectedBuildingId, setSelectedBuildingId] = useState<string | null>(null);
   const [selectedFloorId, setSelectedFloorId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState(false);
+  const listRequest = useRef(0);
+  const lifetime = useRef<object | null>(null);
+  const mutation = useRef<object | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -145,6 +155,7 @@ export function ProjectStructureModal({
   };
 
   const requestClose = () => {
+    if (mutation.current) return;
     if (isDirty) {
       setPendingAction({ kind: 'close' });
       return;
@@ -153,7 +164,7 @@ export function ProjectStructureModal({
   };
 
   const requestSwitchSubView = (target: 'registry' | 'unitFilePlanned') => {
-    if (target === subView) return;
+    if (mutation.current || target === subView) return;
     if (isDirty) {
       setPendingAction({ kind: 'subView', target });
       return;
@@ -162,25 +173,42 @@ export function ProjectStructureModal({
   };
 
   const loadStructure = async () => {
+    if (mutation.current) return;
+    const request = ++listRequest.current;
     setLoading(true);
-    setError(null);
+    setLoadError(false);
+    setStructure(null);
     try {
       const result = await apiClient.getProjectStructure(project.id);
-      setStructure(result);
-    } catch (err) {
-      setError(
-        err instanceof ApiError
-          ? translateApiError(err.code, err.message, language)
-          : (language === 'ar' ? 'تعذر تحميل الهيكل العقاري للمشروع.' : 'Impossible de charger la structure du projet.')
-      );
+      if (request === listRequest.current) setStructure(result);
+    } catch {
+      if (request === listRequest.current) setLoadError(true);
     } finally {
-      setLoading(false);
+      if (request === listRequest.current) setLoading(false);
     }
   };
 
+  // Server DTOs are language-neutral. Language changes must not refetch data,
+  // discard drafts, or race with an acknowledged write.
   useEffect(() => {
+    lifetime.current = {};
     void loadStructure();
-  }, [project.id, language]);
+    return () => { lifetime.current = null; ++listRequest.current; };
+  }, []);
+
+  const beginMutation = () => {
+    if (mutation.current || loading || loadError || !structure) return null;
+    const request = {};
+    mutation.current = request;
+    setError(null);
+    setSubmitting(true);
+    return { request, owner: lifetime.current };
+  };
+
+  const finishMutation = (operation: { request: object; owner: object | null }) => {
+    if (mutation.current === operation.request) mutation.current = null;
+    if (operation.owner === lifetime.current) setSubmitting(false);
+  };
 
   const selectedBuilding = structure?.buildings.find(
     (building) => building.id === selectedBuildingId
@@ -199,8 +227,8 @@ export function ProjectStructureModal({
 
   const handleCreateBuilding = async (event: FormEvent) => {
     event.preventDefault();
-    setError(null);
-    setSubmitting(true);
+    const operation = beginMutation();
+    if (!operation) return;
     const buildingBeingEdited = structure?.buildings.find((item) => item.id === editingBuildingId);
     try {
       if (editingBuildingId && !buildingBeingEdited) {
@@ -212,6 +240,7 @@ export function ProjectStructureModal({
             expectedConcurrencyStamp: buildingBeingEdited!.concurrencyStamp,
           })
         : await apiClient.createProjectBuilding(project.id, buildingForm);
+      if (operation.owner !== lifetime.current) return;
       setStructure(result);
       onStructureChanged?.();
       if (!editingBuildingId) {
@@ -228,21 +257,22 @@ export function ProjectStructureModal({
       setEditingBuildingId(null);
       setShowBuildingForm(false);
     } catch (err) {
+      if (operation.owner !== lifetime.current) return;
       showMutationError(
         err,
         editingBuildingId ? 'تعذر تعديل بيانات العمارة.' : 'فشل إضافة العمارة.',
         editingBuildingId ? 'Impossible de modifier le bâtiment.' : 'Échec de l’ajout du bâtiment.'
       );
     } finally {
-      setSubmitting(false);
+      finishMutation(operation);
     }
   };
 
   const handleCreateFloor = async (event: FormEvent) => {
     event.preventDefault();
     if (!selectedBuilding) return;
-    setError(null);
-    setSubmitting(true);
+    const operation = beginMutation();
+    if (!operation) return;
     const floorBeingEdited = selectedBuilding.floors.find((item) => item.id === editingFloorId);
     try {
       if (editingFloorId && !floorBeingEdited) {
@@ -259,6 +289,7 @@ export function ProjectStructureModal({
             }
           )
         : await apiClient.createBuildingFloor(project.id, selectedBuilding.id, floorForm);
+      if (operation.owner !== lifetime.current) return;
       setStructure(result);
       onStructureChanged?.();
       if (!editingFloorId) {
@@ -275,13 +306,14 @@ export function ProjectStructureModal({
       setEditingFloorId(null);
       setShowFloorForm(false);
     } catch (err) {
+      if (operation.owner !== lifetime.current) return;
       showMutationError(
         err,
         editingFloorId ? 'تعذر تعديل بيانات الطابق.' : 'فشل إضافة الطابق.',
         editingFloorId ? 'Impossible de modifier l’étage.' : 'Échec de l’ajout de l’étage.'
       );
     } finally {
-      setSubmitting(false);
+      finishMutation(operation);
     }
   };
 
@@ -324,8 +356,8 @@ export function ProjectStructureModal({
   const handleCreateUnit = async (event: FormEvent) => {
     event.preventDefault();
     if (!selectedBuilding || !selectedFloor) return;
-    setError(null);
-    setSubmitting(true);
+    const operation = beginMutation();
+    if (!operation) return;
     try {
       const result = await apiClient.createFloorUnit(
         project.id,
@@ -344,6 +376,7 @@ export function ProjectStructureModal({
           roomsCount: unitForm.roomsCount === '' ? null : Number(unitForm.roomsCount),
         }
       );
+      if (operation.owner !== lifetime.current) return;
       setStructure(result);
       onStructureChanged?.();
       setUnitForm({
@@ -357,9 +390,10 @@ export function ProjectStructureModal({
       setUnitEdited(false);
       setShowUnitForm(false);
     } catch (err) {
+      if (operation.owner !== lifetime.current) return;
       showMutationError(err, 'فشل إضافة الوحدة العقارية.', 'Échec de l’ajout de l’unité immobilière.');
     } finally {
-      setSubmitting(false);
+      finishMutation(operation);
     }
   };
 
@@ -379,8 +413,8 @@ export function ProjectStructureModal({
   const handleUpdateUnit = async (event: FormEvent, unit: PropertyUnitDto) => {
     event.preventDefault();
     if (!selectedBuilding || !selectedFloor) return;
-    setError(null);
-    setSubmitting(true);
+    const operation = beginMutation();
+    if (!operation) return;
     try {
       const result = await apiClient.updatePropertyUnit(
         project.id,
@@ -400,14 +434,16 @@ export function ProjectStructureModal({
           expectedConcurrencyStamp: unit.concurrencyStamp,
         }
       );
+      if (operation.owner !== lifetime.current) return;
       setStructure(result);
       onStructureChanged?.();
       setEditUnitEdited(false);
       setEditingUnitId(null);
     } catch (err) {
+      if (operation.owner !== lifetime.current) return;
       showMutationError(err, 'تعذر حفظ تعديلات الوحدة.', 'Impossible d’enregistrer les modifications de l’unité.');
     } finally {
-      setSubmitting(false);
+      finishMutation(operation);
     }
   };
 
@@ -416,8 +452,8 @@ export function ProjectStructureModal({
     const nextStatus = statusSelections[unit.id] ?? NEXT_UNIT_STATUSES[unit.status]?.[0];
     if (!nextStatus || nextStatus === unit.status) return;
 
-    setError(null);
-    setSubmitting(true);
+    const operation = beginMutation();
+    if (!operation) return;
     try {
       const result = await apiClient.changePropertyUnitStatus(
         project.id,
@@ -429,6 +465,7 @@ export function ProjectStructureModal({
           expectedConcurrencyStamp: unit.concurrencyStamp,
         }
       );
+      if (operation.owner !== lifetime.current) return;
       setStructure(result);
       onStructureChanged?.();
       setStatusSelections((current) => {
@@ -437,9 +474,10 @@ export function ProjectStructureModal({
         return updated;
       });
     } catch (err) {
+      if (operation.owner !== lifetime.current) return;
       showMutationError(err, 'تعذر تحديث حالة الوحدة.', 'Impossible de mettre à jour le statut de l’unité.');
     } finally {
-      setSubmitting(false);
+      finishMutation(operation);
     }
   };
 
@@ -462,7 +500,7 @@ export function ProjectStructureModal({
     <>
       {mode === 'embedded' && (
         <div className="flex flex-wrap gap-1.5 border-b border-slate-200 px-4 pt-3 bg-slate-50/70">
-          <button
+          <button disabled={submitting}
             type="button"
             onClick={() => requestSwitchSubView('registry')}
             className={`px-3 py-2 text-xs font-semibold border-b-2 transition-colors ${
@@ -473,7 +511,7 @@ export function ProjectStructureModal({
           >
             {language === 'ar' ? 'العمارات والطوابق والوحدات' : 'Bâtiments, étages & unités'}
           </button>
-          <button
+          <button disabled={submitting}
             type="button"
             onClick={() => requestSwitchSubView('unitFilePlanned')}
             className={`px-3 py-2 text-xs font-semibold border-b-2 transition-colors ${
@@ -506,8 +544,15 @@ export function ProjectStructureModal({
             </p>
           </div>
         </div>
+      ) : loadError ? (
+        <div role="alert" className="m-5 rounded border border-red-200 bg-red-50 p-4 text-sm text-red-800">
+          <p>{language === 'ar' ? 'تعذر تحميل الهيكل العقاري للمشروع.' : 'Impossible de charger la structure du projet.'}</p>
+          <button disabled={submitting} type="button" onClick={() => void loadStructure()} className="mt-3 underline">
+            {language === 'ar' ? 'إعادة تحميل الهيكل' : 'Recharger la structure'}
+          </button>
+        </div>
       ) : loading ? (
-        <div className="p-8 space-y-3">
+        <div role="status" aria-busy="true" aria-label={language === 'ar' ? 'جارٍ تحميل الهيكل' : 'Chargement de la structure'} className="p-8 space-y-3">
           <div className="h-10 rounded bg-slate-100 animate-pulse" />
           <div className="h-10 rounded bg-slate-100 animate-pulse" />
           <div className="h-10 rounded bg-slate-100 animate-pulse" />
@@ -521,7 +566,7 @@ export function ProjectStructureModal({
                   {labels.buildings}
                   <span className="text-xs font-data text-slate-500">({structure?.buildings.length ?? 0})</span>
                 </div>
-                <button
+                <button disabled={submitting}
                   type="button"
                   onClick={() => {
                     setEditingBuildingId(null);
@@ -543,7 +588,7 @@ export function ProjectStructureModal({
                   className="p-3 space-y-3 border-b border-slate-100 bg-slate-50/70"
                 >
                   <FormField id="structure-building-code" label={labels.buildingCode}>
-                    <input
+                    <input disabled={submitting}
                       id="structure-building-code"
                       required
                       value={buildingForm.code}
@@ -553,7 +598,7 @@ export function ProjectStructureModal({
                     />
                   </FormField>
                   <FormField id="structure-building-name-ar" label={labels.buildingNameAr}>
-                    <input
+                    <input disabled={submitting}
                       id="structure-building-name-ar"
                       value={buildingForm.nameAr}
                       onChange={(event) => setBuildingForm((form) => ({ ...form, nameAr: event.target.value }))}
@@ -561,7 +606,7 @@ export function ProjectStructureModal({
                     />
                   </FormField>
                   <FormField id="structure-building-name-fr" label={labels.buildingNameFr}>
-                    <input
+                    <input disabled={submitting}
                       id="structure-building-name-fr"
                       value={buildingForm.nameFr}
                       onChange={(event) => setBuildingForm((form) => ({ ...form, nameFr: event.target.value }))}
@@ -570,7 +615,7 @@ export function ProjectStructureModal({
                     />
                   </FormField>
                   <FormField id="structure-building-status" label={labels.buildingStatus}>
-                    <select
+                    <select disabled={submitting}
                       id="structure-building-status"
                       value={buildingForm.status}
                       onChange={(event) => setBuildingForm((form) => ({ ...form, status: event.target.value }))}
@@ -584,7 +629,7 @@ export function ProjectStructureModal({
                     </select>
                   </FormField>
                   <div className="flex justify-end gap-2">
-                    <button type="button" onClick={() => { setShowBuildingForm(false); setEditingBuildingId(null); setBuildingEdited(false); }} className="text-xs px-3 py-2 border rounded border-slate-200">
+                    <button disabled={submitting} type="button" onClick={() => { setShowBuildingForm(false); setEditingBuildingId(null); setBuildingEdited(false); }} className="text-xs px-3 py-2 border rounded border-slate-200">
                       {t.users.cancel}
                     </button>
                     <button type="submit" disabled={submitting} className="text-xs px-3 py-2 rounded bg-teal-800 text-white disabled:opacity-60">
@@ -602,7 +647,7 @@ export function ProjectStructureModal({
                     key={building.id}
                     className={`rounded-md border px-2 py-2 flex items-center gap-2 ${selectedBuildingId === building.id ? 'border-teal-700 bg-teal-50' : 'border-transparent hover:bg-slate-50'}`}
                   >
-                    <button
+                    <button disabled={submitting}
                       type="button"
                       onClick={() => {
                         setSelectedBuildingId(building.id);
@@ -623,7 +668,7 @@ export function ProjectStructureModal({
                       </span>
                       {selectedBuildingId === building.id ? <ChevronDown className="w-4 h-4 shrink-0" /> : <ChevronRight className="w-4 h-4 shrink-0" />}
                     </button>
-                    <button
+                    <button disabled={submitting}
                       type="button"
                       onClick={() => openBuildingEditor(building)}
                       title={labels.editBuilding}
@@ -644,7 +689,7 @@ export function ProjectStructureModal({
                   {labels.floors}
                 </div>
                 {selectedBuilding && (
-                  <button
+                  <button disabled={submitting}
                     type="button"
                     onClick={() => {
                       setEditingFloorId(null);
@@ -671,7 +716,7 @@ export function ProjectStructureModal({
                       className="p-3 space-y-3 border-b border-slate-100 bg-slate-50/70"
                     >
                       <FormField id="structure-floor-number" label={labels.floorNumber}>
-                        <input
+                        <input disabled={submitting}
                           id="structure-floor-number"
                           type="number"
                           min="-10"
@@ -684,7 +729,7 @@ export function ProjectStructureModal({
                         />
                       </FormField>
                       <FormField id="structure-floor-name-ar" label={labels.floorNameAr}>
-                        <input
+                        <input disabled={submitting}
                           id="structure-floor-name-ar"
                           value={floorForm.nameAr}
                           onChange={(event) => setFloorForm((form) => ({ ...form, nameAr: event.target.value }))}
@@ -692,7 +737,7 @@ export function ProjectStructureModal({
                         />
                       </FormField>
                       <FormField id="structure-floor-name-fr" label={labels.floorNameFr}>
-                        <input
+                        <input disabled={submitting}
                           id="structure-floor-name-fr"
                           value={floorForm.nameFr}
                           onChange={(event) => setFloorForm((form) => ({ ...form, nameFr: event.target.value }))}
@@ -701,7 +746,7 @@ export function ProjectStructureModal({
                         />
                       </FormField>
                       <div className="flex justify-end gap-2">
-                        <button type="button" onClick={() => { setShowFloorForm(false); setEditingFloorId(null); setFloorEdited(false); }} className="text-xs px-3 py-2 border rounded border-slate-200">{language === 'ar' ? 'إلغاء' : 'Annuler'}</button>
+                        <button disabled={submitting} type="button" onClick={() => { setShowFloorForm(false); setEditingFloorId(null); setFloorEdited(false); }} className="text-xs px-3 py-2 border rounded border-slate-200">{language === 'ar' ? 'إلغاء' : 'Annuler'}</button>
                         <button type="submit" disabled={submitting} className="text-xs px-3 py-2 rounded bg-teal-800 text-white disabled:opacity-60">{editingFloorId ? labels.saveFloor : labels.addFloor}</button>
                       </div>
                     </form>
@@ -714,7 +759,7 @@ export function ProjectStructureModal({
                         key={floor.id}
                         className={`rounded-md border px-2 py-2 flex items-center gap-2 ${selectedFloorId === floor.id ? 'border-teal-700 bg-teal-50' : 'border-transparent hover:bg-slate-50'}`}
                       >
-                        <button
+                        <button disabled={submitting}
                           type="button"
                           onClick={() => setSelectedFloorId(floor.id)}
                           className="flex-1 min-w-0 text-start flex items-center justify-between gap-2"
@@ -727,7 +772,7 @@ export function ProjectStructureModal({
                           </span>
                           {selectedFloorId === floor.id ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
                         </button>
-                        <button
+                        <button disabled={submitting}
                           type="button"
                           onClick={() => {
                             setSelectedFloorId(floor.id);
@@ -750,7 +795,7 @@ export function ProjectStructureModal({
               <div className="p-3 border-b border-slate-100 flex items-center justify-between gap-2">
                 <div className="font-semibold text-sm text-slate-800">{labels.units}</div>
                 {selectedFloor && (
-                  <button
+                  <button disabled={submitting}
                     type="button"
                     onClick={() => { setUnitEdited(false); setShowUnitForm((value) => !value); }}
                     className="inline-flex items-center gap-1 rounded border border-slate-200 px-2 py-1 text-xs text-slate-700 hover:bg-slate-50"
@@ -771,7 +816,7 @@ export function ProjectStructureModal({
                   {showUnitForm && (
                     <form onSubmit={handleCreateUnit} onChange={() => setUnitEdited(true)} className="p-3 space-y-3 border-b border-slate-100 bg-slate-50/70">
                       <FormField id="structure-unit-number" label={labels.unitNumber}>
-                        <input
+                        <input disabled={submitting}
                           id="structure-unit-number"
                           required
                           value={unitForm.unitNumber}
@@ -781,7 +826,7 @@ export function ProjectStructureModal({
                         />
                       </FormField>
                       <FormField id="structure-unit-type" label={labels.unitType}>
-                        <select
+                        <select disabled={submitting}
                           id="structure-unit-type"
                           value={unitForm.unitType}
                           onChange={(event) => setUnitForm((form) => ({ ...form, unitType: event.target.value }))}
@@ -793,7 +838,7 @@ export function ProjectStructureModal({
                         </select>
                       </FormField>
                       <FormField id="structure-unit-status" label={labels.unitStatus}>
-                        <select
+                        <select disabled={submitting}
                           id="structure-unit-status"
                           value={unitForm.status}
                           onChange={(event) => setUnitForm((form) => ({ ...form, status: event.target.value }))}
@@ -806,7 +851,7 @@ export function ProjectStructureModal({
                       </FormField>
                       <div className="grid grid-cols-2 gap-3">
                         <FormField id="structure-unit-gross" label={labels.grossArea}>
-                          <input
+                          <input disabled={submitting}
                             id="structure-unit-gross"
                             type="number"
                             min="0"
@@ -818,7 +863,7 @@ export function ProjectStructureModal({
                           />
                         </FormField>
                         <FormField id="structure-unit-net" label={labels.netArea}>
-                          <input
+                          <input disabled={submitting}
                             id="structure-unit-net"
                             type="number"
                             min="0"
@@ -831,7 +876,7 @@ export function ProjectStructureModal({
                         </FormField>
                       </div>
                       <FormField id="structure-unit-rooms" label={labels.roomsCount}>
-                        <input
+                        <input disabled={submitting}
                           id="structure-unit-rooms"
                           type="number"
                           min="0"
@@ -843,7 +888,7 @@ export function ProjectStructureModal({
                         />
                       </FormField>
                       <div className="flex justify-end gap-2">
-                        <button type="button" onClick={() => { setShowUnitForm(false); setUnitEdited(false); }} className="text-xs px-3 py-2 border rounded border-slate-200">{language === 'ar' ? 'إلغاء' : 'Annuler'}</button>
+                        <button disabled={submitting} type="button" onClick={() => { setShowUnitForm(false); setUnitEdited(false); }} className="text-xs px-3 py-2 border rounded border-slate-200">{language === 'ar' ? 'إلغاء' : 'Annuler'}</button>
                         <button type="submit" disabled={submitting} className="text-xs px-3 py-2 rounded bg-teal-800 text-white disabled:opacity-60">{labels.addUnit}</button>
                       </div>
                     </form>
@@ -856,7 +901,7 @@ export function ProjectStructureModal({
                         {editingUnitId === unit.id ? (
                           <form onSubmit={(event) => void handleUpdateUnit(event, unit)} onChange={() => setEditUnitEdited(true)} className="space-y-3">
                             <FormField id={`edit-unit-number-${unit.id}`} label={labels.unitNumber}>
-                              <input
+                              <input disabled={submitting}
                                 id={`edit-unit-number-${unit.id}`}
                                 required
                                 value={editUnitForm.unitNumber}
@@ -866,7 +911,7 @@ export function ProjectStructureModal({
                               />
                             </FormField>
                             <FormField id={`edit-unit-type-${unit.id}`} label={labels.unitType}>
-                              <select
+                              <select disabled={submitting}
                                 id={`edit-unit-type-${unit.id}`}
                                 value={editUnitForm.unitType}
                                 onChange={(event) => setEditUnitForm((form) => ({ ...form, unitType: event.target.value }))}
@@ -879,7 +924,7 @@ export function ProjectStructureModal({
                             </FormField>
                             <div className="grid grid-cols-2 gap-3">
                               <FormField id={`edit-unit-gross-${unit.id}`} label={labels.grossArea}>
-                                <input
+                                <input disabled={submitting}
                                   id={`edit-unit-gross-${unit.id}`}
                                   type="number"
                                   min="0"
@@ -891,7 +936,7 @@ export function ProjectStructureModal({
                                 />
                               </FormField>
                               <FormField id={`edit-unit-net-${unit.id}`} label={labels.netArea}>
-                                <input
+                                <input disabled={submitting}
                                   id={`edit-unit-net-${unit.id}`}
                                   type="number"
                                   min="0"
@@ -904,7 +949,7 @@ export function ProjectStructureModal({
                               </FormField>
                             </div>
                             <FormField id={`edit-unit-rooms-${unit.id}`} label={labels.roomsCount}>
-                              <input
+                              <input disabled={submitting}
                                 id={`edit-unit-rooms-${unit.id}`}
                                 type="number"
                                 min="0"
@@ -949,7 +994,7 @@ export function ProjectStructureModal({
                               )}
                               {(NEXT_UNIT_STATUSES[unit.status]?.length ?? 0) > 0 && (
                                 <div className="flex items-center gap-1.5 ms-auto">
-                                  <select
+                                  <select disabled={submitting}
                                     aria-label={labels.unitStatus}
                                     value={statusSelections[unit.id] ?? NEXT_UNIT_STATUSES[unit.status][0]}
                                     onChange={(event) => setStatusSelections((current) => ({ ...current, [unit.id]: event.target.value }))}
@@ -1045,7 +1090,7 @@ export function ProjectStructureModal({
                 {language === 'ar' ? project.nameAr : project.nameFr}
               </p>
             </div>
-            <button
+            <button disabled={submitting}
               type="button"
               onClick={requestClose}
               aria-label={language === 'ar' ? 'إغلاق' : 'Fermer'}
@@ -1058,7 +1103,7 @@ export function ProjectStructureModal({
           {structureBody}
 
           <div className="px-5 py-3 border-t border-slate-200 flex justify-end">
-            <button type="button" onClick={requestClose} className="px-4 py-2 rounded-md border border-slate-200 text-sm text-slate-700 hover:bg-slate-50">
+            <button disabled={submitting} type="button" onClick={requestClose} className="px-4 py-2 rounded-md border border-slate-200 text-sm text-slate-700 hover:bg-slate-50">
               {language === 'ar' ? 'إغلاق' : 'Fermer'}
             </button>
           </div>

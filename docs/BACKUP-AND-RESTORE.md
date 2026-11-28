@@ -12,7 +12,27 @@ A complete backup must preserve a consistent set of:
 
 Backing up only PostgreSQL leaves documents orphaned. Backing up database and documents without the Data Protection key ring can make previously protected payloads unreadable after restoration. Store backup bundles on encrypted media or an encrypted NAS and restrict access to the service and maintenance administrators.
 
-A document upload can leave unreferenced bytes if the process crashes or a database save fails. A save error can also mean the database committed but the acknowledgement was lost; the application therefore retains the file rather than risking deletion of a committed document. Before a user retries an uncertain upload, inspect the project document list and audit record. There is currently no automated storage reconciliation or orphan cleanup: investigate under a maintenance window with writes stopped, compare a consistent database snapshot of `stored_files.stored_relative_path` against a protected storage snapshot, and verify backups and references before considering any removal. Treat unmatched files as potentially confidential and do not delete them automatically or expose them through a web server. Missing referenced files require recovery from a matching backup; an orphan scan alone is not recovery.
+A document upload can leave unreferenced bytes if the process crashes or a database save fails. A save error can also mean the database committed but the acknowledgement was lost; the application therefore retains the file rather than risking deletion of a committed document. Before a user retries an uncertain upload, inspect the project document list and audit record. The read-only Linux reconciliation procedure below identifies candidates for investigation; it does **not** delete files or prove that an unmatched file is safe to delete. Treat unmatched files as potentially confidential and never expose them through a web server. Missing referenced files require recovery from a matching backup; an orphan scan alone is not recovery.
+
+### Read-only document storage reconciliation (Linux)
+
+During a maintenance window, stop **all** application instances and other storage/database writers. Use a matching restored database and storage snapshot captured consistently while writes were stopped; do not compare a live database against live storage. Restrict access to the snapshots and maintenance directory. The manifest and optional report contain sensitive paths; keep both outside the storage tree and web root, with a private parent directory. Use a read-only PostgreSQL identity and an approved protected credential mechanism. Example, from a maintenance shell with `SNAPSHOT_DATABASE` configured for the restored database and `STORAGE_SNAPSHOT` pointing to its corresponding storage snapshot:
+
+```bash
+umask 077
+work="$(mktemp -d)"
+# psql uses the maintenance account's normal protected connection configuration.
+if ! psql -X -qAt --set=ON_ERROR_STOP=1 --dbname="$SNAPSHOT_DATABASE" \
+  --command="SELECT COALESCE(json_agg(json_build_object('path', stored_relative_path, 'size', size_bytes)), '[]'::json) FROM stored_files;" \
+  > "$work/manifest.json"; then
+  echo 'Export failed; do not scan or treat it as an empty manifest.' >&2
+  exit 1
+fi
+python3 scripts/reconcile-document-storage.py --manifest "$work/manifest.json" \
+  --storage "$STORAGE_SNAPSHOT" --report "$work/findings.json"
+```
+
+The tool prints counts only; the optional newly created mode-0600 JSON report contains relative paths and must be protected and disposed of according to local data-handling rules. It refuses existing reports, reports or manifests inside the storage tree, malformed/duplicate manifest paths, symlink roots and unreadable scans. Symlinks and other non-regular entries are flagged, not followed. Exit status `0` means no findings, `1` means findings, and `2` means the scan could not be completed. Review every candidate against the matching database, audit records and protected backups before any manual action; no automatic cleanup is provided. The tool compares existence and length, **not content hashes**. Even a clean result does not verify bytes or backup recoverability; use the full restore verification procedure for those checks. Never rely on this procedure while writers are active, or on an incomplete export/snapshot.
 
 **Linux production path (implemented 2026-11-20):** the backup job now seals, packs, and encrypts the bundle with an X.509 recipient certificate, writes it together with a SHA-256 sidecar, copies and verifies it on an independent offsite mount, applies a retention policy that never prunes below the newest configured artefacts, and removes the unencrypted bundle by default. Encryption and offsite replication are fail-closed: the job refuses to run without a recipient certificate and an offsite target unless an operator explicitly acknowledges the risk in configuration.
 

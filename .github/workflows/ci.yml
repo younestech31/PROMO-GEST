@@ -43,6 +43,8 @@ jobs:
           "$RUNNER_TEMP/evidence-test-python/bin/python" scripts/test_export_staging_evidence.py
           python3 scripts/test_import_staging_evidence.py
           python3 scripts/test_export_commercialization_evidence.py
+      - name: Test read-only document storage reconciliation
+        run: python3 scripts/test_reconcile_document_storage.py
       - name: Test the repository hygiene guard
         run: python3 scripts/test_check_repository_hygiene.py
       - name: Verify tracked file modes and the lockfile match this branch

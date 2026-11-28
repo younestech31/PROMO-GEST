@@ -666,6 +666,9 @@ export function createPromoGestDevMiddleware(): (
           uploadedByUserId: admin.id,
           uploadedByFullName: admin.fullName,
           createdAtUtc: nowIso,
+          isCustomerIdentitySensitive: false,
+          requiresSensitivityReview: false,
+          concurrencyStamp: crypto.randomUUID(),
         },
         content: demoDocContent,
       },
@@ -2264,6 +2267,8 @@ export function createPromoGestDevMiddleware(): (
             if (!docEntry) {
               return sendJson(res, 404, { code: 'DOCUMENT_NOT_FOUND', message: 'Referenced document not found.' });
             }
+            if (!docEntry.meta.isCustomerIdentitySensitive || docEntry.meta.requiresSensitivityReview)
+              return sendJson(res, 409, { code: 'CUSTOMER_IDENTITY_DOCUMENT_CLASSIFICATION_REQUIRED', message: 'Only reviewed identity documents can be linked.' });
             if (!canAccessDocumentCategory(scope.member, docEntry.meta.category, false)) {
               addAudit(
                 'ACCESS_DENIED',
@@ -2481,6 +2486,8 @@ export function createPromoGestDevMiddleware(): (
               if (!docEntry) {
                 return sendJson(res, 404, { code: 'DOCUMENT_NOT_FOUND', message: 'Referenced document not found.' });
               }
+              if (!docEntry.meta.isCustomerIdentitySensitive || docEntry.meta.requiresSensitivityReview)
+                return sendJson(res, 409, { code: 'CUSTOMER_IDENTITY_DOCUMENT_CLASSIFICATION_REQUIRED', message: 'Only reviewed identity documents can be linked.' });
               if (!canAccessDocumentCategory(scope.member, docEntry.meta.category, false)) {
                 addAudit(
                   'ACCESS_DENIED',
@@ -2793,7 +2800,7 @@ export function createPromoGestDevMiddleware(): (
             .filter(
               (d) =>
                 canAccessDocumentCategory(scope.member, d.meta.category, false) &&
-                (!isCustomerIdentityDoc(scope.project.id, d.meta.id) || canReadCustomers)
+                (!(d.meta.isCustomerIdentitySensitive || isCustomerIdentityDoc(scope.project.id, d.meta.id)) || canReadCustomers)
             )
             .map((d) => d.meta);
           return sendJson(res, 200, docs, { 'Cache-Control': 'no-store' });
@@ -2845,6 +2852,12 @@ export function createPromoGestDevMiddleware(): (
               });
             }
 
+            const sensitivity = parsed.fields.isCustomerIdentitySensitive;
+            if (sensitivity !== undefined && sensitivity !== 'true' && sensitivity !== 'false')
+              return sendJson(res, 400, { code: 'VALIDATION_ERROR', message: 'Invalid sensitivity classification.' });
+            const isIdentity = sensitivity !== 'false';
+            if (isIdentity && !currentUser.isSystemAdministrator && !currentPerms.includes('customers.read'))
+              return sendJson(res, 403, { code: 'CUSTOMER_IDENTITY_DOCUMENT_ACCESS_DENIED', message: 'Customer read permission is required to upload identity documents.' });
             const description = (parsed.fields.description ?? '').trim() || null;
             const nowIso = new Date().toISOString();
             const meta: ProjectDocumentDto = {
@@ -2858,6 +2871,9 @@ export function createPromoGestDevMiddleware(): (
               uploadedByUserId: currentUser.id,
               uploadedByFullName: currentUser.fullName,
               createdAtUtc: nowIso,
+              isCustomerIdentitySensitive: isIdentity,
+              requiresSensitivityReview: false,
+              concurrencyStamp: crypto.randomUUID(),
             };
             const existingDocs = projectDocuments.get(scope.project.id) ?? [];
             existingDocs.unshift({ meta, content: file.content });
@@ -2879,6 +2895,32 @@ export function createPromoGestDevMiddleware(): (
           }
         }
 
+        const reviewMatch = pathname.match(/^\/api\/projects\/([^/]+)\/documents\/([^/]+)\/sensitivity-review$/);
+        if (reviewMatch && method === 'POST') {
+          const scope = authorizeProjectDocumentScope(reviewMatch[1], true);
+          if (!scope) return;
+          if (!currentUser.isSystemAdministrator)
+            return sendJson(res, 403, { code: 'FILE_SENSITIVITY_REVIEW_FORBIDDEN', message: 'Only system administrators may review legacy documents.' });
+          const entry = (projectDocuments.get(scope.project.id) ?? []).find((d) => d.meta.id === decodeURIComponent(reviewMatch[2]));
+          if (!entry) return sendJson(res, 404, { code: 'PROJECT_DOCUMENT_NOT_FOUND', message: 'Document not found.' });
+          const body = await readJsonBody<{ isCustomerIdentitySensitive?: boolean; expectedConcurrencyStamp?: string }>(req);
+          if (typeof body.isCustomerIdentitySensitive !== 'boolean')
+            return sendJson(res, 400, { code: 'VALIDATION_ERROR', message: 'A sensitivity classification is required.' });
+          if (body.expectedConcurrencyStamp !== entry.meta.concurrencyStamp)
+            return sendJson(res, 409, { code: 'CONCURRENCY_CONFLICT', message: 'Document changed; reload before reviewing.' });
+          if (!entry.meta.requiresSensitivityReview)
+            return sendJson(res, 409, { code: 'FILE_SENSITIVITY_ALREADY_REVIEWED', message: 'Document already reviewed.' });
+          if (!body.isCustomerIdentitySensitive && isCustomerIdentityDoc(scope.project.id, entry.meta.id))
+            return sendJson(res, 409, { code: 'FILE_IDENTITY_LINKED', message: 'Linked identity document cannot be classified as general.' });
+          entry.meta.isCustomerIdentitySensitive = body.isCustomerIdentitySensitive;
+          entry.meta.requiresSensitivityReview = false;
+          entry.meta.concurrencyStamp = crypto.randomUUID();
+          addAudit('PROJECT_DOCUMENT_SENSITIVITY_REVIEWED', 'Security', 'Reviewed legacy document sensitivity.', currentUser, 'StoredFile', entry.meta.id);
+          res.statusCode = 204;
+          res.end();
+          return;
+        }
+
         const docDownloadMatch = pathname.match(/^\/api\/projects\/([^/]+)\/documents\/([^/]+)\/download$/);
         if (docDownloadMatch && method === 'GET') {
           const scope = authorizeProjectDocumentScope(docDownloadMatch[1], false);
@@ -2892,7 +2934,7 @@ export function createPromoGestDevMiddleware(): (
             (Boolean(scope.member) && currentPerms.includes('customers.read'));
           if (
             !canAccessDocumentCategory(scope.member, entry.meta.category, false) ||
-            (isCustomerIdentityDoc(scope.project.id, entry.meta.id) && !canReadCustomers)
+            ((entry.meta.isCustomerIdentitySensitive || isCustomerIdentityDoc(scope.project.id, entry.meta.id)) && !canReadCustomers)
           ) {
             addAudit(
               'ACCESS_DENIED',

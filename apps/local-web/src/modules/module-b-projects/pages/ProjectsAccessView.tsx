@@ -1312,6 +1312,7 @@ export function ProjectsAccessView({
           project={documentsProject}
           language={language}
           canUpload={canUploadProjectDocuments(currentUser, documentsProject)}
+          canReviewSensitivity={currentUser.isSystemAdministrator}
           onDirtyChange={setChildModalDirty}
           onClose={() => { setDocumentsProject(null); setChildModalDirty(false); }}
         />

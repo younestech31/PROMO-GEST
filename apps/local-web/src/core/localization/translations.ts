@@ -873,6 +873,26 @@ const API_ERROR_MESSAGES: Record<string, { ar: string; fr: string }> = {
     ar: 'رفض مضيف المعاينة أو الوسيط الطلب باستجابة 403 (قد تكون ملفات تعريف الارتباط محظورة في هذا المتصفح أو انتهت جلسة المعاينة). تأكد من تفعيل الكوكيز ثم أعد تحميل الصفحة وحاول مجدداً.',
     fr: 'L’hôte d’aperçu ou son proxy a renvoyé une réponse 403 (les cookies sont peut-être bloqués par le navigateur ou la session d’aperçu a expiré). Vérifiez l’activation des cookies, rechargez la page et réessayez.',
   },
+  FILE_SENSITIVITY_CLASSIFICATION_REQUIRED: {
+    ar: 'يجب تحديد حساسية الوثيقة.',
+    fr: 'La classification de sensibilité est obligatoire.',
+  },
+  FILE_SENSITIVITY_REVIEW_FORBIDDEN: {
+    ar: 'مراجعة تصنيف الوثائق القديمة متاحة لمدير النظام فقط.',
+    fr: 'Seul l’administrateur système peut classifier les anciens documents.',
+  },
+  FILE_SENSITIVITY_ALREADY_REVIEWED: {
+    ar: 'تم تصنيف هذه الوثيقة مسبقاً. حدّث القائمة.',
+    fr: 'Ce document a déjà été classifié. Actualisez la liste.',
+  },
+  FILE_IDENTITY_LINKED: {
+    ar: 'لا يمكن اعتبار وثيقة هوية مرتبطة وثيقة عامة.',
+    fr: 'Une pièce d’identité liée ne peut pas être classifiée comme document général.',
+  },
+  CUSTOMER_IDENTITY_DOCUMENT_CLASSIFICATION_REQUIRED: {
+    ar: 'لا يمكن ربط الملف إلا بعد تصنيفه كوثيقة هوية زبون؛ يجب مراجعة الملفات القديمة أولاً.',
+    fr: 'Seul un document classifié comme pièce d’identité client peut être lié ; les anciens fichiers doivent d’abord être examinés.',
+  },
   STRUCTURE_WRITE_COMMITTED_REFRESH_FAILED: {
     ar: 'تم حفظ التغيير، لكن تعذر تحميل الهيكل المحدّث. أعد تحميل الهيكل قبل أي تعديل آخر ولا تكرر العملية.',
     fr: 'La modification a été enregistrée, mais la structure actualisée est indisponible. Rechargez-la avant toute autre modification sans répéter l’opération.',

@@ -542,6 +542,10 @@ public sealed class ProjectCustomerService
             throw new NotFoundDomainException(
                 "CUSTOMER_IDENTITY_DOCUMENT_NOT_FOUND",
                 "The selected identity document does not belong to this project or no longer exists.");
+        if (!document.IsCustomerIdentitySensitive || document.RequiresSensitivityReview)
+            throw new ConflictDomainException(
+                "CUSTOMER_IDENTITY_DOCUMENT_CLASSIFICATION_REQUIRED",
+                "Only a document classified as a customer identity document can be linked. Legacy documents must first be reviewed.");
     }
 
     private async Task RecordAuditAsync(

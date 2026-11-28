@@ -193,3 +193,11 @@ Never treat a sanitized configuration archive as a substitute for the offline se
 ## 6. Caddy internal CA recovery
 
 The backup bundles preserve the Caddy configuration file, but they do **not** currently include Caddy's internal PKI/data directory. A same-machine restore normally retains the existing Caddy state if that directory was not lost. During a full host replacement or after loss of Caddy state, expect Caddy to use a new local CA; export the new Caddy root certificate and reinstall it on every trusted LAN workstation before users rely on HTTPS. Do not assume that restoring `Caddyfile` alone preserves the previous trust relationship.
+
+### Document sensitivity rollout and rollback
+
+Migration `20261128120000_ClassifyLegacyProjectDocuments` restricts every existing stored file as potentially containing customer identity information. Known current identity links remain restricted; all other legacy files require review. This can temporarily remove general-document access for users without customer-read permission. The document category (including Financial access controls) remains independent of sensitivity.
+
+A system administrator can download and inspect each restricted legacy project file, then use the document screen to classify it as either restricted identity or general. Review is audited and irreversible in that screen; marking a file general may grant access to additional project members, so inspect its entire contents first. General files cannot be linked as customer identity documents; upload a new copy as an identity document if necessary. Identity restrictions persist after a customer link is removed. New uploads default to restricted identity unless the uploader explicitly selects general. Older clients that omit the classification therefore fail closed and may be unable to upload without customer-read permission.
+
+Back up the database and document store together before the migration. Do **not** expose a downgraded application or database to ordinary users: older versions derive identity restrictions only from current links, so files unlinked before or after migration can be exposed. A rollback requires a separately reviewed access-control plan and restoration of a consistent backup; migration rollback alone removes the durable classification.

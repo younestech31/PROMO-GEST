@@ -49,12 +49,21 @@ public sealed class ProjectDocumentsController : ControllerBase
             form.Description,
             form.File.Length,
             GetMetadata(),
-            ct);
+            ct,
+            form.IsCustomerIdentitySensitive);
 
         return CreatedAtAction(
             nameof(Download),
             new { projectId, fileId = document.Id },
             document);
+    }
+
+    [HttpPost("{fileId:guid}/sensitivity-review")]
+    public async Task<IActionResult> ReviewSensitivity(Guid projectId, Guid fileId,
+        [FromBody] ReviewProjectDocumentSensitivityRequest request, CancellationToken ct)
+    {
+        await _documentService.ReviewSensitivityAsync(GetActorUserId(), projectId, fileId, request, GetMetadata(), ct);
+        return NoContent();
     }
 
     [HttpGet("{fileId:guid}/download")]
@@ -90,4 +99,8 @@ public sealed class UploadProjectDocumentForm
 
     [FromForm(Name = "description")]
     public string? Description { get; set; }
+
+    // Older clients that do not supply a classification fail closed.
+    [FromForm(Name = "isCustomerIdentitySensitive")]
+    public bool IsCustomerIdentitySensitive { get; set; } = true;
 }

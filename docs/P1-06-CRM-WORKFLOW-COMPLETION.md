@@ -7,8 +7,8 @@
 passed on `94d581d4425c1b411cae5b16cd9d242ab9321154`:
 CI[46098184595](https://github.com/younestech31/PROMO-GEST/actions/runs/46098184595)
 and CodeQL[46098184512](https://github.com/younestech31/PROMO-GEST/actions/runs/46098184512).
-Independent main CI46129790407 is pending and CodeQL46129790417 PASS at this
-checkpoint. P1-06 overall acceptance remains separate.
+Independent main CI46129790407 and CodeQL46129790417 both PASS on the exact
+merged SHA. P1-06 overall acceptance remains separate.
 
 ## Scope and work selection
 

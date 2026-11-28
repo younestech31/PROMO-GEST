@@ -7,7 +7,7 @@ Do not implement planned metadata editing, soft-archive, DocumentLink, retention
 contracts or financial workflows. Existing category authorization, KYC isolation,
 25 MiB upload validation and API SHA-256 verification remain unchanged.
 
-## Delivered on the working branch
+## Delivered in PR #296
 
 1. **Upload intent and pending-write protection.** A synchronous request lock
    rejects duplicate submissions while the first request is pending. Upload
@@ -48,5 +48,10 @@ for ambiguous network failures; no automatic write retry is introduced.
 - Tests mock API responses; they are not manual browser, PostgreSQL persistence,
   production installation, or legal/retention acceptance.
 
-This batch still requires its own remote PR checks and merge. It does not close
-P1-06 as a whole or remove any Phase 1 or Phase 2–5 gate.
+PR #296 merged at `c0c32757ee109c3179d8a39ca40471fd7de7b336` after all eight
+exact-head checks succeeded (CI46130175418/CodeQL46130175356). Independent
+main CI46136104804 pending; CodeQL46136104813 PASS. It does not close
+P1-06 as a whole or remove any Phase 1 or Phase 2–5 gate. The new bounded
+[closure execution](PHASE-1-CLOSURE-EXECUTION.ar.md) adds actual CI browser
+acceptance of document persistence/retry/download and guarded routes; its own
+remote execution is pending, not inherited from PR296.

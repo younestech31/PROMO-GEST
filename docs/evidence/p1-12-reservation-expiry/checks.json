@@ -1,5 +1,5 @@
 {
-  "scope": "Exact final PR292 head and prior PR291 main verification; not merged PR292 main verification or screenshot review",
+  "scope": "Exact final PR292 head, independent merged PR292 main, and prior PR291 main verification; not production rollout or screenshot review",
   "records": [
     {
       "runId": 46093639878,
@@ -166,6 +166,57 @@
           "conclusion": "success",
           "jobId": 140817458823,
           "criticalSteps": []
+        }
+      ]
+    },
+    {
+      "runId": 46094642448,
+      "headSha": "f89cc4448b89974440c2be2af527e9dcbac1f997",
+      "url": "https://github.com/younestech31/PROMO-GEST/actions/runs/46094642448",
+      "conclusion": "success",
+      "jobs": [
+        {
+          "name": "Documentation baseline consistency",
+          "conclusion": "success",
+          "jobId": 140823105045
+        },
+        {
+          "name": "Frontend install, checks, and static hosting",
+          "conclusion": "success",
+          "jobId": 140823105231
+        },
+        {
+          "name": ".NET 10 and PostgreSQL 18 least-privilege tests",
+          "conclusion": "success",
+          "jobId": 140823247156
+        },
+        {
+          "name": "Windows publish and PowerShell validation",
+          "conclusion": "success",
+          "jobId": 140823247188
+        },
+        {
+          "name": "Production HTTPS evidence export",
+          "conclusion": "success",
+          "jobId": 140825865029
+        }
+      ]
+    },
+    {
+      "runId": 46094642443,
+      "headSha": "f89cc4448b89974440c2be2af527e9dcbac1f997",
+      "url": "https://github.com/younestech31/PROMO-GEST/actions/runs/46094642443",
+      "conclusion": "success",
+      "jobs": [
+        {
+          "name": "Analyze csharp",
+          "conclusion": "success",
+          "jobId": 140823105387
+        },
+        {
+          "name": "Analyze javascript-typescript",
+          "conclusion": "success",
+          "jobId": 140823105610
         }
       ]
     }

@@ -1,5 +1,15 @@
 # P1-49 follow-up — reliable project directory requests
 
+## Delivery checkpoint
+
+[PR #293](https://github.com/younestech31/PROMO-GEST/pull/293) merged at
+`153273c61815b9d3c3cf5b4d8e6745f724c4686e`. Exact head
+`da9988f51252f58b02f60e8deecd70962064a9ee` passed all eight PR checks:
+CI[46095458732](https://github.com/younestech31/PROMO-GEST/actions/runs/46095458732)
+and CodeQL[46095458725](https://github.com/younestech31/PROMO-GEST/actions/runs/46095458725).
+Independent merged-main CI46096601652/CodeQL46096601635 are pending at this
+checkpoint; do not inherit head results or close deferred manual acceptance.
+
 ## Scope
 
 Functional follow-up to the already implemented project directory pagination.

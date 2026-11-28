@@ -1,3 +1,14 @@
+## Module K functional follow-up — existing document workflow
+
+Upload intent is protected while pending; known upload success remains distinct
+from subsequent list-read failure and read-only retry. Authorized loaded documents
+can be searched by filename/description and filtered by category without discarding
+an upload draft. Obsolete project reads/uploads/downloads cannot publish into the
+next view. Language change does not unlock an in-flight upload. See
+[implementation and limits](P1-06-DOCUMENT-WORKFLOW-COMPLETION.md).
+This batch is on the active branch and awaits its own PR checks/merge. Metadata,
+soft-archive, DocumentLink, retention and authorization policies are unchanged.
+
 ## Module D functional follow-up — CRM workflow completion
 
 Customer registry internal transitions now share Stay/Discard protection; details,
@@ -6,8 +17,9 @@ customer/interaction writes remain explicitly acknowledged even if subsequent
 reads fail, with dedicated read retries. Loaded customer name/contact/phone/email
 search and status filters preserve the selected draft. Identity edits retain
 original stamps/drafts on failure. See [scope and verification](P1-06-CRM-WORKFLOW-COMPLETION.md).
-This is implemented on the active branch, pending its own PR checks/merge; no
-planned pipeline, Party master-data expansion or new manual acceptance is claimed.
+Merged in PR #295 after eight exact-head checks passed; independent-main CI is
+pending at the current canonical checkpoint. No planned pipeline, Party master-data
+expansion or new manual acceptance is claimed.
 
 ## Current implementation addendum — PR #258 / P1-09 real-browser automation — 26 November 2026
 

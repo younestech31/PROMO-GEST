@@ -7,8 +7,9 @@
 on `759601a13d918c009e12561dbad024fe9569b7d0`:
 CI[46097068405](https://github.com/younestech31/PROMO-GEST/actions/runs/46097068405)
 and CodeQL[46097068413](https://github.com/younestech31/PROMO-GEST/actions/runs/46097068413).
-Independent exact-main CI46098043619/CodeQL46098043550 remain pending at this
-checkpoint; no merged-main or production success is inferred.
+Independent exact-main CI[46098043619](https://github.com/younestech31/PROMO-GEST/actions/runs/46098043619) **PASS5/5** and
+CodeQL[46098043550](https://github.com/younestech31/PROMO-GEST/actions/runs/46098043550) **PASS** on the exact merge SHA.
+This does not imply production deployment or new manual acceptance.
 
 ## Functional scope
 

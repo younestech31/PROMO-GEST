@@ -60,8 +60,11 @@ jobs:
           python3 scripts/scan-secrets.py
       - name: Validate documented security settings against the shipped defaults
         run: python3 scripts/validate-security-config-docs.py
-      - name: Test P1-02 operational snapshot preflight and packaging (synthetic data; no import)
-        run: python3 scripts/test_administrative_reference_preflight.py
+      - name: Test P1-02 operational snapshot preflight, packaging and offline import planning
+        run: |
+          python3 scripts/test_administrative_reference_preflight.py
+          python3 scripts/test_capture_administrative_reference.py
+          python3 scripts/test_import_administrative_reference.py
       - name: Validate complete JO44/1985 source extracts
         run: python3 scripts/validate-jo44-reference-extracts.py
       - name: Validate P1-01 candidate crosswalk structure (not legal approval)
@@ -266,13 +269,26 @@ jobs:
           CREATE ROLE promogest_owner WITH LOGIN NOSUPERUSER NOCREATEDB NOCREATEROLE NOINHERIT PASSWORD 'owner_pass';
           CREATE ROLE promogest_app WITH LOGIN NOSUPERUSER NOCREATEDB NOCREATEROLE NOINHERIT PASSWORD 'app_pass';
           CREATE DATABASE promogest_ci OWNER promogest_owner;
+          CREATE DATABASE promogest_reference_import_test OWNER promogest_owner;
           GRANT CONNECT ON DATABASE promogest_ci TO promogest_app;
+          GRANT CONNECT ON DATABASE promogest_reference_import_test TO promogest_app;
           SQL
       # Run database assertions before screenshot notices consume the annotation budget.
       - name: Apply migrations and seed roles as migration owner
         env:
           PROMOGEST_MIGRATE_DB_CONNECTION: Host=localhost;Port=5432;Database=promogest_ci;Username=promogest_owner;Password=owner_pass
         run: dotnet run --project src/PromoGest.Api/PromoGest.Api.csproj --configuration Release --no-build -- --migrate
+      - name: Rehearse P1-02 transactional import and removal on dedicated synthetic PG18 database
+        env:
+          PROMOGEST_MIGRATE_DB_CONNECTION: Host=localhost;Port=5432;Database=promogest_reference_import_test;Username=promogest_owner;Password=owner_pass
+          P1_02_TEST_DATABASE: promogest_reference_import_test
+          PGHOST: localhost
+          PGPORT: "5432"
+          PGUSER: promogest_owner
+          PGPASSWORD: owner_pass
+        run: |
+          dotnet run --project src/PromoGest.Api/PromoGest.Api.csproj --configuration Release --no-build -- --migrate
+          python3 scripts/test_import_administrative_reference.py
       - name: Run integration tests with separate database identities
         env:
           PROMOGEST_TEST_PROVISION_DB_CONNECTION: Host=localhost;Port=5432;Database=postgres;Username=postgres;Password=postgres_password

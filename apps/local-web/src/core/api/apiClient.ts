@@ -275,6 +275,18 @@ export function createPlannedEndpointRejection(endpoint: string, moduleCode: str
 export const apiClient = {
   healthReady: () => requestJson<HealthStatusResponse>('/health/ready', { method: 'GET' }),
 
+  getStagedAdministrativeSnapshot: (snapshotId: string, signal?: AbortSignal) =>
+    requestJson<import('../../types/erp').StagedAdministrativeSnapshotDto>(
+      `/api/reference/staged/${encodeURIComponent(snapshotId)}`, { signal, cache: 'no-store' }),
+
+  getStagedAdministrativeCommunes: (snapshotId: string, filters: { wilayaCode: string; query: string; page: number }, signal?: AbortSignal) => {
+    const parameters = new URLSearchParams({ page: String(filters.page), pageSize: '50' });
+    if (filters.wilayaCode) parameters.set('wilayaCode', filters.wilayaCode);
+    if (filters.query) parameters.set('q', filters.query);
+    return requestJson<import('../../types/erp').StagedAdministrativeCommunePageDto>(
+      `/api/reference/staged/${encodeURIComponent(snapshotId)}/communes?${parameters}`, { signal, cache: 'no-store' });
+  },
+
   getAdministrativeUnits: () =>
     requestJson<AdministrativeUnitsReferenceDto>('/api/reference/administrative-units', {
       method: 'GET',

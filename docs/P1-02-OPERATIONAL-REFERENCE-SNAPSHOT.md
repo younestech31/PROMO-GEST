@@ -33,9 +33,31 @@ confirmed the three tabs and the following aggregates:
 
 The previous metadata-only statement is superseded by these content/aggregate
 reads. This establishes an adopted **operational source**, not byte identity with
-an earlier attachment. The complete 1541/69/151 files have **not yet been captured
-and packaged in this slice**; there is no claimed source-snapshot checksum yet.
-Do not treat hashes of synthetic test inputs as source evidence.
+an earlier attachment. A subsequent [resumable captured-cell adapter](P1-02-SHEETS-CAPTURE.md)
+now persists bounded actual-source reads and reports exact gaps. The initial
+checkpoint contained 69 wilayas, 50 communes and 20 aliases. The current first-pass
+checkpoint contains **69 wilayas, all 1541 communes and all 151 aliases**, in 38
+complete first-pass connector responses, with transcription/provenance limitations
+explicitly retained. First-pass structural inspection through the unchanged
+production-profile preflight reconciled all child counts and all 151 original
+AR/FR alias targets; declared/observed dairas remain 550/549, seats 460 yes / 1081
+unknown / 0 no. The aggregate separately labels its first-pass hashes as unverified,
+not sealed source evidence.
+
+Fresh second-pass reads now match all 69 wilayas, commune physical rows
+1–201 and 1002–1051 (250 data rows), and alias physical rows 1–21 (20 data rows)
+exactly: 45 registered chunks overall, with all three second-pass headers matched.
+Commune and alias second passes remain incomplete and resume at physical rows 202
+and 22 respectively, skipping all retained intervals. The capture adapter now
+provides bounded gap-only connector request planning and complete saved-tool-result
+JSON ingestion without manual cell unescaping; it neither fetches the files itself
+nor authenticates reconstructed/transcribed wrappers. A live intermediate
+metadata/count/tail/extra-column recheck found no profile expansion; it must be
+repeated before finalization.
+The complete 1541/69/151 **two-pass package has not yet been created**; the journal
+digest and provisional first-pass content digest are not sealed source snapshot
+IDs. No actual-source import or activation is claimed. Do not treat hashes of
+synthetic inputs as source evidence.
 
 Sample cells were also read, including `0101`/`01`, a blank seat marker at `0102`,
 and aliases such as reference FR `Chief` → alias FR `Chlef`. Original labels,
@@ -147,10 +169,14 @@ Next implementation sequence:
    in `20261127120000_AddVersionedAdministrativeReference`; see
    [storage design and verification boundary](P1-02-VERSIONED-REFERENCE-STORAGE.md).
    It preserves original labels and unknown values, adds no seed/activation and
-   requires CI verification. Do not derive effective dates from capture time,
+   passed all eight checks at schema head `a66de0c` (CI46152628132 /
+   CodeQL46152628129). Do not derive effective dates from capture time,
    or invent stable daira IDs from names without review.
-3. Rehearse seed, uniqueness, relationships, dates and rollback on disposable PG18;
-   no automatic historical text rewriting. Bind import evidence to the snapshot.
+3. A [transactional importer and reversible removal path](P1-02-REFERENCE-IMPORT.md)
+   now implements retained identities, strict retries and full row readback.
+   Its CI uses synthetic full-size fixtures, not the adopted source. Complete
+   source capture and source-bound PG18 import/rollback rehearsal are still needed;
+   no automatic historical text rewriting.
 4. Consume one activated reference version in the API, setup, organization,
    projects and preview; verify AR/FR selection/display parity and preserve old
    text values. Current endpoint behavior is unchanged until that work lands.

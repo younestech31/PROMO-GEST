@@ -86,8 +86,17 @@ Fixtures are explicitly synthetic, **not 1541/69/151 source-import evidence**.
 Local sandbox has no .NET SDK/PostgreSQL executable. Added tests require CI;
 no local .NET/PG18 success or manual/institutional acceptance is claimed here.
 
-Remaining P1-02 work: complete source capture/package/checksum; validated,
-transactional and repeatable import with retained identity map and reconciled
-counts; PG18 full-dataset rehearsal/rollback; explicit activation; one server-owned
-version consumed by setup/organization/project/preview with AR/FR parity and
-preserved historical text. Schema presence does not mark P1-02 Done.
+Schema head `a66de0cbb759f8d80d03af8500909dbefc23350b` subsequently passed all
+eight PR checks (CI46152628132 / CodeQL46152628129), including these four tests.
+The [transactional operator importer](P1-02-REFERENCE-IMPORT.md) now implements
+staging/retry/removal and retained-map validation; its newer exact-head CI must be
+checked separately. Complete adopted-source capture/package/checksum, reviewed
+identity map/full-source import and PG18 rehearsal remain outstanding, followed by
+explicit activation and one server-owned version consumed by
+setup/organization/project/preview with AR/FR parity and preserved historical text.
+Schema/importer code alone does not mark P1-02 Done.
+
+The subsequent [staged reference inspection slice](P1-02-STAGED-REFERENCE-INSPECTION.md)
+adds active-system-admin-only read endpoints and an AR/FR inspection panel. It
+uses the SELECT-only runtime role and does not publish a version or replace the
+existing anonymous catalogue. Its exact-head tests must be checked independently.

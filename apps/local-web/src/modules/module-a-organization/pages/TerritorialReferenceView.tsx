@@ -1,17 +1,20 @@
 import { useMemo, useState } from 'react';
 import { AlertCircle, MapPin, Search } from 'lucide-react';
-import type { AppLanguage } from '@/types/erp';
+import type { AppLanguage, AuthenticatedUser } from '@/types/erp';
+import { StagedAdministrativeReferencePanel } from './StagedAdministrativeReferencePanel';
 import { useAdministrativeReference } from '../hooks/useAdministrativeReference';
 import { PageHeader } from '@/shared/components/PageHeader';
 import { ErrorBanner, LoadingSkeleton } from '@/shared/components/StateViews';
 import { inputBaseClass } from '@/shared/components/FormField';
 
 interface TerritorialReferenceViewProps {
+  currentUser?: AuthenticatedUser;
   language: AppLanguage;
   onNavigateHome: () => void;
 }
 
 export function TerritorialReferenceView({
+  currentUser,
   language,
   onNavigateHome,
 }: TerritorialReferenceViewProps) {
@@ -49,6 +52,13 @@ export function TerritorialReferenceView({
           { label: isArabic ? 'المرجع الإقليمي' : 'Référentiel territorial' },
         ]}
       />
+
+      {currentUser?.isActive && currentUser.isSystemAdministrator && (
+        <StagedAdministrativeReferencePanel
+          key={`${currentUser.id}:${currentUser.concurrencyStamp}`}
+          language={language}
+        />
+      )}
 
       {hasError && (
         <ErrorBanner

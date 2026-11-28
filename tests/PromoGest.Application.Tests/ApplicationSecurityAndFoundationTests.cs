@@ -15,7 +15,7 @@ using Xunit;
 
 namespace PromoGest.Application.Tests;
 
-public sealed class ApplicationSecurityAndFoundationTests
+public sealed partial class ApplicationSecurityAndFoundationTests
 {
     private sealed class FakeClock : IClock
     {

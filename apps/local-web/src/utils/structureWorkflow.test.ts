@@ -166,3 +166,93 @@ for (const language of ['ar', 'fr'] as AppLanguage[]) {
     }
   });
 }
+
+for (const language of ['ar', 'fr'] as AppLanguage[]) {
+  test(`structure (${language}): local editor transitions require Stay/Discard and never write`, async () => {
+    const original = { read: apiClient.getProjectStructure, building: apiClient.createProjectBuilding,
+      floor: apiClient.createBuildingFloor, unit: apiClient.createFloorUnit,
+      update: apiClient.updatePropertyUnit, status: apiClient.changePropertyUnitStatus };
+    const fixture = structuredClone(structure);
+    fixture.buildings.push({ ...structuredClone(fixture.buildings[0]), id: 'b2', code: 'B2', floors: [] });
+    fixture.buildings[0].floors.push({ ...structuredClone(fixture.buildings[0].floors[0]), id: 'f2', floorNumber: 2, units: [] });
+    let writes = 0;
+    let reads = 0;
+    const write = async () => { writes++; return fixture; };
+    apiClient.getProjectStructure = async () => { reads++; return fixture; };
+    apiClient.createProjectBuilding = write; apiClient.createBuildingFloor = write;
+    apiClient.createFloorUnit = write; apiClient.updatePropertyUnit = write; apiClient.changePropertyUnitStatus = write;
+    const labels = getTranslations(language).projects;
+    const cases = [
+      { source: 'building', target: 'cancel' },
+      { source: 'edit-building', target: 'building2' },
+      { source: 'floor', target: 'building2' },
+      { source: 'edit-floor', target: 'new-building' },
+      { source: 'unit', target: 'floor2' },
+      { source: 'edit-unit', target: 'new-unit' },
+      { source: 'unit', target: 'edit-building' },
+      { source: 'edit-unit', target: 'cancel' },
+    ] as const;
+    try {
+      for (const scenario of cases) {
+        const dirty: boolean[] = [];
+        const ui = await renderReact(createElement(ProjectStructureModal, {
+          project, language, mode: 'embedded', onDirtyChange: (value) => dirty.push(value),
+        }));
+        const icon = async (label: string) => act(async () => {
+          const button = ui.container.querySelector<HTMLButtonElement>(`button[aria-label="${label}"]`);
+          assert.ok(button); button.click();
+        });
+        try {
+          await ui.click('B1', false);
+          await ui.click('1 ·', false);
+          let field: string;
+          switch (scenario.source) {
+            case 'building': await ui.click(labels.createBuilding); field = '#structure-building-name-fr'; break;
+            case 'edit-building': await icon(labels.editBuilding); field = '#structure-building-name-fr'; break;
+            case 'floor': await ui.click(labels.addFloor); field = '#structure-floor-name-fr'; break;
+            case 'edit-floor': await icon(labels.editFloor); field = '#structure-floor-name-fr'; break;
+            case 'unit': await ui.click(labels.addUnit); field = '#structure-unit-number'; break;
+            case 'edit-unit': await ui.click(labels.editUnit); field = '#edit-unit-number-u1'; break;
+          }
+          await ui.change(field, 'UNSAVED-DRAFT');
+          assert.equal(dirty.at(-1), true, scenario.source);
+          const transition = async () => {
+            switch (scenario.target) {
+              case 'cancel': await ui.click(language === 'ar' ? 'إلغاء' : 'Annuler'); break;
+              case 'building2': await ui.click('B2', false); break;
+              case 'floor2': await ui.click('2 ·', false); break;
+              case 'new-building': await ui.click(labels.createBuilding); break;
+              case 'new-unit': await ui.click(labels.addUnit); break;
+              case 'edit-building': await icon(labels.editBuilding); break;
+            }
+          };
+          await transition();
+          assert.ok(ui.container.querySelector('#confirm-dialog-title'), `${scenario.source} -> ${scenario.target}`);
+          assert.equal((ui.container.querySelector(field) as HTMLInputElement).value, 'UNSAVED-DRAFT');
+          assert.equal(ui.container.querySelectorAll('form').length, 1, 'destination must not open before confirmation');
+          await ui.click(language === 'ar' ? 'البقاء في النموذج' : 'Rester sur le formulaire');
+          assert.equal((ui.container.querySelector(field) as HTMLInputElement).value, 'UNSAVED-DRAFT');
+          assert.equal(dirty.at(-1), true);
+          await transition();
+          await ui.click(language === 'ar' ? 'تجاهل والمتابعة' : 'Abandonner et continuer');
+          assert.equal(ui.container.querySelector('#confirm-dialog-title'), null);
+          assert.equal(ui.container.querySelector(field), null, 'old editor must close after explicit discard');
+          assert.equal(dirty.at(-1), false);
+          assert.equal(writes, 0, 'neither Stay nor Discard may perform a write');
+          if (scenario.target === 'new-unit') {
+            assert.equal((ui.container.querySelector('#structure-unit-number') as HTMLInputElement).value, '');
+          } else if (scenario.target === 'new-building') {
+            assert.equal((ui.container.querySelector('#structure-building-name-fr') as HTMLInputElement).value, '');
+          } else if (scenario.target === 'edit-building') {
+            assert.equal((ui.container.querySelector('#structure-building-name-fr') as HTMLInputElement).value, 'Bâtiment');
+          }
+          assert.equal(reads, cases.indexOf(scenario) + 1, 'local navigation must not refetch the structure');
+        } finally { await ui.cleanup(); }
+      }
+    } finally {
+      apiClient.getProjectStructure = original.read; apiClient.createProjectBuilding = original.building;
+      apiClient.createBuildingFloor = original.floor; apiClient.createFloorUnit = original.unit;
+      apiClient.updatePropertyUnit = original.update; apiClient.changePropertyUnitStatus = original.status;
+    }
+  });
+}

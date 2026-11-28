@@ -29,9 +29,20 @@ IN_PROGRESS and Phases 2–5 gated.
 - A completion from an unmounted/project-replaced editor does not publish state,
   errors or parent callbacks into its successor.
 
-This does not extend dirty confirmation to every existing registry selection or
-form-to-form transition. It does not claim offline support, cancellation of a
-server write already submitted, or human visual approval.
+### Local draft-transition follow-up
+
+Building/floor selection, switching between create/edit forms, toggling a form
+closed, explicit Cancel, subview changes and modal close now use one Stay/Discard
+entry point. Clicking the already selected building/floor is a no-op. Stay keeps
+the editor, values and dirty signal unchanged. Discard closes the old editor,
+clears its values/flags and applies only the requested UI transition; it performs
+no write or structure refetch. Only one editor is active at a time, preventing
+hidden drafts from surfacing in a different building/floor context. Pending-write
+locking still wins and mutation handlers reject submission behind a confirmation.
+
+This does not claim offline support, cancellation of a server write already
+submitted, or human visual approval. Unit-status selector intent is unchanged;
+this follow-up governs the tracked create/edit forms, not a new status workflow.
 
 ## Local verification
 
@@ -42,11 +53,20 @@ preservation on language change, all five write families pending/same-turn lock,
 failed retry with identical IDs/draft/stamp, success, project change and stale
 read/write completion. These are component tests, not actual browser acceptance.
 
-Remote exact-head CI/CodeQL and merge remain separate gates for this batch.
-PR298's eight exact-head checks passed and it merged at
-`58793dda00e8b5f960e13efb4c02bb787e3636cc`; independent main CI46139067018 is
-pending at authoring, CodeQL46139067047 PASS. Prior PR297 independent-main
-CI46137466758 and CodeQL46137466759 PASS.
+PR299's eight exact-head checks passed on `47d1527` (CI46139392068,
+CodeQL46139392059) and it merged at
+`360cfbc371fde3dc00f889da0bd7e9aa82e920c3`. Its independent main CI46140818938
+and CodeQL46140818949 are pending at this checkpoint. PR298 independent main
+CI46139067018 and CodeQL46139067047 PASS.
+
+The local transition follow-up passes TypeScript/build/lint guard and **175/175**
+frontend tests. Two additional rendered AR/FR cases each exercise eight actual
+component transitions with Stay and Discard: building cancel/selection, floor
+selection/editor replacement, unit floor/context changes, edit-to-create,
+create-to-edit, and unit-edit cancel. Assertions cover preserved draft/dirty state,
+clean target state and zero writes/refetches. These component checks and the new
+head's remote CI are distinct from PR299's delivery or manual browser acceptance.
+The transition follow-up still needs its own exact-head remote checks and merge.
 
 ## Live roadmap correction
 

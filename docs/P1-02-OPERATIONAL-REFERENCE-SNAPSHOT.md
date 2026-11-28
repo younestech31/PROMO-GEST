@@ -147,10 +147,14 @@ Next implementation sequence:
    in `20261127120000_AddVersionedAdministrativeReference`; see
    [storage design and verification boundary](P1-02-VERSIONED-REFERENCE-STORAGE.md).
    It preserves original labels and unknown values, adds no seed/activation and
-   requires CI verification. Do not derive effective dates from capture time,
+   passed all eight checks at schema head `a66de0c` (CI46152628132 /
+   CodeQL46152628129). Do not derive effective dates from capture time,
    or invent stable daira IDs from names without review.
-3. Rehearse seed, uniqueness, relationships, dates and rollback on disposable PG18;
-   no automatic historical text rewriting. Bind import evidence to the snapshot.
+3. A [transactional importer and reversible removal path](P1-02-REFERENCE-IMPORT.md)
+   now implements retained identities, strict retries and full row readback.
+   Its CI uses synthetic full-size fixtures, not the adopted source. Complete
+   source capture and source-bound PG18 import/rollback rehearsal are still needed;
+   no automatic historical text rewriting.
 4. Consume one activated reference version in the API, setup, organization,
    projects and preview; verify AR/FR selection/display parity and preserve old
    text values. Current endpoint behavior is unchanged until that work lands.

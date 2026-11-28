@@ -81,8 +81,11 @@ def package(inputs: dict[str, bytes], output: Path, captured_at_utc: str) -> dic
             shutil.rmtree(output)
 
 
-def verify(output: Path) -> dict:
-    """Check byte integrity AND re-run validation; never trust a copied PASS report.
+def read_verified_package(output: Path) -> tuple[dict, dict, dict[str, bytes]]:
+    """Return the manifest, report and the SAME immutable bytes that passed checks.
+
+    Consumers must not reopen the CSVs after verification (a verify/use race).
+    Check byte integrity AND re-run validation; never trust a copied PASS report.
 
     Hashes detect accidental drift, not publisher identity/signatures. This is a
     local package verifier, not a legal or operational import authorization.
@@ -123,11 +126,16 @@ def verify(output: Path) -> dict:
                 or manifest["originalAttachmentByteIdentityVerified"] is not False):
             raise InvalidSnapshot("unexpected provenance assertion")
         validate_timestamp(manifest["claimedCaptureAtUtc"])
-        return report
+        return manifest, report, blobs
     except (OSError, KeyError, TypeError, ValueError, AttributeError, RecursionError) as error:
         if isinstance(error, InvalidSnapshot):
             raise
         raise InvalidSnapshot("invalid or unreadable snapshot package") from error
+
+
+def verify(output: Path) -> dict:
+    """Compatibility/report-only entry point; importers use read_verified_package."""
+    return read_verified_package(output)[1]
 
 
 def main(argv: list[str] | None = None) -> int:

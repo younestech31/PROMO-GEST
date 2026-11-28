@@ -61,6 +61,10 @@ def run_document_workflow(admin_ctx, reader_ctx, base, lang, device, out, projec
         draft = page.get_by_label(
             'وصف مختصر (اختياري)' if lang == 'ar' else 'Description (facultative)', exact=True)
         expect(search).to_be_visible()
+        sensitivity = page.get_by_label('حساسية الوثيقة' if lang == 'ar' else 'Sensibilité du document')
+        expect(sensitivity).to_have_value('identity')
+        # This synthetic note is explicitly general so the finance reader can access it.
+        sensitivity.select_option('general')
         draft.fill(description)
         page.locator('#project-document-file').set_input_files({
             'name': filename, 'mimeType': 'text/plain', 'buffer': content,
@@ -71,6 +75,7 @@ def run_document_workflow(admin_ctx, reader_ctx, base, lang, device, out, projec
                                   and urlsplit(r.url).path == endpoint) as uploaded:
             page.get_by_role('button', name='رفع الوثيقة' if lang == 'ar' else 'Téléverser', exact=True).click()
         assert uploaded.value.status == 201
+        assert uploaded.value.json()['isCustomerIdentitySensitive'] is False
         file_id = str(uuid.UUID(uploaded.value.json()['id']))
         expect(page.get_by_role('status').filter(has_text=filename)).to_be_visible()
         retry = page.get_by_role('button', name=(

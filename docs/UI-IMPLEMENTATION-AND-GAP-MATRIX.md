@@ -1,9 +1,20 @@
+## Audit read workflow follow-up — bounded loaded events
+
+AuditLogView now has explicit failure/read-only retry, single-flight refresh,
+actor-scoped rows/filters and obsolete completion protection. Authorized loaded
+records can be searched by visible text and filtered by severity with matching /
+loaded count, reset and distinct no-match state. A visible notice limits this to
+at most100 loaded recent records, not complete history. Local195/195 PASS;
+new head remote checks pending. No endpoint/schema/permission-policy, audit export
+or retention/investigation workflow. [Scope/evidence](P1-06-AUDIT-READ-WORKFLOW.md).
+
 ## Module D follow-up — canonical Party save isolation
 
 The existing identity editor now has synchronous single-flight save/close/search
 protection, clean actor ID/stamp/read/manage-scope replacement and current-language
 async outcomes. Failed saves retain draft/ID/stamp; successful response is applied
-without refetch. Local187/187 PASS; this head remote checks pending. No permission
+without refetch. Local187/187 PASS at PR302; all eight exact-head checks passed before merge.
+Independent main CI46145555028/CodeQL46145555029 pending. No permission
 policy or master-data expansion. [Scope/evidence](P1-06-CRM-WORKFLOW-COMPLETION.md#canonical-party-save-isolation-follow-up).
 
 ## Module E functional follow-up — existing reservation request reliability
@@ -96,7 +107,7 @@ This matrix was prepared from `app/App.tsx`, `app/routeRegistry.ts`, `core/api/`
 | Overview & Reports | `OverviewView.tsx`, `ReportsWorkspaceView.tsx` display live authorized project/organization metrics without fabricating unavailable KPIs. | Cross-module commercial, arrears, construction variance, and SCF exports remain `PLANNED`. |
 | Organization profile | `OrganizationProfileView.tsx` renders legal/fiscal and location/contact details (gated by `org.read` / `org.manage`) and permits authorized `org.manage` edits via `PUT /api/organization` with `ExpectedConcurrencyStamp` CAS conflict handling, consuming the 69-Wilaya API, plus dirty-form / save-and-continue protection. | The complete 1,541-commune hierarchy is not loaded (`TerritorialReferenceView.tsx` documents `69` active Wilayas vs `0` loaded communes). |
 | User administration | `UsersManagementView.tsx` supports user-account creation, edit, role assignment, activation/deactivation, and password reset with unsaved modal confirmation. | No complete HR/Employee master, attendance, payroll, or HR workflow. |
-| Audit administration | `AuditLogView.tsx` lists a bounded recent audit result (currently requests up to 100 rows) and permits refresh under `audit.read` route gating. | No broader security investigation, export, or retention-management UX. |
+| Audit administration | `AuditLogView.tsx` reads up to100 recent events under `audit.read` with explicit retry, scoped read lifetime and local visible-text search/severity filter/count/reset; scope notice is explicit. | No full-history/server-side search or broader security investigation, export, or retention-management UX. |
 
 The shell routes through URL paths managed cleanly per browser tab, enforces `canAccessRoute` prior to mounting gated routes, and clears stale state cleanly upon project-access revocation (`revokeProjectAccessFromState`).
 

@@ -218,6 +218,17 @@ export interface TranslationBundle {
     projectGuardNotice: string;
   };
   audit: {
+    accessDenied: string;
+    loadError: string;
+    retry: string;
+    loading: string;
+    boundedNotice: string;
+    filters: string;
+    search: string;
+    allSeverities: string;
+    clearFilters: string;
+    resultCount: string;
+    noMatches: string;
     title: string;
     subtitle: string;
     refresh: string;
@@ -465,6 +476,17 @@ const AR: TranslationBundle = {
     projectGuardNotice: 'يتم التحقق من عضوية المشروع على الخادم في كل طلب API (403 Forbidden لغير الأعضاء).',
   },
   audit: {
+    accessDenied: 'ليس لديك صلاحية قراءة سجل التدقيق (audit.read).',
+    loadError: 'تعذر تحميل سجل التدقيق.',
+    retry: 'إعادة المحاولة',
+    loading: 'جارٍ تحميل سجل التدقيق',
+    boundedNotice: 'البحث والتصفية ضمن آخر 100 حدث محمّل كحد أقصى، وليس السجل الكامل.',
+    filters: 'تصفية الأحداث المحمّلة',
+    search: 'بحث بالفاعل أو الحدث أو التفاصيل أو المصدر',
+    allSeverities: 'كل المستويات',
+    clearFilters: 'مسح التصفية',
+    resultCount: 'النتائج ضمن الأحداث المحمّلة',
+    noMatches: 'لا توجد أحداث محمّلة تطابق التصفية.',
     title: 'سجل التدقيق الأمني المحلي',
     subtitle: 'تتبع عمليات الدخول، حالات الرفض، إنشاء الحسابات، وتغييرات صلاحيات المشاريع.',
     refresh: 'تحديث السجل',
@@ -712,6 +734,17 @@ const FR: TranslationBundle = {
     projectGuardNotice: 'Vérification serveur systématique : toute requête directe hors périmètre renvoie 403 Forbidden.',
   },
   audit: {
+    accessDenied: 'Vous ne disposez pas du droit de lecture du journal (audit.read).',
+    loadError: 'Impossible de charger le journal d’audit.',
+    retry: 'Réessayer',
+    loading: 'Chargement du journal',
+    boundedNotice: 'Recherche et filtres limités aux 100 derniers événements chargés au maximum, pas à tout le journal.',
+    filters: 'Filtrer les événements chargés',
+    search: 'Rechercher par acteur, événement, résumé ou source',
+    allSeverities: 'Toutes les sévérités',
+    clearFilters: 'Effacer les filtres',
+    resultCount: 'Résultats parmi les événements chargés',
+    noMatches: 'Aucun événement chargé ne correspond aux filtres.',
     title: 'Journal d\'audit de sécurité',
     subtitle: 'Traçabilité des connexions, refus d\'accès, création de comptes et habilitations projets.',
     refresh: 'Actualiser',

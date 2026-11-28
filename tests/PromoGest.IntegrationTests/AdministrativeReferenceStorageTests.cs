@@ -154,7 +154,7 @@ public sealed partial class PostgresEndToEndTests
             FROM admin_commune_versions WHERE snapshot_id = @snapshot
             """, PostgresErrorCodes.UniqueViolation, "ux_admin_commune_version_code");
         await Reject("DELETE FROM admin_wilaya_versions WHERE snapshot_id = @snapshot",
-            PostgresErrorCodes.ForeignKeyViolation, "fk_admin_commune_version_wilaya");
+            PostgresErrorCodes.RestrictViolation, "fk_admin_commune_version_wilaya");
         Assert.Null((await db.AdministrativeCommuneVersions.AsNoTracking().SingleAsync()).ParentEffectiveFrom);
     }
 

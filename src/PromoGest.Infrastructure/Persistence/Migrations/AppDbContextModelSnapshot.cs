@@ -1198,6 +1198,10 @@ namespace PromoGest.Infrastructure.Persistence.Migrations
                         .HasColumnType("character varying(500)")
                         .HasColumnName("description");
 
+                    b.Property<bool>("IsCustomerIdentitySensitive")
+                        .HasColumnType("boolean")
+                        .HasColumnName("is_customer_identity_sensitive");
+
                     b.Property<string>("OriginalFileName")
                         .IsRequired()
                         .HasMaxLength(255)
@@ -1207,6 +1211,10 @@ namespace PromoGest.Infrastructure.Persistence.Migrations
                     b.Property<Guid?>("ProjectId")
                         .HasColumnType("uuid")
                         .HasColumnName("project_id");
+
+                    b.Property<bool>("RequiresSensitivityReview")
+                        .HasColumnType("boolean")
+                        .HasColumnName("requires_sensitivity_review");
 
                     b.Property<string>("Scope")
                         .IsRequired()
@@ -1253,6 +1261,8 @@ namespace PromoGest.Infrastructure.Persistence.Migrations
                     b.ToTable("stored_files", null, t =>
                         {
                             t.HasCheckConstraint("ck_stored_files_category", "category IN ('Legal', 'LandAndTitle', 'Permits', 'Plans', 'Engineering', 'Commercial', 'Financial', 'Correspondence', 'Other')");
+
+                            t.HasCheckConstraint("ck_stored_files_review_restricted", "NOT requires_sensitivity_review OR is_customer_identity_sensitive");
 
                             t.HasCheckConstraint("ck_stored_files_size_positive", "size_bytes > 0");
                         });

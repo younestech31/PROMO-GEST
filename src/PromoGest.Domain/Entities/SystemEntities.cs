@@ -116,9 +116,23 @@ public sealed class StoredFile : BaseEntity
     public string Sha256Checksum { get; private set; } = string.Empty;
     public string Category { get; private set; } = "Other";
     public string? Description { get; private set; }
+    public bool IsCustomerIdentitySensitive { get; private set; } = true;
+    public bool RequiresSensitivityReview { get; private set; }
     public StoredFileScope Scope { get; private set; }
     public Guid? ProjectId { get; private set; }
     public Guid UploadedByUserId { get; private set; }
+
+    // Called before a new file is persisted. Unspecified uploads remain restricted.
+    public void ClassifyNewUpload(bool isIdentity) => IsCustomerIdentitySensitive = isIdentity;
+
+    public void ReviewLegacySensitivity(bool isIdentity, DateTimeOffset nowUtc)
+    {
+        if (!RequiresSensitivityReview)
+            throw new ConflictDomainException("FILE_SENSITIVITY_ALREADY_REVIEWED", "This document has already been classified.");
+        IsCustomerIdentitySensitive = isIdentity;
+        RequiresSensitivityReview = false;
+        Touch(nowUtc);
+    }
 
     public static StoredFile Create(
         string originalFileName,

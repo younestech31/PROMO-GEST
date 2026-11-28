@@ -10,6 +10,7 @@ interface ProjectDocumentsModalProps {
   project: ProjectDto;
   language: AppLanguage;
   canUpload: boolean;
+  canReviewSensitivity?: boolean;
   mode?: 'modal' | 'embedded';
   onClose?: () => void;
   onDirtyChange?: (dirty: boolean) => void;
@@ -51,6 +52,7 @@ export function ProjectDocumentsModal({
   project,
   language,
   canUpload,
+  canReviewSensitivity = false,
   mode = 'modal',
   onClose,
   onDirtyChange,
@@ -61,6 +63,11 @@ export function ProjectDocumentsModal({
   const [loading, setLoading] = useState(true);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [category, setCategory] = useState<string>('Other');
+  // Fail closed: identity sensitivity is the default unless explicitly changed.
+  const [identitySensitive, setIdentitySensitive] = useState(true);
+  const [reviewChoice, setReviewChoice] = useState<{ document: ProjectDocumentDto; isIdentity: boolean } | null>(null);
+  const [reviewing, setReviewing] = useState(false);
+  const reviewRequest = useRef<object | null>(null);
   const [description, setDescription] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
@@ -86,7 +93,7 @@ export function ProjectDocumentsModal({
     (!normalizedQuery || [item.originalFileName, item.description]
       .some((value) => value?.normalize('NFKC').toLocaleLowerCase().includes(normalizedQuery))));
 
-  const isDirty = canUpload && (selectedFile !== null || description.trim() !== '' || category !== 'Other');
+  const isDirty = canUpload && (selectedFile !== null || description.trim() !== '' || category !== 'Other' || !identitySensitive);
 
   useEffect(() => {
     onDirtyChange?.(isDirty);
@@ -102,11 +109,12 @@ export function ProjectDocumentsModal({
     setSelectedFile(null);
     setDescription('');
     setCategory('Other');
+    setIdentitySensitive(true);
     if (fileInput.current) fileInput.current.value = '';
   };
 
   const requestClose = () => {
-    if (uploadRequest.current) return;
+    if (uploadRequest.current || reviewRequest.current) return;
     if (isDirty) {
       setPendingAction({ kind: 'close' });
       return;
@@ -115,7 +123,7 @@ export function ProjectDocumentsModal({
   };
 
   const requestSwitchSubView = (target: 'vault' | 'metadataPlanned' | 'linksPlanned' | 'retentionPlanned') => {
-    if (uploadRequest.current || target === subView) return;
+    if (uploadRequest.current || reviewRequest.current || target === subView) return;
     if (isDirty) {
       setPendingAction({ kind: 'subView', target });
       return;
@@ -145,6 +153,10 @@ export function ProjectDocumentsModal({
     viewLifetime.current = { projectId: project.id };
     uploadRequest.current = null;
     downloadRequest.current = null;
+    reviewRequest.current = null;
+    setReviewChoice(null);
+    setReviewing(false);
+    setIdentitySensitive(true);
     setSubmitting(false);
     setDownloadingId(null);
     setSelectedFile(null);
@@ -167,7 +179,7 @@ export function ProjectDocumentsModal({
 
   const handleUpload = async (event: FormEvent) => {
     event.preventDefault();
-    if (!canUpload || uploadRequest.current) return;
+    if (!canUpload || uploadRequest.current || reviewRequest.current) return;
     setError(null);
     setUploadSuccess(null);
 
@@ -185,6 +197,7 @@ export function ProjectDocumentsModal({
     const form = new FormData();
     form.append('file', selectedFile, selectedFile.name);
     form.append('category', category);
+    form.append('isCustomerIdentitySensitive', String(identitySensitive));
     form.append('description', description.trim());
 
     const lifetime = viewLifetime.current;
@@ -195,10 +208,7 @@ export function ProjectDocumentsModal({
       await apiClient.uploadProjectDocument(project.id, form);
       if (lifetime !== viewLifetime.current) return;
       setUploadSuccess(selectedFile.name);
-      setSelectedFile(null);
-      setDescription('');
-      setCategory('Other');
-      if (fileInput.current) fileInput.current.value = '';
+      resetUploadDraft();
       await loadDocuments();
     } catch (err) {
       if (lifetime !== viewLifetime.current) return;
@@ -208,6 +218,32 @@ export function ProjectDocumentsModal({
     } finally {
       if (uploadRequest.current === request) uploadRequest.current = null;
       if (lifetime === viewLifetime.current) setSubmitting(false);
+    }
+  };
+
+  const handleReview = async () => {
+    if (!canReviewSensitivity || !reviewChoice || reviewRequest.current || uploadRequest.current) return;
+    const { document, isIdentity } = reviewChoice;
+    const lifetime = viewLifetime.current;
+    const request = {};
+    reviewRequest.current = request;
+    setReviewing(true);
+    setError(null);
+    try {
+      await apiClient.reviewProjectDocumentSensitivity(project.id, document.id, isIdentity, document.concurrencyStamp);
+      if (lifetime !== viewLifetime.current) return;
+      setReviewChoice(null);
+      await loadDocuments();
+    } catch (err) {
+      if (lifetime !== viewLifetime.current) return;
+      setReviewChoice(null);
+      setError(err instanceof ApiError ? translateApiError(err.code, err.message, language)
+        : (isArabic ? 'تعذرت مراجعة الوثيقة. حدّث القائمة قبل المحاولة مجدداً.' : 'Impossible de vérifier le résultat. Rechargez la liste avant de réessayer.'));
+      // A network error may have occurred after commit. Never offer a blind retry.
+      await loadDocuments();
+    } finally {
+      if (reviewRequest.current === request) reviewRequest.current = null;
+      if (lifetime === viewLifetime.current) setReviewing(false);
     }
   };
 
@@ -341,6 +377,17 @@ export function ProjectDocumentsModal({
                 </label>
               </div>
               <label className="block space-y-1.5 text-xs font-medium text-slate-700">
+                <span>{isArabic ? 'حساسية الوثيقة' : 'Sensibilité du document'}</span>
+                <select value={identitySensitive ? 'identity' : 'general'} onChange={(event) => setIdentitySensitive(event.target.value === 'identity')}
+                  className="w-full rounded border border-slate-300 bg-white px-3 py-2 text-xs">
+                  <option value="identity">{isArabic ? 'وثيقة هوية زبون — وصول مقيّد' : 'Pièce d’identité client — accès restreint'}</option>
+                  <option value="general">{isArabic ? 'وثيقة عامة — ليست هوية زبون' : 'Document général — pas une pièce d’identité client'}</option>
+                </select>
+                <span className="text-[11px] font-normal text-slate-500">{isArabic
+                  ? 'اختر عامة فقط إذا تأكدت أنها لا تحتوي وثيقة هوية؛ لا يمكن تحويلها لاحقاً إلى وثيقة هوية.'
+                  : 'Choisissez général uniquement si le fichier ne contient pas de pièce d’identité ; il ne pourra pas être lié comme pièce d’identité.'}</span>
+              </label>
+              <label className="block space-y-1.5 text-xs font-medium text-slate-700">
                 <span>{isArabic ? 'وصف مختصر (اختياري)' : 'Description (facultative)'}</span>
                 <input
                   type="text"
@@ -429,6 +476,8 @@ export function ProjectDocumentsModal({
                         <div className="text-[11px] text-slate-600">
                           {categoryLabel(item.category, language)} · {formatBytes(item.sizeBytes)}
                         </div>
+                        {item.requiresSensitivityReview && <p className="text-[11px] font-semibold text-amber-800">{isArabic ? 'ملف قديم مقيّد — يحتاج مراجعة مدير النظام' : 'Ancien fichier restreint — revue administrateur requise'}</p>}
+                        {!item.requiresSensitivityReview && item.isCustomerIdentitySensitive && <p className="text-[11px] text-amber-800">{isArabic ? 'وثيقة هوية زبون مقيّدة' : 'Pièce d’identité client restreinte'}</p>}
                         {item.description && <p className="text-[11px] text-slate-500">{item.description}</p>}
                         <div className="text-[11px] text-slate-400">
                           {item.uploadedByFullName} · {formatDate(item.createdAtUtc, language)}
@@ -439,10 +488,16 @@ export function ProjectDocumentsModal({
                         </details>
                       </div>
                     </div>
+                    {canReviewSensitivity && item.requiresSensitivityReview && <div className="flex flex-wrap gap-2">
+                      <button type="button" disabled={reviewing || submitting || loading} onClick={() => setReviewChoice({ document: item, isIdentity: true })}
+                        className="rounded border border-amber-400 px-3 py-2 text-xs">{isArabic ? 'تصنيف هوية مقيّدة' : 'Classifier identité restreinte'}</button>
+                      <button type="button" disabled={reviewing || submitting || loading} onClick={() => setReviewChoice({ document: item, isIdentity: false })}
+                        className="rounded border border-amber-400 px-3 py-2 text-xs">{isArabic ? 'تصنيف وثيقة عامة' : 'Classifier document général'}</button>
+                    </div>}
                     <button
                       type="button"
                       onClick={() => void handleDownload(item)}
-                      disabled={downloadingId !== null || loading}
+                      disabled={downloadingId !== null || loading || reviewing}
                       className="inline-flex shrink-0 items-center justify-center gap-2 rounded border border-slate-200 px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50 disabled:opacity-50"
                     >
                       {downloadingId === item.id
@@ -486,6 +541,16 @@ export function ProjectDocumentsModal({
     />
   );
 
+  const reviewConfirmDialog = (
+    <ConfirmDialog open={reviewChoice !== null} title={isArabic ? 'تأكيد تصنيف الوثيقة' : 'Confirmer la classification'}
+      message={reviewChoice?.isIdentity
+        ? (isArabic ? 'سيبقى الملف مقيّدًا ويصبح قابلاً للربط كوثيقة هوية زبون.' : 'Le fichier restera restreint et pourra être lié comme pièce d’identité client.')
+        : (isArabic ? 'تأكد من محتوى الملف: تصنيفه كوثيقة عامة قد يتيح لمزيد من المستخدمين الاطلاع عليه. لا يمكن التراجع عبر هذه الشاشة.' : 'Vérifiez le contenu : le classer comme général peut donner accès à davantage d’utilisateurs. Cette action ne peut pas être annulée ici.')}
+      confirmLabel={isArabic ? 'تأكيد التصنيف' : 'Confirmer la classification'}
+      cancelLabel={isArabic ? 'إلغاء' : 'Annuler'} savingConfirm={reviewing}
+      onConfirm={() => void handleReview()} onCancel={() => { if (!reviewing) setReviewChoice(null); }} />
+  );
+
   if (mode === 'embedded') {
     return (
       <>
@@ -493,6 +558,7 @@ export function ProjectDocumentsModal({
           {documentsBody}
         </div>
         {discardConfirmDialog}
+        {reviewConfirmDialog}
       </>
     );
   }
@@ -503,7 +569,7 @@ export function ProjectDocumentsModal({
         open
         titleId="project-documents-title"
         onClose={requestClose}
-        closeDisabled={submitting || downloadingId !== null}
+        closeDisabled={submitting || downloadingId !== null || reviewing}
         dir={isArabic ? 'rtl' : 'ltr'}
         overlayClassName="fixed inset-0 z-[70] flex items-center justify-center bg-slate-950/50 p-3 sm:p-5"
         panelClassName="flex max-h-[92vh] w-full max-w-4xl flex-col overflow-hidden rounded-lg border border-slate-200 bg-white shadow-xl outline-none"
@@ -541,6 +607,7 @@ export function ProjectDocumentsModal({
           </div>
       </Modal>
       {discardConfirmDialog}
+      {reviewConfirmDialog}
     </>
   );
 }

@@ -704,6 +704,7 @@ export function ProjectWorkspaceView({
             project={project}
             language={language}
             canUpload={canUploadProjectDocuments(currentUser, project)}
+            canReviewSensitivity={currentUser.isSystemAdministrator}
             mode="embedded"
             onDirtyChange={setEmbeddedDirty}
           />

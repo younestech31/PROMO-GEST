@@ -312,10 +312,11 @@ test('dev preview enforces document upload integrity, category scoping, and KYC 
   await withPreviewServer(async (baseUrl) => {
     const { adminClient, commercial, finance, projectManager, projectId } = await setupWithActors(baseUrl);
 
-    const makeMultipart = (filename: string, content: Buffer, category: string, description = '') => {
+    const makeMultipart = (filename: string, content: Buffer, category: string, description = '', isIdentity = false) => {
       const form = new FormData();
       form.append('file', new Blob([new Uint8Array(content)], { type: 'application/octet-stream' }), filename);
       form.append('category', category);
+      form.append('isCustomerIdentitySensitive', String(isIdentity));
       if (description) form.append('description', description);
       return form;
     };
@@ -421,11 +422,12 @@ test('dev preview enforces document upload integrity, category scoping, and KYC 
     const kycUpload = await commercial.client.request(
       'POST',
       `/api/projects/${projectId}/documents`,
-      makeMultipart('cni-amina.png', kycBytes, 'Legal', 'KYC'),
+      makeMultipart('cni-amina.png', kycBytes, 'Legal', 'KYC', true),
       true
     );
     assert.equal(kycUpload.status, 201);
 
+    assert.equal((await finance.client.request('GET', `/api/projects/${projectId}/documents/${kycUpload.data.id}/download`)).status, 403, 'unlinked identity must remain private');
     const custWithKyc = await commercial.client.request('POST', `/api/projects/${projectId}/customers`, {
       customerType: 'Individual',
       displayName: 'Amina Benali',
@@ -452,6 +454,19 @@ test('dev preview enforces document upload integrity, category scoping, and KYC 
     );
     assert.equal(financeDownloadKyc.status, 403);
     assert.equal(financeDownloadKyc.data.code, 'PROJECT_DOCUMENT_ACCESS_DENIED');
+
+    const unlink = await commercial.client.request('PUT', `/api/projects/${projectId}/customers/${custWithKyc.data.id}`, {
+      ...custWithKyc.data, identityDocumentStoredFileId: null,
+    });
+    assert.equal(unlink.status, 200);
+    assert.equal((await finance.client.request('GET', `/api/projects/${projectId}/documents/${kycUpload.data.id}/download`)).status, 403, 'unlinked identity must stay private');
+    assert.equal((await finance.client.request('GET', `/api/projects/${projectId}/documents`)).data.some((d: any) => d.id === kycUpload.data.id), false);
+
+    const wrongLink = await commercial.client.request('POST', `/api/projects/${projectId}/customers`, {
+      customerType: 'Individual', displayName: 'Nadia General', phone: '+213551223355', preferredLanguage: 'ar', source: 'WalkIn', identityDocumentStoredFileId: finUpload.data.id,
+    });
+    assert.equal(wrongLink.status, 409);
+    assert.equal(wrongLink.data.code, 'CUSTOMER_IDENTITY_DOCUMENT_CLASSIFICATION_REQUIRED');
   });
 });
 

@@ -422,6 +422,12 @@ export const apiClient = {
       body: form,
     }),
 
+  reviewProjectDocumentSensitivity: (projectId: string, fileId: string, isCustomerIdentitySensitive: boolean, expectedConcurrencyStamp: string) =>
+    requestJson<void>(`/api/projects/${encodeURIComponent(projectId)}/documents/${encodeURIComponent(fileId)}/sensitivity-review`, {
+      method: 'POST',
+      body: JSON.stringify({ isCustomerIdentitySensitive, expectedConcurrencyStamp }),
+    }),
+
   downloadProjectDocument: (projectId: string, fileId: string) =>
     requestBlob(`/api/projects/${encodeURIComponent(projectId)}/documents/${encodeURIComponent(fileId)}/download`),
 

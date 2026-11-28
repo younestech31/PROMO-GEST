@@ -55,6 +55,59 @@ public sealed partial class PostgresEndToEndTests
     }
 
     [Fact]
+    public async Task ExpiryWorkerAndLateCancellation_CompeteOnProjectRoot_AndWriteExpiryExactlyOnce()
+    {
+        var connection = await _fixture.CreateIsolatedDatabaseConnectionStringAsync();
+        var gate = new ReservationExpirySaveGate();
+        await using var factory = CreateFactory(
+            connection,
+            Path.Combine(Path.GetTempPath(), $"promogest_expiry_cancel_race_{Guid.NewGuid():N}"),
+            saveChangesInterceptor: gate);
+        using var client = factory.CreateClient(new WebApplicationFactoryClientOptions { HandleCookies = true });
+        var fixture = await PrepareSuspensionFixtureAsync(client);
+        await SetReservationExpiryDueAsync(factory, fixture.HoldId);
+
+        string concurrencyStamp;
+        using (var readScope = factory.Services.CreateScope())
+        {
+            var db = readScope.ServiceProvider.GetRequiredService<AppDbContext>();
+            concurrencyStamp = (await db.ProjectSalesReservations.SingleAsync(item => item.Id == fixture.HoldId))
+                .ConcurrencyStamp;
+        }
+
+        using var expiryScope = factory.Services.CreateScope();
+        var processor = expiryScope.ServiceProvider.GetRequiredService<ProjectSalesReservationExpiryProcessor>();
+        gate.Arm(fixture.HoldId);
+        var workerTask = processor.ProcessDueAsync();
+
+        HttpResponseMessage? cancellationResponse = null;
+        try
+        {
+            // Pause the worker immediately before its atomic SaveChanges. The API then
+            // reconciles the same due hold through the shared processor and wins the project CAS.
+            await gate.Arrived.Task.WaitAsync(TimeSpan.FromSeconds(30));
+            cancellationResponse = await client.PostAsJsonAsync(
+                $"/api/projects/{fixture.ProjectId}/reservations/{fixture.HoldId}/cancel",
+                new CancelProjectSalesReservationRequest("Late cancellation", concurrencyStamp));
+        }
+        finally
+        {
+            gate.Release();
+        }
+
+        using (cancellationResponse)
+        {
+            Assert.NotNull(cancellationResponse);
+            Assert.Equal(System.Net.HttpStatusCode.Conflict, cancellationResponse.StatusCode);
+            Assert.Contains("RESERVATION_EXPIRY_REACHED", await cancellationResponse.Content.ReadAsStringAsync());
+        }
+
+        var workerConflict = await Assert.ThrowsAsync<ConflictDomainException>(async () => await workerTask);
+        Assert.Equal("RESERVATION_CONCURRENCY_CONFLICT", workerConflict.Code);
+        await AssertReservationExpiredAsync(factory, fixture.HoldId, fixture.HeldUnitId);
+    }
+
+    [Fact]
     public async Task ExpiryAndSuspension_ConflictOnProjectRoot_AndPreserveTheQueuedHold()
     {
         var connection = await _fixture.CreateIsolatedDatabaseConnectionStringAsync();

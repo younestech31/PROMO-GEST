@@ -2149,6 +2149,19 @@ public sealed partial class PostgresEndToEndTests : IClassFixture<PostgreSql18In
                 new CancelProjectSalesReservationRequest("Late cancellation", elapsedReservation.ConcurrencyStamp));
             Assert.Equal(HttpStatusCode.Conflict, cancelExpiredResponse.StatusCode);
 
+            using (var reconciledExpiryScope = factory.Services.CreateScope())
+            {
+                var db = reconciledExpiryScope.ServiceProvider.GetRequiredService<AppDbContext>();
+                var reconciledHold = await db.ProjectSalesReservations.SingleAsync(item => item.Id == elapsedReservation.Id);
+                var reconciledUnit = await db.PropertyUnits.SingleAsync(item => item.Id == raceUnit.Id);
+                Assert.Equal(SalesReservationStatus.Expired, reconciledHold.Status);
+                Assert.Equal("EXPIRED", reconciledHold.CloseReason);
+                Assert.Equal(PropertyUnitStatus.AvailableForSale, reconciledUnit.Status);
+                Assert.Equal(1, await db.AuditLogs.CountAsync(entry =>
+                    entry.EventType == "PROJECT_RESERVATION_EXPIRED" &&
+                    entry.TargetEntityId == elapsedReservation.Id.ToString()));
+            }
+
             using (var reservationAuditScope = factory.Services.CreateScope())
             {
                 var db = reservationAuditScope.ServiceProvider.GetRequiredService<AppDbContext>();

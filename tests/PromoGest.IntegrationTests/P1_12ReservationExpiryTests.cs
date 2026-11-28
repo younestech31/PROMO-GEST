@@ -67,7 +67,7 @@ public sealed partial class PostgresEndToEndTests
         var fixture = await PrepareSuspensionFixtureAsync(client);
         await SetReservationExpiryDueAsync(factory, fixture.HoldId);
 
-        string concurrencyStamp;
+        Guid concurrencyStamp;
         using (var readScope = factory.Services.CreateScope())
         {
             var db = readScope.ServiceProvider.GetRequiredService<AppDbContext>();

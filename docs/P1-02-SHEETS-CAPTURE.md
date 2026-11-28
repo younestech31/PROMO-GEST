@@ -108,18 +108,20 @@ cannot prove there were no intervening source edits or replace source acceptance
 The durable aggregate checkpoint is
 [`reference-data/P1-02-CAPTURE-PROGRESS.json`](reference-data/P1-02-CAPTURE-PROGRESS.json).
 It records a **partial first pass only**, with local transcriptions of complete
-connector ValueRanges: **69 wilayas, 250 communes and all 151 aliases** (470 data
-rows plus three headers, in 12 non-overlapping checksummed chunks). The initial
-checkpoint contained 139 data rows; 331 further rows were captured directly from
-nine fresh complete bounded connector responses, not from repository fixtures.
+connector ValueRanges: **69 wilayas, 600 communes and all 151 aliases** (820 data
+rows plus three headers, in 19 non-overlapping checksummed chunks). The previous
+checkpoint (`94f1626`) contained 470 data rows. Seven further complete bounded
+connector responses added 350 commune rows at physical rows 252–601, directly
+from the adopted workbook, not from repository fixtures. The initial checkpoint
+contained 139 data rows; neither earlier checkpoint was a complete snapshot.
 
 | Table | Captured data rows, first pass | Next missing physical row | Second pass |
 | --- | ---: | ---: | --- |
 | Wilayas | 69 / 69 | None | Not started |
 | Aliases | 151 / 151 | None | Not started |
-| Communes | 250 / 1541 | 252 | Not started |
+| Communes | 600 / 1541 | 602 | Not started |
 
-The next commune request starts at `A252`; 1291 commune data rows remain in the
+The next commune request starts at `A602`; 941 commune data rows remain in the
 first pass. Do not reread and append a table that is already complete in that pass.
 Once the whole first pass is complete, read **all three tables** afresh for the
 second pass. The initial combined 69-wilaya/100-commune response was truncated and
@@ -127,9 +129,12 @@ was **not used**; complete smaller responses were read instead.
 
 Original cell strings remain unnormalized, including U+06A8, Arabic presentation
 forms, tatweel counts, diacritics, doubled spaces, punctuation and curved versus
-ASCII apostrophes. All 18 captured commune/alias intersections have exact original
-AR/FR equality. This is only a consistency check on the captured subset; it neither
-validates the remaining alias targets nor replaces the full structural preflight.
+ASCII apostrophes and the U+200E mark on the captured Sétif source label. All **49**
+captured commune/alias intersections have exact original AR/FR equality; the 600
+captured commune codes are unique. Seat counts in this **subset only** are 178
+`نعم`, 422 unknown blanks and zero explicit `لا`. This is only internal consistency
+over captured cells, not independent validation of those transcriptions. It neither
+validates remaining alias targets nor replaces the full structural preflight.
 
 No second pass, complete adopted-source content hash/package, retained UUID map,
 actual-source import or activation is claimed. Continue from the journal's
@@ -160,3 +165,8 @@ and CodeQL46166417218, including .NET/PG18, frontend, Windows and production HTT
 evidence export. The later progress checkpoint changes only documentation and
 aggregate capture metadata; that historical green does not attest live source
 transcriptions, complete capture, actual-source import or manual/legal acceptance.
+
+The subsequent progress head `94f1626ee44d902741ffd915a214486dc89d871b` also passed
+all reported PR307 checks (PR CI46168332800, push CI46168328595 and
+CodeQL46168332756), including .NET/PG18 and production HTTPS evidence export.
+This supersedes that head's pending checkpoint, not the incomplete-source status.

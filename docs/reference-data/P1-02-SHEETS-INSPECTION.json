@@ -1,0 +1,50 @@
+{
+  "schemaVersion": 1,
+  "evidenceKind": "read-only-connector-content-and-aggregate-observations-not-a-complete-export",
+  "source": {
+    "spreadsheetId": "1vQFc-Ww6V76nUYiqfsgmxkdD32Eu4I6lR7THBbhiikk",
+    "title": "المرجع الوطني للبلديات الجزائرية 1985→2026 (ثنائي اللغة)",
+    "reportedModifiedAtUtc": "2026-11-28T01:14:39.297Z",
+    "selectionBasis": "Owner identified Sheets as the adopted operational municipality reference",
+    "tabs": {
+      "communes": {"sheetId": 42295048, "title": "المرجع الوطني 1541"},
+      "wilayas": {"sheetId": 1074264026, "title": "الولايات 69"},
+      "aliases": {"sheetId": 661835956, "title": "أسماء 2026 الموحدة (ألياس)"}
+    }
+  },
+  "observations": {
+    "communeRowsWithRequiredCodeParentAndBilingualNames": 1541,
+    "distinctCommuneSystemCodes": 1541,
+    "wilayas": 69,
+    "communeCountsMatchEachWilayaDeclaration": true,
+    "aliasRows": 151,
+    "declaredDairaCountSum": 550,
+    "distinctWilayaFrenchDairaGroups": 549,
+    "distinctWilayaArabicDairaGroups": 549,
+    "distinctWilayaBilingualDairaGroups": 549,
+    "seatMarkers": {"yes": 460, "blankUnknown": 1081, "explicitNo": 0}
+  },
+  "inspectionMethods": [
+    "get_spreadsheet for tab metadata",
+    "get_values for all wilaya rows",
+    "batch_get_values for headers and sample commune/alias rows",
+    "query_table for populated-column counts, code grouping, per-wilaya commune grouping, daira grouping and seat-marker grouping",
+    "local weighted sum of declared-daira frequency groups (source count cells were text)"
+  ],
+  "limitations": {
+    "completeSourceSnapshotCaptured": false,
+    "completeSourceSnapshotSha256": null,
+    "fullSourceRunThroughNewPreflight": false,
+    "aliasTargetAndReferenceNameJoinsFullyChecked": false,
+    "originalAttachmentByteIdentityVerified": false,
+    "legalEffectiveDatesVerified": false,
+    "sheetsModified": false,
+    "databaseImported": false,
+    "professionalLegalAttestation": false
+  },
+  "residuals": [
+    "Declared 550 versus observed 549 daira groups retained separately; no missing group fabricated.",
+    "Blank daira seat cells are unknown, not false.",
+    "Live source observations do not establish byte identity with an earlier attachment or replace owner/institutional decisions."
+  ]
+}

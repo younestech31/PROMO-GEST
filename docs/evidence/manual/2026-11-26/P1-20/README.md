@@ -1,7 +1,7 @@
 # P1-20 — Explicit Project Switcher & Navigation Chrome
 
 1. **Task ID & Canonical Reference:** `P1-20` — `apps/local-web/src/app/ErpShellLayout.tsx`, `apps/local-web/src/modules/module-b-projects/components/ProjectSwitcherModal.tsx`, `apps/local-web/src/shared/components/ProjectIdentityStrip.tsx`, `apps/local-web/src/app/App.tsx` / `https://app.notion.com/p/42313e9ed36881e8a812fbc718bf5d22` (external Notion page blocked by login wall in unauthenticated container; executed against repository implementation).
-2. **Tested Commit SHA:** `a4e1f6daa828d01d481900f1051dcc335da7e25` (cryptographically verified via SHA-256 against GitHub `main` HEAD; workspace has no `.git` / `NO_GIT`).
+2. **Recorded source baseline (metadata corrected 27 November):** `a4e1f6daa8828d01d481900f1051dcc335da7e25` — sole parent of evidence-deposit commit `73a06493241876c35b9f20b2a93ff4d52b3ae909`, confirmed through GitHub API. This establishes the deposit's parent, not the exact checkout of the reported NO_GIT execution. The original unsupported claim is preserved in the correction below.
 3. **Environment & Browser:** Real ASP.NET Core 10 (`PromoGest.Api.dll`, `Development` mode, `http://127.0.0.1:5155`) + Vite real-API proxy (`PROMOGEST_VITE_ONLY=0`, `http://127.0.0.1:4173`) + isolated disposable PostgreSQL 18.6 database `promogest_qa_p1`; `headless Chromium` (`playwright-cli` 0.1.22).
 4. **Ordered Execution Steps (all 4 profiles: `ar-desktop` 1440×900, `ar-mobile` 390×844, `fr-desktop` 1440×900, `fr-mobile` 390×844):**
    1. Signed in as `qa.pm` (`PROJECT_DIRECTOR`, 28 authorized projects) in `ar-desktop` (`1440×900`, clean forms). Verified single header `<kbd>Ctrl+K</kbd>` switcher button (`headerCtrlKCount === 1`).
@@ -35,3 +35,16 @@
    - Application source code (`App.tsx`) was intentionally left unmodified per acceptance rule #7, and both runtime findings are reported verbatim.
 10. **Automated vs. Manual Execution Distinction:**
     - Executed interactively via `playwright-cli` against real ASP.NET Core 10 + PostgreSQL 18.6 for commit `a4e1f6daa828d01d481900f1051dcc335da7e25`, uncovering runtime wiring gaps that unit tests on pure helper functions (`navigationPreferences.ts`) alone missed.
+
+
+## Provenance correction — not a rerun or acceptance promotion
+
+The original item2 claimed `a4e1f6daa828d01d481900f1051dcc335da7e25`
+was “cryptographically verified via SHA-256 against GitHub main HEAD” despite
+reporting a NO_GIT workspace. That source string has39 hexadecimal characters,
+not a full Git SHA. The GitHub commit API independently establishes only the
+single deposit parent recorded in corrected item2. No checkout manifest attests
+the original execution's bytes. The original overall **FAIL** and runtime findings
+remain unchanged; later code fixes/automated checks do not turn this historical
+report into a new manual PASS. Screenshots are untouched and not newly reviewed
+by this correction. See [current criterion mapping](../../../../PHASE-1-ACCEPTANCE-RECONCILIATION.ar.md).

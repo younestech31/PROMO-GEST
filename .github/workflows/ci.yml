@@ -58,6 +58,8 @@ jobs:
           python3 scripts/scan-secrets.py
       - name: Validate documented security settings against the shipped defaults
         run: python3 scripts/validate-security-config-docs.py
+      - name: Test P1-02 operational snapshot preflight and packaging (synthetic data; no import)
+        run: python3 scripts/test_administrative_reference_preflight.py
       - name: Validate complete JO44/1985 source extracts
         run: python3 scripts/validate-jo44-reference-extracts.py
       - name: Validate P1-01 candidate crosswalk structure (not legal approval)

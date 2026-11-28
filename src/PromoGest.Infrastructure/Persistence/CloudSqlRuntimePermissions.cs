@@ -94,6 +94,25 @@ public static class CloudSqlRuntimePermissions
                 continue;
             }
 
+            // Adopted reference imports use a separate operator/migration identity.
+            // Revoke defaults as well as avoiding new DML grants on every bootstrap.
+            if (tableName is "admin_reference_versions" or "admin_wilaya_identities"
+                or "admin_commune_identities" or "admin_wilaya_versions"
+                or "admin_commune_versions" or "admin_commune_aliases")
+            {
+                await ExecuteAsync(
+                    connection,
+                    transaction,
+                    $"REVOKE ALL PRIVILEGES ON TABLE public.{QuoteIdentifier(tableName)} FROM {quotedRuntimeRole};",
+                    cancellationToken);
+                await ExecuteAsync(
+                    connection,
+                    transaction,
+                    $"GRANT SELECT ON TABLE public.{QuoteIdentifier(tableName)} TO {quotedRuntimeRole};",
+                    cancellationToken);
+                continue;
+            }
+
             await ExecuteAsync(
                 connection,
                 transaction,

@@ -1,0 +1,68 @@
+phase	source_code_disambiguated	title_summary	source_status	source_verification	notion_page_id	linear_identifier	linear_issue_id
+0	P0-A01	التهيئة الأولى ومنع التهيئة الثانية	Done	Verified	41a13e9e-d368-81cb-a4d7-fe791c2df7d4	YOU-12	e8766a0f-0eec-41f3-98f1-0f4ddb9eba1b
+0	P0-A04	تسجيل الخروج وإبطال الجلسة	Done	Verified	41a13e9e-d368-81e5-bf59-d678611ae65a	YOU-10	93cdfccf-da5d-425a-986e-b157c96da0d0
+1	P1-01	تدقيق مصدر مرجع البلديات 1541	Done	Verified	41a13e9e-d368-816d-9af7-dcb5f0c7a149	YOU-5	77547c6c-3a6c-413b-bacf-7b0ed85733a2
+1	P1-02	مرجع البلديات المؤرخ والمملوك للخادم	In Progress	Not Started	41a13e9e-d368-817a-8a0a-dd0d3cd44fda	YOU-13	7ce19402-8bac-443e-abfb-392f4329ffc6
+1	P1-03	حسم نطاق Party وEmployee	Done	Verified	41a13e9e-d368-8150-b979-dc8d0acfe248	YOU-9	a0d610c8-f452-44dc-8f5d-7fba02f6ff65
+1	P1-04	اعتماد التنقل ومساحات المؤسسة والمشروع	Done	Verified	41a13e9e-d368-8137-b5ec-e42a50d24356	YOU-7	e91d9b93-e190-4f80-860e-738c5536f5b1
+1	P1-05-BUDGET	ميزانية المشروع وCanViewFinancials [رمز المصدر P1-05]	Done	Verified	41a13e9e-d368-812d-bddf-df171088475f	YOU-11	c78c8daf-4479-498d-8d95-3a3fb31b5abc
+1	P1-05-CLOSURE	إغلاق Phase 1 واعتماد نطاق الإصدار [رمز المصدر P1-05]	Blocked	Not Started	41a13e9e-d368-81ee-b7db-f82fe3ef3863	YOU-8	15bc9ff7-a4c4-4ee4-8651-a82d4c592717
+1	P1-07	محاذاة قراءة الملفات المالية مع CanViewFinancials	Done	Verified	41b13e9e-d368-81a5-b1f8-c798e33eda7a	YOU-41	f3d4cb5f-3198-4845-a30f-3c1f0af194b4
+1	P1-08	مصفوفة قراءة Permits وCorrespondence وOther	Blocked	Blocked	41b13e9e-d368-81ee-a5a9-cc4716b23c22	YOU-23	22afa7a7-27d5-402e-b8a3-ad764248ba1f
+1	P1-09	توحيد org.manage في الواجهة	Done	Verified	41b13e9e-d368-8138-9c11-d3952be5b837	YOU-44	1c11f11e-920d-4429-83f1-c8ea3269727b
+1	P1-10	أهلية التسويق والحجز وحالة المشروع ودورة العميل	Done	Verified	41b13e9e-d368-812f-9085-cd0cbe3fc962	YOU-37	239d74bd-e606-4a37-a380-7258a99c5b59
+1	P1-11	توحيد الهاتف الجزائري ومنع تكرار العملاء	In Review	Pending	41b13e9e-d368-81d9-b3a1-df9f1c0f2516	YOU-18	f45ca0a7-3108-40a0-83d0-4d669d5d683e
+1	P1-12	تحرير الوحدة فور انتهاء الحجز	Done	Verified	41b13e9e-d368-8198-ae55-d8179120b335	YOU-42	054956b2-0e50-48d3-b078-4ad66728ea6d
+1	P1-13	تصحيح لقطة التنقل ومراجع CI في baseline	Done	Verified	41b13e9e-d368-8109-b471-ef9f36032ec5	YOU-47	03cfabef-6466-4593-9304-a8d34e588ba5
+1	P1-14	عزل Vite وإزالة دخول المدير التجريبي من الإنتاج	In Review	Blocked	41b13e9e-d368-81eb-b6c8-ed8d4dc65994	YOU-15	d6af0e5d-1881-4cdd-9fe9-f3a0323b1e02
+1	P1-15	حماية آخر Project Manager من التغييرات المتزامنة	Done	Verified	41b13e9e-d368-813f-94b9-d9a17573f61a	YOU-43	0c0024a1-d0c0-42fb-b759-8a5af103e612
+1	P1-16	بوابة Linux والأمان التشغيلي	Blocked	Blocked	41b13e9e-d368-819d-a08f-d53c96d7f3e5	YOU-16	1f8c801f-915f-4772-b4ef-6ce08c1fc8b9
+2	P2-01	دورة حياة K-Min والبيانات الوصفية	Backlog	Not Started	41a13e9e-d368-8153-bd90-f170c327f6c1	YOU-35	3a4cf8da-6338-427f-a239-a8260a1afc2b
+2	P2-02	DocumentLink وعزل الوصول للملفات	Backlog	Not Started	41a13e9e-d368-8146-a125-d6856284a196	YOU-24	fa09c751-ae67-41ef-97c0-3173a72e0d86
+2	P2-03	اعتماد المراجعة القانونية الجزائرية للعقود	Backlog	Not Started	41a13e9e-d368-8178-9e56-fad250433293	YOU-31	702c3659-1e42-4227-942e-cfd4b6dc638f
+2	P2-04	دورة عقد الحجز القانوني	Backlog	Not Started	41a13e9e-d368-81bf-a2fa-d7488c1dab00	YOU-32	4fe2b16b-7d1f-4b37-b95c-e88052270068
+1	P1-17	حفظ تفضيل اللغة على حساب المستخدم	Done	Verified	41b13e9e-d368-8104-9ac1-f1c049e5d91c	YOU-36	c6b09536-d182-4bf7-b93b-6dbdba727845
+1	P1-18	فرض تغيير كلمة المرور بعد إعادة الضبط الإداري	Done	Verified	41b13e9e-d368-81b6-adbb-fa92ec3d580d	YOU-39	27bb173f-0155-49c3-a507-72b98e127422
+1	P1-19	عرض الجلسات وإبطال جلسة مختارة	Done	Verified	41b13e9e-d368-81b2-b45b-c929b51ae2bc	YOU-46	906e66ad-e849-45fa-a532-8bea0b3e87c5
+1	P1-20	مبدل المشروع والتنقل داخل مساحته	In Review	Pending	41b13e9e-d368-81b8-993d-dca3b029f49e	YOU-20	c4c6a196-c23f-43aa-b648-a35babb5c0e9
+1	P1-21	مزامنة baseline بعد PR140 و141	Done	Verified	41d13e9e-d368-8174-b017-e3251b97dfb6	YOU-45	7dfd3569-e157-4e97-9a5d-15e452d5a433
+1	P1-22	مزامنة baseline بعد PR155	Done	Verified	41d13e9e-d368-8159-b733-d5702703fcbb	YOU-38	ff2945b6-ea69-4c46-bd89-a7942e57f6b4
+1	P1-23	مزامنة baseline بعد PR157 وتصحيح الوثائق	Done	Verified	41e13e9e-d368-813f-a0cf-d4907c552cea	YOU-40	2597146f-09c3-47e3-bb77-85f9e4cf1bf3
+1	P1-24	فرض default-deny للمسارات الجديدة	Done	Verified	41e13e9e-d368-8136-a7a7-e912692ada94	YOU-51	9483cfa1-9ddd-435e-a6a9-ed0e69ccb4b7
+2	P2-05	عقود VSP وإصدارات ContractVersion	Backlog	Not Started	41a13e9e-d368-8141-8a3b-d7b4d87665fd	YOU-27	6c7fae86-4d3d-4625-b6da-4da27351e374
+2	P2-06	البيع النهائي ومحضر التسليم	Backlog	Not Started	41a13e9e-d368-81ae-98fe-dc69a7e40269	YOU-26	32b8d16b-a365-4402-841c-8b72b10b2347
+3A	P3A-01	PaymentObligation وجداول الأقساط المؤرخة	Backlog	Not Started	41a13e9e-d368-8152-b239-f0b5d723cd0d	YOU-25	4bb4b8da-b3d7-4029-a857-5787650c112d
+3A	P3A-02	المقبوضات والتخصيص والخزينة والمرتجعات	Backlog	Not Started	41a13e9e-d368-81b0-91d6-c0ab28f3afbe	YOU-34	d0dae7c6-dbbd-4379-a49c-735e93648134
+3B/3C	P3B-01	البناء والورشات وقبول أدلة الإنجاز	Backlog	Not Started	41a13e9e-d368-8154-893e-dbf68d8a0988	YOU-29	4860a245-2f85-4f56-9488-46da8e620ae5
+3B/3C	P3C-01	الموردون والمشتريات ودفتر المخزون	Backlog	Not Started	41a13e9e-d368-81f5-864e-fd838b492664	YOU-30	68a1dea3-2a33-4b42-b9d9-404b22d72934
+4	P4-01	اعتماد وتنفيذ SCF ومحرك الضرائب الجزائري	Backlog	Not Started	41a13e9e-d368-8116-8c3b-c22cb6d21c0a	YOU-28	637e56e7-aaa5-4076-a6ee-2884bd95e81a
+5	P5-01	التقارير التنفيذية وأرشيف K-Full	Backlog	Not Started	41a13e9e-d368-8169-8f42-d738f87224f8	YOU-33	df32a5a7-00a9-45d0-8f68-7d989a034d66
+0	P1-34	حماية main بفرض PR وCI وCodeQL	Blocked	Blocked	42013e9e-d368-810d-bd41-fdfa3188a456	YOU-6	61e90bb4-c272-4b50-bf32-d6550036b877
+1	P1-26	مزامنة baseline بعد PR176 و177	Done	Verified	41e13e9e-d368-8158-b697-f02601075bfa	YOU-50	242d506c-5d71-475f-b35c-1782ebb59cd7
+1	P1-27	مزامنة baseline بعد PR179	Done	Verified	41e13e9e-d368-8100-bdea-d94114d4ca52	YOU-57	3583ce9d-4c8a-469c-b379-3dd78246e422
+1	P1-28	إصلاح تطابق package-lock ومنع فشل CI	Done	Verified	41e13e9e-d368-81a1-8e02-c87434f2bb45	YOU-48	2d075e82-45dd-4522-9300-3e7b933f2550
+1	P1-29	مزامنة baseline بعد PR186	Done	Verified	41f13e9e-d368-812f-8232-f70f0bb6050b	YOU-49	3f15d055-f815-42bc-bbe8-021ab462aaa2
+1	P1-30	إزالة ادعاءات main SHA ذاتية التقادم	Done	Verified	41f13e9e-d368-81a4-bfc6-faa8d16cbb08	YOU-54	f832053c-4af0-47e5-b885-2b33eff75ba3
+1	P1-31	إصلاح تراجع lockfile وصلاحيات سكربتات النسخ	Done	Verified	42013e9e-d368-8116-82f0-ce39997c4fd5	YOU-53	afc08650-359b-447d-a343-17e3867f483d
+1	P1-32	مزامنة baseline بعد PR193 ونتائج main	Done	Verified	42013e9e-d368-81f4-95a6-ff90586c3070	YOU-58	362d77d4-59cb-43d0-bbf8-4b6450eada18
+1	P1-33	تسجيل الوصول للأصول الرسمية لثلاثة سجلات تسمية	Done	Verified	42013e9e-d368-813e-bfdd-ef1e133c3702	YOU-59	b779da31-4107-47c0-ac42-6692528009d8
+1	P1-35	اعتماد JO25/2026 وJO61/2026 وخط أساس1541/69	Done	Verified	42013e9e-d368-817a-aa8f-c736e7229b4d	YOU-52	3d6048e4-3d91-45e2-952f-f81a534a052d
+1	P1-36	تقوية رؤوس HTTP وحدود Kestrel	In Review	Pending	42013e9e-d368-8170-9507-f07e78116ef9	YOU-19	d932d652-b301-4066-bf7a-6d790678f118
+1	P1-37	مزامنة baseline بعد PR214 و215	Done	Verified	42013e9e-d368-81dc-bd02-dbbe726c083e	YOU-56	8932fcc2-0276-4fa4-8b79-cef1dfa5088f
+1	P1-38	ترحيل Session Cookie إلى __Host- وحفظ CSRF	In Review	Pending	42013e9e-d368-817c-ad28-f5f87d0c9ed8	YOU-14	db3264f9-a0eb-45ee-a6c7-e4b3df980c1b
+1	P1-39	إصلاح تراجع lockfile وصلاحيات النسخ على main	Done	Verified	42113e9e-d368-81ae-bf33-c0b3488f7954	YOU-55	844a2209-41d5-46f9-801a-1878fa72a9aa
+1	P1-40	إصلاح lockfile وصلاحيات النسخ بعد تحديث الوثائق	Done	Verified	42113e9e-d368-81eb-a0eb-f34a4c5c2df5	YOU-67	46472c13-9d81-4c13-9ea0-d07ebbbe085b
+1	P1-41	مزامنة baseline بعد PR221 وإغلاق تراجع lockfile	Done	Verified	42113e9e-d368-81b5-8ed4-db221a0b1d74	YOU-62	7768993b-97dd-4ddd-932c-69f9a4d10a67
+1	P1-42	مزامنة baseline بعد PR223 وADR-0018	Done	Verified	42113e9e-d368-8157-8f12-fa15ca8c2992	YOU-61	b50801d0-4dad-4866-bd85-3d0985b21638
+1	P1-43	مزامنة baseline بعد PR225 وتحقق P1-17	Done	Verified	42113e9e-d368-8122-b1f7-d8dc0f5cb8df	YOU-71	58f9f272-6468-4ac5-ada5-cc6340dfe184
+1	P1-44	مزامنة baseline بعد PR228 وتحقق P1-19	Done	Verified	42113e9e-d368-81aa-975f-c635d20ebe6c	YOU-66	9a462ec4-06ff-4182-9605-c1d0652c8ebc
+1	P1-45	مزامنة baseline بعد PR230 وتصحيح main الحي	Done	Verified	42113e9e-d368-818c-b30e-fd9d6f56a28f	YOU-65	404fef82-6988-4e8b-9a21-ece1517ada60
+1	P1-46	بوابة CI لاتفاق الخط الأساسي وترقيتهPR231	Done	Verified	42113e9e-d368-81ee-861c-dc91003a37ec	YOU-63	04690225-c8ca-441a-a4da-16a40f33c812
+1	P1-47	مزامنة baseline بعد PR247 وقبول Phase0 browser CI	Done	Verified	42313e9e-d368-817c-a761-df811e1f9b33	YOU-70	75fbd3e7-9a8b-453d-84ee-e9255a76e3ef
+1	P1-48	مزامنة baseline بعد دمج P1-19	Done	Verified	42313e9e-d368-8179-9096-db7d55875754	YOU-60	0ea36cfb-871c-4091-b9b8-166031d2f37d
+1	P1-49	ترقيم صفحات دليل المشاريع API مع نطاق الوصول	In Review	Pending	42313e9e-d368-8182-9095-ef3761a53466	YOU-22	c10413cf-3a4e-46b7-b34e-a38905a5a021
+1	P1-50	مزامنة baseline بعد دمج P1-49	Done	Verified	42313e9e-d368-8183-a6f3-d019ae48eaf9	YOU-64	2970544e-6191-4098-9696-b524b1704278
+1	P1-51	مزامنة baseline بعد PR256	Done	Verified	42313e9e-d368-8136-b430-dee0f3a20b4f	YOU-68	ba8e6c1e-0f64-4733-8163-b2b589019761
+1	P1-52	مزامنة baseline بعد PR258	Done	Verified	42413e9e-d368-81a3-942d-e262061c9930	YOU-69	d561b4ed-2249-4be6-87ee-6bb10ad806ce
+1	P1-25	فحص يومي لاكتشاف توقف النسخ الاحتياطي بصمت PR173	In Review	Pending	41e13e9e-d368-81ce-a94b-de87b9986ca5	YOU-21	e5087ea0-cd93-4b93-9fe4-51ee56536dd9
+1	P1-06	Stabilize modular ERP frontend architecture and navigation safety	In Review	Pending	41b13e9e-d368-8138-b03c-c58a16acc25b	YOU-17	e3239fb8-9bf2-4b2a-be8e-ba0c46d7376d

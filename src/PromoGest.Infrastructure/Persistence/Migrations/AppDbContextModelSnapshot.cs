@@ -1759,6 +1759,342 @@ namespace PromoGest.Infrastructure.Persistence.Migrations
 
                     b.Navigation("UserRoles");
                 });
+            modelBuilder.Entity("PromoGest.Domain.Reference.AdministrativeReferenceVersion", b =>
+                {
+                    b.Property<string>("Id")
+                        .IsRequired()
+                        .HasMaxLength(78)
+                        .HasColumnType("character varying(78)")
+                        .HasColumnName("id");
+
+                    b.Property<string>("CanonicalContentSha256")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)")
+                        .HasColumnName("canonical_content_sha256");
+
+                    b.Property<string>("ManifestSha256")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)")
+                        .HasColumnName("manifest_sha256");
+
+                    b.Property<string>("SourceSpreadsheetId")
+                        .IsRequired()
+                        .HasMaxLength(128)
+                        .HasColumnType("character varying(128)")
+                        .HasColumnName("source_spreadsheet_id");
+
+                    b.Property<DateTimeOffset>("ClaimedCaptureAtUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("claimed_capture_at_utc");
+
+                    b.Property<int>("WilayaCount")
+                        .HasColumnType("integer")
+                        .HasColumnName("wilaya_count");
+
+                    b.Property<int>("CommuneCount")
+                        .HasColumnType("integer")
+                        .HasColumnName("commune_count");
+
+                    b.Property<int>("AliasCount")
+                        .HasColumnType("integer")
+                        .HasColumnName("alias_count");
+
+                    b.Property<int>("DeclaredDairaCount")
+                        .HasColumnType("integer")
+                        .HasColumnName("declared_daira_count");
+
+                    b.Property<int>("ObservedDairaCount")
+                        .HasColumnType("integer")
+                        .HasColumnName("observed_daira_count");
+
+                    b.HasKey("Id")
+                        .HasName("pk_admin_reference_versions");
+
+                    b.ToTable("admin_reference_versions", t =>
+                        {
+                            t.HasCheckConstraint("ck_admin_reference_hashes", "canonical_content_sha256 ~ '^[0-9a-f]{64}$' AND manifest_sha256 ~ '^[0-9a-f]{64}$' AND id = 'sheets-sha256-' || canonical_content_sha256");
+                            t.HasCheckConstraint("ck_admin_reference_counts", "wilaya_count > 0 AND commune_count > 0 AND alias_count >= 0 AND declared_daira_count >= 0 AND observed_daira_count >= 0");
+                            t.HasCheckConstraint("ck_admin_reference_source", "length(btrim(source_spreadsheet_id)) > 0");
+                        });
+                });
+
+            modelBuilder.Entity("PromoGest.Domain.Reference.AdministrativeWilayaIdentity", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.HasKey("Id")
+                        .HasName("pk_admin_wilaya_identities");
+
+                    b.ToTable("admin_wilaya_identities");
+                });
+
+            modelBuilder.Entity("PromoGest.Domain.Reference.AdministrativeCommuneIdentity", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.HasKey("Id")
+                        .HasName("pk_admin_commune_identities");
+
+                    b.ToTable("admin_commune_identities");
+                });
+
+            modelBuilder.Entity("PromoGest.Domain.Reference.AdministrativeWilayaVersion", b =>
+                {
+                    b.Property<string>("SnapshotId")
+                        .IsRequired()
+                        .HasMaxLength(78)
+                        .HasColumnType("character varying(78)")
+                        .HasColumnName("snapshot_id");
+
+                    b.Property<Guid>("WilayaId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("wilaya_id");
+
+                    b.Property<string>("SystemCode")
+                        .IsRequired()
+                        .HasMaxLength(2)
+                        .HasColumnType("character varying(2)")
+                        .HasColumnName("system_code");
+
+                    b.Property<string>("NameFr")
+                        .IsRequired()
+                        .HasMaxLength(256)
+                        .HasColumnType("character varying(256)")
+                        .HasColumnName("name_fr");
+
+                    b.Property<string>("NameAr")
+                        .IsRequired()
+                        .HasMaxLength(256)
+                        .HasColumnType("character varying(256)")
+                        .HasColumnName("name_ar");
+
+                    b.Property<int>("DeclaredDairaCount")
+                        .HasColumnType("integer")
+                        .HasColumnName("declared_daira_count");
+
+                    b.Property<int>("DeclaredCommuneCount")
+                        .HasColumnType("integer")
+                        .HasColumnName("declared_commune_count");
+
+                    b.Property<string>("NameArSource")
+                        .IsRequired()
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)")
+                        .HasColumnName("name_ar_source");
+
+                    b.HasKey("SnapshotId", "WilayaId")
+                        .HasName("pk_admin_wilaya_versions");
+
+                    b.HasIndex("SnapshotId", "SystemCode")
+                        .IsUnique()
+                        .HasDatabaseName("ux_admin_wilaya_version_code");
+
+                    b.HasIndex("WilayaId")
+                        .HasDatabaseName("ix_admin_wilaya_identity");
+
+                    b.ToTable("admin_wilaya_versions", t =>
+                        {
+                            t.HasCheckConstraint("ck_admin_wilaya_code", "system_code ~ '^[0-9]{2}$'");
+                            t.HasCheckConstraint("ck_admin_wilaya_labels", "length(btrim(name_fr)) > 0 AND length(btrim(name_ar)) > 0 AND length(btrim(name_ar_source)) > 0");
+                            t.HasCheckConstraint("ck_admin_wilaya_counts", "declared_daira_count >= 0 AND declared_commune_count > 0");
+                        });
+                });
+
+            modelBuilder.Entity("PromoGest.Domain.Reference.AdministrativeCommuneVersion", b =>
+                {
+                    b.Property<string>("SnapshotId")
+                        .IsRequired()
+                        .HasMaxLength(78)
+                        .HasColumnType("character varying(78)")
+                        .HasColumnName("snapshot_id");
+
+                    b.Property<Guid>("CommuneId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("commune_id");
+
+                    b.Property<string>("SystemCode")
+                        .IsRequired()
+                        .HasMaxLength(4)
+                        .HasColumnType("character varying(4)")
+                        .HasColumnName("system_code");
+
+                    b.Property<string>("NameFr")
+                        .IsRequired()
+                        .HasMaxLength(256)
+                        .HasColumnType("character varying(256)")
+                        .HasColumnName("name_fr");
+
+                    b.Property<string>("NameAr")
+                        .IsRequired()
+                        .HasMaxLength(256)
+                        .HasColumnType("character varying(256)")
+                        .HasColumnName("name_ar");
+
+                    b.Property<Guid>("WilayaId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("wilaya_id");
+
+                    b.Property<string>("DairaNameFr")
+                        .IsRequired()
+                        .HasMaxLength(256)
+                        .HasColumnType("character varying(256)")
+                        .HasColumnName("daira_name_fr");
+
+                    b.Property<string>("DairaNameAr")
+                        .IsRequired()
+                        .HasMaxLength(256)
+                        .HasColumnType("character varying(256)")
+                        .HasColumnName("daira_name_ar");
+
+                    b.Property<bool?>("IsDairaSeat")
+                        .HasColumnType("boolean")
+                        .HasColumnName("is_daira_seat");
+
+                    b.Property<DateOnly?>("ParentEffectiveFrom")
+                        .HasColumnType("date")
+                        .HasColumnName("parent_effective_from");
+
+                    b.Property<DateOnly?>("ParentEffectiveTo")
+                        .HasColumnType("date")
+                        .HasColumnName("parent_effective_to");
+
+                    b.Property<string>("ParentDateEvidence")
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)")
+                        .HasColumnName("parent_date_evidence");
+
+                    b.HasKey("SnapshotId", "CommuneId")
+                        .HasName("pk_admin_commune_versions");
+
+                    b.HasIndex("SnapshotId", "SystemCode")
+                        .IsUnique()
+                        .HasDatabaseName("ux_admin_commune_version_code");
+
+                    b.HasIndex("CommuneId")
+                        .HasDatabaseName("ix_admin_commune_identity");
+
+                    b.HasIndex("SnapshotId", "WilayaId")
+                        .HasDatabaseName("ix_admin_commune_version_wilaya");
+
+                    b.ToTable("admin_commune_versions", t =>
+                        {
+                            t.HasCheckConstraint("ck_admin_commune_code", "system_code ~ '^[0-9]{4}$'");
+                            t.HasCheckConstraint("ck_admin_commune_labels", "length(btrim(name_fr)) > 0 AND length(btrim(name_ar)) > 0 AND length(btrim(daira_name_fr)) > 0 AND length(btrim(daira_name_ar)) > 0");
+                            t.HasCheckConstraint("ck_admin_commune_parent_dates", "((parent_effective_from IS NULL AND parent_effective_to IS NULL AND parent_date_evidence IS NULL) OR (parent_effective_from IS NOT NULL AND parent_date_evidence IS NOT NULL AND length(btrim(parent_date_evidence)) > 0 AND (parent_effective_to IS NULL OR parent_effective_to > parent_effective_from)))");
+                        });
+                });
+
+            modelBuilder.Entity("PromoGest.Domain.Reference.AdministrativeCommuneAlias", b =>
+                {
+                    b.Property<string>("SnapshotId")
+                        .IsRequired()
+                        .HasMaxLength(78)
+                        .HasColumnType("character varying(78)")
+                        .HasColumnName("snapshot_id");
+
+                    b.Property<Guid>("CommuneId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("commune_id");
+
+                    b.Property<string>("ReferenceNameFr")
+                        .IsRequired()
+                        .HasMaxLength(256)
+                        .HasColumnType("character varying(256)")
+                        .HasColumnName("reference_name_fr");
+
+                    b.Property<string>("AliasNameFr")
+                        .IsRequired()
+                        .HasMaxLength(256)
+                        .HasColumnType("character varying(256)")
+                        .HasColumnName("alias_name_fr");
+
+                    b.Property<string>("ReferenceNameAr")
+                        .IsRequired()
+                        .HasMaxLength(256)
+                        .HasColumnType("character varying(256)")
+                        .HasColumnName("reference_name_ar");
+
+                    b.Property<string>("RepositoryNameAr")
+                        .IsRequired()
+                        .HasMaxLength(256)
+                        .HasColumnType("character varying(256)")
+                        .HasColumnName("repository_name_ar");
+
+                    b.Property<string>("Evidence")
+                        .IsRequired()
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)")
+                        .HasColumnName("evidence");
+
+                    b.HasKey("SnapshotId", "CommuneId")
+                        .HasName("pk_admin_commune_aliases");
+
+                    b.ToTable("admin_commune_aliases", t =>
+                        {
+                            t.HasCheckConstraint("ck_admin_commune_alias_labels", "length(btrim(reference_name_fr)) > 0 AND length(btrim(alias_name_fr)) > 0 AND length(btrim(reference_name_ar)) > 0 AND length(btrim(repository_name_ar)) > 0 AND length(btrim(evidence)) > 0");
+                        });
+                });
+
+            modelBuilder.Entity("PromoGest.Domain.Reference.AdministrativeWilayaVersion", b =>
+                {
+                    b.HasOne("PromoGest.Domain.Reference.AdministrativeReferenceVersion", null)
+                        .WithMany()
+                        .HasForeignKey("SnapshotId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_admin_wilaya_version_snapshot");
+
+                    b.HasOne("PromoGest.Domain.Reference.AdministrativeWilayaIdentity", null)
+                        .WithMany()
+                        .HasForeignKey("WilayaId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_admin_wilaya_version_identity");
+
+                });
+
+            modelBuilder.Entity("PromoGest.Domain.Reference.AdministrativeCommuneVersion", b =>
+                {
+                    b.HasOne("PromoGest.Domain.Reference.AdministrativeReferenceVersion", null)
+                        .WithMany()
+                        .HasForeignKey("SnapshotId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_admin_commune_version_snapshot");
+
+                    b.HasOne("PromoGest.Domain.Reference.AdministrativeCommuneIdentity", null)
+                        .WithMany()
+                        .HasForeignKey("CommuneId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_admin_commune_version_identity");
+
+                    b.HasOne("PromoGest.Domain.Reference.AdministrativeWilayaVersion", null)
+                        .WithMany()
+                        .HasForeignKey("SnapshotId", "WilayaId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_admin_commune_version_wilaya");
+
+                });
+
+            modelBuilder.Entity("PromoGest.Domain.Reference.AdministrativeCommuneAlias", b =>
+                {
+                    b.HasOne("PromoGest.Domain.Reference.AdministrativeCommuneVersion", null)
+                        .WithMany()
+                        .HasForeignKey("SnapshotId", "CommuneId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_admin_commune_alias_version");
+
+                });
+
 #pragma warning restore 612, 618
         }
     }

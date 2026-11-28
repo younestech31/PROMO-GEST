@@ -195,13 +195,19 @@ public sealed class ProjectDocumentService
                     metadata.IpAddress,
                     metadata.UserAgent),
                 ct);
-            await _documentRepository.SaveChangesAsync(ct);
         }
         catch
         {
+            // No database save has been attempted yet, so this file cannot have a
+            // committed metadata row from this operation.
             _fileStorage.Delete(storedFile);
             throw;
         }
+
+        // A save failure can be an ambiguous commit (for example a lost database
+        // acknowledgement). Preserve the bytes: deleting them here could destroy a
+        // committed document. Unreferenced files need offline reconciliation.
+        await _documentRepository.SaveChangesAsync(ct);
 
         return Map(storedFile, actor.FullName);
     }

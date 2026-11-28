@@ -131,13 +131,19 @@ public sealed class PostgreSql18IntegrationFixture : IAsyncLifetime
             await createDatabase.ExecuteNonQueryAsync();
         }
 
+        // Each test uses a unique database. A pooled connection is retained per
+        // connection string after the test ends, eventually exhausting the server's
+        // connection slots. Disable pooling for these disposable databases; live
+        // concurrent test operations still use separate real connections.
         var migrationConnection = new NpgsqlConnectionStringBuilder(_migrationConnectionString)
         {
-            Database = dbName
+            Database = dbName,
+            Pooling = false
         }.ConnectionString;
         var runtimeConnection = new NpgsqlConnectionStringBuilder(_runtimeConnectionString)
         {
-            Database = dbName
+            Database = dbName,
+            Pooling = false
         }.ConnectionString;
 
         var migrationOptions = new DbContextOptionsBuilder<AppDbContext>()
@@ -238,7 +244,8 @@ public sealed class PostgreSql18IntegrationFixture : IAsyncLifetime
 
         return new NpgsqlConnectionStringBuilder(_migrationConnectionString)
         {
-            Database = databaseName
+            Database = databaseName,
+            Pooling = false
         }.ConnectionString;
     }
 

@@ -2,7 +2,7 @@ name: PROMO GEST CI
 
 on:
   push:
-    branches: [main, "fix/**"]
+    branches: ["**"]
   pull_request:
     branches: [main]
 

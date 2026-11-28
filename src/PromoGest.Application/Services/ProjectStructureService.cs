@@ -82,6 +82,28 @@ public sealed class ProjectStructureService
         return new ProjectStructureDto(project.Id, buildingDtos);
     }
 
+    private async Task<ProjectStructureDto> ReadCommittedStructureAsync(
+        Guid actorUserId, Guid projectId, RequestMetadata metadata, CancellationToken ct)
+    {
+        try
+        {
+            return await GetProjectStructureAsync(actorUserId, projectId, metadata, ct);
+        }
+        catch (OperationCanceledException) when (ct.IsCancellationRequested)
+        {
+            throw;
+        }
+        catch (Exception exception)
+        {
+            // The write and audit were already committed. Never report a generic
+            // failed write that encourages the caller to submit it again.
+            throw new CommittedWriteResponseException(
+                "STRUCTURE_WRITE_COMMITTED_REFRESH_FAILED",
+                "The change was saved, but the updated structure could not be loaded. Reload before making another change.",
+                exception);
+        }
+    }
+
     public async Task<ProjectStructureDto> CreateBuildingAsync(
         Guid actorUserId,
         Guid projectId,
@@ -125,7 +147,7 @@ public sealed class ProjectStructureService
             ct);
         await _structureRepository.SaveChangesAsync(ct);
 
-        return await GetProjectStructureAsync(actorUserId, projectId, metadata, ct);
+        return await ReadCommittedStructureAsync(actorUserId, projectId, metadata, ct);
     }
 
     public async Task<ProjectStructureDto> CreateFloorAsync(
@@ -166,7 +188,7 @@ public sealed class ProjectStructureService
             ct);
         await _structureRepository.SaveChangesAsync(ct);
 
-        return await GetProjectStructureAsync(actorUserId, projectId, metadata, ct);
+        return await ReadCommittedStructureAsync(actorUserId, projectId, metadata, ct);
     }
 
     public async Task<ProjectStructureDto> CreatePropertyUnitAsync(
@@ -231,7 +253,7 @@ public sealed class ProjectStructureService
             ct);
         await _structureRepository.SaveChangesAsync(ct);
 
-        return await GetProjectStructureAsync(actorUserId, projectId, metadata, ct);
+        return await ReadCommittedStructureAsync(actorUserId, projectId, metadata, ct);
     }
 
 
@@ -281,7 +303,7 @@ public sealed class ProjectStructureService
             ct);
         await _structureRepository.SaveChangesAsync(ct);
 
-        return await GetProjectStructureAsync(actorUserId, projectId, metadata, ct);
+        return await ReadCommittedStructureAsync(actorUserId, projectId, metadata, ct);
     }
 
     public async Task<ProjectStructureDto> UpdateFloorAsync(
@@ -328,7 +350,7 @@ public sealed class ProjectStructureService
             ct);
         await _structureRepository.SaveChangesAsync(ct);
 
-        return await GetProjectStructureAsync(actorUserId, projectId, metadata, ct);
+        return await ReadCommittedStructureAsync(actorUserId, projectId, metadata, ct);
     }
 
     public async Task<ProjectStructureDto> UpdatePropertyUnitAsync(
@@ -385,7 +407,7 @@ public sealed class ProjectStructureService
             ct);
         await _structureRepository.SaveChangesAsync(ct);
 
-        return await GetProjectStructureAsync(actorUserId, projectId, metadata, ct);
+        return await ReadCommittedStructureAsync(actorUserId, projectId, metadata, ct);
     }
 
     public async Task<ProjectStructureDto> ChangePropertyUnitStatusAsync(
@@ -427,7 +449,7 @@ public sealed class ProjectStructureService
             await _structureRepository.SaveChangesAsync(ct);
         }
 
-        return await GetProjectStructureAsync(actorUserId, projectId, metadata, ct);
+        return await ReadCommittedStructureAsync(actorUserId, projectId, metadata, ct);
     }
 
     private async Task<(User Actor, Project Project, Building Building, BuildingFloor Floor, PropertyUnit Unit)>

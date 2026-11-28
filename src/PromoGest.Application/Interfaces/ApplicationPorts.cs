@@ -40,6 +40,9 @@ public interface IUserRepository
     Task<User?> GetByIdWithRolesAsync(Guid userId, CancellationToken ct = default);
     Task<User?> GetSystemAdministratorAsync(CancellationToken ct = default);
     Task<User?> GetByUsernameOrEmailWithRolesAsync(string usernameOrEmail, CancellationToken ct = default);
+    // Reload and hold the user row until the callback and its writes commit.
+    // The callback returns its audit ID so a retry after an ambiguous commit can detect success.
+    Task<bool> ExecuteWithUserLockAsync(User user, Func<CancellationToken, Task<Guid>> action, CancellationToken ct = default);
     Task<IReadOnlyList<User>> ListUsersWithRolesAsync(CancellationToken ct = default);
     Task<bool> ExistsUsernameOrEmailAsync(string username, string email, Guid? excludeUserId = null, CancellationToken ct = default);
     Task<IReadOnlyList<Role>> GetRolesByCodesAsync(IEnumerable<string> roleCodes, CancellationToken ct = default);
@@ -48,6 +51,8 @@ public interface IUserRepository
     Task ReplaceUserRolesAsync(Guid userId, IEnumerable<UserRole> newRoles, CancellationToken ct = default);
     Task AddSessionAsync(UserSession session, CancellationToken ct = default);
     Task<UserSession?> GetSessionByTokenHashAsync(string tokenHash, CancellationToken ct = default);
+    // A concurrent activity touch must not fail the request, but revocation must still win.
+    Task<bool> TryTouchSessionAsync(UserSession session, User user, DateTimeOffset nowUtc, TimeSpan idleTimeout, CancellationToken ct = default);
     Task<IReadOnlyList<UserSession>> ListSessionsByUserAsync(Guid userId, CancellationToken ct = default);
     Task<UserSession?> GetSessionByIdAsync(Guid userId, Guid sessionId, CancellationToken ct = default);
     Task RevokeAllUserSessionsAsync(Guid userId, DateTimeOffset revokedAtUtc, CancellationToken ct = default);
@@ -117,6 +122,8 @@ public interface IProjectSalesReservationRepository
     Task<IReadOnlyList<ProjectSalesReservation>> ListTrackedActiveAsync(Guid projectId, CancellationToken ct = default);
     Task AddAsync(ProjectSalesReservation reservation, CancellationToken ct = default);
     Task SaveChangesAsync(CancellationToken ct = default);
+    // Used only by the isolated expiry worker after a rolled-back concurrency conflict.
+    void DiscardTrackedChanges();
 }
 
 public interface IAuditQueryRepository

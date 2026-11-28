@@ -60,6 +60,7 @@ public sealed class EfProjectSalesReservationRepository : IProjectSalesReservati
         int limit,
         CancellationToken ct = default)
         => await _dbContext.ProjectSalesReservations
+            .AsNoTracking()
             .Where(reservation =>
                 reservation.Status == Domain.Enums.SalesReservationStatus.Active &&
                 reservation.ExpiresAtUtc <= nowUtc &&
@@ -84,6 +85,8 @@ public sealed class EfProjectSalesReservationRepository : IProjectSalesReservati
     public async Task AddAsync(ProjectSalesReservation reservation, CancellationToken ct = default)
         => await _dbContext.ProjectSalesReservations.AddAsync(reservation, ct);
 
+    public void DiscardTrackedChanges() => _dbContext.ChangeTracker.Clear();
+
     public async Task SaveChangesAsync(CancellationToken ct = default)
     {
         try
@@ -100,9 +103,15 @@ public sealed class EfProjectSalesReservationRepository : IProjectSalesReservati
             exception.InnerException is PostgresException postgres &&
             postgres.SqlState == PostgresErrorCodes.UniqueViolation)
         {
-            throw new ConflictDomainException(
-                "RESERVATION_UNIT_UNAVAILABLE",
-                "Another active reservation already exists for this property unit.");
+            if (postgres.ConstraintName == "ux_project_sales_reservations_active_unit")
+                throw new ConflictDomainException(
+                    "RESERVATION_UNIT_UNAVAILABLE",
+                    "Another active reservation already exists for this property unit.");
+            if (postgres.ConstraintName == "ux_project_sales_reservations_project_number")
+                throw new ConflictDomainException(
+                    "RESERVATION_NUMBER_CONFLICT",
+                    "The generated reservation reference is already in use. Reload and try again.");
+            throw;
         }
     }
 }

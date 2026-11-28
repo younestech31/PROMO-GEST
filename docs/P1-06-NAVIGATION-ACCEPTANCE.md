@@ -6,6 +6,18 @@ Live Notion task: `41b13e9e-d368-8138-b03c-c58a16acc25b`, reread on this date,
 including all nine acceptance criteria and non-goals. Phase 1 only; no backend,
 schema, policy, deployment or F–J business implementation changes.
 
+## Current reconciliation (supersedes pending statements below)
+
+[Criterion-by-criterion reconciliation](PHASE-1-ACCEPTANCE-RECONCILIATION.ar.md)
+records delivered embedded switching, remaining option/action/manual gates, and
+live owner operational acceptance of P1-01/P1-35 (P1-02 is now In Progress).
+`appContentRouter.test.ts` adds four actual-router rendered AR/FR checks for
+pre-render denial without fetch, inactive administrator denial, explicit home
+acknowledgement, and permitted audit mount/revocation/late result/restoration.
+These are React/JSDOM component checks, not new browser or visual acceptance.
+Local frontend199/199 and TypeScript/build/lint guard PASS; own head CI pending.
+Historical per-slice source results below are not current-head acceptance.
+
 ## Bounded next slice: failed Save & Continue
 
 `tests/browser/phase0.py` already executes actual App routing against ASP.NET Core

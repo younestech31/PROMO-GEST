@@ -125,11 +125,7 @@ function ProjectStructureEditor({
   const [floorEdited, setFloorEdited] = useState(false);
   const [unitEdited, setUnitEdited] = useState(false);
   const [editUnitEdited, setEditUnitEdited] = useState(false);
-  const [pendingAction, setPendingAction] = useState<
-    | { kind: 'close' }
-    | { kind: 'subView'; target: 'registry' | 'unitFilePlanned' }
-    | null
-  >(null);
+  const [pendingAction, setPendingAction] = useState<{ apply: () => void } | null>(null);
 
   const isDirty =
     (showBuildingForm && buildingEdited) ||
@@ -147,29 +143,42 @@ function ProjectStructureEditor({
     };
   }, [onDirtyChange]);
 
-  const clearAllEdits = () => {
+  const discardEditors = () => {
     setBuildingEdited(false);
     setFloorEdited(false);
     setUnitEdited(false);
     setEditUnitEdited(false);
+    setShowBuildingForm(false);
+    setShowFloorForm(false);
+    setShowUnitForm(false);
+    setEditingBuildingId(null);
+    setEditingFloorId(null);
+    setEditingUnitId(null);
+    setBuildingForm({ code: '', nameAr: '', nameFr: '', status: 'Planned' });
+    setFloorForm({ floorNumber: 0, nameAr: '', nameFr: '' });
+    setUnitForm({ unitNumber: '', unitType: 'Apartment', status: 'Planned',
+      grossAreaSquareMeters: '', netAreaSquareMeters: '', roomsCount: '' });
+    setEditUnitForm({ unitNumber: '', unitType: 'Apartment',
+      grossAreaSquareMeters: '', netAreaSquareMeters: '', roomsCount: '' });
+    setError(null);
   };
 
-  const requestClose = () => {
-    if (mutation.current) return;
+  // All local editor/context exits share one Stay/Discard decision. No write is
+  // implied by Discard, and no editor may silently hide another editor's draft.
+  const requestEditorTransition = (apply: () => void) => {
+    if (mutation.current || pendingAction) return;
     if (isDirty) {
-      setPendingAction({ kind: 'close' });
+      setPendingAction({ apply });
       return;
     }
-    onClose?.();
+    discardEditors();
+    apply();
   };
+
+  const requestClose = () => requestEditorTransition(() => onClose?.());
 
   const requestSwitchSubView = (target: 'registry' | 'unitFilePlanned') => {
-    if (mutation.current || target === subView) return;
-    if (isDirty) {
-      setPendingAction({ kind: 'subView', target });
-      return;
-    }
-    setSubView(target);
+    if (target !== subView) requestEditorTransition(() => setSubView(target));
   };
 
   const loadStructure = async () => {
@@ -197,7 +206,7 @@ function ProjectStructureEditor({
   }, []);
 
   const beginMutation = () => {
-    if (mutation.current || loading || loadError || !structure) return null;
+    if (mutation.current || pendingAction || loading || loadError || !structure) return null;
     const request = {};
     mutation.current = request;
     setError(null);
@@ -568,12 +577,7 @@ function ProjectStructureEditor({
                 </div>
                 <button disabled={submitting}
                   type="button"
-                  onClick={() => {
-                    setEditingBuildingId(null);
-                    setBuildingForm({ code: '', nameAr: '', nameFr: '', status: 'Planned' });
-                    setBuildingEdited(false);
-                    setShowBuildingForm((value) => !value);
-                  }}
+                  onClick={() => requestEditorTransition(() => setShowBuildingForm(!showBuildingForm))}
                   className="inline-flex items-center gap-1 rounded border border-slate-200 px-2 py-1 text-xs text-slate-700 hover:bg-slate-50"
                 >
                   <Plus className="w-3.5 h-3.5" />
@@ -629,7 +633,7 @@ function ProjectStructureEditor({
                     </select>
                   </FormField>
                   <div className="flex justify-end gap-2">
-                    <button disabled={submitting} type="button" onClick={() => { setShowBuildingForm(false); setEditingBuildingId(null); setBuildingEdited(false); }} className="text-xs px-3 py-2 border rounded border-slate-200">
+                    <button disabled={submitting} type="button" onClick={() => requestEditorTransition(() => {})} className="text-xs px-3 py-2 border rounded border-slate-200">
                       {t.users.cancel}
                     </button>
                     <button type="submit" disabled={submitting} className="text-xs px-3 py-2 rounded bg-teal-800 text-white disabled:opacity-60">
@@ -650,11 +654,11 @@ function ProjectStructureEditor({
                     <button disabled={submitting}
                       type="button"
                       onClick={() => {
-                        setSelectedBuildingId(building.id);
-                        setSelectedFloorId(null);
-                        setEditingFloorId(null);
-                        setShowFloorForm(false);
-                        setShowUnitForm(false);
+                        if (building.id === selectedBuildingId) return;
+                        requestEditorTransition(() => {
+                          setSelectedBuildingId(building.id);
+                          setSelectedFloorId(null);
+                        });
                       }}
                       className="flex-1 min-w-0 text-start flex items-center justify-between gap-2"
                     >
@@ -670,7 +674,7 @@ function ProjectStructureEditor({
                     </button>
                     <button disabled={submitting}
                       type="button"
-                      onClick={() => openBuildingEditor(building)}
+                      onClick={() => requestEditorTransition(() => openBuildingEditor(building))}
                       title={labels.editBuilding}
                       aria-label={labels.editBuilding}
                       className="p-2 rounded text-slate-600 hover:bg-white border border-transparent hover:border-slate-200"
@@ -691,12 +695,7 @@ function ProjectStructureEditor({
                 {selectedBuilding && (
                   <button disabled={submitting}
                     type="button"
-                    onClick={() => {
-                      setEditingFloorId(null);
-                      setFloorForm({ floorNumber: 0, nameAr: '', nameFr: '' });
-                      setFloorEdited(false);
-                      setShowFloorForm((value) => !value);
-                    }}
+                    onClick={() => requestEditorTransition(() => setShowFloorForm(!showFloorForm))}
                     className="inline-flex items-center gap-1 rounded border border-slate-200 px-2 py-1 text-xs text-slate-700 hover:bg-slate-50"
                   >
                     <Plus className="w-3.5 h-3.5" />
@@ -746,7 +745,7 @@ function ProjectStructureEditor({
                         />
                       </FormField>
                       <div className="flex justify-end gap-2">
-                        <button disabled={submitting} type="button" onClick={() => { setShowFloorForm(false); setEditingFloorId(null); setFloorEdited(false); }} className="text-xs px-3 py-2 border rounded border-slate-200">{language === 'ar' ? 'إلغاء' : 'Annuler'}</button>
+                        <button disabled={submitting} type="button" onClick={() => requestEditorTransition(() => {})} className="text-xs px-3 py-2 border rounded border-slate-200">{language === 'ar' ? 'إلغاء' : 'Annuler'}</button>
                         <button type="submit" disabled={submitting} className="text-xs px-3 py-2 rounded bg-teal-800 text-white disabled:opacity-60">{editingFloorId ? labels.saveFloor : labels.addFloor}</button>
                       </div>
                     </form>
@@ -761,7 +760,11 @@ function ProjectStructureEditor({
                       >
                         <button disabled={submitting}
                           type="button"
-                          onClick={() => setSelectedFloorId(floor.id)}
+                          onClick={() => {
+                            if (floor.id !== selectedFloorId) {
+                              requestEditorTransition(() => setSelectedFloorId(floor.id));
+                            }
+                          }}
                           className="flex-1 min-w-0 text-start flex items-center justify-between gap-2"
                         >
                           <span>
@@ -774,10 +777,10 @@ function ProjectStructureEditor({
                         </button>
                         <button disabled={submitting}
                           type="button"
-                          onClick={() => {
+                          onClick={() => requestEditorTransition(() => {
                             setSelectedFloorId(floor.id);
                             openFloorEditor(floor);
-                          }}
+                          })}
                           title={labels.editFloor}
                           aria-label={labels.editFloor}
                           className="p-2 rounded text-slate-600 hover:bg-white border border-transparent hover:border-slate-200"
@@ -797,7 +800,7 @@ function ProjectStructureEditor({
                 {selectedFloor && (
                   <button disabled={submitting}
                     type="button"
-                    onClick={() => { setUnitEdited(false); setShowUnitForm((value) => !value); }}
+                    onClick={() => requestEditorTransition(() => setShowUnitForm(!showUnitForm))}
                     className="inline-flex items-center gap-1 rounded border border-slate-200 px-2 py-1 text-xs text-slate-700 hover:bg-slate-50"
                   >
                     <Plus className="w-3.5 h-3.5" />
@@ -888,7 +891,7 @@ function ProjectStructureEditor({
                         />
                       </FormField>
                       <div className="flex justify-end gap-2">
-                        <button disabled={submitting} type="button" onClick={() => { setShowUnitForm(false); setUnitEdited(false); }} className="text-xs px-3 py-2 border rounded border-slate-200">{language === 'ar' ? 'إلغاء' : 'Annuler'}</button>
+                        <button disabled={submitting} type="button" onClick={() => requestEditorTransition(() => {})} className="text-xs px-3 py-2 border rounded border-slate-200">{language === 'ar' ? 'إلغاء' : 'Annuler'}</button>
                         <button type="submit" disabled={submitting} className="text-xs px-3 py-2 rounded bg-teal-800 text-white disabled:opacity-60">{labels.addUnit}</button>
                       </div>
                     </form>
@@ -961,7 +964,7 @@ function ProjectStructureEditor({
                               />
                             </FormField>
                             <div className="flex justify-end gap-2">
-                              <button type="button" disabled={submitting} onClick={() => { setEditingUnitId(null); setEditUnitEdited(false); }} className="text-xs px-3 py-2 border rounded border-slate-200">
+                              <button type="button" disabled={submitting} onClick={() => requestEditorTransition(() => {})} className="text-xs px-3 py-2 border rounded border-slate-200">
                                 {t.users.cancel}
                               </button>
                               <button type="submit" disabled={submitting} className="text-xs px-3 py-2 rounded bg-teal-800 text-white disabled:opacity-60">
@@ -986,7 +989,7 @@ function ProjectStructureEditor({
                                 <button
                                   type="button"
                                   disabled={submitting}
-                                  onClick={() => beginEditUnit(unit)}
+                                  onClick={() => requestEditorTransition(() => beginEditUnit(unit))}
                                   className="text-xs px-2.5 py-1.5 rounded border border-slate-200 text-slate-700 hover:bg-slate-50 disabled:opacity-60"
                                 >
                                   {labels.editUnit}
@@ -1039,21 +1042,13 @@ function ProjectStructureEditor({
       }
       confirmLabel={language === 'ar' ? 'تجاهل والمتابعة' : 'Abandonner et continuer'}
       cancelLabel={language === 'ar' ? 'البقاء في النموذج' : 'Rester sur le formulaire'}
+      savingConfirm={submitting}
       onConfirm={() => {
+        if (mutation.current) return;
         const next = pendingAction;
         setPendingAction(null);
-        clearAllEdits();
-        setShowBuildingForm(false);
-        setShowFloorForm(false);
-        setShowUnitForm(false);
-        setEditingBuildingId(null);
-        setEditingFloorId(null);
-        setEditingUnitId(null);
-        if (next?.kind === 'close') {
-          onClose?.();
-        } else if (next?.kind === 'subView') {
-          setSubView(next.target);
-        }
+        discardEditors();
+        next?.apply();
       }}
       onCancel={() => setPendingAction(null)}
     />

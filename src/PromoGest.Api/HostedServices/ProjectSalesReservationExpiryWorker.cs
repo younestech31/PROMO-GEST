@@ -21,11 +21,15 @@ public sealed class ProjectSalesReservationExpiryWorker : BackgroundService
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
         using var timer = new PeriodicTimer(TimeSpan.FromMinutes(1));
+        var runImmediately = true;
         while (!stoppingToken.IsCancellationRequested)
         {
             try
             {
-                await timer.WaitForNextTickAsync(stoppingToken);
+                if (!runImmediately && !await timer.WaitForNextTickAsync(stoppingToken))
+                    break;
+
+                runImmediately = false;
                 await using var scope = _scopeFactory.CreateAsyncScope();
                 var processor = scope.ServiceProvider.GetRequiredService<ProjectSalesReservationExpiryProcessor>();
                 var expired = await processor.ProcessDueAsync(stoppingToken);

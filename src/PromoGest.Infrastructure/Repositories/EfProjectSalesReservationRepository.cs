@@ -62,7 +62,11 @@ public sealed class EfProjectSalesReservationRepository : IProjectSalesReservati
         => await _dbContext.ProjectSalesReservations
             .Where(reservation =>
                 reservation.Status == Domain.Enums.SalesReservationStatus.Active &&
-                reservation.ExpiresAtUtc <= nowUtc)
+                reservation.ExpiresAtUtc <= nowUtc &&
+                (reservation.ReviewRequiredAtUtc == null || reservation.ReviewCompletedAtUtc != null) &&
+                _dbContext.Projects.Any(project =>
+                    project.Id == reservation.ProjectId &&
+                    project.Status != Domain.Enums.ProjectStatus.Suspended))
             .OrderBy(reservation => reservation.ExpiresAtUtc)
             .Take(Math.Clamp(limit, 1, 500))
             .ToListAsync(ct);

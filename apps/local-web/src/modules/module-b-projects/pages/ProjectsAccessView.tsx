@@ -90,8 +90,11 @@ export function ProjectsAccessView({
   const [pageSize, setPageSize] = useState(25);
   const [totalCount, setTotalCount] = useState(0);
   const [totalPages, setTotalPages] = useState(1);
-  const [usersLoadedFor, setUsersLoadedFor] = useState<string | null>(null);
-  const userScope = `${currentUser.id}:${currentUser.concurrencyStamp}`;
+  const [usersLoading, setUsersLoading] = useState(false);
+  const [usersError, setUsersError] = useState(false);
+  const usersRequest = useRef(0);
+  const mayReadUsers = canManageUsers(currentUser);
+  const userScope = `${currentUser.id}:${currentUser.concurrencyStamp}:${mayReadUsers}`;
   const directoryRequest = useRef(0);
   // Draft text is not an applied server filter. Paging and mutation refreshes
   // must keep the successful query until the user explicitly applies another.
@@ -194,13 +197,6 @@ export function ProjectsAccessView({
       setPageSize(result.pageSize);
       setTotalCount(result.totalCount);
       setTotalPages(Math.max(1, result.totalPages));
-
-      if (canManageUsers(currentUser) && usersLoadedFor !== userScope) {
-        const userList = await apiClient.listUsers();
-        if (requestId !== directoryRequest.current) return;
-        setUsers(userList.filter((u) => !u.isSystemAdministrator && u.isActive));
-        setUsersLoadedFor(userScope);
-      }
     } catch (err) {
       if (requestId !== directoryRequest.current) return;
       setProjects([]);
@@ -215,14 +211,38 @@ export function ProjectsAccessView({
     }
   };
 
+  // Employee lookup is auxiliary: its failure must not discard valid projects
+  // or keep the directory spinner running. Never fetch it for directory readers.
+  const loadUsers = async () => {
+    const requestId = ++usersRequest.current;
+    setUsers([]);
+    setUsersError(false);
+    setMemberForm((form) => ({ ...form, userId: '' }));
+    if (!mayReadUsers) {
+      setUsersLoading(false);
+      return;
+    }
+    setUsersLoading(true);
+    try {
+      const result = await apiClient.listUsers();
+      if (requestId !== usersRequest.current) return;
+      setUsers(result.filter((user) => !user.isSystemAdministrator && user.isActive));
+    } catch {
+      if (requestId === usersRequest.current) setUsersError(true);
+    } finally {
+      if (requestId === usersRequest.current) setUsersLoading(false);
+    }
+  };
+
   // Reload only for a new authenticated actor/version, not every loader render.
   // biome-ignore lint/correctness/useExhaustiveDependencies: actor lifecycle owns the initial load; actions use the current render's loader.
   useEffect(() => {
     setSearchQuery('');
     setStatusFilter('');
-    setUsers([]);
+    setAccessProject(null);
+    void loadUsers();
     void loadData({ q: '', status: '', page: 1, pageSize: 25 });
-    return () => { ++directoryRequest.current; };
+    return () => { ++directoryRequest.current; ++usersRequest.current; };
   }, [userScope]);
 
   const handleFilterSubmit = (e: FormEvent) => {
@@ -365,7 +385,8 @@ export function ProjectsAccessView({
 
   const handleAssignMember = async (e: FormEvent) => {
     e.preventDefault();
-    if (!accessProject || !memberForm.userId) return;
+    if (!accessProject || submitting || !mayReadUsers || usersLoading || usersError
+      || !users.some((user) => user.id === memberForm.userId)) return;
     setModalError(null);
     setSubmitting(true);
 
@@ -1171,10 +1192,23 @@ export function ProjectsAccessView({
             <form onSubmit={handleAssignMember} className="mt-6 pt-5 border-t border-slate-200 space-y-4">
               <h3 className="text-sm font-bold text-slate-900">{t.projects.assignMemberTitle}</h3>
 
+              {usersLoading && <p role="status" className="text-xs text-slate-600">
+                {language === 'ar' ? 'جارٍ تحميل قائمة الموظفين…' : 'Chargement des employés…'}
+              </p>}
+              {usersError && <div role="alert" className="rounded border border-red-200 bg-red-50 p-3 text-xs text-red-800">
+                <p>{language === 'ar' ? 'تعذر تحميل قائمة الموظفين. تظل المشاريع متاحة.' : 'Impossible de charger les employés. Les projets restent disponibles.'}</p>
+                <button type="button" onClick={() => void loadUsers()} className="mt-2 underline">
+                  {language === 'ar' ? 'إعادة تحميل الموظفين' : 'Recharger les employés'}
+                </button>
+              </div>}
+              {!usersLoading && !usersError && users.length === 0 && <p role="status" className="text-xs text-slate-600">
+                {language === 'ar' ? 'لا يوجد موظفون نشطون قابلون للإسناد.' : 'Aucun employé actif à affecter.'}
+              </p>}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <FormField id="pm-user" label={t.projects.selectEmployee}>
                   <select
                     id="pm-user"
+                    disabled={submitting || usersLoading || usersError || !mayReadUsers}
                     value={memberForm.userId}
                     onChange={(e) => setMemberForm((p) => ({ ...p, userId: e.target.value }))}
                     className={inputBaseClass}
@@ -1263,7 +1297,7 @@ export function ProjectsAccessView({
                 </button>
                 <button
                   type="submit"
-                  disabled={submitting || !memberForm.userId}
+                  disabled={submitting || usersLoading || usersError || !mayReadUsers || !users.some((user) => user.id === memberForm.userId)}
                   className="px-4 py-2 text-xs font-semibold rounded-md bg-teal-800 text-white hover:bg-teal-900 disabled:opacity-60"
                 >
                   {t.projects.assignButton}

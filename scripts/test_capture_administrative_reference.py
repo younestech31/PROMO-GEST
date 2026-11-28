@@ -9,7 +9,9 @@ import unittest
 from unittest.mock import patch
 
 from administrative_reference_preflight import HEADERS, SOURCE_ID, InvalidSnapshot
-from capture_administrative_reference import COUNTS, add_read, digest, freeze, rows_for, status
+from capture_administrative_reference import (
+    COUNTS, add_read, connector_response, digest, freeze, plan, rows_for, status,
+)
 from package_administrative_reference import TAB_IDENTITIES, json_bytes, verify
 from test_administrative_reference_preflight import fixture
 
@@ -202,6 +204,138 @@ class CaptureTests(unittest.TestCase):
             with self.assertRaises(InvalidSnapshot):
                 freeze(self.journal, self.root / "raced")
         self.assertFalse((self.root / "raced").exists())
+
+    def test_plan_is_read_only_bounded_and_covers_only_current_pass_gaps(self):
+        self.add(start=4, end=6)
+        before = {p.name: p.read_bytes() for p in self.journal.iterdir()}
+        result = plan(self.journal)
+        self.assertEqual(result["plannedPass"], "first")
+        self.assertFalse(result["networkRequestsPerformed"])
+        self.assertFalse(result["readyForPreflight"])
+        self.assertTrue(result["liveProfileRecheckStillRequired"])
+        covered = {kind: set() for kind in HEADERS}
+        for item in result["requests"]:
+            kind, start, end = item["table"], item["startRow"], item["endRow"]
+            self.assertEqual(item["pass"], "first")
+            self.assertLessEqual(end - start + 1, 20 if kind == "aliases" else 50)
+            self.assertFalse(covered[kind] & set(range(start, end + 1)))
+            covered[kind].update(range(start, end + 1))
+            expected = response(kind, start, end, self.rows[kind])["value_ranges"][0]["range"]
+            self.assertEqual(item["input"]["ranges"], [expected])
+            self.assertEqual(item["input"]["spreadsheet_id"], SOURCE_ID)
+            self.assertEqual(item["input"]["major_dimension"], "ROWS")
+            self.assertEqual(item["input"]["value_render_option"], "UNFORMATTED_VALUE")
+            self.assertEqual(item["input"]["date_time_render_option"], "FORMATTED_STRING")
+        for kind in HEADERS:
+            expected = set(range(1, COUNTS[kind] + 2))
+            if kind == "communes":
+                expected -= {4, 5, 6}
+            self.assertEqual(covered[kind], expected)
+        self.assertEqual(before, {p.name: p.read_bytes() for p in self.journal.iterdir()})
+        for limit in (0, 51, True, "50"):
+            with self.subTest(limit=limit), self.assertRaises(InvalidSnapshot):
+                plan(self.journal, limit)
+
+    def test_plan_second_pass_skips_retained_intervals_and_complete_has_no_requests(self):
+        self.first_complete()
+        self.add(start=1002, end=1051, read_pass="second")
+        result = plan(self.journal, 7)
+        self.assertEqual(result["plannedPass"], "second")
+        covered = set()
+        for item in result["requests"]:
+            self.assertLessEqual(item["endRow"] - item["startRow"] + 1, 7)
+            if item["table"] == "communes":
+                covered.update(range(item["startRow"], item["endRow"] + 1))
+        self.assertEqual(covered, set(range(1, 1543)) - set(range(1002, 1052)))
+        for kind in HEADERS:
+            if kind == "communes":
+                self.add(kind, 1, 1001, "second")
+                self.add(kind, 1052, 1542, "second")
+            else:
+                self.add(kind, 1, COUNTS[kind] + 1, "second")
+        self.assertEqual(plan(self.journal)["requests"], [])
+        self.assertTrue(plan(self.journal)["readyForPreflight"])
+
+    def test_plan_rejects_changed_journal(self):
+        assessment = status(self.journal)
+        assessment["journalSha256"] = "f" * 64
+        with patch("capture_administrative_reference.status", return_value=assessment):
+            with self.assertRaises(InvalidSnapshot):
+                plan(self.journal)
+
+    def tool_payload(self):
+        # Synthetic saved connector transport, not an attested connector response.
+        return {"content": [{"type": "text", "text": json.dumps(
+                    response("communes", 1, 3, self.rows["communes"]), ensure_ascii=True)}],
+                "isError": False, "_meta": {"dev.merge/request_id": "synthetic-tool-1"}}
+
+    def test_complete_saved_connector_wrappers_extract_exact_strings_and_request_id(self):
+        self.rows["communes"][1][3] = "\\\\آث \ufeb3\ufeeeقـ\u200e"
+        expected = response("communes", 1, 3, self.rows["communes"])
+        inner = self.tool_payload()
+        for value in (inner, {"status": "success", "result_text": json.dumps(inner)}):
+            actual, request_id = connector_response(value)
+            self.assertEqual(actual, expected)
+            self.assertEqual(request_id, "synthetic-tool-1")
+
+    def test_saved_connector_errors_truncation_ambiguity_and_duplicate_keys_fail_closed(self):
+        original = self.tool_payload()
+        variants = [{"status": "error", "result_text": json.dumps(original)},
+                    {"status": "aborted", "result_text": json.dumps(original)}]
+        for key, value in (("isError", True), ("isError", 0), ("content", []),
+                           ("_meta", {}), ("_meta", {"dev.merge/request_id": "bad/id"})):
+            bad = copy.deepcopy(original); bad[key] = value; variants.append(bad)
+        bad = copy.deepcopy(original); bad["truncated"] = True; variants.append(bad)
+        bad = copy.deepcopy(original); bad["content"] *= 2; variants.append(bad)
+        bad = copy.deepcopy(original); bad["content"][0]["text"] = '{"x":1,"x":2}'; variants.append(bad)
+        bad = copy.deepcopy(original); bad["content"][0]["text"] = '{"spreadsheet_id":'; variants.append(bad)
+        variants.append({"status": "success", "result_text": '{"x":1,"x":2}'})
+        for value in variants:
+            with self.subTest(value=value), self.assertRaises(InvalidSnapshot):
+                connector_response(value)
+        self.assertEqual(list(self.journal.iterdir()), [])
+
+    def test_add_tool_read_cli_keeps_existing_journal_contract_and_rejects_reuse(self):
+        path = self.root / "saved-tool.json"
+        path.write_text(json.dumps({"status": "success", "result_text": json.dumps(self.tool_payload())}))
+        command = [sys.executable, "scripts/capture_administrative_reference.py", "add-tool-read",
+                   str(self.journal), "--table", "communes", "--read-pass", "first",
+                   "--start-row", "1", "--end-row", "3", "--tool-result", str(path),
+                   "--read-at-utc", FIRST]
+        result = subprocess.run(command, capture_output=True, text=True, check=False)
+        self.assertEqual(result.returncode, 0, result.stderr)
+        envelope = json.loads(next(self.journal.iterdir()).read_bytes())
+        self.assertEqual(envelope["body"]["schemaVersion"], 1)
+        self.assertEqual(envelope["body"]["connectorRequestId"], "synthetic-tool-1")
+        self.assertEqual(envelope["body"]["response"], response("communes", 1, 3, self.rows["communes"]))
+        before = {p.name: p.read_bytes() for p in self.journal.iterdir()}
+        result = subprocess.run(command, capture_output=True, text=True, check=False)
+        self.assertEqual(result.returncode, 1)
+        self.assertEqual(before, {p.name: p.read_bytes() for p in self.journal.iterdir()})
+        result = subprocess.run([sys.executable, "scripts/capture_administrative_reference.py", "plan",
+                                 str(self.journal)], capture_output=True, text=True, check=False)
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertEqual(json.loads(result.stdout)["plannedPass"], "first")
+
+    def test_add_tool_read_cli_rejects_incomplete_rows_and_sanitizes_errors(self):
+        value = self.tool_payload()
+        value["content"][0]["text"] = json.dumps(response("communes", 1, 2, self.rows["communes"]))
+        path = self.root / "PRIVATE-PATH.json"
+        path.write_text(json.dumps(value))
+        command = [sys.executable, "scripts/capture_administrative_reference.py", "add-tool-read",
+                   str(self.journal), "--table", "communes", "--read-pass", "first",
+                   "--start-row", "1", "--end-row", "3", "--tool-result", str(path),
+                   "--read-at-utc", FIRST]
+        result = subprocess.run(command, capture_output=True, text=True, check=False)
+        self.assertEqual(result.returncode, 1)
+        self.assertNotIn("PRIVATE-PATH", result.stderr)
+        self.assertEqual(json.loads(result.stderr)["assessment"], "INVALID_CAPTURE")
+        self.assertEqual(list(self.journal.iterdir()), [])
+        path.write_text('{"content":')
+        result = subprocess.run(command, capture_output=True, text=True, check=False)
+        self.assertEqual(result.returncode, 1)
+        self.assertNotIn("Traceback", result.stderr)
+        self.assertEqual(list(self.journal.iterdir()), [])
 
     def test_duplicate_json_keys_and_cli_errors_are_sanitized(self):
         path = self.root / "PRIVATE-PATH.json"

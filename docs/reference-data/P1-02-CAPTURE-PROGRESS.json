@@ -77,6 +77,16 @@
       "startRow": 122
     },
     {
+      "canonicalEnvelopeSha256": "e033bca0b38d1fa2a40759f60459e4b9d50b42cb72cab6500215d44b30dba2ea",
+      "claimedReadAtUtc": "2026-11-28T18:08:14Z",
+      "connectorRequestId": "d6ede7ef-4308-44b0-82aa-faf1441adf01",
+      "endRow": 21,
+      "file": "aliases-second-0001-0021.json",
+      "kind": "aliases",
+      "pass": "second",
+      "startRow": 1
+    },
+    {
       "canonicalEnvelopeSha256": "9d5045ab14911abb945af7ffc031b45f96670b98185b4fbbab3a9d5f6990bf6a",
       "claimedReadAtUtc": "2026-11-28T16:36:04Z",
       "connectorRequestId": "8001442d-4f77-427b-8a57-7f34624dac39",
@@ -387,6 +397,46 @@
       "startRow": 1502
     },
     {
+      "canonicalEnvelopeSha256": "9ff2dedba834bd0b8e39b4d39573cca389ceb4d1d483c461b57859f2b0733ec4",
+      "claimedReadAtUtc": "2026-11-28T18:04:44Z",
+      "connectorRequestId": "951066bf-4d7e-4cc2-8444-d666438a38cd",
+      "endRow": 51,
+      "file": "communes-second-0001-0051.json",
+      "kind": "communes",
+      "pass": "second",
+      "startRow": 1
+    },
+    {
+      "canonicalEnvelopeSha256": "2a938952c3e820905622eac43c965e4da9e84c386e74dcdf8479f1e0f20422de",
+      "claimedReadAtUtc": "2026-11-28T18:04:44Z",
+      "connectorRequestId": "d4e1d7ac-1b0d-489a-919e-c6c69e5a136e",
+      "endRow": 101,
+      "file": "communes-second-0052-0101.json",
+      "kind": "communes",
+      "pass": "second",
+      "startRow": 52
+    },
+    {
+      "canonicalEnvelopeSha256": "57c978bd7e88d48463fb5cb59e10aebd20ec9513f48c8f09633811670cac4f20",
+      "claimedReadAtUtc": "2026-11-28T18:05:52Z",
+      "connectorRequestId": "a0ea248b-a29e-43dc-86a0-4ecb3317c703",
+      "endRow": 151,
+      "file": "communes-second-0102-0151.json",
+      "kind": "communes",
+      "pass": "second",
+      "startRow": 102
+    },
+    {
+      "canonicalEnvelopeSha256": "89d0152438b57441f426208e99a854eb298a4c587b8c32613680d56297437eea",
+      "claimedReadAtUtc": "2026-11-28T18:05:52Z",
+      "connectorRequestId": "6c5313e1-adbb-4463-9933-32036d51dc33",
+      "endRow": 201,
+      "file": "communes-second-0152-0201.json",
+      "kind": "communes",
+      "pass": "second",
+      "startRow": 152
+    },
+    {
       "canonicalEnvelopeSha256": "167ee74626a340443d3807859866197186389a3d09fa09e85c9038eab4205e0e",
       "claimedReadAtUtc": "2026-11-28T17:46:51Z",
       "connectorRequestId": "526ec41d-2836-4bc5-8a57-ae871b767e00",
@@ -466,7 +516,7 @@
   },
   "journalDigestIsSourceSnapshotId": false,
   "journalLocalPath": "storage/p1-02-sheets-capture",
-  "journalSha256": "f04f211f08f790555ef8975bf30733276e7315f5b2a7a0c223aa8b15c8af6ceb",
+  "journalSha256": "3d58bf37cc8aa929d1c30bd6ee7013ffe9a05818d05f305e67b5e2b49eb2758b",
   "legalEffectiveDatesInferred": false,
   "liveProfileRecheck": {
     "extraColumns": [
@@ -577,7 +627,7 @@
       "reason": "Combined response truncated; not parsed or stored as a source chunk"
     }
   ],
-  "remaining": "First pass complete. Continue fresh second-pass communes from physical row1 (rows1002–1051 already matched; skip that registered interval) and aliases from row1; wilayas second pass complete. Repeat live profile/count/tail recheck after matching all rows; freeze through unchanged preflight/package, reviewed identities and actual-source PG18 rehearsal before activation.",
+  "remaining": "First pass complete. Continue fresh second-pass communes from physical row202 (rows1–201 and1002–1051 already matched; skip both registered intervals) and aliases from row22 (rows1–21 already matched); wilayas second pass complete. Use plan to schedule only missing physical rows. Repeat live profile/count/tail recheck after matching all rows; freeze through unchanged preflight/package, reviewed identities and actual-source PG18 rehearsal before activation.",
   "schemaVersion": 1,
   "sheetsModified": false,
   "sourceContentSha256": null,
@@ -594,10 +644,10 @@
           "nextMissingRow": null
         },
         "second": {
-          "capturedDataRows": 0,
-          "headerCaptured": false,
-          "missingRowCount": 152,
-          "nextMissingRow": 1
+          "capturedDataRows": 20,
+          "headerCaptured": true,
+          "missingRowCount": 131,
+          "nextMissingRow": 22
         }
       }
     },
@@ -611,10 +661,10 @@
           "nextMissingRow": null
         },
         "second": {
-          "capturedDataRows": 50,
-          "headerCaptured": false,
-          "missingRowCount": 1492,
-          "nextMissingRow": 1
+          "capturedDataRows": 250,
+          "headerCaptured": true,
+          "missingRowCount": 1291,
+          "nextMissingRow": 202
         }
       }
     },

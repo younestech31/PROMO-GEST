@@ -44,11 +44,16 @@ AR/FR alias targets; declared/observed dairas remain 550/549, seats 460 yes / 10
 unknown / 0 no. The aggregate separately labels its first-pass hashes as unverified,
 not sealed source evidence.
 
-Fresh second-pass reads now match all 69 wilayas and commune physical rows
-1002–1051 exactly (40 registered chunks overall). Commune and alias second passes
-remain incomplete and begin/resume at physical row 1, skipping the commune interval
-already retained. A live intermediate metadata/count/tail/extra-column recheck
-found no profile expansion; it must be repeated before finalization.
+Fresh second-pass reads now match all 69 wilayas, commune physical rows
+1–201 and 1002–1051 (250 data rows), and alias physical rows 1–21 (20 data rows)
+exactly: 45 registered chunks overall, with all three second-pass headers matched.
+Commune and alias second passes remain incomplete and resume at physical rows 202
+and 22 respectively, skipping all retained intervals. The capture adapter now
+provides bounded gap-only connector request planning and complete saved-tool-result
+JSON ingestion without manual cell unescaping; it neither fetches the files itself
+nor authenticates reconstructed/transcribed wrappers. A live intermediate
+metadata/count/tail/extra-column recheck found no profile expansion; it must be
+repeated before finalization.
 The complete 1541/69/151 **two-pass package has not yet been created**; the journal
 digest and provisional first-pass content digest are not sealed source snapshot
 IDs. No actual-source import or activation is claimed. Do not treat hashes of

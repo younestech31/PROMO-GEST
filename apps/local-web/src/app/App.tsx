@@ -247,7 +247,7 @@ export function AppContentRouter({
       )}
 
       {activeRoute.kind === 'admin' && activeRoute.section === 'audit' && (
-        <AuditLogView language={language} />
+        <AuditLogView language={language} currentUser={session.user} />
       )}
 
       {activeRoute.kind === 'admin' && activeRoute.section === 'diagnostics' && (

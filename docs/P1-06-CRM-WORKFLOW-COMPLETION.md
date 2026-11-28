@@ -100,11 +100,13 @@ confirmation exclusion, language-stable failure/retry/success, and replacement b
 actor ID/stamp/read/manage scope during writes. Tests cover both stale success and
 stale failure. The five existing Party request tests also pass. This is mocked
 React/JSDOM evidence, not manual visual, database or institutional acceptance.
-This follow-up still requires its own exact-head remote checks and merge.
+This follow-up merged as PR302 after all eight exact-head checks SUCCESS on
+`7ea5e34` (CI46143591539/CodeQL46143591251). Independent main CI46145555028
+and CodeQL46145555029 pending at this checkpoint.
 
 Prior delivery checkpoint: PR301 merged at main `4eeffa4` after all eight
 exact-head checks SUCCESS on `649e587` (CI46142347443/CodeQL46142347461).
-Independent main CI46143373760 and CodeQL46143373737 pending at authoring.
+Independent main CI46143373760 and CodeQL46143373737 subsequently passed.
 PR300 independent main CI46142099423 and CodeQL46142099406 SUCCESS.
 No API, database/schema, permission-policy, merge/contact/identifier model or
 financial change. P1-06 remains In Review, Phase1 IN_PROGRESS, later phases gated.

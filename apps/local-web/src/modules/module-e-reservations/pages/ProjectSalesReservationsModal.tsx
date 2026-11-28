@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState, type FormEvent } from 'react';
+import { useCallback, useEffect, useRef, useState, type FormEvent } from 'react';
 import { CalendarClock, CheckCircle2, LoaderCircle, Plus, ShieldAlert, X } from 'lucide-react';
 import type {
   AppLanguage,
@@ -72,15 +72,25 @@ export function ProjectSalesReservationsModal({
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [loadError, setLoadError] = useState<string | null>(null);
+  const [dataReady, setDataReady] = useState(false);
+  const [conflictRefreshed, setConflictRefreshed] = useState(false);
+  const loadGeneration = useRef(0);
+  const viewLifetime = useRef<object | null>(null);
+  const optionsProject = useRef<string | null>(null);
   const [unitId, setUnitId] = useState('');
   const [customerId, setCustomerId] = useState('');
   const [expiresAtLocal, setExpiresAtLocal] = useState(defaultExpiryLocal);
   const [hasFormEdits, setHasFormEdits] = useState(false);
-  const [cancelTarget, setCancelTarget] = useState<ProjectSalesReservationDto | null>(null);
+  const [cancelTargetId, setCancelTargetId] = useState<string | null>(null);
   const [cancelReason, setCancelReason] = useState('');
   const [confirmDiscardOpen, setConfirmDiscardOpen] = useState(false);
   const [reviewQueue, setReviewQueue] = useState<ProjectSalesReservationDto[]>([]);
-  const [reviewTarget, setReviewTarget] = useState<ProjectSalesReservationDto | null>(null);
+  const [reviewTargetId, setReviewTargetId] = useState<string | null>(null);
+  // Selected actions always use the last successfully loaded server version.
+  const cancelTarget = reservations.find((row) => row.id === cancelTargetId && row.status === 'Active') ?? null;
+  const reviewTarget = reviewQueue.find((row) => row.id === reviewTargetId) ?? null;
+  const actionsDisabled = !canManage || saving || loading || !dataReady;
 
   const isDirty = canManage && (hasFormEdits || cancelTarget !== null || cancelReason.trim() !== '');
 
@@ -103,52 +113,83 @@ export function ProjectSalesReservationsModal({
   };
 
   const loadData = useCallback(async () => {
+    const generation = ++loadGeneration.current;
     setLoading(true);
-    setError(null);
+    setDataReady(false);
+    setLoadError(null);
     try {
-      const [reservationRows, reviewQueueRows] = await Promise.all([
+      // Publish one complete snapshot, never new holds with old unit/customer options.
+      const [reservationRows, reviewQueueRows, structure, customerRows] = await Promise.all([
         apiClient.listProjectSalesReservations(project.id),
         apiClient.listProjectSalesReservations(project.id, { reviewRequired: true }),
+        canManage ? apiClient.getProjectStructure(project.id) : Promise.resolve(null),
+        canManage ? apiClient.listProjectCustomers(project.id) : Promise.resolve([]),
       ]);
+      if (generation !== loadGeneration.current) return false;
+      const available = structure?.buildings
+        .flatMap((building) => building.floors)
+        .flatMap((floor) => floor.units)
+        .filter((unit) => unit.status === 'AvailableForSale') ?? [];
+      const eligibleCustomers = customerRows.filter((customer) => customer.status !== 'Archived');
       setReservations(reservationRows);
-      // The server already filtered the queue; the predicate is re-applied here so a completed or
-      // closed hold can never appear as awaiting review.
       setReviewQueue(reviewQueueRows.filter(isReservationAwaitingReview));
-
-      if (canManage) {
-        const [structure, customerRows] = await Promise.all([
-          apiClient.getProjectStructure(project.id),
-          apiClient.listProjectCustomers(project.id),
-        ]);
-        const available = structure.buildings
-          .flatMap((building) => building.floors)
-          .flatMap((floor) => floor.units)
-          .filter((unit) => unit.status === 'AvailableForSale');
-        const eligibleCustomers = customerRows.filter((customer) => customer.status !== 'Archived');
-        setUnits(available);
-        setCustomers(eligibleCustomers);
-        setUnitId((current) => available.some((unit) => unit.id === current) ? current : (available[0]?.id ?? ''));
-        setCustomerId((current) => eligibleCustomers.some((customer) => customer.id === current)
-          ? current
-          : (eligibleCustomers[0]?.id ?? ''));
-      } else {
-        setUnits([]);
-        setCustomers([]);
-      }
+      setUnits(available);
+      setCustomers(eligibleCustomers);
+      const initializeOptions = optionsProject.current !== project.id;
+      if (canManage) optionsProject.current = project.id;
+      setUnitId((current) => current
+        ? (available.some((unit) => unit.id === current) ? current : '')
+        : (initializeOptions ? available[0]?.id ?? '' : ''));
+      setCustomerId((current) => current
+        ? (eligibleCustomers.some((customer) => customer.id === current) ? current : '')
+        : (initializeOptions ? eligibleCustomers[0]?.id ?? '' : ''));
+      setDataReady(true);
+      return true;
     } catch (loadError) {
-      setError(errorText(loadError, language));
+      if (generation !== loadGeneration.current) return false;
+      setLoadError(errorText(loadError, language));
+      return false;
     } finally {
-      setLoading(false);
+      if (generation === loadGeneration.current) setLoading(false);
     }
   }, [project.id, canManage, language]);
 
   useEffect(() => {
+    viewLifetime.current = {};
+    setSaving(false);
     void loadData();
+    return () => {
+      viewLifetime.current = null;
+      ++loadGeneration.current;
+    };
   }, [loadData]);
+
+  useEffect(() => {
+    // A terminal/missing hold cannot keep an obsolete cancellation form open.
+    if (dataReady && !cancelTarget) {
+      setCancelTargetId(null);
+      setCancelReason('');
+    }
+    if (dataReady && !reviewTarget) setReviewTargetId(null);
+  }, [dataReady, cancelTarget, reviewTarget]);
+
+  const handleMutationError = async (mutationError: unknown, lifetime: object | null) => {
+    if (lifetime !== viewLifetime.current) return;
+    setError(errorText(mutationError, language));
+    // A 409 can mean expiry was persisted or another actor changed the hold/unit.
+    // Refresh authoritative state, but never replay the rejected write.
+    if (mutationError instanceof ApiError && mutationError.status === 409) {
+      const refreshed = await loadData();
+      if (lifetime === viewLifetime.current) setConflictRefreshed(refreshed);
+    }
+  };
 
   const submitReservation = async (event: FormEvent) => {
     event.preventDefault();
+    if (actionsDisabled) return;
+    const lifetime = viewLifetime.current;
     setSaving(true);
+    setConflictRefreshed(false);
     setError(null);
     try {
       const expiresAtUtc = new Date(expiresAtLocal);
@@ -160,51 +201,58 @@ export function ProjectSalesReservationsModal({
         projectCustomerId: customerId,
         expiresAtUtc: expiresAtUtc.toISOString(),
       });
+      if (lifetime !== viewLifetime.current) return;
       setExpiresAtLocal(defaultExpiryLocal());
       setHasFormEdits(false);
       await loadData();
     } catch (submitError) {
-      setError(errorText(submitError, language));
+      await handleMutationError(submitError, lifetime);
     } finally {
-      setSaving(false);
+      if (lifetime === viewLifetime.current) setSaving(false);
     }
   };
 
   const submitCancellation = async (event: FormEvent) => {
     event.preventDefault();
-    if (!cancelTarget) return;
+    if (actionsDisabled || !cancelTarget) return;
+    const lifetime = viewLifetime.current;
     setSaving(true);
+    setConflictRefreshed(false);
     setError(null);
     try {
       await apiClient.cancelProjectSalesReservation(project.id, cancelTarget.id, {
         reason: cancelReason.trim(),
         expectedConcurrencyStamp: cancelTarget.concurrencyStamp,
       });
-      setCancelTarget(null);
+      if (lifetime !== viewLifetime.current) return;
+      setCancelTargetId(null);
       setCancelReason('');
       await loadData();
     } catch (cancelError) {
-      setError(errorText(cancelError, language));
+      await handleMutationError(cancelError, lifetime);
     } finally {
-      setSaving(false);
+      if (lifetime === viewLifetime.current) setSaving(false);
     }
   };
 
   const submitReview = async (event: FormEvent) => {
     event.preventDefault();
-    if (!reviewTarget) return;
+    if (actionsDisabled || !reviewTarget) return;
+    const lifetime = viewLifetime.current;
     setSaving(true);
+    setConflictRefreshed(false);
     setError(null);
     try {
       await apiClient.reviewProjectSalesReservation(project.id, reviewTarget.id, {
         expectedConcurrencyStamp: reviewTarget.concurrencyStamp,
       });
-      setReviewTarget(null);
+      if (lifetime !== viewLifetime.current) return;
+      setReviewTargetId(null);
       await loadData();
     } catch (reviewError) {
-      setError(errorText(reviewError, language));
+      await handleMutationError(reviewError, lifetime);
     } finally {
-      setSaving(false);
+      if (lifetime === viewLifetime.current) setSaving(false);
     }
   };
 
@@ -220,6 +268,22 @@ export function ProjectSalesReservationsModal({
       </div>
 
       {error && <div role="alert" className="rounded border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-800">{error}</div>}
+      {loadError && (
+        <div role="alert" className="rounded border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-800">
+          <p>{loadError}</p>
+          <button type="button" disabled={saving || loading} onClick={() => void loadData()}
+            className="mt-2 rounded border border-red-300 px-3 py-2 font-semibold disabled:opacity-50">
+            {isArabic ? 'إعادة تحميل البيانات' : 'Recharger les données'}
+          </button>
+        </div>
+      )}
+      {conflictRefreshed && dataReady && (
+        <p role="status" className="rounded border border-teal-200 bg-teal-50 px-3 py-2 text-xs text-teal-950">
+          {isArabic
+            ? 'تم تحديث البيانات من الخادم. لم تُكرر العملية تلقائياً. راجع الحالة الحالية قبل تأكيد أي إجراء جديد.'
+            : 'Les données ont été rechargées. L’opération n’a pas été répétée automatiquement. Vérifiez l’état actuel avant toute nouvelle confirmation.'}
+        </p>
+      )}
 
       <section
         aria-labelledby="reservation-review-queue-title"
@@ -255,7 +319,7 @@ export function ProjectSalesReservationsModal({
             <div className="flex flex-wrap gap-2">
               <button
                 type="submit"
-                disabled={saving}
+                disabled={actionsDisabled}
                 className="inline-flex items-center gap-1.5 rounded bg-amber-700 px-3 py-2 text-xs font-semibold text-white hover:bg-amber-800 disabled:opacity-50"
               >
                 {saving ? <LoaderCircle className="h-4 w-4 animate-spin" /> : <CheckCircle2 className="h-4 w-4" />}
@@ -263,8 +327,8 @@ export function ProjectSalesReservationsModal({
               </button>
               <button
                 type="button"
-                disabled={saving}
-                onClick={() => setReviewTarget(null)}
+                disabled={actionsDisabled}
+                onClick={() => setReviewTargetId(null)}
                 className="rounded border border-slate-300 px-3 py-2 text-xs text-slate-700 disabled:opacity-50"
               >
                 {isArabic ? 'تراجع' : 'Retour'}
@@ -278,7 +342,7 @@ export function ProjectSalesReservationsModal({
             <LoaderCircle className="h-4 w-4 animate-spin" />
             {isArabic ? 'جارٍ التحميل...' : 'Chargement...'}
           </div>
-        ) : reviewQueue.length === 0 ? (
+        ) : !dataReady ? null : reviewQueue.length === 0 ? (
           <p className="rounded border border-dashed border-amber-300 bg-white px-3 py-4 text-center text-xs text-slate-600">
             {isArabic ? 'لا توجد حجوزات بانتظار المراجعة.' : 'Aucune réservation en attente de revue.'}
           </p>
@@ -310,7 +374,8 @@ export function ProjectSalesReservationsModal({
                         <td className="px-3 py-2.5">
                           <button
                             type="button"
-                            onClick={() => setReviewTarget(reservation)}
+                            disabled={actionsDisabled}
+                            onClick={() => setReviewTargetId(reservation.id)}
                             className="rounded border border-amber-700 px-2.5 py-1.5 text-[11px] font-semibold text-amber-900 hover:bg-amber-100"
                           >
                             {isArabic ? 'تمت المراجعة' : 'Revue effectuée'}
@@ -367,7 +432,7 @@ export function ProjectSalesReservationsModal({
               </label>
               <button
                 type="submit"
-                disabled={saving || !unitId || !customerId || !units.length || !customers.length}
+                disabled={actionsDisabled || !unitId || !customerId || !units.length || !customers.length}
                 className="inline-flex items-center justify-center gap-1.5 rounded bg-teal-800 px-3 py-2 text-xs font-semibold text-white hover:bg-teal-900 disabled:cursor-not-allowed disabled:opacity-50"
               >
                 {saving ? <LoaderCircle className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}
@@ -400,10 +465,10 @@ export function ProjectSalesReservationsModal({
                 />
               </label>
               <div className="flex flex-wrap gap-2">
-                <button type="submit" disabled={saving || !cancelReason.trim()} className="rounded bg-amber-700 px-3 py-2 text-xs font-semibold text-white disabled:opacity-50">
+                <button type="submit" disabled={actionsDisabled || !cancelReason.trim()} className="rounded bg-amber-700 px-3 py-2 text-xs font-semibold text-white disabled:opacity-50">
                   {isArabic ? 'تأكيد الإلغاء' : 'Confirmer l’annulation'}
                 </button>
-                <button type="button" onClick={() => { setCancelTarget(null); setCancelReason(''); }} className="rounded border border-slate-300 px-3 py-2 text-xs text-slate-700">
+                <button type="button" disabled={saving} onClick={() => { setCancelTargetId(null); setCancelReason(''); }} className="rounded border border-slate-300 px-3 py-2 text-xs text-slate-700">
                   {isArabic ? 'تراجع' : 'Retour'}
                 </button>
               </div>
@@ -415,7 +480,7 @@ export function ProjectSalesReservationsModal({
               <h3 className="text-sm font-bold text-slate-900">
                 {isArabic ? 'سجل الحجوزات' : 'Historique des réservations'} ({reservations.length})
               </h3>
-              <button type="button" onClick={() => void loadData()} disabled={loading} className="text-xs font-medium text-teal-800 hover:underline disabled:opacity-50">
+              <button type="button" onClick={() => void loadData()} disabled={saving || loading} className="text-xs font-medium text-teal-800 hover:underline disabled:opacity-50">
                 {isArabic ? 'تحديث' : 'Actualiser'}
               </button>
             </div>
@@ -424,7 +489,7 @@ export function ProjectSalesReservationsModal({
                 <LoaderCircle className="h-4 w-4 animate-spin" />
                 {isArabic ? 'جارٍ التحميل...' : 'Chargement...'}
               </div>
-            ) : reservations.length === 0 ? (
+            ) : !dataReady ? null : reservations.length === 0 ? (
               <div className="rounded border border-dashed border-slate-300 px-3 py-8 text-center text-xs text-slate-500">
                 {isArabic ? 'لا توجد حجوزات مسجلة لهذا المشروع.' : 'Aucune réservation enregistrée pour ce projet.'}
               </div>
@@ -471,7 +536,7 @@ export function ProjectSalesReservationsModal({
                         {canManage && (
                           <td className="px-3 py-2.5">
                             {reservation.status === 'Active' ? (
-                              <button type="button" onClick={() => { setCancelTarget(reservation); setCancelReason(''); }} className="text-xs font-semibold text-amber-800 hover:underline">
+                              <button type="button" disabled={actionsDisabled} onClick={() => { setCancelTargetId(reservation.id); setCancelReason(''); }} className="text-xs font-semibold text-amber-800 hover:underline">
                                 {isArabic ? 'إلغاء الحجز' : 'Annuler'}
                               </button>
                             ) : (
@@ -506,7 +571,7 @@ export function ProjectSalesReservationsModal({
       onConfirm={() => {
         setConfirmDiscardOpen(false);
         setHasFormEdits(false);
-        setCancelTarget(null);
+        setCancelTargetId(null);
         setCancelReason('');
         onClose?.();
       }}

@@ -1,6 +1,6 @@
 # P1-12 — Safe, immediate reservation-expiry reconciliation
 
-Status: **Implementation merged; final head verified; independent main pending.**
+Status: **Backend acceptance verified on final head and independent merged main.**
 Not production rollout approval.
 
 PR [292](https://github.com/younestech31/PROMO-GEST/pull/292) merged with exact
@@ -15,8 +15,9 @@ Arabic/French expiry-conflict wording now explicitly preserves suspended and
 review-required holds and instructs refreshing the list; no unconditional
 release or manual-cancel success is promised.
 
-Independent exact merged-main CI46094642448/CodeQL46094642443 pending at checkpoint;
-head success is not inherited. [Compact exact-run archive](evidence/p1-12-reservation-expiry/checks.json).
+Independent exact merged-main CI[46094642448](https://github.com/younestech31/PROMO-GEST/actions/runs/46094642448) **PASS5/5** and
+CodeQL[46094642443](https://github.com/younestech31/PROMO-GEST/actions/runs/46094642443) **PASS** on
+`f89cc4448b89974440c2be2af527e9dcbac1f997`; checked independently, not inherited from the PR head. [Compact exact-run archive](evidence/p1-12-reservation-expiry/checks.json).
 Previous PR291 main8ff4330 CI46092836863/CodeQL46092836856 also independently PASS.
 Superseded source5924eb8 CI46093550987 explicitly cancelled to avoid wasting
 resources after the localized final head; its CodeQL was cancelled too.
@@ -82,6 +83,23 @@ No sleeps, dropped assertions, disabled suites or synthetic browser evidence.
 The normal full CI/CodeQL, PG18, restore and existing four-profile browser gates
 remain in place. No extra browser scenarios were added for this backend change.
 Local checks do not substitute for .NET/PG execution (not installed locally).
-Final exact-head results are verified above; independent merged-main verification
-remains pending before final task closure. No new screenshots or manual UI acceptance
+Final exact-head and independent merged-main results are verified above.
+The five original backend acceptance criteria are mapped below. No new screenshots or manual UI acceptance
 are claimed.
+
+## Original backend acceptance mapping
+
+1. Idempotent/concurrent expiry and unit release: worker/cancel race, boundary,
+   repeated processing, and atomic audit readback pass on PostgreSQL 18.
+2. Late cancellation: immediate persisted Expired/EXPIRED/unit release before the
+   existing 409, except intentionally protected suspended/pending-review holds.
+3. Startup/restart and mismatched unit: immediate worker execution and Sold-unit
+   preservation pass; no unconditional unit release.
+4. Time boundary/cancel-worker race/restart: seven dedicated real PostgreSQL cases
+   plus the existing end-to-end late-cancel assertions pass.
+5. Audit/reason semantics: exactly one expiry audit, EXPIRED preserved, no cancelled
+   success substituted, and suspension loser rollback verified.
+
+The separate UI conflict-recovery follow-up described in
+[P1-12-UI-CONFLICT-RECOVERY.md](P1-12-UI-CONFLICT-RECOVERY.md) is not included in
+this backend closure evidence and still requires its own PR checks.

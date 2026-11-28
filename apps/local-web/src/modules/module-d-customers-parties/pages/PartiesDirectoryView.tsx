@@ -16,7 +16,12 @@ interface PartiesDirectoryViewProps {
   onDirtyChange?: (dirty: boolean) => void;
 }
 
-export function PartiesDirectoryView({
+export function PartiesDirectoryView(props: PartiesDirectoryViewProps) {
+  const scope = `${props.currentUser.id}:${props.currentUser.concurrencyStamp}:${canReadPartyDirectory(props.currentUser)}:${canManagePartyIdentity(props.currentUser)}`;
+  return <PartiesDirectoryEditor key={scope} {...props} />;
+}
+
+function PartiesDirectoryEditor({
   currentUser,
   language,
   onNavigateHome,
@@ -34,14 +39,16 @@ export function PartiesDirectoryView({
   const searchRequest = useRef(0);
   const lastSearch = useRef('');
   const viewLifetime = useRef<object | null>(null);
-  const actorScope = `${currentUser.id}:${currentUser.concurrencyStamp}`;
+  const mutation = useRef<object | null>(null);
+  const languageRef = useRef(language);
+  languageRef.current = language;
 
   const [editingParty, setEditingParty] = useState<PartyDirectoryItemDto | null>(null);
   const [editKind, setEditKind] = useState<'Person' | 'LegalEntity'>('Person');
   const [editDisplayName, setEditDisplayName] = useState('');
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
-  const [saveSuccess, setSaveSuccess] = useState<string | null>(null);
+  const [saveSuccess, setSaveSuccess] = useState(false);
   const [confirmDiscardOpen, setConfirmDiscardOpen] = useState(false);
 
   const isEditorDirty = Boolean(
@@ -61,7 +68,7 @@ export function PartiesDirectoryView({
   }, [onDirtyChange]);
 
   const requestCloseEditor = () => {
-    if (saving) return;
+    if (mutation.current) return;
     if (isEditorDirty) {
       setConfirmDiscardOpen(true);
       return;
@@ -70,22 +77,16 @@ export function PartiesDirectoryView({
   };
 
   useEffect(() => {
-    viewLifetime.current = { actorScope, canRead };
-    setResults([]);
-    setHasSearched(false);
-    setEditingParty(null);
-    setLoading(false);
-    setSaving(false);
-    setError(null);
-    setSaveSuccess(null);
+    viewLifetime.current = {};
     return () => {
+      mutation.current = null;
       viewLifetime.current = null;
       ++searchRequest.current;
     };
-  }, [actorScope, canRead]);
+  }, []);
 
   const runSearch = async (term: string) => {
-    if (!canRead || saving) return;
+    if (!canRead || mutation.current || confirmDiscardOpen) return;
     const request = ++searchRequest.current;
     const trimmed = term.trim();
     lastSearch.current = trimmed;
@@ -98,7 +99,7 @@ export function PartiesDirectoryView({
       return;
     }
     setError(null);
-    setSaveSuccess(null);
+    setSaveSuccess(false);
     setLoading(true);
     try {
       const items = await apiClient.searchPartyDirectory(trimmed);
@@ -108,8 +109,8 @@ export function PartiesDirectoryView({
     } catch (err) {
       if (request !== searchRequest.current) return;
       setError(err instanceof ApiError
-        ? translateApiError(err.code, err.message, language)
-        : (isArabic ? 'تعذر البحث في دليل الأطراف.' : 'Impossible d’interroger le répertoire des tiers.'));
+        ? translateApiError(err.code, err.message, languageRef.current)
+        : (languageRef.current === 'ar' ? 'تعذر البحث في دليل الأطراف.' : 'Impossible d’interroger le répertoire des tiers.'));
     } finally {
       if (request === searchRequest.current) setLoading(false);
     }
@@ -121,7 +122,7 @@ export function PartiesDirectoryView({
   };
 
   const openEditor = (party: PartyDirectoryItemDto) => {
-    if (!canEdit || saving) return;
+    if (!canRead || !canEdit || mutation.current || confirmDiscardOpen) return;
     setEditingParty(party);
     setEditKind(party.kind === 'LegalEntity' ? 'LegalEntity' : 'Person');
     setEditDisplayName(party.displayName);
@@ -130,7 +131,9 @@ export function PartiesDirectoryView({
 
   const handleSaveIdentity = async (event: FormEvent) => {
     event.preventDefault();
-    if (!canEdit || !editingParty || saving || !editDisplayName.trim()) return;
+    if (!canRead || !canEdit || !editingParty || mutation.current || confirmDiscardOpen || !editDisplayName.trim()) return;
+    const request = {};
+    mutation.current = request;
     const lifetime = viewLifetime.current;
     setSaveError(null);
     setSaving(true);
@@ -146,20 +149,19 @@ export function PartiesDirectoryView({
       setLoading(false);
       setResults((prev) => prev.map((item) => (item.id === updated.id ? updated : item)));
       setEditingParty(null);
-      setSaveSuccess(
-        isArabic
-          ? 'تم تحديث الهوية المركزية للطرف بنجاح.'
-          : 'L’identité centrale du tiers a été mise à jour.'
-      );
+      setSaveSuccess(true);
     } catch (err) {
       if (lifetime !== viewLifetime.current) return;
       setSaveError(
         err instanceof ApiError
-          ? translateApiError(err.code, err.message, language)
-          : (isArabic ? 'فشل تحديث هوية الطرف.' : 'Échec de la mise à jour de l’identité du tiers.')
+          ? translateApiError(err.code, err.message, languageRef.current)
+          : (languageRef.current === 'ar' ? 'فشل تحديث هوية الطرف.' : 'Échec de la mise à jour de l’identité du tiers.')
       );
     } finally {
-      if (lifetime === viewLifetime.current) setSaving(false);
+      if (mutation.current === request) {
+        mutation.current = null;
+        setSaving(false);
+      }
     }
   };
 
@@ -213,7 +215,7 @@ export function PartiesDirectoryView({
             onAction={lastSearch.current.length >= 2 ? () => void runSearch(lastSearch.current) : undefined} />}
           {saveSuccess && (
             <div role="status" className="rounded-md border border-emerald-200 bg-emerald-50 px-4 py-3 text-xs text-emerald-800">
-              {saveSuccess}
+              {isArabic ? 'تم تحديث الهوية المركزية للطرف بنجاح.' : 'L’identité centrale du tiers a été mise à jour.'}
             </div>
           )}
 
@@ -233,6 +235,7 @@ export function PartiesDirectoryView({
                   />
                   <input
                     id="party-directory-search"
+                    disabled={saving}
                     type="search"
                     value={query}
                     onChange={(e) => setQuery(e.target.value)}
@@ -302,6 +305,7 @@ export function PartiesDirectoryView({
                           {canEdit ? (
                             <button
                               type="button"
+                              disabled={saving}
                               onClick={() => openEditor(party)}
                               className="inline-flex items-center gap-1.5 rounded border border-slate-200 px-2.5 py-1 text-xs font-medium text-slate-700 hover:bg-slate-100"
                             >
@@ -401,6 +405,7 @@ export function PartiesDirectoryView({
 
       <ConfirmDialog
         open={confirmDiscardOpen}
+        savingConfirm={saving}
         title={isArabic ? 'تغييرات غير محفوظة' : 'Modifications non enregistrées'}
         message={
           isArabic
@@ -410,6 +415,7 @@ export function PartiesDirectoryView({
         confirmLabel={isArabic ? 'تجاهل وإغلاق' : 'Abandonner et fermer'}
         cancelLabel={isArabic ? 'البقاء في النموذج' : 'Continuer l’édition'}
         onConfirm={() => {
+          if (mutation.current) return;
           setConfirmDiscardOpen(false);
           setEditingParty(null);
         }}

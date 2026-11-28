@@ -38,13 +38,14 @@ single-flight/close, cross-family lock, language stability, failed retry payload
 success plus failed read/read-only recovery, project/scope replacement and stale
 read/write completions. The seven existing conflict/read-only tests remain green.
 These are React/JSDOM tests, not manual visual or actual institutional execution.
-This change still needs its own exact-head remote CI/CodeQL and merge.
+PR301 merged after all eight exact-head checks SUCCESS on `649e587`
+(CI46142347443/CodeQL46142347461). Independent main CI46143373760 and
+CodeQL46143373737 pending at this checkpoint.
 
 ## Prior delivery checkpoint
 
 PR300 merged after all eight checks SUCCESS on `20417ce` (CI46141031470 and
-CodeQL46141031502). Independent main CI46142099423 and CodeQL46142099406 pending
-at authoring. PR299 independent main CI46140818938 and CodeQL46140818949 SUCCESS.
+CodeQL46141031502). Independent main CI46142099423 and CodeQL46142099406 subsequently passed. PR299 independent main CI46140818938 and CodeQL46140818949 SUCCESS.
 
 ## Limits
 

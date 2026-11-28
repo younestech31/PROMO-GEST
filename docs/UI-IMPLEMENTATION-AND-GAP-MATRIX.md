@@ -1,10 +1,19 @@
+## Module D follow-up — canonical Party save isolation
+
+The existing identity editor now has synchronous single-flight save/close/search
+protection, clean actor ID/stamp/read/manage-scope replacement and current-language
+async outcomes. Failed saves retain draft/ID/stamp; successful response is applied
+without refetch. Local187/187 PASS; this head remote checks pending. No permission
+policy or master-data expansion. [Scope/evidence](P1-06-CRM-WORKFLOW-COMPLETION.md#canonical-party-save-isolation-follow-up).
+
 ## Module E functional follow-up — existing reservation request reliability
 
 Create/cancel/review share a synchronous write lock and frozen submitted controls;
 language changes preserve draft/pending state. Project/scope-owned editors ignore
 obsolete completions. Acknowledged success survives a failed list refresh, with
 read-only recovery. Existing 409 recovery and review-not-approval rules unchanged.
-Local183/183 PASS; new head remote checks pending. [Scope and limits](P1-06-RESERVATION-REQUEST-RELIABILITY.md).
+Local183/183 PASS at PR301; all eight exact-head checks passed before merge.
+Independent main CI46143373760/CodeQL46143373737 pending. [Scope and limits](P1-06-RESERVATION-REQUEST-RELIABILITY.md).
 No financial, contract, endpoint/schema or permission-policy expansion.
 
 ## Module C functional follow-up — current editor recovery

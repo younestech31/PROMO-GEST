@@ -1951,7 +1951,7 @@ namespace PromoGest.Infrastructure.Persistence.Migrations
                         .HasColumnType("date")
                         .HasColumnName("parent_effective_to");
 
-                    b.Property<string?>("ParentDateEvidence")
+                    b.Property<string>("ParentDateEvidence")
                         .HasMaxLength(1000)
                         .HasColumnType("character varying(1000)")
                         .HasColumnName("parent_date_evidence");

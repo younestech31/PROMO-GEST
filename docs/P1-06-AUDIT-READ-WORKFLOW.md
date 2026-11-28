@@ -1,5 +1,13 @@
 # P1-06 — bounded audit-log read workflow
 
+## Delivery checkpoint
+
+PR303 merged at `24ed95a1899a2eabb04b0be9d21b8041ee01d92c` after all eight
+checks SUCCESS on `6608058` (CI46145845806 / CodeQL46145845797).
+Independent main CI46147418827 pending; CodeQL46147418769 PASS.
+PR302 independent main CI46145555028 / CodeQL46145555029 both PASS.
+The local and pre-delivery wording below is historical; full P1-06 stays In Review.
+
 ## Roadmap and scope
 
 Existing frontend/platform stabilization under P1-06; technical administration's

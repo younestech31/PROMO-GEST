@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+import hashlib
 import importlib.util
 import json
 import os
@@ -44,7 +45,9 @@ class ReconcileDocumentStorageTests(unittest.TestCase):
         self.assertEqual(result.returncode, 1, result.stderr)
         self.assertNotIn('project/', result.stdout + result.stderr)
         summary = json.loads(result.stdout)
-        self.assertEqual(summary['counts'], {'missing': 1, 'unreferenced': 1, 'size_mismatch': 1, 'unsafe_entries': 0})
+        self.assertEqual(summary['counts'], {'missing': 1, 'unreferenced': 1, 'size_mismatch': 1,
+                                             'checksum_mismatch': 0, 'unsafe_entries': 0})
+        self.assertFalse(summary['checksum_verification_requested'])
         findings = json.loads(report.read_text())['findings']
         self.assertEqual(findings['missing'], ['project/missing.txt'])
         self.assertEqual(findings['unreferenced'], ['project/orphan.txt'])
@@ -59,6 +62,44 @@ class ReconcileDocumentStorageTests(unittest.TestCase):
         result = self.run_scan()
         self.assertEqual(result.returncode, 0)
         self.assertEqual(json.loads(result.stdout)['references'], 1)
+
+    def test_optional_checksum_detects_same_size_corruption(self):
+        (self.storage / 'ok.txt').write_bytes(b'good')
+        (self.storage / 'corrupt.txt').write_bytes(b'evil')
+        (self.storage / 'orphan.txt').write_bytes(b'secret')
+        digest = hashlib.sha256(b'good').hexdigest()
+        self.write_manifest([{'path': 'ok.txt', 'size': 4, 'sha256': digest.upper()},
+                             {'path': 'corrupt.txt', 'size': 4, 'sha256': digest}])
+        report = self.base / 'report.json'
+        result = self.run_scan('--verify-content', '--report', report)
+        self.assertEqual(result.returncode, 1, result.stderr)
+        self.assertNotIn('corrupt.txt', result.stdout + result.stderr)
+        summary = json.loads(result.stdout)
+        self.assertTrue(summary['checksum_verification_requested'])
+        self.assertEqual(summary['counts']['checksum_mismatch'], 1)
+        self.assertEqual(summary['counts']['size_mismatch'], 0)
+        details = json.loads(report.read_text())
+        self.assertTrue(details['checksum_verification_requested'])
+        self.assertEqual(details['findings']['checksum_mismatch'], ['corrupt.txt'])
+        self.assertEqual(details['findings']['unreferenced'], ['orphan.txt'])
+        (self.storage / 'corrupt.txt').write_bytes(b'good')
+        (self.storage / 'orphan.txt').unlink()
+        clean = self.run_scan('--verify-content')
+        self.assertEqual(clean.returncode, 0, clean.stderr)
+        self.assertEqual(json.loads(clean.stdout)['counts']['checksum_mismatch'], 0)
+
+    def test_checksum_mode_requires_a_valid_digest_for_every_reference(self):
+        (self.storage / 'match').write_bytes(b'ab')
+        for checksum in [None, '', 'x' * 64, 'a' * 63, 42, True]:
+            row = {'path': 'match', 'size': 2}
+            if checksum is not None:
+                row['sha256'] = checksum
+            self.write_manifest([row])
+            result = self.run_scan('--verify-content')
+            self.assertEqual(result.returncode, 2, str(checksum))
+            self.assertEqual(result.stdout, '')
+        self.write_manifest([{'path': 'match', 'size': 2}])
+        self.assertEqual(self.run_scan().returncode, 0, 'size-only manifests remain supported')
 
     def test_rejects_invalid_manifest_and_never_reports_paths(self):
         cases = [
@@ -82,9 +123,11 @@ class ReconcileDocumentStorageTests(unittest.TestCase):
         (outside / 'secret').write_bytes(b'ab')
         (self.storage / 'linked-dir').symlink_to(outside, target_is_directory=True)
         (self.storage / 'linked-file').symlink_to(outside / 'secret')
-        self.write_manifest([{'path': 'linked-dir/secret', 'size': 2}, {'path': 'linked-file', 'size': 2}])
+        digest = hashlib.sha256(b'ab').hexdigest()
+        self.write_manifest([{'path': 'linked-dir/secret', 'size': 2, 'sha256': digest},
+                             {'path': 'linked-file', 'size': 2, 'sha256': digest}])
         report = self.base / 'report.json'
-        result = self.run_scan('--report', report)
+        result = self.run_scan('--verify-content', '--report', report)
         self.assertEqual(result.returncode, 1)
         findings = json.loads(report.read_text())['findings']
         self.assertEqual(findings['unsafe_entries'], ['linked-dir', 'linked-file'])
@@ -128,6 +171,62 @@ class ReconcileDocumentStorageTests(unittest.TestCase):
         result = self.run_scan()
         self.assertEqual(result.returncode, 2)
         self.assertEqual(result.stdout, '')
+
+    def test_hashing_is_limited_to_referenced_files(self):
+        (self.storage / 'ref').write_bytes(b'ab')
+        (self.storage / 'orphan').write_bytes(b'secret')
+        spec = importlib.util.spec_from_file_location('storage_reconciliation', SCRIPT)
+        module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(module)
+        digest = hashlib.sha256(b'ab').hexdigest()
+        original = module.fingerprint_file
+        with patch.object(module, 'fingerprint_file', wraps=original) as fingerprint:
+            findings = module.reconcile(str(self.storage), {'ref': {'size': 2, 'sha256': digest}}, True)
+            self.assertEqual(fingerprint.call_count, 1)
+            self.assertEqual(fingerprint.call_args.args[1], 'ref')
+        self.assertEqual(findings['unreferenced'], ['orphan'])
+
+    def test_hash_open_refuses_replacement_with_symlink(self):
+        path = self.storage / 'ref'
+        path.write_bytes(b'ab')
+        outside = self.base / 'outside'
+        outside.write_bytes(b'ab')
+        spec = importlib.util.spec_from_file_location('storage_reconciliation', SCRIPT)
+        module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(module)
+        directory_fd = os.open(self.storage, os.O_RDONLY | os.O_DIRECTORY)
+        try:
+            info = os.stat('ref', dir_fd=directory_fd, follow_symlinks=False)
+            path.unlink()
+            path.symlink_to(outside)
+            with self.assertRaises(module.ScanError):
+                module.fingerprint_file(directory_fd, 'ref', info)
+            self.assertEqual(outside.read_bytes(), b'ab')
+        finally:
+            os.close(directory_fd)
+
+    def test_file_changed_or_replaced_while_hashing_fails_closed(self):
+        path = self.storage / 'ref'
+        path.write_bytes(b'ab')
+        spec = importlib.util.spec_from_file_location('storage_reconciliation', SCRIPT)
+        module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(module)
+        digest = hashlib.sha256(b'ab').hexdigest()
+        original_read = os.read
+        changed = False
+
+        def alter_during_read(fd, length):
+            nonlocal changed
+            block = original_read(fd, length)
+            if block and not changed:
+                changed = True
+                path.write_bytes(b'changed-length')
+            return block
+
+        with patch.object(module.os, 'read', alter_during_read):
+            with self.assertRaises(module.ScanError):
+                module.reconcile(str(self.storage), {'ref': {'size': 2, 'sha256': digest}}, True)
+        self.assertTrue(changed)
 
     def test_enumeration_errors_fail_closed(self):
         spec = importlib.util.spec_from_file_location('storage_reconciliation', SCRIPT)

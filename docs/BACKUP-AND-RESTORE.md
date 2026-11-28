@@ -23,16 +23,18 @@ umask 077
 work="$(mktemp -d)"
 # psql uses the maintenance account's normal protected connection configuration.
 if ! psql -X -qAt --set=ON_ERROR_STOP=1 --dbname="$SNAPSHOT_DATABASE" \
-  --command="SELECT COALESCE(json_agg(json_build_object('path', stored_relative_path, 'size', size_bytes)), '[]'::json) FROM stored_files;" \
+  --command="SELECT COALESCE(json_agg(json_build_object('path', stored_relative_path, 'size', size_bytes, 'sha256', sha256_checksum)), '[]'::json) FROM stored_files;" \
   > "$work/manifest.json"; then
   echo 'Export failed; do not scan or treat it as an empty manifest.' >&2
   exit 1
 fi
 python3 scripts/reconcile-document-storage.py --manifest "$work/manifest.json" \
-  --storage "$STORAGE_SNAPSHOT" --report "$work/findings.json"
+  --storage "$STORAGE_SNAPSHOT" --verify-content --report "$work/findings.json"
 ```
 
-The tool prints counts only; the optional newly created mode-0600 JSON report contains relative paths and must be protected and disposed of according to local data-handling rules. It refuses existing reports, reports or manifests inside the storage tree, malformed/duplicate manifest paths, symlink roots and unreadable scans. Symlinks and other non-regular entries are flagged, not followed. Exit status `0` means no findings, `1` means findings, and `2` means the scan could not be completed. Review every candidate against the matching database, audit records and protected backups before any manual action; no automatic cleanup is provided. The tool compares existence and length, **not content hashes**. Even a clean result does not verify bytes or backup recoverability; use the full restore verification procedure for those checks. Never rely on this procedure while writers are active, or on an incomplete export/snapshot.
+The tool prints counts only; the optional newly created mode-0600 JSON report contains relative paths and must be protected and disposed of according to local data-handling rules. It refuses existing reports, reports or manifests inside the storage tree, malformed/duplicate manifest paths, symlink roots and unreadable scans. Symlinks and other non-regular entries are flagged, not followed. Exit status `0` means no findings, `1` means findings, and `2` means the scan could not be completed. Review every candidate against the matching database, audit records and protected backups before any manual action; no automatic cleanup is provided.
+
+`--verify-content` reads each **referenced regular file** and compares its SHA-256 against the manifest; it requires valid checksums in every manifest record and may take considerable time and disk I/O. Unreferenced and non-regular entries are not read. If the file's observed identity, size or timestamps change during hashing, or it cannot be safely read, the scan fails rather than reporting a clean result. These checks do not detect every possible concurrent modification, so immutable snapshots and stopped writers remain mandatory. Omitting the flag supports older path-and-size manifests but checks only existence and size; the summary and report explicitly record whether checksum verification was requested. A clean result cannot verify that the database export is authentic or prove backup recoverability. Use the full restore verification procedure for recovery testing. Never rely on this procedure while writers are active, or on an incomplete export/snapshot.
 
 **Linux production path (implemented 2026-11-20):** the backup job now seals, packs, and encrypts the bundle with an X.509 recipient certificate, writes it together with a SHA-256 sidecar, copies and verifies it on an independent offsite mount, applies a retention policy that never prunes below the newest configured artefacts, and removes the unencrypted bundle by default. Encryption and offsite replication are fail-closed: the job refuses to run without a recipient certificate and an offsite target unless an operator explicitly acknowledges the risk in configuration.
 

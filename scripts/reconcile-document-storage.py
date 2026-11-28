@@ -5,8 +5,10 @@ Read-only: never modify storage or the database and never delete files. Operate
 only on consistent, quiescent snapshots; findings are candidates for review.
 """
 import argparse
+import hashlib
 import json
 import os
+import re
 import stat
 import sys
 
@@ -22,7 +24,7 @@ def valid_path(value):
     return all(part not in ('', '.', '..') for part in parts)
 
 
-def load_manifest(filename):
+def load_manifest(filename, verify_content=False):
     try:
         with open(filename, encoding='utf-8') as source:
             rows = json.load(source)
@@ -32,18 +34,51 @@ def load_manifest(filename):
         raise ScanError('Manifest must be an array.')
     references = {}
     for row in rows:
-        if not isinstance(row, dict) or set(row) != {'path', 'size'}:
-            raise ScanError('Each manifest entry must contain only path and size.')
+        if not isinstance(row, dict) or set(row) not in ({'path', 'size'}, {'path', 'size', 'sha256'}):
+            raise ScanError('Each manifest entry must contain path, size and optionally sha256.')
         path, size = row['path'], row['size']
+        checksum = row.get('sha256')
         if not valid_path(path) or isinstance(size, bool) or not isinstance(size, int) or size <= 0:
             raise ScanError('Manifest has an invalid path or size.')
+        if (verify_content and 'sha256' not in row) or ('sha256' in row and
+                (not isinstance(checksum, str) or not re.fullmatch(r'[0-9a-fA-F]{64}', checksum))):
+            raise ScanError('Manifest has a missing or invalid SHA-256 checksum.')
         if path in references:
             raise ScanError('Manifest contains duplicate paths.')
-        references[path] = size
+        references[path] = {'size': size, 'sha256': checksum.lower() if checksum else None}
     return references
 
 
-def reconcile(storage, references):
+def fingerprint_file(directory_fd, name, listed_info):
+    """Hash only a stable regular file opened without following its final link."""
+    fd = None
+    try:
+        fd = os.open(name, os.O_RDONLY | os.O_NOFOLLOW | os.O_NONBLOCK, dir_fd=directory_fd)
+        before = os.fstat(fd)
+        attributes = lambda info: (info.st_dev, info.st_ino, info.st_size, info.st_mtime_ns, info.st_ctime_ns)
+        if not stat.S_ISREG(before.st_mode) or attributes(before) != attributes(listed_info):
+            raise ScanError('A storage entry changed during the scan.')
+        digest = hashlib.sha256()
+        total = 0
+        while True:
+            block = os.read(fd, 1024 * 1024)
+            if not block:
+                break
+            digest.update(block)
+            total += len(block)
+        after_path = os.stat(name, dir_fd=directory_fd, follow_symlinks=False)
+        if (total != before.st_size or not stat.S_ISREG(after_path.st_mode) or
+                attributes(os.fstat(fd)) != attributes(before) or attributes(after_path) != attributes(before)):
+            raise ScanError('A storage entry changed during the scan.')
+        return digest.hexdigest()
+    except OSError as exc:
+        raise ScanError('Cannot safely read all referenced storage files.') from exc
+    finally:
+        if fd is not None:
+            os.close(fd)
+
+
+def reconcile(storage, references, verify_content=False):
     # Strip a trailing slash so lstat cannot follow a symlink supplied as root.
     storage = os.path.normpath(storage)
     # Anchor traversal to an opened directory descriptor. Never follow a root
@@ -53,6 +88,7 @@ def reconcile(storage, references):
     except OSError as exc:
         raise ScanError('Cannot inspect storage snapshot; it must be a real directory.') from exc
     found = {}
+    checksum_mismatch = []
     unsafe = []
     failed = []
 
@@ -75,6 +111,10 @@ def reconcile(storage, references):
                     continue
                 if stat.S_ISREG(info.st_mode):
                     found[path] = info.st_size
+                    if verify_content and path in references:
+                        checksum = fingerprint_file(fd, name, info)
+                        if checksum != references[path]['sha256']:
+                            checksum_mismatch.append(path)
                 else:
                     unsafe.append(path)
         if failed:
@@ -86,12 +126,12 @@ def reconcile(storage, references):
 
     missing = sorted(set(references) - set(found))
     unreferenced = sorted(set(found) - set(references))
-    size_mismatch = sorted(path for path in set(found) & set(references) if found[path] != references[path])
-    return {'missing': missing, 'unreferenced': unreferenced,
-            'size_mismatch': size_mismatch, 'unsafe_entries': sorted(unsafe)}
+    size_mismatch = sorted(path for path in set(found) & set(references) if found[path] != references[path]['size'])
+    return {'missing': missing, 'unreferenced': unreferenced, 'size_mismatch': size_mismatch,
+            'checksum_mismatch': sorted(checksum_mismatch), 'unsafe_entries': sorted(unsafe)}
 
 
-def write_report(filename, storage, findings):
+def write_report(filename, storage, findings, verify_content=False):
     target = os.path.abspath(filename)
     root = os.path.realpath(storage)
     parent = os.path.realpath(os.path.dirname(target))
@@ -103,7 +143,7 @@ def write_report(filename, storage, findings):
     try:
         fd = os.open(target, flags, 0o600)
         with os.fdopen(fd, 'w', encoding='utf-8') as output:
-            json.dump({'version': 1, 'findings': findings}, output, ensure_ascii=True, indent=2)
+            json.dump({'version': 2, 'checksum_verification_requested': verify_content, 'findings': findings}, output, ensure_ascii=True, indent=2)
             output.write('\n')
     except OSError as exc:
         raise ScanError('Cannot create the report; it must not already exist.') from exc
@@ -111,23 +151,25 @@ def write_report(filename, storage, findings):
 
 def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('--manifest', required=True, help='Protected JSON export of stored_files paths and sizes')
+    parser.add_argument('--manifest', required=True, help='Protected JSON export of stored_files paths, sizes and optional checksums')
     parser.add_argument('--storage', required=True, help='Quiescent storage snapshot directory')
     parser.add_argument('--report', help='Create a new 0600 JSON report containing sensitive relative paths')
+    parser.add_argument('--verify-content', action='store_true', help='Hash referenced files and compare SHA-256 checksums')
     args = parser.parse_args(argv)
     try:
         root = os.path.realpath(args.storage)
         if os.path.commonpath([root, os.path.realpath(args.manifest)]) == root:
             raise ScanError('The manifest must be outside the storage snapshot.')
-        references = load_manifest(args.manifest)
-        findings = reconcile(args.storage, references)
+        references = load_manifest(args.manifest, args.verify_content)
+        findings = reconcile(args.storage, references, args.verify_content)
         if args.report:
-            write_report(args.report, args.storage, findings)
+            write_report(args.report, args.storage, findings, args.verify_content)
     except ScanError as exc:
         print(f'Error: {exc}', file=sys.stderr)
         return 2
     counts = {key: len(value) for key, value in findings.items()}
-    print(json.dumps({'complete': True, 'references': len(references), 'counts': counts}, sort_keys=True))
+    print(json.dumps({'complete': True, 'references': len(references), 'counts': counts,
+                      'checksum_verification_requested': args.verify_content}, sort_keys=True))
     return 1 if any(counts.values()) else 0
 
 

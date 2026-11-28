@@ -16,6 +16,56 @@
       "startRow": 1
     },
     {
+      "canonicalEnvelopeSha256": "0a622799c717f505f0ee79b43f24d893842363297fc23288c6afe82560dad4cc",
+      "claimedReadAtUtc": "2026-11-28T16:57:29Z",
+      "connectorRequestId": "98d0e7fd-2d47-4ec7-8da7-7424663fb0b6",
+      "endRow": 46,
+      "file": "aliases-first-0022-0046.json",
+      "kind": "aliases",
+      "pass": "first",
+      "startRow": 22
+    },
+    {
+      "canonicalEnvelopeSha256": "94e3d63e9d62fba7c9b62e81ce6500061d37a6c54bbb165ca853de837f99cf2d",
+      "claimedReadAtUtc": "2026-11-28T16:58:49Z",
+      "connectorRequestId": "86f168eb-2852-4efc-acb3-3e2cd15d6d50",
+      "endRow": 71,
+      "file": "aliases-first-0047-0071.json",
+      "kind": "aliases",
+      "pass": "first",
+      "startRow": 47
+    },
+    {
+      "canonicalEnvelopeSha256": "8205175bb74c724bf92a6657b0aa66c6f719e21f9a1a950f872fce95351d6413",
+      "claimedReadAtUtc": "2026-11-28T16:58:49Z",
+      "connectorRequestId": "ad975674-ab3b-4460-a5dd-9c1e011c78c0",
+      "endRow": 96,
+      "file": "aliases-first-0072-0096.json",
+      "kind": "aliases",
+      "pass": "first",
+      "startRow": 72
+    },
+    {
+      "canonicalEnvelopeSha256": "dafb06474b8ea122b6862d31da095ec40b7b7f1ee6f88a818c73012ee73fbbb4",
+      "claimedReadAtUtc": "2026-11-28T16:58:49Z",
+      "connectorRequestId": "c2b367d3-3f4e-48c7-a129-5433aa2d39bf",
+      "endRow": 121,
+      "file": "aliases-first-0097-0121.json",
+      "kind": "aliases",
+      "pass": "first",
+      "startRow": 97
+    },
+    {
+      "canonicalEnvelopeSha256": "45140b934503d760ff1ca5eec5d70e383e11b8c5420108db4ad2d7e62dc36fb0",
+      "claimedReadAtUtc": "2026-11-28T16:59:58Z",
+      "connectorRequestId": "9bd648fa-c9f7-4228-8ba4-0a16beb4353b",
+      "endRow": 152,
+      "file": "aliases-first-0122-0152.json",
+      "kind": "aliases",
+      "pass": "first",
+      "startRow": 122
+    },
+    {
       "canonicalEnvelopeSha256": "9d5045ab14911abb945af7ffc031b45f96670b98185b4fbbab3a9d5f6990bf6a",
       "claimedReadAtUtc": "2026-11-28T16:36:04Z",
       "connectorRequestId": "8001442d-4f77-427b-8a57-7f34624dac39",
@@ -24,6 +74,46 @@
       "kind": "communes",
       "pass": "first",
       "startRow": 1
+    },
+    {
+      "canonicalEnvelopeSha256": "e32e74829fbbae546f8d1fa0016b3ce0b741baf8d88e91693deca2f96d85717a",
+      "claimedReadAtUtc": "2026-11-28T16:57:29Z",
+      "connectorRequestId": "b3d6a923-3606-4d9a-a33e-ef561b9fa5d5",
+      "endRow": 101,
+      "file": "communes-first-0052-0101.json",
+      "kind": "communes",
+      "pass": "first",
+      "startRow": 52
+    },
+    {
+      "canonicalEnvelopeSha256": "6cfd292602d71adb803994ceeac0c104e2938ddb1cc6b540c6d3ee20cda32b6b",
+      "claimedReadAtUtc": "2026-11-28T16:59:58Z",
+      "connectorRequestId": "7a2b6bc2-297d-4160-8ba1-36b6e54ec73d",
+      "endRow": 151,
+      "file": "communes-first-0102-0151.json",
+      "kind": "communes",
+      "pass": "first",
+      "startRow": 102
+    },
+    {
+      "canonicalEnvelopeSha256": "de28d301318434d7e6e137457dc1a1074600a6199ae633c5c543c174e3d27bfe",
+      "claimedReadAtUtc": "2026-11-28T17:01:08Z",
+      "connectorRequestId": "348454f4-6108-4361-b5bb-8b4b5744397b",
+      "endRow": 201,
+      "file": "communes-first-0152-0201.json",
+      "kind": "communes",
+      "pass": "first",
+      "startRow": 152
+    },
+    {
+      "canonicalEnvelopeSha256": "e0235b4164120218dd8b2f0a21f0bedbf02f9297df41aac3904aaef52ffebac9",
+      "claimedReadAtUtc": "2026-11-28T17:01:08Z",
+      "connectorRequestId": "a451783e-9da9-4862-8290-d640ff36d806",
+      "endRow": 251,
+      "file": "communes-first-0202-0251.json",
+      "kind": "communes",
+      "pass": "first",
+      "startRow": 202
     },
     {
       "canonicalEnvelopeSha256": "f2979d4ed1711ca321d81ae8c0c6b3ac48089376440ab0e2c4d0cc6157b695b7",
@@ -39,7 +129,7 @@
   "completeSourcePackageCreated": false,
   "journalDigestIsSourceSnapshotId": false,
   "journalLocalPath": "storage/p1-02-sheets-capture",
-  "journalSha256": "da17551078023277f6c472cbd161fbcbc971abbd49749f3d753382e44a584fd3",
+  "journalSha256": "cabdb210580e00b9bd5a47c0284015556913990e2f43f0cf5f07dbe2390e0bf8",
   "legalEffectiveDatesInferred": false,
   "readyForPreflight": false,
   "rejectedReads": [
@@ -48,7 +138,7 @@
       "reason": "Combined response truncated; not parsed or stored as a source chunk"
     }
   ],
-  "remaining": "Finish first-pass communes rows52–1542 and aliases rows22–152, then fresh matching complete second pass and live profile/count recheck; full existing preflight/package; reviewed identities and actual-source rehearsal before activation.",
+  "remaining": "Finish first-pass communes rows252–1542, then fresh matching complete second pass across all three tables and live profile/count recheck; full existing preflight/package; reviewed identities and actual-source rehearsal before activation.",
   "schemaVersion": 1,
   "sheetsModified": false,
   "sourceContentSha256": null,
@@ -59,10 +149,10 @@
       "expectedDataRows": 151,
       "passes": {
         "first": {
-          "capturedDataRows": 20,
+          "capturedDataRows": 151,
           "headerCaptured": true,
-          "missingRowCount": 131,
-          "nextMissingRow": 22
+          "missingRowCount": 0,
+          "nextMissingRow": null
         },
         "second": {
           "capturedDataRows": 0,
@@ -76,10 +166,10 @@
       "expectedDataRows": 1541,
       "passes": {
         "first": {
-          "capturedDataRows": 50,
+          "capturedDataRows": 250,
           "headerCaptured": true,
-          "missingRowCount": 1491,
-          "nextMissingRow": 52
+          "missingRowCount": 1291,
+          "nextMissingRow": 252
         },
         "second": {
           "capturedDataRows": 0,

@@ -108,16 +108,40 @@ cannot prove there were no intervening source edits or replace source acceptance
 The durable aggregate checkpoint is
 [`reference-data/P1-02-CAPTURE-PROGRESS.json`](reference-data/P1-02-CAPTURE-PROGRESS.json).
 It records a **partial first pass only**, with local transcriptions of complete
-connector ValueRanges: 69 wilayas, 50 communes and 20 aliases (plus all headers).
-The initial combined 69-wilaya/100-commune response was truncated and was **not
-used**; complete smaller responses were read instead. The original cell values
-were preserved, including U+06A8 and Arabic presentation-form code points.
+connector ValueRanges: **69 wilayas, 250 communes and all 151 aliases** (470 data
+rows plus three headers, in 12 non-overlapping checksummed chunks). The initial
+checkpoint contained 139 data rows; 331 further rows were captured directly from
+nine fresh complete bounded connector responses, not from repository fixtures.
+
+| Table | Captured data rows, first pass | Next missing physical row | Second pass |
+| --- | ---: | ---: | --- |
+| Wilayas | 69 / 69 | None | Not started |
+| Aliases | 151 / 151 | None | Not started |
+| Communes | 250 / 1541 | 252 | Not started |
+
+The next commune request starts at `A252`; 1291 commune data rows remain in the
+first pass. Do not reread and append a table that is already complete in that pass.
+Once the whole first pass is complete, read **all three tables** afresh for the
+second pass. The initial combined 69-wilaya/100-commune response was truncated and
+was **not used**; complete smaller responses were read instead.
+
+Original cell strings remain unnormalized, including U+06A8, Arabic presentation
+forms, tatweel counts, diacritics, doubled spaces, punctuation and curved versus
+ASCII apostrophes. All 18 captured commune/alias intersections have exact original
+AR/FR equality. This is only a consistency check on the captured subset; it neither
+validates the remaining alias targets nor replaces the full structural preflight.
 
 No second pass, complete adopted-source content hash/package, retained UUID map,
 actual-source import or activation is claimed. Continue from the journal's
 `nextMissingRow`, never from assumed source-code sequencing. Raw journal files
-remain in ignored `storage/p1-02-sheets-capture/`; recorded ranges, request IDs and
-digest allow resumption checks. Transcription is not independently verified yet.
+remain in ignored `storage/p1-02-sheets-capture/`; the aggregate file commits only
+ranges, request IDs, claimed recording times, digests and counts, not the source
+cell dataset. Timestamps are local recording-clock claims, not attested connector
+read times or legal effective dates. Transcription is not independently verified.
+Recompute the journal status and check its digest against the committed checkpoint
+before resuming. If the ignored journal is unavailable in another checkout, the
+aggregate JSON cannot reconstruct source rows: recover the retained journal or
+start a new capture; never infer cells from the checkpoint.
 
 ## Verification
 
@@ -129,3 +153,10 @@ unknown trailing seats and Unicode preservation; wrong workbook/range/dimension,
 truncation, numeric-code rejection and malformed columns; checksum/symlink/extra
 file refusal; freeze read-race detection; and sanitized duplicate-key CLI errors.
 They are not evidence of complete actual-source capture or legal/manual acceptance.
+
+Capture-adapter implementation head `d9690095372d980e27241d0f6488534bb3b1bcf0`
+subsequently passed every reported PR307 check: PR CI46166417214, push CI46166411601
+and CodeQL46166417218, including .NET/PG18, frontend, Windows and production HTTPS
+evidence export. The later progress checkpoint changes only documentation and
+aggregate capture metadata; that historical green does not attest live source
+transcriptions, complete capture, actual-source import or manual/legal acceptance.

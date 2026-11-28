@@ -56,7 +56,7 @@ read/write completion. These are component tests, not actual browser acceptance.
 PR299's eight exact-head checks passed on `47d1527` (CI46139392068,
 CodeQL46139392059) and it merged at
 `360cfbc371fde3dc00f889da0bd7e9aa82e920c3`. Its independent main CI46140818938
-and CodeQL46140818949 are pending at this checkpoint. PR298 independent main
+and CodeQL46140818949 subsequently passed. PR298 independent main
 CI46139067018 and CodeQL46139067047 PASS.
 
 The local transition follow-up passes TypeScript/build/lint guard and **175/175**
@@ -66,7 +66,9 @@ selection/editor replacement, unit floor/context changes, edit-to-create,
 create-to-edit, and unit-edit cancel. Assertions cover preserved draft/dirty state,
 clean target state and zero writes/refetches. These component checks and the new
 head's remote CI are distinct from PR299's delivery or manual browser acceptance.
-The transition follow-up still needs its own exact-head remote checks and merge.
+The transition follow-up merged as PR300 after all eight exact-head checks
+SUCCESS on `20417ce` (CI46141031470 and CodeQL46141031502). Its independent
+main CI46142099423 and CodeQL46142099406 are pending at this checkpoint.
 
 ## Live roadmap correction
 

@@ -57,7 +57,12 @@ function errorText(error: unknown, language: AppLanguage): string {
     : 'Impossible de terminer l’opération sur le serveur local.';
 }
 
-export function ProjectSalesReservationsModal({
+export function ProjectSalesReservationsModal(props: ProjectSalesReservationsModalProps) {
+  // A different project/management scope owns a different draft and async lifetime.
+  return <ProjectSalesReservationsEditor key={`${props.project.id}:${props.canManage}`} {...props} />;
+}
+
+function ProjectSalesReservationsEditor({
   project,
   language,
   canManage,
@@ -66,6 +71,10 @@ export function ProjectSalesReservationsModal({
   onDirtyChange,
 }: ProjectSalesReservationsModalProps) {
   const isArabic = language === 'ar';
+  const languageRef = useRef(language);
+  languageRef.current = language;
+  const mutation = useRef<object | null>(null);
+  const [success, setSuccess] = useState<'create' | 'cancel' | 'review' | null>(null);
   const [reservations, setReservations] = useState<ProjectSalesReservationDto[]>([]);
   const [customers, setCustomers] = useState<ProjectCustomerListItemDto[]>([]);
   const [units, setUnits] = useState<PropertyUnitDto[]>([]);
@@ -105,6 +114,7 @@ export function ProjectSalesReservationsModal({
   }, [onDirtyChange]);
 
   const requestClose = () => {
+    if (mutation.current) return;
     if (isDirty) {
       setConfirmDiscardOpen(true);
       return;
@@ -147,18 +157,19 @@ export function ProjectSalesReservationsModal({
       return true;
     } catch (loadError) {
       if (generation !== loadGeneration.current) return false;
-      setLoadError(errorText(loadError, language));
+      setLoadError(errorText(loadError, languageRef.current));
       return false;
     } finally {
       if (generation === loadGeneration.current) setLoading(false);
     }
-  }, [project.id, canManage, language]);
+  }, [project.id, canManage]);
 
   useEffect(() => {
     viewLifetime.current = {};
     setSaving(false);
     void loadData();
     return () => {
+      mutation.current = null;
       viewLifetime.current = null;
       ++loadGeneration.current;
     };
@@ -175,7 +186,7 @@ export function ProjectSalesReservationsModal({
 
   const handleMutationError = async (mutationError: unknown, lifetime: object | null) => {
     if (lifetime !== viewLifetime.current) return;
-    setError(errorText(mutationError, language));
+    setError(errorText(mutationError, languageRef.current));
     // A 409 can mean expiry was persisted or another actor changed the hold/unit.
     // Refresh authoritative state, but never replay the rejected write.
     if (mutationError instanceof ApiError && mutationError.status === 409) {
@@ -184,13 +195,29 @@ export function ProjectSalesReservationsModal({
     }
   };
 
-  const submitReservation = async (event: FormEvent) => {
-    event.preventDefault();
-    if (actionsDisabled) return;
-    const lifetime = viewLifetime.current;
+  const beginMutation = () => {
+    if (mutation.current || actionsDisabled || confirmDiscardOpen || !viewLifetime.current) return null;
+    const request = {};
+    mutation.current = request;
     setSaving(true);
+    setSuccess(null);
     setConflictRefreshed(false);
     setError(null);
+    return request;
+  };
+
+  const finishMutation = (request: object) => {
+    if (mutation.current !== request) return;
+    mutation.current = null;
+    setSaving(false);
+  };
+
+  const submitReservation = async (event: FormEvent) => {
+    event.preventDefault();
+    if (!units.some((unit) => unit.id === unitId) || !customers.some((customer) => customer.id === customerId)) return;
+    const request = beginMutation();
+    if (!request) return;
+    const lifetime = viewLifetime.current;
     try {
       const expiresAtUtc = new Date(expiresAtLocal);
       if (!Number.isFinite(expiresAtUtc.getTime())) {
@@ -202,57 +229,58 @@ export function ProjectSalesReservationsModal({
         expiresAtUtc: expiresAtUtc.toISOString(),
       });
       if (lifetime !== viewLifetime.current) return;
+      setSuccess('create');
       setExpiresAtLocal(defaultExpiryLocal());
       setHasFormEdits(false);
       await loadData();
     } catch (submitError) {
       await handleMutationError(submitError, lifetime);
     } finally {
-      if (lifetime === viewLifetime.current) setSaving(false);
+      finishMutation(request);
     }
   };
 
   const submitCancellation = async (event: FormEvent) => {
     event.preventDefault();
-    if (actionsDisabled || !cancelTarget) return;
+    if (!cancelTarget || !cancelReason.trim()) return;
+    const request = beginMutation();
+    if (!request) return;
     const lifetime = viewLifetime.current;
-    setSaving(true);
-    setConflictRefreshed(false);
-    setError(null);
     try {
       await apiClient.cancelProjectSalesReservation(project.id, cancelTarget.id, {
         reason: cancelReason.trim(),
         expectedConcurrencyStamp: cancelTarget.concurrencyStamp,
       });
       if (lifetime !== viewLifetime.current) return;
+      setSuccess('cancel');
       setCancelTargetId(null);
       setCancelReason('');
       await loadData();
     } catch (cancelError) {
       await handleMutationError(cancelError, lifetime);
     } finally {
-      if (lifetime === viewLifetime.current) setSaving(false);
+      finishMutation(request);
     }
   };
 
   const submitReview = async (event: FormEvent) => {
     event.preventDefault();
-    if (actionsDisabled || !reviewTarget) return;
+    if (!reviewTarget) return;
+    const request = beginMutation();
+    if (!request) return;
     const lifetime = viewLifetime.current;
-    setSaving(true);
-    setConflictRefreshed(false);
-    setError(null);
     try {
       await apiClient.reviewProjectSalesReservation(project.id, reviewTarget.id, {
         expectedConcurrencyStamp: reviewTarget.concurrencyStamp,
       });
       if (lifetime !== viewLifetime.current) return;
+      setSuccess('review');
       setReviewTargetId(null);
       await loadData();
     } catch (reviewError) {
       await handleMutationError(reviewError, lifetime);
     } finally {
-      if (lifetime === viewLifetime.current) setSaving(false);
+      finishMutation(request);
     }
   };
 
@@ -267,6 +295,15 @@ export function ProjectSalesReservationsModal({
           : 'La réservation interne constitue un blocage commercial temporaire sans flux financier ni effet contractuel. Les contrats réglementaires et encaissements (FGCMPI / VSP) relèvent des modules F et G.'}
       </div>
 
+      {success && (
+        <p role="status" className="rounded border border-teal-200 bg-teal-50 px-3 py-2 text-xs text-teal-950">
+          {({
+            create: { ar: 'تم إنشاء الحجز بنجاح.', fr: 'La réservation a été créée.' },
+            cancel: { ar: 'تم إلغاء الحجز بنجاح.', fr: 'La réservation a été annulée.' },
+            review: { ar: 'تم تسجيل المراجعة. هذا ليس اعتماداً للحجز.', fr: 'La revue a été enregistrée. Elle ne constitue pas une approbation.' },
+          })[success][language]}
+        </p>
+      )}
       {error && <div role="alert" className="rounded border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-800">{error}</div>}
       {loadError && (
         <div role="alert" className="rounded border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-800">
@@ -402,7 +439,7 @@ export function ProjectSalesReservationsModal({
             <form onSubmit={submitReservation} className="grid grid-cols-1 items-end gap-3 rounded-md border border-slate-200 p-3 md:grid-cols-[1fr_1fr_1fr_auto]">
               <label className={labelClass}>
                 <span>{isArabic ? 'الوحدة المتاحة *' : 'Unité disponible *'}</span>
-                <select className={fieldClass} required value={unitId} onChange={(event) => { setUnitId(event.target.value); setHasFormEdits(true); }}>
+                <select disabled={actionsDisabled} className={fieldClass} required value={unitId} onChange={(event) => { setUnitId(event.target.value); setHasFormEdits(true); }}>
                   <option value="">{isArabic ? 'اختر الوحدة' : 'Choisir une unité'}</option>
                   {units.map((unit) => (
                     <option key={unit.id} value={unit.id}>
@@ -413,7 +450,7 @@ export function ProjectSalesReservationsModal({
               </label>
               <label className={labelClass}>
                 <span>{isArabic ? 'الزبون / المهتم *' : 'Client / prospect *'}</span>
-                <select className={fieldClass} required value={customerId} onChange={(event) => { setCustomerId(event.target.value); setHasFormEdits(true); }}>
+                <select disabled={actionsDisabled} className={fieldClass} required value={customerId} onChange={(event) => { setCustomerId(event.target.value); setHasFormEdits(true); }}>
                   <option value="">{isArabic ? 'اختر الزبون' : 'Choisir un client'}</option>
                   {customers.map((customer) => (
                     <option key={customer.id} value={customer.id}>{customer.displayName} · {customer.status}</option>
@@ -422,7 +459,7 @@ export function ProjectSalesReservationsModal({
               </label>
               <label className={labelClass}>
                 <span>{isArabic ? 'تاريخ انتهاء الحجز *' : 'Expiration *'}</span>
-                <input
+                <input disabled={actionsDisabled}
                   className={fieldClass}
                   type="datetime-local"
                   required
@@ -455,7 +492,7 @@ export function ProjectSalesReservationsModal({
               </div>
               <label className={labelClass}>
                 <span>{isArabic ? 'سبب الإلغاء *' : 'Motif d’annulation *'}</span>
-                <textarea
+                <textarea disabled={actionsDisabled}
                   className={fieldClass}
                   rows={2}
                   maxLength={300}
@@ -560,6 +597,7 @@ export function ProjectSalesReservationsModal({
   const discardConfirmDialog = (
     <ConfirmDialog
       open={confirmDiscardOpen}
+      savingConfirm={saving}
       title={isArabic ? 'تغييرات غير محفوظة' : 'Modifications non enregistrées'}
       message={
         isArabic
@@ -569,6 +607,7 @@ export function ProjectSalesReservationsModal({
       confirmLabel={isArabic ? 'تجاهل وإغلاق' : 'Abandonner et fermer'}
       cancelLabel={isArabic ? 'البقاء في النموذج' : 'Continuer l’édition'}
       onConfirm={() => {
+        if (mutation.current) return;
         setConfirmDiscardOpen(false);
         setHasFormEdits(false);
         setCancelTargetId(null);
@@ -611,7 +650,7 @@ export function ProjectSalesReservationsModal({
                 <span className="font-data">{project.code}</span> · {isArabic ? project.nameAr : project.nameFr}
               </p>
             </div>
-            <button type="button" onClick={requestClose} aria-label={isArabic ? 'إغلاق' : 'Fermer'} className="rounded p-1.5 text-slate-500 hover:bg-slate-100">
+            <button type="button" disabled={saving} onClick={requestClose} aria-label={isArabic ? 'إغلاق' : 'Fermer'} className="rounded p-1.5 text-slate-500 hover:bg-slate-100">
               <X className="h-4 w-4" aria-hidden="true" />
             </button>
           </header>

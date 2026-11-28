@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import { act, createElement } from 'react';
 import { JSDOM } from 'jsdom';
+import { deferred } from './testSupport/renderReact';
 import { apiClient, ApiError } from '../core/api/apiClient';
 import type { AppLanguage, ProjectDto, ProjectSalesReservationDto, ProjectStructureDto } from '../types/erp';
 
@@ -38,7 +39,7 @@ async function mount(language: AppLanguage, manage = true) {
   };
   const state = {
     rows: [hold()], failRead: false, dirty: false, availableUnit: 'unit-1', structureReads: 0,
-    listReads: 0,
+    listReads: 0, closes: 0,
     cancellations: [] as Array<Parameters<typeof apiClient.cancelProjectSalesReservation>[2]>,
     reviews: [] as Array<Parameters<typeof apiClient.reviewProjectSalesReservation>[2]>,
     creations: [] as Array<Parameters<typeof apiClient.createProjectSalesReservation>[1]>,
@@ -72,9 +73,13 @@ async function mount(language: AppLanguage, manage = true) {
   assert.ok(container);
   const root = createRoot(container);
   const onDirtyChange = (dirty: boolean) => { state.dirty = dirty; };
-  await act(async () => root.render(createElement(ProjectSalesReservationsModal, {
-    project: { id: 'project-1' } as ProjectDto, language, canManage: manage, mode: 'embedded', onDirtyChange,
-  })));
+  const render = async (lang = language, projectId = 'project-1', canManage = manage) => {
+    await act(async () => root.render(createElement(ProjectSalesReservationsModal, {
+      project: { id: projectId } as ProjectDto, language: lang, canManage, onDirtyChange,
+      onClose: () => { state.closes++; },
+    })));
+  };
+  await render();
   const button = (label: string) => {
     const found = [...container.querySelectorAll('button')].find((element) => element.textContent?.trim() === label);
     assert.ok(found, `button: ${label}`);
@@ -107,7 +112,7 @@ async function mount(language: AppLanguage, manage = true) {
       else delete globals[key];
     }
   };
-  return { container, state, button, click, fill, submit, cleanup };
+  return { container, state, button, click, fill, submit, cleanup, render };
 }
 
 for (const language of ['ar', 'fr'] as const) {
@@ -213,3 +218,107 @@ test('read-only reservation viewers never fetch manager-only options or expose w
     assert.equal(ui.state.listReads, 2);
   } finally { await ui.cleanup(); }
 });
+
+
+for (const language of ['ar', 'fr'] as AppLanguage[]) {
+  for (const operation of ['create', 'cancel', 'review'] as const) {
+    test(`reservation ${operation} (${language}): single-flight survives language, retry preserves intent, success survives failed read`, async () => {
+      const ui = await mount(language);
+      let pending = deferred<ProjectSalesReservationDto>();
+      const calls = operation === 'create' ? ui.state.creations : operation === 'cancel' ? ui.state.cancellations : ui.state.reviews;
+      const otherLanguage = language === 'ar' ? 'fr' : 'ar';
+      const selector = operation === 'create' ? 'input[type="datetime-local"]' : operation === 'cancel' ? 'textarea' : 'form button[type="submit"]';
+      const success = {
+        create: /La réservation a été créée/,
+        cancel: /La réservation a été annulée/,
+        review: /La revue a été enregistrée/,
+      };
+      try {
+        if (operation === 'review') {
+          ui.state.rows = [hold({ reviewRequiredAtUtc: '2026-11-25T10:00:00Z', isAwaitingReview: true })];
+          await ui.click(language === 'ar' ? 'تحديث' : 'Actualiser');
+          await ui.click(language === 'ar' ? 'تمت المراجعة' : 'Revue effectuée');
+        } else if (operation === 'cancel') {
+          await ui.click(language === 'ar' ? 'إلغاء الحجز' : 'Annuler');
+          await ui.fill('textarea', 'Original cancellation reason');
+        } else {
+          await ui.fill('input[type="datetime-local"]', '2026-12-05T10:00');
+        }
+        ui.state[operation] = () => pending.promise;
+        const form = ui.container.querySelector(selector)?.closest('form');
+        assert.ok(form);
+        await act(async () => {
+          for (let i = 0; i < 2; i++) form.dispatchEvent(new window.Event('submit', { bubbles: true, cancelable: true }));
+          ui.container.querySelector<HTMLButtonElement>('button[aria-label]')?.click();
+        });
+        assert.equal(calls.length, 1, 'same-event duplicate must be rejected synchronously');
+        assert.equal(ui.state.closes, 0, 'same-event close must respect the synchronous lock');
+        assert.equal(document.querySelector('#confirm-dialog-title'), null);
+        if (operation !== 'create') {
+          await ui.submit('input[type="datetime-local"]');
+          assert.equal(ui.state.creations.length, 0, 'a different write family shares the same lock');
+        }
+        const submitted = structuredClone(calls[0]);
+        const reads = ui.state.listReads;
+        for (const input of ui.container.querySelectorAll('input, select, textarea')) {
+          assert.equal((input as HTMLInputElement).disabled, true, 'submitted fields are frozen');
+        }
+        const close = ui.container.querySelector<HTMLButtonElement>('button[aria-label]');
+        assert.ok(close); assert.equal(close.disabled, true);
+        await ui.render(otherLanguage);
+        assert.equal(ui.state.listReads, reads, 'language must not refetch or renew the write lifetime');
+        await ui.submit(selector);
+        assert.equal(calls.length, 1);
+        await act(async () => pending.reject(new Error('PRIVATE-WRITE-DETAILS')));
+        assert.ok(ui.container.querySelector('[role="alert"]'));
+        assert.doesNotMatch(ui.container.textContent ?? '', /PRIVATE-WRITE-DETAILS/);
+        assert.equal(ui.state.listReads, reads, 'non-conflict failure must preserve original snapshot');
+        if (operation === 'cancel') assert.equal((ui.container.querySelector('textarea') as HTMLTextAreaElement).value, 'Original cancellation reason');
+        if (operation === 'create') assert.equal((ui.container.querySelector('input') as HTMLInputElement).value, '2026-12-05T10:00');
+        pending = deferred<ProjectSalesReservationDto>();
+        await ui.submit(selector);
+        assert.equal(calls.length, 2);
+        assert.deepEqual(calls[1], submitted, 'explicit retry retains IDs, stamp and draft');
+        ui.state.failRead = true;
+        await act(async () => pending.resolve(hold()));
+        await ui.render('fr');
+        assert.match(ui.container.querySelector('[role="status"]')?.textContent ?? '', success[operation]);
+        assert.ok(ui.container.querySelector('[role="alert"]'), 'post-write read error stays distinct from success');
+        assert.equal(ui.button('Créer une réservation').disabled, true, 'failed snapshot cannot be used to write');
+        await ui.submit('input[type="datetime-local"]');
+        assert.equal(calls.length, 2);
+        ui.state.failRead = false;
+        await ui.click('Recharger les données');
+        assert.equal(calls.length, 2, 'read-only recovery never repeats an acknowledged write');
+        assert.match(ui.container.querySelector('[role="status"]')?.textContent ?? '', success[operation]);
+        assert.equal(ui.state.closes, 0);
+      } finally { await ui.cleanup(); }
+    });
+  }
+
+  test(`reservation (${language}): changed project/scope owns a clean draft and ignores obsolete writes and reads`, async () => {
+    const ui = await mount(language);
+    const write = deferred<ProjectSalesReservationDto>();
+    const staleRead = deferred<ProjectSalesReservationDto[]>();
+    const originalList = apiClient.listProjectSalesReservations;
+    try {
+      await ui.fill('input[type="datetime-local"]', '2026-12-05T10:00');
+      ui.state.create = () => write.promise;
+      await ui.submit('input[type="datetime-local"]');
+      await ui.render(language, 'project-2');
+      assert.equal(ui.state.dirty, false);
+      assert.notEqual((ui.container.querySelector('input') as HTMLInputElement).value, '2026-12-05T10:00');
+      const reads = ui.state.listReads;
+      await act(async () => write.resolve(hold()));
+      assert.equal(ui.state.listReads, reads, 'obsolete success cannot reload its successor');
+      assert.equal(ui.container.querySelector('[role="status"]'), null);
+      apiClient.listProjectSalesReservations = () => staleRead.promise;
+      await ui.render(language, 'project-3');
+      apiClient.listProjectSalesReservations = originalList;
+      await ui.render(language, 'project-4', false);
+      await act(async () => staleRead.resolve([hold({ reservationNumber: 'OBSOLETE-READ' })]));
+      assert.doesNotMatch(ui.container.textContent ?? '', /OBSOLETE-READ/);
+      assert.equal(ui.container.querySelector('form'), null, 'read-only replacement exposes no manager forms');
+    } finally { apiClient.listProjectSalesReservations = originalList; await ui.cleanup(); }
+  });
+}

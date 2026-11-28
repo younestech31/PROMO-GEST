@@ -873,6 +873,10 @@ const API_ERROR_MESSAGES: Record<string, { ar: string; fr: string }> = {
     ar: 'رفض مضيف المعاينة أو الوسيط الطلب باستجابة 403 (قد تكون ملفات تعريف الارتباط محظورة في هذا المتصفح أو انتهت جلسة المعاينة). تأكد من تفعيل الكوكيز ثم أعد تحميل الصفحة وحاول مجدداً.',
     fr: 'L’hôte d’aperçu ou son proxy a renvoyé une réponse 403 (les cookies sont peut-être bloqués par le navigateur ou la session d’aperçu a expiré). Vérifiez l’activation des cookies, rechargez la page et réessayez.',
   },
+  STRUCTURE_WRITE_COMMITTED_REFRESH_FAILED: {
+    ar: 'تم حفظ التغيير، لكن تعذر تحميل الهيكل المحدّث. أعد تحميل الهيكل قبل أي تعديل آخر ولا تكرر العملية.',
+    fr: 'La modification a été enregistrée, mais la structure actualisée est indisponible. Rechargez-la avant toute autre modification sans répéter l’opération.',
+  },
   CONCURRENCY_CONFLICT: {
     ar: 'تم تعديل هذا السجل بواسطة عملية أخرى. حدّث البيانات ثم أعد المحاولة.',
     fr: 'Cet enregistrement a été modifié par une autre opération. Rechargez les données puis réessayez.',
@@ -1185,6 +1189,10 @@ const API_ERROR_MESSAGES: Record<string, { ar: string; fr: string }> = {
   RESERVATION_UNIT_UNAVAILABLE: {
     ar: 'الوحدة غير متاحة للحجز أو تم حجزها من طرف عملية أخرى.',
     fr: 'L’unité n’est pas disponible ou vient d’être réservée par une autre opération.',
+  },
+  RESERVATION_NUMBER_CONFLICT: {
+    ar: 'رقم الحجز مستخدم بالفعل. حدّث البيانات وحاول مجدداً.',
+    fr: 'La référence de réservation existe déjà. Actualisez les données et réessayez.',
   },
   RESERVATION_NOT_FOUND: {
     ar: 'الحجز غير موجود ضمن هذا المشروع.',

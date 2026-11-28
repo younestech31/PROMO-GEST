@@ -271,6 +271,57 @@ public sealed partial class PostgresEndToEndTests
             (await db.PropertyUnits.SingleAsync(u => u.Id == fixture.FreeUnitId)).Status);
     }
 
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public async Task CustomerArchivalAndReservationCreation_SerializeOnCustomer(bool pauseCreate)
+    {
+        var connection = await _fixture.CreateIsolatedDatabaseConnectionStringAsync();
+        var gate = new SuspensionSaveGate();
+        await using var factory = CreateFactory(connection,
+            Path.Combine(Path.GetTempPath(), $"promogest_customer_archive_race_{Guid.NewGuid():N}"),
+            saveChangesInterceptor: gate);
+        using var client = factory.CreateClient(new WebApplicationFactoryClientOptions { HandleCookies = true });
+        var fixture = await PrepareSuspensionFixtureAsync(client);
+        var customer = (await client.GetFromJsonAsync<ProjectCustomerDto>(
+            $"/api/projects/{fixture.ProjectId}/customers/{fixture.CustomerId}"))!;
+        var archive = new UpdateProjectCustomerRequest(
+            customer.CustomerType, customer.DisplayName, customer.ContactPerson, customer.Phone,
+            customer.Email, customer.Address, customer.PreferredLanguage, customer.Source,
+            nameof(ProjectCustomerStatus.Archived), customer.IdentityDocument?.Id,
+            customer.ConcurrencyStamp, customer.PartyConcurrencyStamp);
+        Task<HttpResponseMessage> Create() => client.PostAsJsonAsync(
+            $"/api/projects/{fixture.ProjectId}/reservations",
+            new CreateProjectSalesReservationRequest(fixture.FreeUnitId, fixture.CustomerId, DateTimeOffset.UtcNow.AddDays(3)));
+        Task<HttpResponseMessage> Archive() => client.PutAsJsonAsync(
+            $"/api/projects/{fixture.ProjectId}/customers/{fixture.CustomerId}", archive);
+
+        gate.Arm(fixture.ProjectId, pauseCreate ? "create" : "archive");
+        var paused = pauseCreate ? Create() : Archive();
+        HttpResponseMessage winner;
+        try
+        {
+            await gate.Arrived.Task.WaitAsync(TimeSpan.FromSeconds(30));
+            winner = await (pauseCreate ? Archive() : Create());
+        }
+        finally { gate.Release(); }
+        using (winner)
+        using (var loser = await paused)
+        {
+            Assert.Equal(pauseCreate ? HttpStatusCode.OK : HttpStatusCode.Created, winner.StatusCode);
+            Assert.Equal(HttpStatusCode.Conflict, loser.StatusCode);
+        }
+
+        using var scope = factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+        var saved = await db.ProjectCustomers.SingleAsync(item => item.Id == fixture.CustomerId);
+        var holds = await db.ProjectSalesReservations.CountAsync(item => item.PropertyUnitId == fixture.FreeUnitId);
+        Assert.Equal(pauseCreate ? ProjectCustomerStatus.Archived : ProjectCustomerStatus.Prospect, saved.Status);
+        Assert.Equal(pauseCreate ? 0 : 1, holds);
+        Assert.Equal(pauseCreate ? PropertyUnitStatus.AvailableForSale : PropertyUnitStatus.Reserved,
+            (await db.PropertyUnits.SingleAsync(item => item.Id == fixture.FreeUnitId)).Status);
+    }
+
     private sealed class SuspensionSaveGate : SaveChangesInterceptor
     {
         private Guid _projectId;
@@ -293,13 +344,16 @@ public sealed partial class PostgresEndToEndTests
                 .Any(e => e.State == EntityState.Modified && e.Entity.Id == _projectId && e.Entity.Status == ProjectStatus.Suspended);
             var queuesReview = db.ChangeTracker.Entries<ProjectSalesReservation>()
                 .Any(e => e.State == EntityState.Modified && e.Entity.ProjectId == _projectId && e.Entity.ReviewRequiredAtUtc != null);
+            var archivesCustomer = db.ChangeTracker.Entries<ProjectCustomer>()
+                .Any(e => e.State == EntityState.Modified && e.Entity.ProjectId == _projectId && e.Entity.Status == ProjectCustomerStatus.Archived);
             if (_mode == "fail-review" && queuesReview)
             {
                 _mode = null;
                 InjectedFailure = true;
                 throw new InvalidOperationException("Injected suspension review save failure (#280).");
             }
-            if ((_mode == "create" && createsHold) || (_mode == "suspend" && suspendsProject))
+            if ((_mode == "create" && createsHold) || (_mode == "suspend" && suspendsProject) ||
+                (_mode == "archive" && archivesCustomer))
             {
                 _mode = null; // Only the selected request waits; the competing request can finish.
                 Arrived.TrySetResult(true);

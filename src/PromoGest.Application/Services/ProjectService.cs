@@ -475,6 +475,14 @@ public sealed class ProjectService
 
         var nowUtc = _clock.UtcNow;
         var isNewMembership = existingMembership is null;
+        var previous = existingMembership is null ? null : new
+        {
+            Role = existingMembership.RoleInProject.ToString(),
+            existingMembership.CanViewFinancials,
+            existingMembership.CanManageSales,
+            existingMembership.CanManageConstruction,
+            existingMembership.CanManageDocuments
+        };
         var membership = project.AssignMember(
             targetUser.Id,
             roleInProject,
@@ -500,7 +508,19 @@ public sealed class ProjectService
                 "Project",
                 project.Id.ToString(),
                 $"Assigned '{targetUser.Username}' to project '{project.Code}' as {roleInProject}.",
-                null,
+                JsonSerializer.Serialize(new
+                {
+                    TargetUserId = targetUser.Id,
+                    Previous = previous,
+                    Current = new
+                    {
+                        Role = membership.RoleInProject.ToString(),
+                        membership.CanViewFinancials,
+                        membership.CanManageSales,
+                        membership.CanManageConstruction,
+                        membership.CanManageDocuments
+                    }
+                }),
                 metadata.IpAddress,
                 metadata.UserAgent),
             ct);

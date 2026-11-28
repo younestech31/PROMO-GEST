@@ -103,9 +103,58 @@ public sealed partial class PostgresEndToEndTests
             Assert.Contains("RESERVATION_EXPIRY_REACHED", await cancellationResponse.Content.ReadAsStringAsync());
         }
 
-        var workerConflict = await Assert.ThrowsAsync<ConflictDomainException>(async () => await workerTask);
-        Assert.Equal("RESERVATION_CONCURRENCY_CONFLICT", workerConflict.Code);
+        // The worker skips its stale candidate; the competing request already expired it.
+        Assert.Equal(0, await workerTask);
         await AssertReservationExpiredAsync(factory, fixture.HoldId, fixture.HeldUnitId);
+    }
+
+    [Fact]
+    public async Task ExpiryBatch_ContinuesAfterOneReservationConflicts()
+    {
+        var connection = await _fixture.CreateIsolatedDatabaseConnectionStringAsync();
+        var gate = new ReservationExpirySaveGate();
+        await using var factory = CreateFactory(connection,
+            Path.Combine(Path.GetTempPath(), $"promogest_expiry_batch_{Guid.NewGuid():N}"),
+            saveChangesInterceptor: gate);
+        using var client = factory.CreateClient(new WebApplicationFactoryClientOptions { HandleCookies = true });
+        var fixture = await PrepareSuspensionFixtureAsync(client);
+        using var create = await client.PostAsJsonAsync($"/api/projects/{fixture.ProjectId}/reservations",
+            new CreateProjectSalesReservationRequest(fixture.FreeUnitId, fixture.CustomerId, DateTimeOffset.UtcNow.AddDays(3)));
+        Assert.Equal(System.Net.HttpStatusCode.Created, create.StatusCode);
+        var second = (await create.Content.ReadFromJsonAsync<ProjectSalesReservationDto>())!;
+        // Explicitly order the two candidates so the conflict happens first.
+        using (var scope = factory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+            var due = DateTimeOffset.UtcNow.AddMinutes(-3);
+            await db.ProjectSalesReservations.Where(item => item.Id == fixture.HoldId)
+                .ExecuteUpdateAsync(setters => setters
+                    .SetProperty(item => item.ReservedAtUtc, due.AddDays(-7))
+                    .SetProperty(item => item.ExpiresAtUtc, due));
+            await db.ProjectSalesReservations.Where(item => item.Id == second.Id)
+                .ExecuteUpdateAsync(setters => setters
+                    .SetProperty(item => item.ReservedAtUtc, due.AddDays(-7))
+                    .SetProperty(item => item.ExpiresAtUtc, due.AddMinutes(1)));
+        }
+        var first = (await client.GetFromJsonAsync<ProjectSalesReservationDto>(
+            $"/api/projects/{fixture.ProjectId}/reservations/{fixture.HoldId}"))!;
+        using var workerScope = factory.Services.CreateScope();
+        var processor = workerScope.ServiceProvider.GetRequiredService<ProjectSalesReservationExpiryProcessor>();
+        gate.Arm(fixture.HoldId);
+        var task = processor.ProcessDueAsync();
+        try
+        {
+            await gate.Arrived.Task.WaitAsync(TimeSpan.FromSeconds(30));
+            using var cancel = await client.PostAsJsonAsync(
+                $"/api/projects/{fixture.ProjectId}/reservations/{fixture.HoldId}/cancel",
+                new CancelProjectSalesReservationRequest("Late cancellation", first.ConcurrencyStamp));
+            Assert.Equal(System.Net.HttpStatusCode.Conflict, cancel.StatusCode);
+        }
+        finally { gate.Release(); }
+
+        Assert.Equal(1, await task);
+        await AssertReservationExpiredAsync(factory, fixture.HoldId, fixture.HeldUnitId);
+        await AssertReservationExpiredAsync(factory, second.Id, fixture.FreeUnitId);
     }
 
     [Fact]
@@ -149,8 +198,7 @@ public sealed partial class PostgresEndToEndTests
             Assert.NotNull(suspensionResponse);
         }
 
-        var conflict = await Assert.ThrowsAsync<ConflictDomainException>(async () => await expiryTask);
-        Assert.Equal("RESERVATION_CONCURRENCY_CONFLICT", conflict.Code);
+        Assert.Equal(0, await expiryTask);
 
         using (var verifyScope = factory.Services.CreateScope())
         {

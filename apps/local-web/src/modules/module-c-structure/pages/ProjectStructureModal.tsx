@@ -227,6 +227,17 @@ function ProjectStructureEditor({
   ) ?? null;
 
   const showMutationError = (err: unknown, fallbackAr: string, fallbackFr: string) => {
+    if (err instanceof ApiError && err.code === 'STRUCTURE_WRITE_COMMITTED_REFRESH_FAILED') {
+      // The server explicitly confirmed the write, so do not preserve a form
+      // that could submit it a second time. Require a fresh read before editing.
+      discardEditors();
+      setStructure(null);
+      setSelectedBuildingId(null);
+      setSelectedFloorId(null);
+      setStatusSelections({});
+      setLoadError(true);
+      onStructureChanged?.();
+    }
     setError(
       err instanceof ApiError
         ? translateApiError(err.code, err.message, language)

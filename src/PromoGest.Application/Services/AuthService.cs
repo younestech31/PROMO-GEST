@@ -146,26 +146,32 @@ public sealed class AuthService
             throw new UnauthorizedDomainException("AUTH_INVALID_CREDENTIALS", "Invalid username or password.");
         }
 
-        if (!_passwordHasher.VerifyPassword(request.Password, user.PasswordHash))
+        var verifiedPasswordHash = user.PasswordHash;
+        var verifiedSecurityStamp = user.SecurityStamp;
+        if (!_passwordHasher.VerifyPassword(request.Password, verifiedPasswordHash))
         {
-            var lockedNow = user.RecordFailedLogin(nowUtc);
-            await _auditWriter.WriteAsync(
-                AuditLog.Record(
-                    nowUtc,
-                    user.Id,
-                    user.Username,
-                    lockedNow ? "AUTH_LOCKOUT" : "AUTH_LOGIN_FAILED",
-                    AuditSeverity.Security,
-                    "User",
-                    user.Id.ToString(),
-                    lockedNow
-                        ? $"Account '{user.Username}' locked for {User.LockoutDuration.TotalMinutes} minutes after {User.MaxFailedLoginAttempts} failed attempts."
-                        : $"Failed login attempt {user.FailedLoginAttempts}/{User.MaxFailedLoginAttempts} for '{user.Username}'.",
-                    null,
-                    metadata.IpAddress,
-                    metadata.UserAgent),
-                ct);
-            await _userRepository.SaveChangesAsync(ct);
+            await _userRepository.ExecuteWithUserLockAsync(user, async lockedCt =>
+            {
+                // The password check happened before acquiring the lock. Never count a
+                // stale failure against a newly reset password or a deactivated account.
+                var currentTime = _clock.UtcNow;
+                var credentialsChanged = user.SecurityStamp != verifiedSecurityStamp || user.PasswordHash != verifiedPasswordHash;
+                var isBlocked = !user.IsActive || user.IsLockedOut(currentTime);
+                var lockedNow = !credentialsChanged && !isBlocked && user.RecordFailedLogin(currentTime);
+                var eventType = !user.IsActive ? "AUTH_LOGIN_BLOCKED_INACTIVE"
+                    : user.IsLockedOut(currentTime) && !lockedNow ? "AUTH_LOGIN_BLOCKED_LOCKED"
+                    : lockedNow ? "AUTH_LOCKOUT" : "AUTH_LOGIN_FAILED";
+                var summary = credentialsChanged ? "Login failed after the account credentials changed."
+                    : !user.IsActive ? $"Deactivated account '{user.Username}' attempted to sign in."
+                    : isBlocked ? $"Locked account '{user.Username}' attempted to sign in before lockout expiry."
+                    : lockedNow ? $"Account '{user.Username}' locked for {User.LockoutDuration.TotalMinutes} minutes after {User.MaxFailedLoginAttempts} failed attempts."
+                    : $"Failed login attempt {user.FailedLoginAttempts}/{User.MaxFailedLoginAttempts} for '{user.Username}'.";
+                var audit = AuditLog.Record(currentTime, user.Id, user.Username, eventType, AuditSeverity.Security,
+                    "User", user.Id.ToString(), summary, null, metadata.IpAddress, metadata.UserAgent);
+                await _auditWriter.WriteAsync(audit, lockedCt);
+                await _userRepository.SaveChangesAsync(lockedCt);
+                return audit.Id;
+            }, ct);
 
             throw new UnauthorizedDomainException("AUTH_INVALID_CREDENTIALS", "Invalid username or password.");
         }
@@ -302,10 +308,12 @@ public sealed class AuthService
         if (org is null || !org.IsInitialized)
             return null;
 
-        if (nowUtc - session.LastSeenAtUtc >= _sessionPolicy.TouchInterval)
+        if (nowUtc - session.LastSeenAtUtc >= _sessionPolicy.TouchInterval &&
+            !await _userRepository.TryTouchSessionAsync(session, user, nowUtc, _sessionPolicy.IdleTimeout, ct))
         {
-            session.Touch(nowUtc);
-            await _userRepository.SaveChangesAsync(ct);
+            // A competing touch is harmless, but a concurrent revocation, account change,
+            // or expiry must not be treated as successful authentication.
+            return null;
         }
 
         var permissions = await _userRepository.GetEffectivePermissionsAsync(user.Id, ct);

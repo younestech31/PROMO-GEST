@@ -7,6 +7,7 @@ using PromoGest.Contracts.Auth;
 using PromoGest.Contracts.Common;
 using PromoGest.Domain.Entities;
 using PromoGest.Infrastructure.Persistence;
+using PromoGest.Infrastructure.Repositories;
 using Xunit;
 
 namespace PromoGest.IntegrationTests;
@@ -422,6 +423,163 @@ public sealed partial class PostgresEndToEndTests
                 entry.EventType == "AUTH_SESSION_REVOKED_BY_USER" &&
                 entry.TargetEntityType == "UserSession" &&
                 entry.TargetEntityId == target.Id.ToString()));
+    }
+
+    [Fact]
+    public async Task ParallelInvalidLogins_AreUnauthorizedAndAllAudited()
+    {
+        var connection = await _fixture.CreateIsolatedDatabaseConnectionStringAsync();
+        await using var factory = CreateFactory(connection,
+            Path.Combine(Path.GetTempPath(), $"promogest_parallel_login_{Guid.NewGuid():N}"));
+        using var setup = factory.CreateClient(new Microsoft.AspNetCore.Mvc.Testing.WebApplicationFactoryClientOptions { HandleCookies = true });
+        await AttachCsrfTokenAsync(setup);
+        using var initialize = await setup.PostAsJsonAsync("/api/setup/initialize", ValidInitRequest());
+        Assert.Equal(HttpStatusCode.Created, initialize.StatusCode);
+
+        var clients = Enumerable.Range(0, User.MaxFailedLoginAttempts + 1)
+            .Select(_ => factory.CreateClient(new Microsoft.AspNetCore.Mvc.Testing.WebApplicationFactoryClientOptions { HandleCookies = true }))
+            .ToArray();
+        try
+        {
+            await Task.WhenAll(clients.Select(AttachCsrfTokenAsync));
+            var responses = await Task.WhenAll(clients.Select(client =>
+                client.PostAsJsonAsync("/api/auth/login", new LoginRequest("sysadmin", "wrong-password"))));
+            try { Assert.All(responses, response => Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode)); }
+            finally { foreach (var response in responses) response.Dispose(); }
+        }
+        finally { foreach (var client in clients) client.Dispose(); }
+
+        using var scope = factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+        var user = await db.Users.SingleAsync(item => item.Username == "sysadmin");
+        Assert.Equal(User.MaxFailedLoginAttempts, user.FailedLoginAttempts);
+        Assert.True(user.IsLockedOut(DateTimeOffset.UtcNow));
+        Assert.Equal(User.MaxFailedLoginAttempts + 1, await db.AuditLogs.CountAsync(entry =>
+            entry.ActorUserId == user.Id &&
+            (entry.EventType == "AUTH_LOGIN_FAILED" || entry.EventType == "AUTH_LOCKOUT" ||
+             entry.EventType == "AUTH_LOGIN_BLOCKED_LOCKED")));
+        Assert.Equal(1, await db.AuditLogs.CountAsync(entry => entry.ActorUserId == user.Id && entry.EventType == "AUTH_LOCKOUT"));
+    }
+
+    [Fact]
+    public async Task ConcurrentFailedLoginUpdates_SerializeAndReachLockout()
+    {
+        var connection = await _fixture.CreateIsolatedDatabaseConnectionStringAsync();
+        Assert.False(new Npgsql.NpgsqlConnectionStringBuilder(connection).Pooling);
+        Assert.False(new Npgsql.NpgsqlConnectionStringBuilder(_fixture.GetMigrationConnectionString(connection)).Pooling);
+        // Production enables retry-on-failure, which requires an execution strategy
+        // around user-managed transactions.
+        var options = new DbContextOptionsBuilder<AppDbContext>()
+            .UseNpgsql(connection, npgsql => npgsql.EnableRetryOnFailure()).Options;
+        var now = DateTimeOffset.UtcNow;
+        Guid userId;
+        await using (var setup = new AppDbContext(options))
+        {
+            var user = User.CreateEmployee("login.race", "Login Race", "login.race@example.dz", null,
+                "test-hash", "fr", now);
+            setup.Users.Add(user);
+            await setup.SaveChangesAsync();
+            userId = user.Id;
+        }
+
+        var contexts = Enumerable.Range(0, User.MaxFailedLoginAttempts)
+            .Select(_ => new AppDbContext(options)).ToArray();
+        try
+        {
+            var users = await Task.WhenAll(contexts.Select(db => db.Users.SingleAsync(item => item.Id == userId)));
+            var results = await Task.WhenAll(contexts.Select((db, index) =>
+            {
+                var repository = new EfUserRepository(db);
+                return repository.ExecuteWithUserLockAsync(users[index], async ct =>
+                {
+                    if (!users[index].IsLockedOut(now)) users[index].RecordFailedLogin(now);
+                    await repository.SaveChangesAsync(ct);
+                    return Guid.Empty;
+                });
+            }));
+            Assert.All(results, result => Assert.True(result));
+        }
+        finally
+        {
+            foreach (var context in contexts) await context.DisposeAsync();
+        }
+
+        await using var verify = new AppDbContext(options);
+        var persisted = await verify.Users.SingleAsync(item => item.Id == userId);
+        Assert.Equal(User.MaxFailedLoginAttempts, persisted.FailedLoginAttempts);
+        Assert.True(persisted.IsLockedOut(now));
+    }
+
+    [Fact]
+    public async Task ConcurrentSessionTouches_BothSucceed_WithoutUndoingRevocation()
+    {
+        var connection = await _fixture.CreateIsolatedDatabaseConnectionStringAsync();
+        var now = DateTimeOffset.UtcNow;
+        var initialOptions = new DbContextOptionsBuilder<AppDbContext>().UseNpgsql(connection).Options;
+        Guid userId;
+        Guid sessionId;
+        await using (var setup = new AppDbContext(initialOptions))
+        {
+            var user = User.CreateEmployee("touch.user", "Touch User", "touch@example.dz", null,
+                "test-hash", "fr", now.AddMinutes(-2));
+            var session = UserSession.Create(user.Id, new string('a', 64), user.SecurityStamp,
+                now.AddMinutes(-2), now.AddHours(1), null, null);
+            setup.Users.Add(user);
+            setup.UserSessions.Add(session);
+            await setup.SaveChangesAsync();
+            userId = user.Id;
+            sessionId = session.Id;
+        }
+
+        var barrier = new SessionTouchBarrier();
+        var options = new DbContextOptionsBuilder<AppDbContext>().UseNpgsql(connection)
+            .AddInterceptors(barrier).Options;
+        await using var first = new AppDbContext(options);
+        await using var second = new AppDbContext(options);
+        var firstUser = await first.Users.SingleAsync(item => item.Id == userId);
+        var secondUser = await second.Users.SingleAsync(item => item.Id == userId);
+        var firstSession = await first.UserSessions.SingleAsync(item => item.Id == sessionId);
+        var secondSession = await second.UserSessions.SingleAsync(item => item.Id == sessionId);
+        var results = await Task.WhenAll(
+            new EfUserRepository(first).TryTouchSessionAsync(firstSession, firstUser, now, TimeSpan.FromMinutes(30)),
+            new EfUserRepository(second).TryTouchSessionAsync(secondSession, secondUser, now, TimeSpan.FromMinutes(30)));
+        Assert.All(results, result => Assert.True(result));
+
+        // A stale touch must not resurrect a session that was revoked after it was read.
+        await using var stale = new AppDbContext(initialOptions);
+        var staleUser = await stale.Users.SingleAsync(item => item.Id == userId);
+        var staleSession = await stale.UserSessions.SingleAsync(item => item.Id == sessionId);
+        await using (var revoker = new AppDbContext(initialOptions))
+        {
+            var revoked = await revoker.UserSessions.SingleAsync(item => item.Id == sessionId);
+            revoked.Revoke(now.AddSeconds(1));
+            await revoker.SaveChangesAsync();
+        }
+        Assert.False(await new EfUserRepository(stale).TryTouchSessionAsync(
+            staleSession, staleUser, now.AddSeconds(2), TimeSpan.FromMinutes(30)));
+        Assert.True(staleSession.IsRevoked);
+    }
+
+    private sealed class SessionTouchBarrier : SaveChangesInterceptor
+    {
+        private int _arrivals;
+        private readonly TaskCompletionSource<bool> _release = new(TaskCreationOptions.RunContinuationsAsynchronously);
+
+        public override async ValueTask<InterceptionResult<int>> SavingChangesAsync(
+            DbContextEventData eventData, InterceptionResult<int> result, CancellationToken cancellationToken = default)
+        {
+            var context = eventData.Context;
+            if (context is null)
+                return result;
+            context.ChangeTracker.DetectChanges();
+            if (!context.ChangeTracker.Entries<UserSession>().Any(entry =>
+                entry.State == EntityState.Modified && entry.Property(item => item.LastSeenAtUtc).IsModified))
+                return result;
+            if (Interlocked.Increment(ref _arrivals) == 2)
+                _release.TrySetResult(true);
+            await _release.Task.WaitAsync(TimeSpan.FromSeconds(30), cancellationToken);
+            return result;
+        }
     }
 
     private sealed class SessionRevocationSaveChangesBarrier : SaveChangesInterceptor

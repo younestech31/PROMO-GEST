@@ -61,6 +61,7 @@ jobs:
       - name: Test P1-02 operational snapshot preflight, packaging and offline import planning
         run: |
           python3 scripts/test_administrative_reference_preflight.py
+          python3 scripts/test_capture_administrative_reference.py
           python3 scripts/test_import_administrative_reference.py
       - name: Validate complete JO44/1985 source extracts
         run: python3 scripts/validate-jo44-reference-extracts.py

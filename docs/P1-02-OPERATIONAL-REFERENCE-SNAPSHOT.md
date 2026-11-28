@@ -33,9 +33,13 @@ confirmed the three tabs and the following aggregates:
 
 The previous metadata-only statement is superseded by these content/aggregate
 reads. This establishes an adopted **operational source**, not byte identity with
-an earlier attachment. The complete 1541/69/151 files have **not yet been captured
-and packaged in this slice**; there is no claimed source-snapshot checksum yet.
-Do not treat hashes of synthetic test inputs as source evidence.
+an earlier attachment. A subsequent [resumable captured-cell adapter](P1-02-SHEETS-CAPTURE.md)
+now persists bounded actual-source reads and reports exact gaps. Its first
+checkpoint contains 69 wilayas, 50 communes and 20 aliases, from complete connector
+responses, with transcription/provenance limitations explicitly retained.
+The complete 1541/69/151 files have **not yet been captured and packaged**; there
+is no claimed source-snapshot checksum yet. A partial journal digest is not a
+source snapshot ID. Do not treat hashes of synthetic inputs as source evidence.
 
 Sample cells were also read, including `0101`/`01`, a blank seat marker at `0102`,
 and aliases such as reference FR `Chief` → alias FR `Chlef`. Original labels,

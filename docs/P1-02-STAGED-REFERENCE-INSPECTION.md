@@ -75,9 +75,13 @@ synthetic and must not be represented as adopted-source import evidence.
 Six rendered component tests cover AR/FR inspection, retry, paging/filter races,
 late-result cleanup, permission/session changes, removal and language stability.
 They are component tests, **not manual owner AR/FR acceptance**. The local sandbox
-has no .NET SDK or PostgreSQL; new server/PG tests require exact-head CI. The
-previous importer head `dcf04bdf5ebdfd3611f3a802d2b6681c2f3d887e` passed all checks
-in PR307; that result does not validate this newer slice.
+has no .NET SDK or PostgreSQL; no local server/PG success is claimed. Inspection
+head `7cc8f7e92d84371b04f9b9c5258f212a3495e4b4` subsequently passed all reported
+PR307 checks: PR CI46164230193 / CodeQL46164230157 and push CI46164225826,
+including build, application/integration/PG18 tests, browser/recovery, Windows,
+four-profile HTTPS rehearsal/restart and evidence export. This supersedes the
+inspection slice's pending checkpoint. It does not validate newer capture-adapter
+changes, prove adopted-source import or substitute for manual/legal acceptance.
 
 P1-02 remains In Progress. Full adopted Sheets capture and verifiable package,
 reviewed retained identity map, actual-source staging/rehearsal, activation design

@@ -1,4 +1,13 @@
-## Current operating checkpoint — PR #296 merged; Phase 1 closure execution — 28 November 2026
+## Current operating checkpoint — PR #297 merged; directory lookup isolation — 28 November 2026
+
+- **Verified live source:** GitHub `main` = `1c64bec900e681c5175e78f2fed8b81c395e57f9`, squash merge of [PR #297](https://github.com/younestech31/PROMO-GEST/pull/297), integrated on the mandated branch. All eight exact-head checks SUCCESS on `eae5203`: CI46136503184 and CodeQL46136503117. Independent main CI46137466758 pending; CodeQL46137466759 PASS. PR296 independent main CI46136104804 and CodeQL46136104813 PASS.
+- **Verified bounded browser delivery:** document upload/read-only recovery/filter/checksum download, reader non-mutation and protected-route non-mount checks passed in the existing four-profile Development/Production HTTPS pipeline. CI results are not manual visual approval; artifacts could not be downloaded through sandbox egress. Read-only Linux host collector delivered; NOT_GRANTED and actual institution/operator gates preserved. [Execution ledger](PHASE-1-CLOSURE-EXECUTION.ar.md).
+- **Current bounded fix, remote verification pending:** employee lookup now has independent loading/error/retry and request generation; slow/failed employees cannot hide valid directory projects. Assignment remains guarded to current eligible options, and actor/capability changes clear stale lookup/modal state. No endpoint or permission-policy change. Local TypeScript/build/lint guard and frontend159/159 PASS. [Directory reliability](P1-49-DIRECTORY-REQUEST-RELIABILITY.md).
+- **Preserved gates:** P1-06/P1-20/P1-49 In Review, Phase1 IN_PROGRESS, Phases2–5 gated; phase-closure P1-05 Blocked. Copied other-environment prose is not reviewed screenshot evidence. P1-08 owner category policy, P1-11 actual preflight/restore/migration, actual institutional/AI Studio/legal/release gates outstanding. P1-01/P1-35 Deferred, P1-02 Blocked; no Sheets import, professional signoff, financial/schema/deployment change.
+
+---
+
+## Historical operating checkpoint — PR #296 merged; Phase 1 closure execution — 28 November 2026
 
 - **Verified live source:** GitHub `main` = `c0c32757ee109c3179d8a39ca40471fd7de7b336`, squash merge of [PR #296](https://github.com/younestech31/PROMO-GEST/pull/296), integrated on the mandated branch. All eight exact-head checks SUCCESS on `a54cd56`: CI46130175418 and CodeQL46130175356. Independent main CI46136104804 pending; CodeQL46136104813 PASS. [Document delivery](P1-06-DOCUMENT-WORKFLOW-COMPLETION.md).
 - **CRM independently verified:** PR295 main `36c637c` CI46129790407 and CodeQL46129790417 PASS; prior PR294 independent-main CI46098043619/CodeQL46098043550 PASS. Original P1-12 backend acceptance remains distinct.

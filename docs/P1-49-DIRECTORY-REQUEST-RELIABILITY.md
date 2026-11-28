@@ -18,9 +18,10 @@ No new endpoint, migration, permission, project-switcher change, or Phase 2–5 
 
 ## Changes
 
-- Only the latest directory request can publish rows, counts, errors, user options,
-  or loading completion. Effect cleanup invalidates requests after unmount or an
-  authenticated actor/version change.
+- Only the latest directory request can publish rows, counts, errors, or directory
+  loading completion. Employee options now have an independent request generation
+  (see follow-up below). Effect cleanup invalidates both after unmount or an
+  authenticated actor/version/employee-read capability change.
 - Search text remains a draft until the filter form is submitted. Page navigation,
   page-size changes, status selection, and mutation refreshes reuse the successful
   applied search. Status selection still applies immediately; reset clears both
@@ -45,3 +46,28 @@ These are automated component checks, not manual browser/visual acceptance.
 The existing P1-49 owner-requested deferral of manual visual acceptance remains
 unchanged. Remote PR checks and merge are separate delivery checkpoints; local
 success is not a claim of deployment or independent merged-main success.
+
+## Bounded follow-up — independent employee lookup
+
+The access-management employee list was awaited inside the directory request.
+A failed employee lookup therefore discarded successfully fetched projects, and a
+slow lookup kept the directory busy. This follow-up separates the two lifecycles:
+
+- Directory success is immediately usable regardless of employee lookup outcome.
+- Only actors already allowed by `canManageUsers` request employee options; this
+  does not grant any API or project permission.
+- The access dialog shows localized lookup loading, failure/retry, or genuine
+  empty states. Retrying employees does not repeat the directory query or write.
+- Assignment is disabled and guarded in the submit handler until a currently
+  returned active, non-system employee is selected. A retry clears the old
+  selection rather than silently choosing a replacement.
+- Actor/version/capability changes close the access dialog, clear lookup data,
+  and invalidate stale responses. Unmount also invalidates outstanding requests.
+- Project filter/page/mutation refreshes no longer restart employee lookup.
+
+Local verification: TypeScript PASS; **159/159** component/unit tests PASS,
+including four new rendered AR/FR tests for pending/failing lookup isolation,
+read-only retry, eligible employee filtering, selection and assignment, empty
+results, actor change, capability revocation, and stale completion after unmount.
+These remain component checks, not manual visual acceptance or institutional
+access-management approval. Remote exact-head CI is a separate pending gate.

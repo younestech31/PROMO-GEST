@@ -1,10 +1,20 @@
+## Module E functional follow-up — existing reservation request reliability
+
+Create/cancel/review share a synchronous write lock and frozen submitted controls;
+language changes preserve draft/pending state. Project/scope-owned editors ignore
+obsolete completions. Acknowledged success survives a failed list refresh, with
+read-only recovery. Existing 409 recovery and review-not-approval rules unchanged.
+Local183/183 PASS; new head remote checks pending. [Scope and limits](P1-06-RESERVATION-REQUEST-RELIABILITY.md).
+No financial, contract, endpoint/schema or permission-policy expansion.
+
 ## Module C functional follow-up — current editor recovery
 
 The current structure editor has read failure/retry states, project-scoped async
 lifetimes, stable drafts on language change, synchronous write locking and frozen
 context/form controls while saving. Failed writes retain draft/stamp; obsolete
-completions cannot affect the next project. Remote verification pending; no manual
-visual acceptance claimed. [Scope and limits](P1-06-STRUCTURE-WORKFLOW-COMPLETION.md).
+completions cannot affect the next project. Local draft transitions use Stay/Discard
+with one active editor. PR299/300 exact-head checks passed before merge; PR299
+independent-main checks PASS, PR300 independent-main pending. No manual visual acceptance claimed. [Scope and limits](P1-06-STRUCTURE-WORKFLOW-COMPLETION.md).
 No delete, bulk generation, pricing or unified property-file feature is added.
 
 ## Module K functional follow-up — existing document workflow

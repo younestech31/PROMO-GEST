@@ -71,3 +71,11 @@ read-only retry, eligible employee filtering, selection and assignment, empty
 results, actor change, capability revocation, and stale completion after unmount.
 These remain component checks, not manual visual acceptance or institutional
 access-management approval. Remote exact-head CI is a separate pending gate.
+
+## Follow-up delivery checkpoint
+
+PR298 merged at `58793dda00e8b5f960e13efb4c02bb787e3636cc` after all eight
+exact-head checks passed on `a227537` (CI46137955893, CodeQL46137955903).
+Independent main CI46139067018 pending at this checkpoint; CodeQL46139067047
+PASS. Manual visual acceptance remains separate. PR297 independent main
+CI46137466758 and CodeQL46137466759 PASS.

@@ -1,3 +1,14 @@
+## Module D functional follow-up — CRM workflow completion
+
+Customer registry internal transitions now share Stay/Discard protection; details,
+Party lookups and central Party searches reject stale responses. Successful
+customer/interaction writes remain explicitly acknowledged even if subsequent
+reads fail, with dedicated read retries. Loaded customer name/contact/phone/email
+search and status filters preserve the selected draft. Identity edits retain
+original stamps/drafts on failure. See [scope and verification](P1-06-CRM-WORKFLOW-COMPLETION.md).
+This is implemented on the active branch, pending its own PR checks/merge; no
+planned pipeline, Party master-data expansion or new manual acceptance is claimed.
+
 ## Current implementation addendum — PR #258 / P1-09 real-browser automation — 26 November 2026
 
 - Current live main: `a7560ec71519ad1252406874ef7a0910a246ce6d`, merged PR #258.

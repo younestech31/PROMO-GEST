@@ -1,5 +1,15 @@
 # Reservation workflow — recover safely from server conflicts
 
+## Delivery checkpoint
+
+[PR #294](https://github.com/younestech31/PROMO-GEST/pull/294) merged at
+`2b0a730390556519ec307abc08bb4276b5301c2e` after all eight exact-head checks passed
+on `759601a13d918c009e12561dbad024fe9569b7d0`:
+CI[46097068405](https://github.com/younestech31/PROMO-GEST/actions/runs/46097068405)
+and CodeQL[46097068413](https://github.com/younestech31/PROMO-GEST/actions/runs/46097068413).
+Independent exact-main CI46098043619/CodeQL46098043550 remain pending at this
+checkpoint; no merged-main or production success is inferred.
+
 ## Functional scope
 
 Phase 1, Module E internal commercial holds only. This is a UI follow-up to the

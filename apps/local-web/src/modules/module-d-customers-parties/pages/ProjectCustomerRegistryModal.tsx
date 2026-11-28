@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState, type FormEvent } from 'react';
+import { useCallback, useEffect, useRef, useState, type FormEvent } from 'react';
 import { Download, LoaderCircle, Plus, Search, UserRound, X } from 'lucide-react';
 import type {
   AppLanguage,
@@ -25,6 +25,12 @@ interface ProjectCustomerRegistryModalProps {
   onClose?: () => void;
   onDirtyChange?: (dirty: boolean) => void;
 }
+
+type RegistryAction =
+  | { kind: 'close' }
+  | { kind: 'subView'; target: 'registry' | 'pipelinePlanned' }
+  | { kind: 'customer'; customerId: string }
+  | { kind: 'new' | 'edit' | 'dismissForm' };
 
 interface CustomerFormState {
   partyId: string;
@@ -133,14 +139,28 @@ export function ProjectCustomerRegistryModal({
   const [interactionSummary, setInteractionSummary] = useState('');
   const [nextFollowUp, setNextFollowUp] = useState('');
   const [error, setError] = useState<string | null>(null);
-  const [pendingAction, setPendingAction] = useState<
-    | { kind: 'close' }
-    | { kind: 'subView'; target: 'registry' | 'pipelinePlanned' }
-    | null
-  >(null);
+  const [pendingAction, setPendingAction] = useState<RegistryAction | null>(null);
+  const [listError, setListError] = useState<string | null>(null);
+  const [detailsError, setDetailsError] = useState<string | null>(null);
+  const [detailsLoading, setDetailsLoading] = useState(false);
+  const [requestedCustomerId, setRequestedCustomerId] = useState<string | null>(null);
+  const [success, setSuccess] = useState<string | null>(null);
+  const [registryQuery, setRegistryQuery] = useState('');
+  const [registryStatus, setRegistryStatus] = useState('');
+  const listRequest = useRef(0);
+  const detailRequest = useRef(0);
+  const partyRequest = useRef(0);
+  const lifetime = useRef<object | null>(null);
+  const busy = saving || interactionSaving;
+  const normalizedQuery = registryQuery.trim().normalize('NFKC').toLocaleLowerCase();
+  const visibleCustomers = customers.filter((customer) =>
+    (!registryStatus || customer.status === registryStatus) &&
+    (!normalizedQuery || [customer.displayName, customer.contactPerson, customer.phone, customer.email]
+      .some((value) => value?.normalize('NFKC').toLocaleLowerCase().includes(normalizedQuery))));
 
   const isDirty =
     (showForm && hasFormEdits) ||
+    interactionType !== 'Call' ||
     interactionSubject.trim() !== '' ||
     interactionSummary.trim() !== '' ||
     nextFollowUp.trim() !== '';
@@ -155,58 +175,102 @@ export function ProjectCustomerRegistryModal({
     };
   }, [onDirtyChange]);
 
-  const requestClose = () => {
-    if (isDirty) {
-      setPendingAction({ kind: 'close' });
-      return;
-    }
-    onClose?.();
+  const discardDrafts = () => {
+    ++detailRequest.current;
+    ++partyRequest.current;
+    setDetailsLoading(false);
+    setPartySearching(false);
+    setPartyResults([]);
+    setShowForm(false);
+    setHasFormEdits(false);
+    setEditing(false);
+    setInteractionSubject('');
+    setInteractionSummary('');
+    setNextFollowUp('');
+    setInteractionType('Call');
   };
 
+  const performAction = (action: RegistryAction) => {
+    discardDrafts();
+    setError(null);
+    setSuccess(null);
+    setDetailsError(null);
+    if (action.kind === 'close') onClose?.();
+    else if (action.kind === 'subView') setSubView(action.target);
+    else if (action.kind === 'customer') void openDetails(action.customerId);
+    else if (action.kind === 'new') openNewForm();
+    else if (action.kind === 'edit') openEditForm();
+  };
+
+  const requestAction = (action: RegistryAction) => {
+    if (busy) return;
+    if (isDirty) setPendingAction(action);
+    else performAction(action);
+  };
+
+  const requestClose = () => requestAction({ kind: 'close' });
   const requestSwitchSubView = (target: 'registry' | 'pipelinePlanned') => {
-    if (target === subView) return;
-    if (isDirty) {
-      setPendingAction({ kind: 'subView', target });
-      return;
-    }
-    setSubView(target);
+    if (target !== subView) requestAction({ kind: 'subView', target });
   };
 
   const loadCustomers = useCallback(async () => {
+    const request = ++listRequest.current;
     setLoading(true);
-    setError(null);
+    setListError(null);
     try {
       const result = await apiClient.listProjectCustomers(project.id);
+      if (request !== listRequest.current) return;
       setCustomers(result);
       if (canManage) {
         try {
           const projectDocuments = await apiClient.listProjectDocuments(project.id);
-          setDocuments(projectDocuments);
+          if (request === listRequest.current) setDocuments(projectDocuments);
         } catch {
-          setDocuments([]);
+          if (request === listRequest.current) setDocuments([]);
         }
+      } else {
+        setDocuments([]);
       }
     } catch (err) {
-      setError(errorText(err, language));
+      if (request === listRequest.current) setListError(errorText(err, language));
     } finally {
-      setLoading(false);
+      if (request === listRequest.current) setLoading(false);
     }
   }, [project.id, canManage, language]);
 
   useEffect(() => {
+    lifetime.current = {};
+    setSaving(false);
+    setInteractionSaving(false);
     void loadCustomers();
+    return () => {
+      lifetime.current = null;
+      ++listRequest.current;
+      ++detailRequest.current;
+      ++partyRequest.current;
+    };
   }, [loadCustomers]);
 
   const openDetails = async (customerId: string) => {
+    const request = ++detailRequest.current;
+    setRequestedCustomerId(customerId);
+    setDetailsLoading(true);
+    setDetailsError(null);
     setError(null);
     try {
       const result = await apiClient.getProjectCustomer(project.id, customerId);
+      if (request !== detailRequest.current) return;
       setDetails(result);
       setShowForm(false);
       setHasFormEdits(false);
       setEditing(false);
     } catch (err) {
-      setError(errorText(err, language));
+      if (request === detailRequest.current) {
+        setDetails(null);
+        setDetailsError(errorText(err, language));
+      }
+    } finally {
+      if (request === detailRequest.current) setDetailsLoading(false);
     }
   };
 
@@ -246,6 +310,8 @@ export function ProjectCustomerRegistryModal({
   };
 
   const searchPartyDirectory = async () => {
+    if (!canReadPartyDirectory || busy) return;
+    const request = ++partyRequest.current;
     const query = partyQuery.trim();
     if (query.length < 2) {
       setError(isArabic ? 'أدخل حرفين على الأقل للبحث في دليل الأطراف.' : 'Saisissez au moins deux caractères pour rechercher un tiers.');
@@ -256,16 +322,19 @@ export function ProjectCustomerRegistryModal({
     setPartySearching(true);
     try {
       const results = await apiClient.searchPartyDirectory(query);
-      setPartyResults(results);
+      if (request === partyRequest.current) setPartyResults(results);
     } catch (err) {
+      if (request !== partyRequest.current) return;
       setPartyResults([]);
       setError(errorText(err, language));
     } finally {
-      setPartySearching(false);
+      if (request === partyRequest.current) setPartySearching(false);
     }
   };
 
   const chooseParty = (party: PartyDirectoryItemDto) => {
+    ++partyRequest.current;
+    setPartySearching(false);
     setSelectedParty(party);
     setHasFormEdits(true);
     setForm((current) => ({
@@ -285,7 +354,10 @@ export function ProjectCustomerRegistryModal({
 
   const submitCustomer = async (event: FormEvent) => {
     event.preventDefault();
+    if (!canManage || busy || detailsLoading) return;
+    const scope = lifetime.current;
     setError(null);
+    setSuccess(null);
     setSaving(true);
 
     const common = {
@@ -318,22 +390,26 @@ export function ProjectCustomerRegistryModal({
         saved = await apiClient.createProjectCustomer(project.id, createPayload);
       }
 
+      if (scope !== lifetime.current) return;
       setDetails(saved);
+      setSuccess(isArabic ? 'تم حفظ السجل على الخادم.' : 'Le client a été enregistré sur le serveur.');
       setShowForm(false);
       setHasFormEdits(false);
       setEditing(false);
       await loadCustomers();
     } catch (err) {
-      setError(errorText(err, language));
+      if (scope === lifetime.current) setError(errorText(err, language));
     } finally {
-      setSaving(false);
+      if (scope === lifetime.current) setSaving(false);
     }
   };
 
   const submitInteraction = async (event: FormEvent) => {
     event.preventDefault();
-    if (!details) return;
+    if (!canManage || busy || detailsLoading || !details || !interactionSubject.trim() || !interactionSummary.trim()) return;
+    const scope = lifetime.current;
     setError(null);
+    setSuccess(null);
     setInteractionSaving(true);
     try {
       await apiClient.addCustomerInteraction(project.id, details.id, {
@@ -344,15 +420,18 @@ export function ProjectCustomerRegistryModal({
           ? new Date(`${nextFollowUp}T12:00:00`).toISOString()
           : null,
       });
+      if (scope !== lifetime.current) return;
       setInteractionSubject('');
       setInteractionSummary('');
       setNextFollowUp('');
+      setInteractionType('Call');
+      setSuccess(isArabic ? 'تم تسجيل المتابعة على الخادم. لا تُعد إرسالها إذا تعذر تحديث العرض.' : 'Le suivi a été enregistré sur le serveur. Ne le renvoyez pas si le rechargement échoue.');
       await openDetails(details.id);
       await loadCustomers();
     } catch (err) {
-      setError(errorText(err, language));
+      if (scope === lifetime.current) setError(errorText(err, language));
     } finally {
-      setInteractionSaving(false);
+      if (scope === lifetime.current) setInteractionSaving(false);
     }
   };
 
@@ -384,7 +463,7 @@ export function ProjectCustomerRegistryModal({
         <div className="flex flex-wrap gap-1.5 border-b border-slate-200 px-4 pt-3 bg-slate-50/70">
           <button
             type="button"
-            onClick={() => requestSwitchSubView('registry')}
+            disabled={busy} onClick={() => requestSwitchSubView('registry')}
             className={`px-3 py-2 text-xs font-semibold border-b-2 transition-colors ${
               subView === 'registry'
                 ? 'border-teal-800 text-teal-900 bg-white rounded-t'
@@ -395,7 +474,7 @@ export function ProjectCustomerRegistryModal({
           </button>
           <button
             type="button"
-            onClick={() => requestSwitchSubView('pipelinePlanned')}
+            disabled={busy} onClick={() => requestSwitchSubView('pipelinePlanned')}
             className={`px-3 py-2 text-xs font-semibold border-b-2 transition-colors ${
               subView === 'pipelinePlanned'
                 ? 'border-teal-800 text-teal-900 bg-white rounded-t'
@@ -423,6 +502,11 @@ export function ProjectCustomerRegistryModal({
       ) : (
         <div className="flex-1 space-y-4 overflow-y-auto p-4 sm:p-5">
           {error && <div role="alert" className="rounded border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-800">{error}</div>}
+          {success && <p role="status" className="rounded border border-teal-200 bg-teal-50 px-3 py-2 text-xs text-teal-950">{success}</p>}
+          {listError && <div role="alert" className="space-y-2 text-xs text-red-800"><p>{listError}</p>
+            <button type="button" disabled={busy || loading} onClick={() => void loadCustomers()} className="rounded border px-3 py-2">
+              {isArabic ? 'إعادة تحميل السجلات' : 'Recharger le registre'}
+            </button></div>}
 
           <div className="grid min-h-[26rem] grid-cols-1 gap-4 lg:grid-cols-[minmax(260px,0.85fr)_minmax(0,1.5fr)]">
             <section className="space-y-3 rounded-md border border-slate-200 p-3">
@@ -431,29 +515,43 @@ export function ProjectCustomerRegistryModal({
                   {isArabic ? 'قائمة السجلات' : 'Registre'} ({customers.length})
                 </h3>
                 {canManage && (
-                  <button type="button" onClick={openNewForm} className="inline-flex items-center gap-1 rounded bg-teal-800 px-2.5 py-1.5 text-xs font-semibold text-white hover:bg-teal-900">
+                  <button type="button" disabled={busy} onClick={() => requestAction({ kind: 'new' })} className="inline-flex items-center gap-1 rounded bg-teal-800 px-2.5 py-1.5 text-xs font-semibold text-white hover:bg-teal-900">
                     <Plus className="h-3.5 w-3.5" aria-hidden="true" />
                     {isArabic ? 'إضافة' : 'Ajouter'}
                   </button>
                 )}
               </div>
 
+              <div className="space-y-2">
+                <input type="search" aria-label={isArabic ? 'بحث في السجلات المحملة' : 'Rechercher dans les clients chargés'}
+                  placeholder={isArabic ? 'الاسم، الهاتف، البريد...' : 'Nom, téléphone, e-mail...'}
+                  value={registryQuery} onChange={(event) => setRegistryQuery(event.target.value)} className={inputClass} />
+                <select aria-label={isArabic ? 'تصفية حالة الزبون' : 'Filtrer par statut client'}
+                  value={registryStatus} onChange={(event) => setRegistryStatus(event.target.value)} className={inputClass}>
+                  <option value="">{isArabic ? 'كل الحالات' : 'Tous les statuts'}</option>
+                  {['Prospect', 'Qualified', 'Customer', 'Archived'].map((status) => <option key={status} value={status}>{statusLabel(status, language)}</option>)}
+                </select>
+                <p aria-live="polite" className="text-[11px] text-slate-500">{isArabic ? `عرض ${visibleCustomers.length} من ${customers.length}` : `${visibleCustomers.length} sur ${customers.length}`}</p>
+              </div>
               {loading ? (
                 <div className="flex items-center justify-center gap-2 py-8 text-xs text-slate-500">
                   <LoaderCircle className="h-4 w-4 animate-spin" />
                   {isArabic ? 'جارٍ التحميل...' : 'Chargement...'}
                 </div>
-              ) : customers.length === 0 ? (
+              ) : listError ? null : visibleCustomers.length === 0 ? (
                 <div className="rounded border border-dashed border-slate-300 px-3 py-8 text-center text-xs text-slate-500">
-                  {isArabic ? 'لا توجد سجلات زبائن لهذا المشروع.' : 'Aucun client enregistré pour ce projet.'}
+                  {registryQuery || registryStatus
+                    ? (isArabic ? 'لا توجد سجلات تطابق البحث والتصفية.' : 'Aucun client ne correspond aux filtres.')
+                    : (isArabic ? 'لا توجد سجلات زبائن لهذا المشروع.' : 'Aucun client enregistré pour ce projet.')}
+                  {(registryQuery || registryStatus) && <button type="button" onClick={() => { setRegistryQuery(''); setRegistryStatus(''); }} className="mt-2 block w-full font-semibold">{isArabic ? 'مسح التصفية' : 'Effacer les filtres'}</button>}
                 </div>
               ) : (
                 <div className="max-h-[62vh] space-y-2 overflow-y-auto">
-                  {customers.map((customer) => (
+                  {visibleCustomers.map((customer) => (
                     <button
                       key={customer.id}
                       type="button"
-                      onClick={() => void openDetails(customer.id)}
+                      disabled={busy} onClick={() => requestAction({ kind: 'customer', customerId: customer.id })}
                       className={`w-full rounded border px-3 py-2.5 text-start transition hover:border-teal-500 hover:bg-teal-50/50 ${details?.id === customer.id ? 'border-teal-700 bg-teal-50' : 'border-slate-200'}`}
                     >
                       <div className="flex items-start justify-between gap-2">
@@ -472,15 +570,25 @@ export function ProjectCustomerRegistryModal({
             </section>
 
             <section className="min-w-0 space-y-4 rounded-md border border-slate-200 p-3 sm:p-4">
-              {showForm ? (
+              {detailsLoading ? (
+                <p role="status" aria-busy="true" className="py-8 text-center text-xs text-slate-600">{isArabic ? 'جارٍ تحميل بيانات الزبون...' : 'Chargement du client...'}</p>
+              ) : detailsError ? (
+                <div role="alert" className="space-y-2 text-xs text-red-800">
+                  <p>{detailsError}</p>
+                  <button type="button" onClick={() => requestedCustomerId && void openDetails(requestedCustomerId)} className="rounded border px-3 py-2">
+                    {isArabic ? 'إعادة تحميل الزبون' : 'Recharger le client'}
+                  </button>
+                </div>
+              ) : showForm && canManage ? (
                 <form onSubmit={submitCustomer} onChange={() => setHasFormEdits(true)} className="space-y-3">
+                  <fieldset disabled={busy} className="space-y-3">
                   <div className="flex items-center justify-between gap-3">
                     <h3 className="text-sm font-bold text-slate-900">
                       {editing
                         ? (isArabic ? 'تعديل بيانات الزبون' : 'Modifier le client')
                         : (isArabic ? 'إضافة زبون أو مهتم' : 'Ajouter un client ou prospect')}
                     </h3>
-                    <button type="button" onClick={() => { setShowForm(false); setHasFormEdits(false); }} className="text-xs text-slate-500 hover:underline">
+                    <button type="button" disabled={busy} onClick={() => requestAction({ kind: 'dismissForm' })} className="text-xs text-slate-500 hover:underline">
                       {isArabic ? 'إلغاء' : 'Annuler'}
                     </button>
                   </div>
@@ -510,7 +618,7 @@ export function ProjectCustomerRegistryModal({
                             <input
                               className={inputClass}
                               value={partyQuery}
-                              onChange={(e) => setPartyQuery(e.target.value)}
+                              onChange={(e) => { ++partyRequest.current; setPartySearching(false); setPartyResults([]); setPartyQuery(e.target.value); }}
                               onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); void searchPartyDirectory(); } }}
                               maxLength={100}
                               placeholder={isArabic ? 'ابحث بالاسم القانوني...' : 'Rechercher par nom...'}
@@ -623,15 +731,16 @@ export function ProjectCustomerRegistryModal({
                   </label>
 
                   <div className="flex justify-end gap-2 border-t border-slate-100 pt-3">
-                    <button type="button" onClick={() => { setShowForm(false); setHasFormEdits(false); }} className="rounded border border-slate-200 px-4 py-2 text-xs font-medium text-slate-700 hover:bg-slate-50">
+                    <button type="button" disabled={busy} onClick={() => requestAction({ kind: 'dismissForm' })} className="rounded border border-slate-200 px-4 py-2 text-xs font-medium text-slate-700 hover:bg-slate-50">
                       {isArabic ? 'إلغاء' : 'Annuler'}
                     </button>
-                    <button type="submit" disabled={saving} className="rounded bg-teal-800 px-4 py-2 text-xs font-semibold text-white hover:bg-teal-900 disabled:opacity-50">
+                    <button type="submit" disabled={busy} className="rounded bg-teal-800 px-4 py-2 text-xs font-semibold text-white hover:bg-teal-900 disabled:opacity-50">
                       {saving
                         ? (isArabic ? 'جارٍ الحفظ...' : 'Enregistrement...')
                         : (isArabic ? 'حفظ السجل' : 'Enregistrer')}
                     </button>
                   </div>
+                  </fieldset>
                 </form>
               ) : details ? (
                 <div className="space-y-4">
@@ -646,7 +755,7 @@ export function ProjectCustomerRegistryModal({
                       </div>
                     </div>
                     {canManage && (
-                      <button type="button" onClick={openEditForm} className="rounded border border-slate-200 px-3 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-50">
+                      <button type="button" disabled={busy} onClick={() => requestAction({ kind: 'edit' })} className="rounded border border-slate-200 px-3 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-50">
                         {isArabic ? 'تعديل البيانات' : 'Modifier'}
                       </button>
                     )}
@@ -675,6 +784,7 @@ export function ProjectCustomerRegistryModal({
 
                   {canManage && (
                     <form onSubmit={submitInteraction} className="space-y-2 rounded border border-slate-200 bg-slate-50 p-3">
+                      <fieldset disabled={busy} className="space-y-2">
                       <h4 className="text-xs font-bold text-slate-900">{isArabic ? 'تسجيل اتصال أو متابعة جديدة' : 'Ajouter une communication ou un suivi'}</h4>
                       <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
                         <label className={labelClass}>
@@ -701,12 +811,13 @@ export function ProjectCustomerRegistryModal({
                         <textarea required maxLength={1500} rows={2} className={inputClass} value={interactionSummary} onChange={(e) => setInteractionSummary(e.target.value)} />
                       </label>
                       <div className="flex justify-end">
-                        <button type="submit" disabled={interactionSaving} className="rounded bg-teal-800 px-3 py-2 text-xs font-semibold text-white hover:bg-teal-900 disabled:opacity-50">
+                        <button type="submit" disabled={busy} className="rounded bg-teal-800 px-3 py-2 text-xs font-semibold text-white hover:bg-teal-900 disabled:opacity-50">
                           {interactionSaving
                             ? (isArabic ? 'جارٍ التسجيل...' : 'Enregistrement...')
                             : (isArabic ? 'تسجيل المتابعة' : 'Ajouter le suivi')}
                         </button>
                       </div>
+                      </fieldset>
                     </form>
                   )}
 
@@ -763,17 +874,7 @@ export function ProjectCustomerRegistryModal({
       onConfirm={() => {
         const next = pendingAction;
         setPendingAction(null);
-        setShowForm(false);
-        setHasFormEdits(false);
-        setEditing(false);
-        setInteractionSubject('');
-        setInteractionSummary('');
-        setNextFollowUp('');
-        if (next?.kind === 'close') {
-          onClose?.();
-        } else if (next?.kind === 'subView') {
-          setSubView(next.target);
-        }
+        if (next && !busy) performAction(next);
       }}
       onCancel={() => setPendingAction(null)}
     />
@@ -796,7 +897,7 @@ export function ProjectCustomerRegistryModal({
         open
         titleId="project-customers-title"
         onClose={requestClose}
-        closeDisabled={saving}
+        closeDisabled={busy}
         dir={isArabic ? 'rtl' : 'ltr'}
         overlayClassName="fixed inset-0 z-[75] flex items-center justify-center bg-slate-950/50 p-3 sm:p-5"
         panelClassName="flex max-h-[94vh] w-full max-w-6xl flex-col overflow-hidden rounded-lg border border-slate-200 bg-white shadow-xl outline-none"
@@ -811,7 +912,7 @@ export function ProjectCustomerRegistryModal({
                 <span className="font-data">{project.code}</span> · {isArabic ? project.nameAr : project.nameFr}
               </p>
             </div>
-            <button type="button" onClick={requestClose} aria-label={isArabic ? 'إغلاق' : 'Fermer'} className="rounded p-1.5 text-slate-500 hover:bg-slate-100">
+            <button type="button" disabled={busy} onClick={requestClose} aria-label={isArabic ? 'إغلاق' : 'Fermer'} className="rounded p-1.5 text-slate-500 hover:bg-slate-100">
               <X className="h-4 w-4" aria-hidden="true" />
             </button>
           </header>

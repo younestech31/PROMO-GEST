@@ -1,4 +1,4 @@
-import { useEffect, useState, type FormEvent } from 'react';
+import { useEffect, useRef, useState, type FormEvent } from 'react';
 import { Info, LoaderCircle, Pencil, Search, ShieldCheck, Users2, X } from 'lucide-react';
 import type { AppLanguage, AuthenticatedUser, PartyDirectoryItemDto } from '@/types/erp';
 import { apiClient, ApiError } from '@/core/api/apiClient';
@@ -31,6 +31,10 @@ export function PartiesDirectoryView({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [results, setResults] = useState<PartyDirectoryItemDto[]>([]);
+  const searchRequest = useRef(0);
+  const lastSearch = useRef('');
+  const viewLifetime = useRef<object | null>(null);
+  const actorScope = `${currentUser.id}:${currentUser.concurrencyStamp}`;
 
   const [editingParty, setEditingParty] = useState<PartyDirectoryItemDto | null>(null);
   const [editKind, setEditKind] = useState<'Person' | 'LegalEntity'>('Person');
@@ -57,6 +61,7 @@ export function PartiesDirectoryView({
   }, [onDirtyChange]);
 
   const requestCloseEditor = () => {
+    if (saving) return;
     if (isEditorDirty) {
       setConfirmDiscardOpen(true);
       return;
@@ -64,38 +69,59 @@ export function PartiesDirectoryView({
     setEditingParty(null);
   };
 
-  const handleSearch = async (event?: FormEvent) => {
-    event?.preventDefault();
-    const trimmed = query.trim();
+  useEffect(() => {
+    viewLifetime.current = { actorScope, canRead };
+    setResults([]);
+    setHasSearched(false);
+    setEditingParty(null);
+    setLoading(false);
+    setSaving(false);
+    setError(null);
+    setSaveSuccess(null);
+    return () => {
+      viewLifetime.current = null;
+      ++searchRequest.current;
+    };
+  }, [actorScope, canRead]);
+
+  const runSearch = async (term: string) => {
+    if (!canRead || saving) return;
+    const request = ++searchRequest.current;
+    const trimmed = term.trim();
+    lastSearch.current = trimmed;
+    setResults([]);
     if (trimmed.length < 2) {
-      setError(
-        isArabic
-          ? 'أدخل حرفين على الأقل للبحث في دليل الأطراف المركزي.'
-          : 'Saisissez au moins 2 caractères pour rechercher dans le répertoire des tiers.'
-      );
+      setLoading(false);
+      setError(isArabic
+        ? 'أدخل حرفين على الأقل للبحث في دليل الأطراف المركزي.'
+        : 'Saisissez au moins 2 caractères pour rechercher dans le répertoire des tiers.');
       return;
     }
-
     setError(null);
     setSaveSuccess(null);
     setLoading(true);
     try {
       const items = await apiClient.searchPartyDirectory(trimmed);
+      if (request !== searchRequest.current) return;
       setResults(items);
       setHasSearched(true);
     } catch (err) {
-      setResults([]);
-      setError(
-        err instanceof ApiError
-          ? translateApiError(err.code, err.message, language)
-          : (isArabic ? 'تعذر البحث في دليل الأطراف.' : 'Impossible d’interroger le répertoire des tiers.')
-      );
+      if (request !== searchRequest.current) return;
+      setError(err instanceof ApiError
+        ? translateApiError(err.code, err.message, language)
+        : (isArabic ? 'تعذر البحث في دليل الأطراف.' : 'Impossible d’interroger le répertoire des tiers.'));
     } finally {
-      setLoading(false);
+      if (request === searchRequest.current) setLoading(false);
     }
   };
 
+  const handleSearch = (event: FormEvent) => {
+    event.preventDefault();
+    void runSearch(query);
+  };
+
   const openEditor = (party: PartyDirectoryItemDto) => {
+    if (!canEdit || saving) return;
     setEditingParty(party);
     setEditKind(party.kind === 'LegalEntity' ? 'LegalEntity' : 'Person');
     setEditDisplayName(party.displayName);
@@ -104,7 +130,8 @@ export function PartiesDirectoryView({
 
   const handleSaveIdentity = async (event: FormEvent) => {
     event.preventDefault();
-    if (!editingParty) return;
+    if (!canEdit || !editingParty || saving || !editDisplayName.trim()) return;
+    const lifetime = viewLifetime.current;
     setSaveError(null);
     setSaving(true);
     try {
@@ -113,6 +140,10 @@ export function PartiesDirectoryView({
         displayName: editDisplayName.trim(),
         concurrencyStamp: editingParty.concurrencyStamp,
       });
+      if (lifetime !== viewLifetime.current) return;
+      // An earlier search cannot restore the old canonical identity after save.
+      ++searchRequest.current;
+      setLoading(false);
       setResults((prev) => prev.map((item) => (item.id === updated.id ? updated : item)));
       setEditingParty(null);
       setSaveSuccess(
@@ -121,13 +152,14 @@ export function PartiesDirectoryView({
           : 'L’identité centrale du tiers a été mise à jour.'
       );
     } catch (err) {
+      if (lifetime !== viewLifetime.current) return;
       setSaveError(
         err instanceof ApiError
           ? translateApiError(err.code, err.message, language)
           : (isArabic ? 'فشل تحديث هوية الطرف.' : 'Échec de la mise à jour de l’identité du tiers.')
       );
     } finally {
-      setSaving(false);
+      if (lifetime === viewLifetime.current) setSaving(false);
     }
   };
 
@@ -176,7 +208,9 @@ export function PartiesDirectoryView({
         />
       ) : (
         <>
-          {error && <ErrorBanner message={error} />}
+          {error && <ErrorBanner message={error}
+            actionLabel={lastSearch.current.length >= 2 ? (isArabic ? 'إعادة المحاولة' : 'Réessayer') : undefined}
+            onAction={lastSearch.current.length >= 2 ? () => void runSearch(lastSearch.current) : undefined} />}
           {saveSuccess && (
             <div role="status" className="rounded-md border border-emerald-200 bg-emerald-50 px-4 py-3 text-xs text-emerald-800">
               {saveSuccess}
@@ -210,7 +244,7 @@ export function PartiesDirectoryView({
             </div>
             <button
               type="submit"
-              disabled={loading || query.trim().length < 2}
+              disabled={saving || query.trim().length < 2}
               className="inline-flex items-center justify-center gap-2 rounded-md bg-teal-800 px-4 py-2 text-xs font-semibold text-white hover:bg-teal-900 disabled:opacity-50"
             >
               {loading ? <LoaderCircle className="h-4 w-4 animate-spin" /> : <Search className="h-4 w-4" />}
@@ -218,7 +252,9 @@ export function PartiesDirectoryView({
             </button>
           </form>
 
-          {!hasSearched ? (
+          {loading ? (
+            <p role="status" aria-busy="true" className="py-8 text-center text-sm text-slate-600">{isArabic ? 'جارٍ البحث...' : 'Recherche en cours...'}</p>
+          ) : error ? null : !hasSearched ? (
             <EmptyState
               icon={<Users2 className="h-8 w-8" aria-hidden="true" />}
               title={isArabic ? 'ابحث في دليل الأطراف المركزي' : 'Interroger le répertoire central des tiers'}
@@ -305,7 +341,7 @@ export function PartiesDirectoryView({
               <button
                 type="button"
                 aria-label={isArabic ? 'إغلاق' : 'Fermer'}
-                onClick={requestCloseEditor}
+                disabled={saving} onClick={requestCloseEditor}
                 className="p-1.5 rounded text-slate-500 hover:bg-slate-100"
               >
                 <X className="w-4 h-4" />
@@ -322,6 +358,7 @@ export function PartiesDirectoryView({
               <FormField id="party-edit-kind" label={isArabic ? 'الطبيعة القانونية' : 'Nature du tiers'}>
                 <select
                   id="party-edit-kind"
+                  disabled={saving}
                   value={editKind}
                   onChange={(e) => setEditKind(e.target.value as 'Person' | 'LegalEntity')}
                   className={inputBaseClass}
@@ -334,6 +371,7 @@ export function PartiesDirectoryView({
               <FormField id="party-edit-name" label={isArabic ? 'الاسم القانوني أو الكامل *' : 'Nom complet ou raison sociale *'}>
                 <input
                   id="party-edit-name"
+                  disabled={saving}
                   required
                   maxLength={200}
                   value={editDisplayName}
@@ -345,7 +383,7 @@ export function PartiesDirectoryView({
               <div className="pt-4 border-t border-slate-100 flex justify-end gap-3">
                 <button
                   type="button"
-                  onClick={requestCloseEditor}
+                  disabled={saving} onClick={requestCloseEditor}
                   className="px-4 py-2 text-xs font-semibold rounded-md border border-slate-200 text-slate-700 hover:bg-slate-100"
                 >
                   {isArabic ? 'إلغاء' : 'Annuler'}

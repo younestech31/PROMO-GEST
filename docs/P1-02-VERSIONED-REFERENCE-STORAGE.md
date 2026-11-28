@@ -95,3 +95,8 @@ identity map/full-source import and PG18 rehearsal remain outstanding, followed 
 explicit activation and one server-owned version consumed by
 setup/organization/project/preview with AR/FR parity and preserved historical text.
 Schema/importer code alone does not mark P1-02 Done.
+
+The subsequent [staged reference inspection slice](P1-02-STAGED-REFERENCE-INSPECTION.md)
+adds active-system-admin-only read endpoints and an AR/FR inspection panel. It
+uses the SELECT-only runtime role and does not publish a version or replace the
+existing anonymous catalogue. Its exact-head tests must be checked independently.

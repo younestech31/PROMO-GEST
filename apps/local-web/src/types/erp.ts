@@ -30,6 +30,33 @@ export interface AdministrativeUnitsReferenceDto {
   wilayas: AdministrativeWilayaDto[];
 }
 
+export interface StagedAdministrativeWilayaDto {
+  id: string; code: string; nameAr: string; nameFr: string; nameArSource: string;
+  declaredCommuneCount: number; storedCommuneCount: number; declaredDairaCount: number;
+}
+
+export interface StagedAdministrativeSnapshotDto {
+  snapshotId: string; canonicalContentSha256: string; manifestSha256: string;
+  sourceSpreadsheetId: string; claimedCaptureAtUtc: string; publicationStatus: 'StagedNotActivated';
+  declaredWilayaCount: number; declaredCommuneCount: number; declaredAliasCount: number;
+  declaredDairaCount: number; recordedObservedDairaCount: number;
+  storedWilayaCount: number; storedCommuneCount: number; storedAliasCount: number; storedObservedDairaCount: number;
+  countsMatchMetadata: boolean; wilayas: StagedAdministrativeWilayaDto[];
+}
+
+export interface StagedAdministrativeCommuneDto {
+  id: string; code: string; wilayaId: string; wilayaCode: string;
+  nameAr: string; nameFr: string; dairaNameAr: string; dairaNameFr: string;
+  isDairaSeat: boolean | null; parentEffectiveFrom: string | null; parentEffectiveTo: string | null;
+  parentDateEvidence: string | null;
+  alias: { referenceNameAr: string; referenceNameFr: string; aliasNameFr: string; repositoryNameAr: string; evidence: string } | null;
+}
+
+export interface StagedAdministrativeCommunePageDto {
+  snapshotId: string; page: number; pageSize: number; totalCount: number; totalPages: number;
+  items: StagedAdministrativeCommuneDto[];
+}
+
 export interface InitializeInstallationRequest {
   legalName: string;
   tradeName?: string;

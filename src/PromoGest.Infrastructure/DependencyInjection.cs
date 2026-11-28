@@ -53,6 +53,8 @@ public static class DependencyInjection
 
         services.AddScoped<IAuditWriter, EfAuditWriter>();
         services.AddScoped<IAuditQueryRepository, EfAuditWriter>();
+        services.AddScoped<IAdministrativeReferenceReadRepository, EfAdministrativeReferenceReadRepository>();
+        services.AddScoped<StagedAdministrativeReferenceService>();
         services.AddScoped<IInstallationRepository, EfInstallationRepository>();
         services.AddScoped<IUserRepository, EfUserRepository>();
         services.AddScoped<IProjectRepository, EfProjectRepository>();

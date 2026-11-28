@@ -184,6 +184,7 @@ export function AppContentRouter({
 
       {activeRoute.kind === 'org' && activeRoute.section === 'territorialReference' && (
         <TerritorialReferenceView
+          currentUser={session.user}
           language={language}
           onNavigateHome={() => onNavigate({ kind: 'org', section: 'workspace' })}
         />

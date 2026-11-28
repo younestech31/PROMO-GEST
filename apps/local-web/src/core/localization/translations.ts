@@ -1326,6 +1326,22 @@ const API_ERROR_MESSAGES: Record<string, { ar: string; fr: string }> = {
     ar: 'اسم الولاية لا يطابق رمز الولاية الرسمي المحدد للمؤسسة.',
     fr: 'Le nom de la wilaya ne correspond pas au code officiel sélectionné pour l’organisation.',
   },
+  FORBIDDEN_REFERENCE_INSPECTION: {
+    ar: 'فحص المرجع المرحلي متاح لمدير النظام النشط فقط.',
+    fr: 'L’inspection du référentiel préparé est réservée à l’administrateur système actif.',
+  },
+  REFERENCE_QUERY_INVALID: {
+    ar: 'مرشحات المرجع أو إعدادات الصفحات غير صالحة.',
+    fr: 'Les filtres ou la pagination du référentiel sont invalides.',
+  },
+  REFERENCE_SNAPSHOT_INVALID: {
+    ar: 'أدخل معرّف النسخة الكامل الصحيح من إيصال الاستيراد.',
+    fr: 'Saisissez l’identifiant complet et valide figurant sur le reçu d’import.',
+  },
+  REFERENCE_SNAPSHOT_NOT_FOUND: {
+    ar: 'النسخة المرحلية غير موجودة أو أزيلت.',
+    fr: 'La version préparée est absente ou a été retirée.',
+  },
   FORBIDDEN_AUDIT_READ: {
     ar: 'لا تملك صلاحية الاطلاع على سجل التدقيق الأمني.',
     fr: 'Vous n’êtes pas autorisé à consulter le journal d’audit.',

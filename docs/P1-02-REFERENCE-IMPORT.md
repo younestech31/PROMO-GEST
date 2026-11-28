@@ -174,3 +174,8 @@ AR/FR UI acceptance, and do not authorize production. No local PG18/.NET run is
 claimed in the sandbox. Next: full adopted-source snapshot/capture provenance,
 reviewed retained map and full-source rehearsal, then explicit version activation
 and shared API/setup/organization/project/preview integration.
+
+The [read-only staged inspection panel/API](P1-02-STAGED-REFERENCE-INSPECTION.md)
+lets the active System Administrator inspect an exact imported snapshot and its
+communes without activating it. Count comparison is not a replacement for the
+importer's full-package equality checks or actual-source acceptance.
